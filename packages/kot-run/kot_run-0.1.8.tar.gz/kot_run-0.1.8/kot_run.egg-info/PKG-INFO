@@ -1,0 +1,123 @@
+Metadata-Version: 2.1
+Name: kot-run
+Version: 0.1.8
+Summary: The cloud python function runner !
+Home-page: https://github.com/KOT-database/KOT-Run
+Author: Onur Atakan ULUSOY
+Author-email: atadogan06@gmail.com
+License: MIT
+Description: # KOT Run
+        
+        The cloud python function runner with docker and KOT Cloud.
+        
+        [Website](https://kotdatabase.dev/kot-run) | [Discord](https://discord.gg/QtnKf532Er) | [Twitter](https://twitter.com/kot_database)
+        
+        
+        
+        
+        ## Installation
+        You can install KOT by pip3:
+        
+        ```console
+        pip3 install kot_run
+        ```
+        
+        
+        
+        ## Implementing
+        In this point you can use any [KOT Cloud](https://docs.kotdatabase.dev/kot_cloud.html).
+        
+        
+        We will use the Free cloud for these examples and for free `YOUR_CLOUD_KEY`:
+        ```console
+        KOT cloud_key
+        ```
+        >YOUR_CLOUD_KEY = "cloud-***"
+        
+        Also you can set any string for `YOUR_GLOBAL_ENCRYPTION_KEY` example: 
+        > YOUR_GLOBAL_ENCRYPTION_KEY = "Thisismypass"
+        
+        ### Basic
+        
+        ```python
+        from kot_run import KOT_Run
+        from kot import KOT_Cloud
+        
+        YOUR_CLOUD_KEY = ""
+        YOUR_GLOBAL_ENCRYPTION_KEY = ""
+        INTERVAL = 15
+        
+        cloud = KOT_Cloud(YOUR_CLOUD_KEY)
+        run = KOT_Run(cloud, YOUR_GLOBAL_ENCRYPTION_KEY, interval=INTERVAL)
+        
+        
+        # ------- REGISTER_FUNCTIONS ------- 
+        
+        
+        @cloud.active(encryption_key=YOUR_GLOBAL_ENCRYPTION_KEY)
+        def add(a, b, c=5):
+            return a + b + c
+        
+        
+        # ------- RUN ------- 
+        
+        print(run.run("add", args_for_func=(15, 5), kwargs_for_func={"c": 25}))
+        ```
+        
+        ```console
+        $ 45
+        ```
+        
+        
+        ## Docker
+        We supports docker for runners.
+        
+        Firstly edit the `.env.template` and rename as `.env`
+        
+        
+        After if you want to use Free:
+        
+        ```console
+        docker run --env-file .env -d --name KOT_RUN_FREE ghcr.io/kot-database/kot_run:latest python3 run_Free.py
+        ```
+        
+        For Pro:
+        
+        
+        ```console
+        docker run --env-file .env -d --name KOT_RUN_PRO ghcr.io/kot-database/kot_run:latest python3 run_Pro.py
+        ```
+        
+        or Dedicated:
+        
+        
+        ```console
+        docker run --env-file .env -d --name KOT_RUN_DEDICATED ghcr.io/kot-database/kot_run:latest python3 run_Dedicated.py
+        ```
+        
+        
+        And after you can use the editor.
+        
+        
+        
+        ## Contributing
+        Contributions to KOT Run are welcome! If you have any suggestions or find a bug, please open an issue on the GitHub repository. If you want to contribute code, please fork the repository and create a pull request.
+        
+        ## License
+        KOT Run is released under the MIT License.
+        
+        <h2 align="center">
+            Contributors
+        </h2>
+        <p align="center">
+            Thank you for your contribution!
+        </p>
+        <p align="center">
+            <a href="https://github.com/KOT-database/KOT-Run/graphs/contributors">
+              <img src="https://contrib.rocks/image?repo=KOT-database/KOT-Run" />
+            </a>
+        </p>
+        
+Platform: UNKNOWN
+Requires-Python: >= 3
+Description-Content-Type: text/markdown
