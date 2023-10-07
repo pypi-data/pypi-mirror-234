@@ -1,0 +1,13 @@
+"""
+This module is part of the "MultifunctionTools" module which belongs to "https://github.com/veHRz" and provides access to various functions to better handle Exceptions.
+"""
+
+class MultifunctionErrors(Exception):
+    def __init__(self, errorMessage: str):
+        super().__init__(errorMessage)
+
+class SeparatorError(MultifunctionErrors): ...
+class BadSeparator(SeparatorError): ...
+
+class PasswordError(MultifunctionErrors): ...
+class BadPassword(PasswordError): ...
