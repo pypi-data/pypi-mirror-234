@@ -1,0 +1,77 @@
+---
+name: Enfugue
+configuration:
+    environment_prefix: ENFUGUE
+    sandboxed: false
+    logging: !include ./logging.yml
+    orm: !include ./database.yml
+    enfugue: !include ./enfugue.yml
+    session:
+        cookie: enfugue_session
+    user:
+        cookie: enfugue_token
+        token:
+            days: 30
+        permissions:
+            - object_name: DiffusionModel
+              global: true
+              scope_type: explicit
+              action: read
+            - object_name: DiffusionModel
+              group: admin
+              scope_type: explicit
+              action: 
+                - create
+                - update
+                - delete
+            - object_name: Download
+              global: true
+              scope_type: explicit
+              action: read
+            - object_name: Download
+              group: admin
+              scope_type: explicit
+              action:
+                - create
+                - delete
+            - object_name: DiffusionInvocation
+              global: true
+              scope_type: explicit
+              action: 
+                - read
+                - create
+                - delete
+            - object_name: System
+              group: admin
+              scope_type: explicit
+              action:
+                - read
+                - update
+            - object_name: User
+              group: admin
+              scope_type: explicit
+              action:
+                - create
+                - read
+                - update
+                - delete
+        users:
+            - username: enfugue
+              password: enfugue
+              first_name: Default
+              last_name: User
+              groups:
+                - admin
+    server:
+        secure: true
+        host: 0.0.0.0
+        port: 45554
+        domain: app.enfugue.ai
+        driver: cherrypy
+        classes:
+            - enfugue.server.EnfugueServer
+        template:
+            recurse: true
+        cms:
+            name: Enfugue
+            context: !include ./cms-context.yml

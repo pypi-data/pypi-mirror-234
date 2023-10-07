@@ -1,0 +1,1 @@
+import{MenuController}from"../menu.mjs";class NewModelController extends MenuController{static menuName="New Configuration";static menuIcon="fa-solid fa-plus";static menuShortcut="n";async onClick(){this.application.modelManager.showNewModel()}}export{NewModelController as MenuController};

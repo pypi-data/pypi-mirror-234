@@ -1,0 +1,1 @@
+import{InputView}from"./base.mjs";class HiddenInputView extends InputView{static inputType="hidden"}class ButtonInputView extends InputView{static inputType="button";async build(){let t=await super.build();return t.off("click").on("click",(t=>this.changed(t))),t}}export{HiddenInputView,ButtonInputView};

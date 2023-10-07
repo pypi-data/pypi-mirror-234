@@ -1,0 +1,1 @@
+let Language={getString:function(e){let t=this.strings;for(let n of e.split(".")){if(!t.hasOwnProperty(n)){t=void 0;break}t=t[n]}return void 0===t?(console.error("Couldn't find string code",e),""):t},strings:{},supportedLanguages:["en"]};export{Language};

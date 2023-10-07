@@ -1,0 +1,1 @@
+import{MenuController}from"../menu.mjs";class SystemLogsController extends MenuController{static menuName="Engine Logs";static menuIcon="fa-solid fa-clipboard-list";static menuShortcut="l";async onClick(){this.application.logs.showLogDetails()}}export{SystemLogsController as MenuController};

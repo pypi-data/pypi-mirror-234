@@ -1,0 +1,1 @@
+import{MenuController}from"../menu.mjs";class ModelManagerController extends MenuController{static menuName="Configuration Manager";static menuIcon="fa-solid fa-table-list";static menuShortcut="c";async onClick(){this.application.modelManager.showManager()}}export{ModelManagerController as MenuController};
