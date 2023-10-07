@@ -1,0 +1,194 @@
+[tool.poetry]
+name = "medkit-lib"
+version = "0.11.0"
+description = "A Python library for a learning health system"
+readme = "README.md"
+repository = "https://gitlab.inria.fr/heka/medkit/"
+documentation = "https://heka.gitlabpages.inria.fr/medkit/"
+authors = ["HeKA Research Team"]
+maintainers = [
+    "medkit-maintainers <medkit-maintainers@inria.fr>"
+]
+
+license = "MIT"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Medical Science Apps."
+]
+packages = [
+  { include = "medkit" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8, <4.0"
+duptextfinder = "*"
+flashtext = "*"
+numpy = "*"
+pyaml = "*"
+requests = "*"
+smart-open = "*"
+soundfile = "*"
+tqdm = "*"
+typing-extensions = "*"
+Unidecode = "*"
+intervaltree = "*"
+wheel = "*"
+iamsystem = ">=0.3"
+
+# optional
+edsnlp = {version = "^0.7", optional = true}
+feather-format = {version = "^0.4", optional = true}
+packaging = {version = "*", optional = true}
+pandas = [
+    {version = "^1.4", python = ">=3.8, <4.0", optional = true},
+]
+
+PyRuSH = {version = "^1.0", optional = true}
+quickumls = {version = "^1.4", optional = true}
+resampy = {version = "^0.4", optional = true}
+sacremoses = {version = "*", optional = true}
+sentencepiece = {version = "*", optional = true}
+seqeval = {version = "^1.2.2", optional = true}
+spacy = {version = "^3.4", optional = true}
+speechbrain = {version = "^0.5", optional = true}
+torch = [  # bug https://github.com/pytorch/pytorch/issues/100974
+    {version = "^2.0, !=2.0.1", optional = true, markers = 'platform_system == "Linux"', source = "torch-linux-cpu"},
+    {version = "^2.0, !=2.0.1", optional = true, markers = 'platform_system != "Linux"'}
+]
+torchaudio = [
+    {version = "^2.0", optional = true, markers = 'platform_system == "Linux"', source = "torch-linux-cpu"},
+    {version = "^2.0", optional = true, markers = 'platform_system != "Linux"'}
+]
+transformers = {version = "^4.21", optional = true}
+# workaround bug with cython >= 3.0 and unqlite < 0.9.6
+unqlite =  {version = "^0.9.6", optional = true}
+webrtcvad = {version = "^2.0", optional = true}
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-cov = "*"
+pytest-mock = "*"
+pre-commit = "*"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+jupyter-book = "^0.13"
+matplotlib = "*"
+pandas = [
+    {version = "^1.4", python = ">=3.8, <4.0"},
+]
+spacy = "^3.4"
+sphinx = ">=4.3.3"
+sphinxcontrib-mermaid = ">=0.8"
+sphinx-toolbox = "*"
+
+[tool.poetry.group.pa-speaker-detector]
+optional = true
+
+[tool.poetry.group.pa-speaker-detector.dependencies]
+# for testing compatibility with audio component during development but not included in package
+pyannote-audio = {url = "https://github.com/pyannote/pyannote-audio/archive/refs/tags/JSALT2023.tar.gz"}
+torch = [  # bug https://github.com/pytorch/pytorch/issues/100974
+    {version = "^2.0, !=2.0.1", markers = 'platform_system == "Linux"', source = "torch-linux-cpu"},
+    {version = "^2.0, !=2.0.1", markers = 'platform_system != "Linux"'}
+]
+
+[tool.poetry.extras]
+
+# Dependencies related to optional medkit modules
+edsnlp = ["edsnlp"]
+hf-entity-matcher = [
+    "torch",
+    "transformers",
+]
+hf-transcriber-function = [
+    "torchaudio",
+    "transformers"
+]
+hf-translator = [
+    "sacremoses",  # needed by default model "Helsinki-NLP/opus-mt-fr-en"
+    "sentencepiece",
+    "torch",
+    "transformers"
+]
+hf-utils = ["transformers"]
+metrics-ner = ["seqeval","transformers","torch"]
+quick-umls = [
+    "packaging",  # needed to check quickumls version
+    "quickumls",
+    "unqlite",  # workaround bug with cython >= 3.0 and unqlite < 0.9.6
+]
+resampler = ["resampy"]
+rush-sentence-tokenizer = ["PyRush"]
+sb-transcriber-function = [
+    "speechbrain",
+    "torch",
+    "transformers",
+]
+spacy = ["spacy"]
+syntactic-relation-extractor = ["spacy"]
+training = ["torch"]
+umls-coder-normalizer = [
+    "feather-format",
+    "pandas",
+    "torch",
+    "transformers",
+]
+webrtc-voice-detector = ["webrtcvad"]
+
+## 'optional' groups dependencies from all extras for pip install <medkit-package>[optional]
+## for poetry, you can use `poetry install --all-extras`
+
+optional = [
+    "eds-nlp",
+    "feather-format",
+    "packaging",
+    "pandas",
+    "PyRuSH",
+    "quickumls",
+    "resampy",
+    "sacremoses",
+    "sentencepiece",
+    "seqeval",
+    "spacy",
+    "speechbrain",
+    "torch",
+    "torchaudio",
+    "transformers",
+    "unqlite",
+    "webrtcvad",
+]
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[[tool.poetry.source]]
+name = "torch-linux-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+
+[tool.black]
+line-length = 88
+preview = true
+extend-exclude = ".venv"
+
+[tool.poetry-dynamic-versioning]
+enable = false
+vcs = "git"
+dirty = true
+pattern = "(?P<base>\\d+(\\.\\d+)*)"
+latest-tag = true
+style = "semver"
