@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "definitions": {
+    "column": {
+      "description": "Name of column",
+      "type": "string",
+      "title": "Column"
+    },
+    "schema": {
+      "properties": {
+        "count": {
+          "type": "integer"
+        }
+      },
+      "required": ["count"],
+      "type": "object"
+    },
+    "sequence": {
+      "description": "Sequence.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string"
+        }
+      },
+      "title": "Sequence",
+      "type": "object"
+    },
+    "table": {
+      "description": "Table manifest",
+      "properties": {
+        "columns": {
+          "description": "Columns of table",
+          "items": {
+            "$ref": "#/definitions/column"
+          },
+          "title": "Column",
+          "type": "array"
+        },
+        "name": {
+          "description": "Name of table",
+          "title": "Name",
+          "type": "string"
+        },
+        "schema": {
+          "description": "Name of schema",
+          "title": "Schema",
+          "type": "string"
+        },
+        "segments": {
+          "description": "Data segments",
+          "segments": {
+            "$ref": "#/definitions/tableSegment"
+          },
+          "title": "Segments",
+          "type": "array"
+        }
+      },
+      "required": ["name", "schema", "segments"],
+      "title": "Table",
+      "type": "object"
+    },
+    "tableSegment": {
+      "description": "Part of table",
+      "properties": {
+        "rowCount": {
+          "description": "Count of rows",
+          "minimum": 0,
+          "title": "Row count",
+          "type": "integer"
+        }
+      },
+      "required": ["properties"],
+      "title": "Table segment",
+      "type": "object"
+    },
+    "tableSegmentId": {
+      "description": "Reference to table segment",
+      "properties": {
+        "index": {
+          "description": "Index of segment",
+          "title": "Index",
+          "type": "integer"
+        },
+        "tableId": {
+          "description": "ID of table",
+          "title": "Table ID",
+          "type": "string"
+        }
+      },
+      "required": ["index", "tableId"],
+      "title": "Table segment ID"
+    }
+  },
+  "description": "Snapshot manifest",
+  "properties": {
+    "preData": {
+      "$ref": "#/definitions/schema"
+    },
+    "postData": {
+      "$ref": "#/definitions/schema"
+    },
+    "sequences": {
+      "additionalProperties": {
+        "$ref": "#/definitions/sequence"
+      },
+      "description": "Sequences",
+      "title": "Sequences",
+      "type": "object"
+    },
+    "tables": {
+      "additionalProperties": {
+        "$ref": "#/definitions/table"
+      },
+      "description": "Tables",
+      "title": "Tables",
+      "type": "object"
+    }
+  },
+  "required": ["tables"],
+  "title": "Manifest",
+  "type": "object"
+}
