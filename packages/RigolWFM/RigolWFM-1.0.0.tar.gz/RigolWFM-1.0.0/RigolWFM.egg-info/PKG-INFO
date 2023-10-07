@@ -1,0 +1,172 @@
+Metadata-Version: 2.1
+Name: RigolWFM
+Version: 1.0.0
+Summary: Read and parse Rigol Oscilloscope WFM files
+Home-page: https://github.com/scottprahl/RigolWFM.git
+Author: Scott Prahl
+Author-email: scott.prahl@oit.edu
+License: BSD 3-clause
+Keywords: Rigol,wfm,DS1000B,DS1074B,DS1104B,DS1204B,DS1000C,DS1000CD,DS1000M,DS1000MD,DS1042C,DS1102CA,DS1202CA,DS1302CA,DS1062CA,DS1000D,DS1102D,DS1052D,DS1102D,DS1000E,DS1052E,DS1102E,DS1000Z,DS1054Z,MSO1054Z,DS1074Z,DS1074Z-S,MSO1074Z,DS1104Z,DS1104Z-S,MSO1104Z,DS1202Z,DS2000,DS2072A,DS2102A,MSO2102A,MSO2102A-S,DS2202A,MSO2202A,MSO2202A-S,DS2302A,MSO2302A,MSO2302A-S,DS4000,DS4012,MSO4012,DS4014,MSO4014,DS4022,MSO4022,DS4024,MSO4024,DS4032,MSO4032,DS4034,MSO4034,DS4052,MSO4052,DS4054,MSO4054,DS6000,DS6062,DS6064,DS6102,DS6104
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Intended Audience :: Science/Research
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering
+Requires-Python: >=3.8
+Description-Content-Type: text/x-rst
+License-File: LICENSE.txt
+Requires-Dist: kaitaistruct
+Requires-Dist: numpy
+Requires-Dist: matplotlib
+Requires-Dist: requests
+
+RigolWFM
+=========
+
+by Scott Prahl
+
+A utility to process Rigol oscilloscope ``.wfm`` files
+------------------------------------------------------
+
+.. image:: https://img.shields.io/pypi/v/RigolWFM?color=73C449
+   :target: https://pypi.org/project/RigolWFM/
+   :alt: pypi
+
+.. image:: https://img.shields.io/github/v/tag/scottprahl/RigolWFM?label=github&color=73C449
+   :target: https://github.com/scottprahl/RigolWFM
+   :alt: github
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/RigolWFM?label=conda&color=73C449
+   :target: https://github.com/conda-forge/RigolWFM-feedstock
+   :alt: conda
+
+.. image:: https://img.shields.io/badge/kaitai-struct-green.svg
+   :target: https://ide.kaitai.io
+   :alt: kaitai-struct
+
+.. image:: https://zenodo.org/badge/244228290.svg
+   :target: https://zenodo.org/badge/latestdoi/244228290
+   :alt: doi
+
+|
+
+.. image:: https://img.shields.io/github/license/scottprahl/RigolWFM?color=73C449
+   :target: https://github.com/scottprahl/RigolWFM/blob/master/LICENSE.txt
+   :alt: License
+
+.. image:: https://github.com/scottprahl/RigolWFM/actions/workflows/test.yaml/badge.svg
+   :target: https://github.com/scottprahl/RigolWFM/actions/workflows/test.yaml
+   :alt: Testing
+
+.. image:: https://readthedocs.org/projects/RigolWFM/badge
+   :target: https://RigolWFM.readthedocs.io
+   :alt: Docs
+
+.. image:: https://img.shields.io/pypi/dm/RigolWFM?color=73C449
+   :target: https://pypi.org/project/RigolWFM/
+   :alt: Downloads
+
+__________
+
+This project is intended to be a comprehensive resource for interpreting waveform ``.wmf`` files created by any Rigol oscilloscope.  Open source (and Rigol's own applications) that parse/convert Rigol's binary ``.wfm`` files are sadly balkanized: each program tends to support a single oscilloscope group and the available efforts are spread across a range of languages.
+
+This project leverages a domain specific language (kaitai struct) to represent the binary files.  Once a binary file has been described in this text format, parsers can be generated for a wide range of languages (C++/STL, C#, Go, Java, JavaScript, Lua, Perl, PHP, Python, and Ruby).  
+
+Documentation can be found at <https://RigolWFM.readthedocs.io>
+
+Installation
+---------------
+
+You can install locally using pip::
+    
+    pip install --user RigolWFM
+
+or ``conda``::
+
+    conda install -c conda-forge RigolWFM
+
+or use immediately by clicking the Google Colaboratory button below
+
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+  :target: https://colab.research.google.com/github/scottprahl/RigolWFM/blob/master
+  :alt: Colab
+
+or `analyze your files using the kaitai struct IDE <https://ide.kaitai.io>`_ (you will need to manually upload the appropriate `.ksy` file and your `.wfm` to the IDE).  This allows one to interactively reverse engineer binary file formats directly in your browser.  This is super helpful for those Rigol ``.wfm`` formats that are undocumented or not parsing correctly.
+
+
+Usage
+-----
+
+Once ``RigolWFM`` is installed, you can plot the signals from binary Rigol ``.wfm`` files by::
+
+   import matplotlib.pyplot as plt
+   import RigolWFM.wfm as rigol
+
+   filename = 'example.wfm'
+   scope = 'DS1000E'
+
+   w = rigol.Wfm.from_file(filename, scope)
+   w.plot()
+   plt.show()
+
+
+Alternatively, ``wfmconvert`` can be used from the command line.  For example, the following should convert all the DS1000E files in the current directory to the ``.csv`` format::
+
+   prompt> wfmconvert E csv *.wfm
+
+If you just wanted to convert channel 1 from a single file to ``.csv`` then::
+
+   prompt> wfmconvert --channel 1 E csv DS1102E.wfm
+
+If you wanted to a signal `.wav` file using the second channel waveform (for use with LTspice) then:: 
+
+   prompt> wfmconvert --channel 2 E wav *.wfm
+
+If you want to create a ``.wav`` file with channels one and four as signals (and autoscale for use with Audacity or Sigrok Pulseview)::
+
+   prompt> wfmconvert --autoscale --channel 14 E wav *.wfm
+
+Status
+------
+
+There is a bit of work remaining (testing, validation, repackaging) but there are binary file descriptions for ``.wfm`` files created by the following scopes:
+
+* DS1000B tested 
+* DS1000C tested (two files only)
+* DS1000D tested (one file only)
+* DS1000E tested
+* DS1000Z tested, but with wonky voltage offsets
+* DS2000 tested
+* DS4000 tested
+* DS6000 untested
+
+Resources
+---------
+
+This has been a bit of an adventure.  In the process of nailing down the basic formats, I have gleaned information from a wide range of projects started by others.
+
+
+* Shein's Pascal program <https://sourceforge.net/projects/wfmreader>
+* Wagenaars's Matlab script <https://www.mathworks.com/matlabcentral/fileexchange/18999-read-binary-rigol-waveforms>
+* Steele's C program <http://nsweb.tn.tudelft.nl/~gsteele/rigol2dat>
+* Blaicher's python code <https://github.com/mabl/pyRigolWFM>
+* Szkutnik's python code <https://github.com/michal-szkutnik/pyRigolWfm1000Z>
+* Cat-Ion's python code <https://github.com/Cat-Ion/rigol-ds4000-wfm>
+* Šolc's python code <https://www.tablix.org/~avian/blog/archives/2019/08/quick_and_ugly_wfm_data_export_for_rigol_ds2072a/>
+* Contributions from <http://www.hakasoft.com.au/wfm_viewer>
+* A LabView program I got from Rigol support
+* Rigol's documentation of the 1000E, 1000Z, 2000, and 6000 file formats.
+
+
+Source code repository
+-------------------------------------------
+
+    <https://github.com/scottprahl/RigolWFM>
+
+License
+-------
+    BSD 3-clause -- see the file ``LICENSE`` for details.
