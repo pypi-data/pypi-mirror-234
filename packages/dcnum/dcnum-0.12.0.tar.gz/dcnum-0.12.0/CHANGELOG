@@ -1,0 +1,96 @@
+0.12.0
+ - ref: always use "spawn" for creating new processes to avoid race
+   conditions with Python threading.Lock upon forking on POSIX
+ - enh: some multiprocessing values in CPUSegmenter can be raw
+0.11.13
+ - enh: wait for event queue to empty before attempting to join
+   QueueEventExtractor processes
+0.11.12
+ - enh: explicitly close event queue in QueueEventExtractor
+0.11.11
+ - fix: QueueCollectorThread hangs indefinitely because of a missing
+   EventStash.is_complete check
+ - tests: increase coverage for queue_collector_thread submodule
+0.11.10
+ - fix: GPUSegmenter does not remove model_file from passed kwargs anymore
+0.11.9
+ - fix: properly support table data of length 1
+ - tests: make sure all segmenters have clear type definitions
+0.11.8
+ - reg: do not close the background thread of the event queue
+0.11.7
+ - enh: add more debugging messages for feature extraction workers
+0.11.6
+ - enh: add more debugging messages for feature extraction workers
+0.11.5
+ - setup: fix bad package discovery
+0.11.4
+ - fix: properly handle empty logs
+0.11.3
+ - fix: make sure values in tables dictionary are one-dimensional
+0.11.2
+ - meta: increment pipeline ID (texture feature computation)
+ - fix: HDF5Data was not pickable
+ - fix: HDF5Data did not properly handle tables
+ - enh: add context manager for CPUSegmenter
+ - enh: record and log execution time of segmentation and feature extraction
+ - enh: properly handle border case for computing contour-moments
+ - enh: properly handle empty images/masks in haralick texture features
+ - tests: do not use numba's JIT during testing (coverage)
+0.11.1
+ - fix: fix GPUSegmenter labeling
+0.11.0
+ - feat: introduce GPUSegmenter base class
+ - fix: handle bytes-values in HDF5 attributes
+ - ref: correctly introduce `requires_background_correction` for segmenters
+ - setup: don't requrie cibuildwheel
+0.10.0
+ - enh: some minor improvements in efficiency
+ - ref: increment DCNUM_PPID_GENERATION for the sake of clarity
+ - ref: unify dealing with num_workers and debugging
+0.0.9
+ - fix: properly propagate event extraction keyword arguments
+ - fix: QueueCollectorThread used uint16 for enumerating indices
+ - fix: handle case where number of events is not multiple of chunk_size
+ - enh: reduce thread waiting times
+ - enh: add bounds check for image cache
+0.0.8
+ - feat: introduce QueueCollectorThread
+ - feat: introduce SegmenterManagerThread
+ - feat: instroduce EventExtractorManagerThread and corresponding workers
+ - enh: minor improvements for HDF5ImageCache and ImageCorrCache
+ - enh: use data size as cache size if smaller than requested chunk size
+ - enh: return dictionary for brightness feature computation
+ - enh: allow to pass a single image for brightness feature computation
+ - enh: allow to pass a single image for texture feature computation
+ - enh: make sure that masks are written as uint8 to HDF5 files
+ - ref: haralick texture computation now returns dict instead of recarray
+ - ref: renamed HDF5WriterThread to DequeWriterThread
+ - ref: renamed feature submodules (prepended "feat_")
+0.0.7
+ - enh: dataset keyword arguments and mode HDF5WriterThread
+ - enh: speed-up of brightness feature computation
+0.0.6
+ - feat: add HDF5Writer and HDF5WriterThread classes in write submodule
+ - feat: segmenters compute labeled images instead of masks
+ - enh: introduce iter_chunks for cached image data
+ - ref: do not filter for contour length
+ - ref: rename feat.background.get_available_background_methods
+ - ref: store PPID information in dataset metadata instead of "user" section
+0.0.5
+ - enh: allow to set image_cache_size in HDF5Data
+ - enh: allow to easily register new custom segmenters
+ - ref: CPUSegmenter has its own submodule now
+0.0.4
+ - feat: introduce HDF5 virtual dataset path concatenator
+ - enh: allow to pass h5py.File object to HDF5Data
+ - fix: typo in logging statement for sparse median bg computation
+0.0.3
+ - feat: introduce median background computation
+ - feat: introduce data reader
+ - feat: introduce thresholding segmenter
+ - feat: introduce brightness, haralick texture, and moments-based features
+0.0.2
+ - first automated release
+0.0.1
+ - stub release
