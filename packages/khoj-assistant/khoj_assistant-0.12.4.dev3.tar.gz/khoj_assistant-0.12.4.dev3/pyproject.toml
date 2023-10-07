@@ -1,0 +1,117 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "khoj-assistant"
+description = "An AI personal assistant for your Digital Brain"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.8"
+authors = [
+    { name = "Debanjum Singh Solanky, Saba Imran" },
+]
+keywords = [
+    "search",
+    "semantic-search",
+    "productivity",
+    "NLP",
+    "AI",
+    "org-mode",
+    "markdown",
+    "images",
+    "pdf",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Human Machine Interfaces",
+    "Topic :: Text Processing :: Linguistic",
+]
+dependencies = [
+    "bs4 >= 0.0.1",
+    "dateparser >= 1.1.1",
+    "defusedxml == 0.7.1",
+    "fastapi == 0.77.1",
+    "jinja2 == 3.1.2",
+    "openai >= 0.27.0",
+    "tiktoken >= 0.3.2",
+    "tenacity >= 8.2.2",
+    "pillow == 9.3.0",
+    "pydantic >= 1.10.10",
+    "pyyaml == 6.0",
+    "rich >= 13.3.1",
+    "schedule == 1.1.0",
+    "sentence-transformers == 2.2.2",
+    "transformers >= 4.28.0",
+    "torch >= 2.0.1",
+    "uvicorn == 0.17.6",
+    "aiohttp == 3.8.5",
+    "langchain >= 0.0.187",
+    "requests >= 2.26.0",
+    "bs4 >= 0.0.1",
+    "anyio == 3.7.1",
+    "pymupdf >= 1.23.3",
+    "gpt4all == 1.0.12; platform_system == 'Linux' and platform_machine == 'x86_64'",
+    "gpt4all == 1.0.12; platform_system == 'Windows' or platform_system == 'Darwin'",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/khoj-ai/khoj#readme"
+Issues = "https://github.com/khoj-ai/khoj/issues"
+Discussions = "https://github.com/khoj-ai/khoj/discussions"
+Releases = "https://github.com/khoj-ai/khoj/releases"
+
+[project.scripts]
+khoj = "khoj.main:run"
+
+[project.optional-dependencies]
+test = [
+    "pytest >= 7.1.2",
+    "freezegun >= 1.2.0",
+    "factory-boy >= 3.2.1",
+    "trio >= 0.22.0",
+]
+dev = [
+    "khoj-assistant[test]",
+    "mypy >= 1.0.1",
+    "black >= 23.1.0",
+    "pre-commit >= 3.0.4",
+]
+
+[tool.hatch.version]
+source = "vcs"
+raw-options.local_scheme = "no-local-version"  # PEP440 compliant version for PyPi
+
+[tool.hatch.build.targets.sdist]
+include = ["src/khoj"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/khoj"]
+
+[tool.mypy]
+files = "src/khoj"
+pretty = true
+strict_optional = false
+install_types = true
+ignore_missing_imports = true
+non_interactive = true
+show_error_codes = true
+warn_unused_ignores = false
+
+[tool.black]
+line-length = 120
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+markers = [
+    "chatquality: Evaluate chatbot capabilities and quality",
+]
