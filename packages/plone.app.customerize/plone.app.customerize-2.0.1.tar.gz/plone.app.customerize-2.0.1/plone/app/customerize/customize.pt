@@ -1,0 +1,87 @@
+<h1 tal:replace="structure context/manage_page_header"></h1>
+<h1 tal:replace="structure context/manage_tabs"></h1>
+
+<div>
+
+  <form action="@@customizezpt"
+        enctype="multipart/form-data"
+        method="post"
+  >
+
+    <style type="text/css">
+    dl {
+      font-family: Verdana, Helvetica, sans-serif;
+      font-size: 10pt;
+    }
+    dt {
+      font-weight: bold;
+    }
+    pre {
+      background-color: #cccccc;
+      border: 1px solid black;
+      padding: 0.5em;
+      margin: 0.5em;
+      font-size: 85%;
+    }
+    dl, pre, form {
+      margin-left: 1em;
+    }
+    </style>
+
+    <p i18n:translate="">The following is the source of
+      "<code tal:content="request/form/view_name">viewname</code>",
+      registered as:</p>
+
+    <dl tal:define="
+          info view/getTemplateViewRegistrationInfo;
+        ">
+      <dt i18n:ignore="true">
+        view name
+      </dt>
+      <dd tal:content="info/viewname"></dd>
+      <dt i18n:ignore="true">
+        registered for interface
+      </dt>
+      <dd tal:content="info/for"></dd>
+      <dt i18n:ignore="true">
+        registered for request type
+      </dt>
+      <dd tal:content="info/type"></dd>
+      <dt i18n:ignore="true">
+        template file
+      </dt>
+      <dd tal:content="info/zptfile"></dd>
+      <dt i18n:ignore="true">
+        zcml file
+      </dt>
+      <dd tal:content="info/zcmlfile"></dd>
+    </dl>
+
+    <pre tal:content="view/getTemplateCodeFromRegistration">
+    template source
+  </pre>
+
+    <input name="required"
+           type="hidden"
+           value=""
+           tal:attributes="
+             value request/form/required;
+           "
+    />
+    <input name="view_name"
+           type="hidden"
+           value="theviewname"
+           tal:attributes="
+             value request/form/view_name;
+           "
+    />
+    <input name=""
+           type="submit"
+           value="Customize"
+           i18n:attributes="value"
+    />
+  </form>
+
+</div>
+
+<h1 tal:replace="structure context/manage_page_footer"></h1>
