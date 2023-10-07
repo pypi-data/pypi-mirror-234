@@ -1,0 +1,3 @@
+MODEL_ENDPOINT = "/models/"
+PROVIDERS_ENDPOINT = "/models/provider/"
+VALIDATE_MODEL_API_KEY_ENDPOINT = f"{MODEL_ENDPOINT}validate"
