@@ -1,0 +1,152 @@
+name: Build
+
+on:
+  push:
+    branches: [master, stable]
+  pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'The git ref to build'
+        default: ''
+        required: true
+        type: string
+    outputs:
+      whl-filename:
+        description: Wheel filename
+        value: ${{ jobs.wheel.outputs.whl-filename }}
+      tar-filename:
+        description: Tarball filename
+        value: ${{ jobs.wheel.outputs.tar-filename }}
+  workflow_dispatch:
+
+jobs:
+  bundles:
+    name: Build bundles
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # If the ref input is empty, checkout falls back to github.ref.
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install gettext for i18n
+        run: |
+          sudo apt install -y gettext
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          # Should be same version as in scripts/bootstrap.sh
+          node-version: '16.14.0'
+
+      - name: Install latest pipenv
+        run: |
+          python -m pip install --upgrade pipenv wheel
+
+      - name: Install dependencies in pipenv
+        run: |
+          bash ./scripts/bootstrap.sh --ci
+
+      - name: Build libs
+        run: pipenv run yarn build:libs
+
+      - name: Upload loading-screen.zip
+        uses: actions/upload-artifact@v3
+        with:
+          name: loading-screen.zip
+          path: packages/loading-screen/loading-screen.zip
+          if-no-files-found: error
+
+      - name: Build apps
+        run: pipenv run yarn build:apps
+
+      - name: Deploy apps
+        run: pipenv run yarn deploy:apps
+
+      - name: Upload apps-bundle.zip
+        uses: actions/upload-artifact@v3
+        with:
+          name: apps-bundle.zip
+          path: apps-bundle.zip
+          if-no-files-found: error
+
+
+  wheel:
+    name: Build wheel
+    runs-on: ubuntu-latest
+
+    outputs:
+      whl-filename: ${{ steps.whl-filename.outputs.whl-filename }}
+      tar-filename: ${{ steps.tar-filename.outputs.tar-filename }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          # If the ref input is empty, checkout falls back to github.ref.
+          ref: ${{ inputs.ref }}
+          # The full git history is needed so that setuptools_scm can derive
+          # the version number correctly.
+          fetch-depth: 0
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install gettext for i18n
+        run: |
+          sudo apt install -y gettext
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          # Should be same version as in scripts/bootstrap.sh
+          node-version: '16.14.0'
+
+      - name: Install latest pipenv
+        run: |
+          python -m pip install --upgrade pipenv wheel
+
+      - name: Install dependencies in pipenv
+        run: |
+          bash ./scripts/bootstrap.sh --ci
+
+      - name: Python tests
+        run: |
+          pipenv run python -m pytest
+
+      - name: Build
+        run: |
+          pipenv run yarn build-dist
+          ls -l dist/
+
+      - name: Get wheel filename
+        id: whl-filename
+        run: echo "whl-filename=$(ls dist | grep '\.whl$')" >> $GITHUB_OUTPUT
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.whl-filename.outputs.whl-filename }}
+          path: dist/${{ steps.whl-filename.outputs.whl-filename }}
+          if-no-files-found: error
+
+      - name: Get tarball filename
+        id: tar-filename
+        run: echo "tar-filename=$(ls dist | grep '\.tar\.')" >> $GITHUB_OUTPUT
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.tar-filename.outputs.tar-filename }}
+          path: dist/${{ steps.tar-filename.outputs.tar-filename }}
+          if-no-files-found: error

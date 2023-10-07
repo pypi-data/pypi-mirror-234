@@ -1,0 +1,63 @@
+{
+  "name": "kolibri-explore-plugin",
+  "description": "Monorepo with kolibri's Discovery page and custom channel presentations.",
+  "private": true,
+  "scripts": {
+    "build": "yarn build:version && yarn build:packages && yarn deploy:loading && yarn build:plugin && yarn build:info && yarn run i18n-django-compilemessages",
+    "build:plugin": "./scripts/set_override.py default && kolibri-tools build prod --plugins kolibri_explore_plugin --transpile",
+    "build:packages": "yarn build:libs",
+    "build:libs": "lerna run build --stream --ignore template-ui",
+    "build:apps": "lerna run build --stream --scope template-ui",
+    "build:info": "./scripts/build_info.sh > kolibri_explore_plugin/static/build-info.json",
+    "build:version": "python -m setuptools_scm",
+    "build:i18n": "yarn run i18n-extract && yarn run i18n-django-compilemessages",
+    "build-dist": "./scripts/clean.sh && yarn clean && yarn build && python -m build",
+    "deploy:apps": "./scripts/bundle_bundles.py",
+    "clean": "kolibri-tools build clean --plugins kolibri_explore_plugin",
+    "dev": "kolibri-tools build dev --plugins kolibri_explore_plugin --port 4000",
+    "lint-packages": "lerna run lint --stream",
+    "lint-frontend": "kolibri-tools lint -p 'kolibri_explore_plugin/assets/**/*.{js,vue,scss,less,css}'",
+    "lint-frontend:format": "yarn run lint-frontend --write",
+    "bump-version": "./scripts/bump_version.py",
+    "deploy:loading": "cp -rf packages/loading-screen/dist kolibri_explore_plugin/loadingScreen && rm -f kolibri_explore_plugin/loadingScreen/js/*map",
+    "release": "./scripts/check_can_relese.sh && twine upload -s dist/*",
+    "test:python": "python -m pytest",
+    "makemessages": "kolibri-tools i18n-extract-messages --plugins kolibri_explore_plugin && kolibri-tools i18n-extract-messages --namespace ek-components --searchPath ./packages/ek-components && kolibri-tools i18n-extract-messages --namespace template-ui --searchPath ./packages/template-ui && yarn run lerna run extract-messages --scope loading-screen",
+    "i18n-extract-backend": "cd kolibri_explore_plugin && python -m kolibri manage makemessages --skip-update --all --ignore 'node_modules/*' --ignore 'kolibri_explore_plugin/dist/*'",
+    "i18n-extract-frontend": "yarn run makemessages",
+    "i18n-extract": "yarn run i18n-extract-frontend && yarn run i18n-extract-backend",
+    "i18n-django-compilemessages": "cd kolibri_explore_plugin && PYTHONPATH=\"..:$$PYTHONPATH\" python -m kolibri manage compilemessages --skip-update",
+    "i18n-download-translations": "kolibri-tools i18n-code-gen --output-dir ./kolibri_explore_plugin/assets/src --lang-info ./kolibri_explore_plugin/locale/language_info.json && yarn run i18n-django-compilemessages && yarn exec kolibri-tools i18n-create-message-files -- --plugins kolibri_explore_plugin && yarn exec kolibri-tools i18n-create-message-files -- --namespace ek-components --searchPath ./packages/ek-components && yarn exec kolibri-tools i18n-create-message-files -- --namespace template-ui --searchPath ./packages/template-ui && lerna run compile-messages --stream --scope loading-screen"
+  },
+  "workspaces": [
+    "kolibri_explore_plugin/assets",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@formatjs/cli": "^4.5.0",
+    "lerna": "^4.0.0",
+    "sass": "^1.49.9",
+    "webpack": "^5.86.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.0",
+    "webpack-merge": "^5.8.0"
+  },
+  "resolutions": {
+    "vuex-router-sync": "^5.0.0",
+    "kolibri-design-system": "https://github.com/learningequality/kolibri-design-system#269b294bf562dd7d0e3a616aaace97bf0d3433c3"
+  },
+  "engines": {
+    "node": "16.x",
+    "yarn": "1.x"
+  },
+  "dependencies": {
+    "@babel/preset-env": "^7.22.10",
+    "intl": "^1.2.4",
+    "kolibri-design-system": "https://github.com/learningequality/kolibri-design-system#269b294bf562dd7d0e3a616aaace97bf0d3433c3",
+    "node-sass": "file:dependency-stub",
+    "vue-intl": "3.1.0"
+  },
+  "browserslist": [
+    "extends browserslist-config-kolibri"
+  ]
+}

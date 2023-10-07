@@ -1,0 +1,37 @@
+exclude: (\.git/|\.tox/|\.venv/|\.bumpversion.cfg$|build/|static/|dist/|node_modules/)
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.0.0
+  hooks:
+  - id: trailing-whitespace
+  - id: flake8
+  - id: check-yaml
+  - id: check-added-large-files
+    args: ['--maxkb=2000']
+  - id: debug-statements
+  - id: end-of-file-fixer
+    exclude: '^.+?(\.json|\.po)$'
+- repo: https://github.com/asottile/reorder_python_imports
+  rev: v2.6.0
+  hooks:
+  - id: reorder-python-imports
+- repo: local
+  hooks:
+  - id: lint-frontend-format
+    name: Linting of JS, Vue, SCSS and CSS files on the frontend
+    description: This hook handles all frontend linting for Kolibri
+    entry: yarn run lint-frontend:format
+    language: system
+    files: ^kolibri_explore_plugin/assets/src/.*\.(js|vue|scss|css)$
+  - id: lint-packages
+    name: Linting of JS and Vue files on the packages
+    description: This hook handles all packages linting
+    entry: yarn run lint-packages
+    pass_filenames: false
+    language: system
+    files: ^packages/.*\.(js|vue)$
+
+- repo: https://github.com/psf/black
+  rev: 22.3.0
+  hooks:
+  - id: black
