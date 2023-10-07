@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+nox = ["nox>=2023.4.22"]
+test = ["pytest>=7.4.2"]
+coverage = ["coverage[toml]>=7.3.2"]
+qa = [
+    "bandit>=1.7.5",
+    "codespell>=2.2.6",
+    "ruff>=0.0.292",
+    "black>=23.9.1",
+    "pre-commit>=3.4.0",
+    "pre-commit-hooks>=4.4.0",
+    "pyright>=1.1.329",
+]
+docs = [
+    "mkdocs-material>=9.4.4",
+    "mkdocstrings[python]>=0.23.0",
+    "mike>=1.1.2",
+    "mkdocs-git-revision-date-localized-plugin>=1.2.0",
+    "mkdocs-git-committers-plugin-2>=1.2.0",
+    "pymdown-extensions>=10.3",
+    # Weirdly Mike fails without this being explicitly available (don't think nox is installing it)
+    "setuptools>=61.0",
+]
+
+
+[project]
+name = "cookiecutter_test_build"
+version = "0.0.2"
+description = "Python Boilerplate contains all the boilerplate you need to create a Python package."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Zachary Stucke", email = "zakstucke@gmail.com" }]
+requires-python = ">=3.9"
+
+dependencies = []
+
+
+[project.urls]
+"Sourcecode" = "https://github.com/zakstucke/cookiecutter_test_build"
+"Documentation" = "https://zakstucke.github.io/cookiecutter_test_build"
+
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests/*"]
+
+
+[tool.black]
+line-length = 100
+
+
+[tool.ruff]
+line-length = 100
+ignore-init-module-imports = true # Makes unused imports in __init__.py give message to add to __all__ rather than redundant import
+unfixable = [
+    "F401", # Don't automatically remove unused imports, can be quite annoying on save when writing code
+]
+select = [
+    "E",   # pycodestyle
+    "D",   # pydocstyle for docstrings
+    "F",   # pyflakes
+    "A",   # prevent using keywords that clobber python builtins
+    "B",   # bugbear: security warnings
+    "UP",  # alert you when better syntax is available in your python version
+    "RUF", # the ruff developer's own rules
+    "PD",  # Pandas rules
+    "ISC", # implicit string concatenation
+    "I",   # Isort import sorting
+]
+ignore = [
+    "E712",   # Allow using if x == False, as it's not always equivalent to if x.
+    "E501",   # Supress line-too-long warnings: trust black's judgement on this one.
+    "E402",   # Allow imports not at top of file
+    "UP032",  # Ignore convert "{}".format(...) to f"{...}"
+    "UP015",  # Stops trying to remove "r" from open("..", "r") as it's the default, good to be clear
+    "RUF010", # Ignore converting f"{str(x)}" to f"{x!s}" simply because it's less obvious and less people know about it
+]
+
+[tool.ruff.per-file-ignores]
+"**/{tests}/**/*" = [
+    # Don't need docstrings linting for tests
+    "D100",
+    "D103",
+    "D104",
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.pyright]
+venv = ".venv"
+pythonVersion = "3.9"             # Run using the minimum supported version
+typeCheckingMode = "basic"        # Additional strict rules are enabled manually
+reportUnknownParameterType = true
+reportMissingImports = true
+deprecateTypingAliases = true
+reportImportCycles = true
+reportMissingTypeStubs = false
+
+[tool.coverage.paths]
+tests = ["tests"]
+source = [
+    'cookiecutter_test_build/',
+    # This handles the fact that mac/windows/ubuntu github action runners all have different paths
+    # This tells coverage to treat the paths as identical and not error:
+    '/Users/runner/work/cookiecutter_test_build/cookiecutter_test_build/cookiecutter_test_build/',
+    '/home/runner/work/cookiecutter_test_build/cookiecutter_test_build/cookiecutter_test_build/',
+    'D:\a\cookiecutter_test_build\cookiecutter_test_build\cookiecutter_test_build',
+]
+
+[tool.coverage.run]
+source = ["cookiecutter_test_build"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 100
