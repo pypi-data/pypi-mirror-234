@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: b5327157 <b5327157@protonmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+image: debian/bullseye
+arch: amd64
+
+secrets:
+- a3cafe86-e4dd-4f18-b7ad-5809c8d577f2
+- 076fcca6-4239-4488-bf29-ec6dd1e9852c
+
+artifacts:
+- no_vtf-desktop.tar.gz
+
+tasks:
+  - env: |
+      cd no_vtf-desktop
+      builds/debian/env.sh
+
+  - python3_10: |
+      cd no_vtf-desktop
+      builds/debian/python3.10-build_dep.sh
+      builds/python3.10-install.sh
+
+  - lint: |
+      cd no_vtf-desktop
+      builds/nox.sh --session lint
+
+  - package: |
+      cd no_vtf-desktop
+      builds/nox.sh --session package -- ~/no_vtf-desktop.tar.gz
+
+  - verify_signatures: |
+      cd no_vtf-desktop
+      builds/verify_signatures.sh || complete-build
+
+  - pre-release: |
+      cd no_vtf-desktop
+      [ "$(git rev-parse --verify HEAD)" == "$(git rev-parse --verify master)" ] || complete-build
+      git describe --exact-match 2>/dev/null || complete-build
+
+  - publish_package: |
+      cd no_vtf-desktop
+      builds/nox.sh --session publish -- ~/.pypi.org.token
