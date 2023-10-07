@@ -1,0 +1,40 @@
+{% load admin_tags %}
+{% load pbx_tags %}
+
+<table class="table tableDnD">
+    <thead>
+    <tr class="nodrag nodrop">
+        {% for field in nested_fields %}
+            <th><div class="text">{{ field|capfirst }}</div></th>
+        {% endfor %}
+    </tr>
+</thead>
+<tbody>
+    {% for obj in nested_queryset %}
+        {% render_list_row nested_admin obj nested_fields show_actions=False %}
+        {% if sub_object %}
+            <tr>
+              <td colspan="*" style="padding-left: 40px;">
+                <h4>{{ sub_title }}</h4>
+                <table class="table table-condensed table-bordered">
+                <thead>
+                <tr class="nodrag nodrop">
+                    {% for field in sub_fields %}
+                        <th><div class="text">{{ field|capfirst }}</div></th>
+                    {% endfor %}
+                </tr>
+                </thead>
+                <tbody>
+                    {% with sub_objects=obj|getattribute:sub_related_field %}
+                        {% for sub_obj in sub_objects.all %}
+                            {% render_list_row sub_admin sub_obj sub_fields show_actions=False %}
+                        {% endfor %}
+                    {% endwith %}
+                </tbody>
+                </table>
+              </td>
+            </tr>
+        {% endif %}
+    {% endfor %}
+</tbody>
+</table>

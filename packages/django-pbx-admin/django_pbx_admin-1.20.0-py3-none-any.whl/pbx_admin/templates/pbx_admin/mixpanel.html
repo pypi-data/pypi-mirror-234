@@ -1,0 +1,38 @@
+<script type="text/javascript">
+mixpanel.init("{{ mixpanel.project_token }}");
+
+mixpanel.track("screen_view", {
+  eventCategory: "adminPanel",
+  instanceId: "{{ mixpanel.instance_name }}",
+  screenTitle: document.title,
+  screenType: "{{ page_type }}",
+});
+
+function sendSaveEvent(){
+  let nameValue = "{{ event_object_value }}"
+  if (!nameValue){
+    nameValue = document.getElementById("id_name").value
+  }
+
+  mixpanel.track("{{ action_name }}",
+      {
+      eventCategory: "adminPanel",
+      instanceId: "{{ mixpanel.instance_name }}",
+      screenTitle: document.title,
+      eventObject: nameValue,
+    }
+  )
+}
+
+// can be more saves buttons e.g. editor translations
+let saveButtons = document.querySelectorAll("button[name='_save']")
+let saveAndContinueButtons = document.querySelectorAll("button[name='_continue']")
+
+saveButtons.forEach((button)=>{
+  button.addEventListener('click', sendSaveEvent)
+})
+
+saveAndContinueButtons.forEach((button)=>{
+  button.addEventListener('click', sendSaveEvent)
+})
+</script>
