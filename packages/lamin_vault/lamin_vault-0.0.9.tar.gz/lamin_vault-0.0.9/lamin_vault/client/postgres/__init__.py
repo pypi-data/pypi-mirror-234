@@ -1,0 +1,1 @@
+"""Generate credentials for postgres."""
