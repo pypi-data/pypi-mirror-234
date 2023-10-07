@@ -1,0 +1,52 @@
+{
+  "title": "Chain",
+  "about": "isamua",
+  "temperature": 0,
+  "functions": [
+    {
+      "name": "take_off",
+      "description": "Let the drone take off from the ground",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "height": {
+            "type": "number",
+            "description": "height in meters, e.g. 1.2"
+          }
+        }
+      }
+    },
+    {
+      "name": "next_manifgest",
+      "description": "After calling all function, call this method",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string",
+            "description": "Question from the user"
+          }
+        }
+      }
+    }
+  ],
+  "actions": {
+    "take_off": { "type": "message_template", "message":"Success" },
+    "next_manifgest": {
+      "type": "emit",
+      "emit_method": "switch_session",
+      "emit_data": {
+        "message": "{question}",
+        "manifest": "blip2"
+      }
+    }
+    
+  },
+  "sample": "Please let the drone take off from the ground, fly around a building twice (first with height=2 meter2, and then with height=3 meters) with four corners at [(10,10), (10,20), (30,20), (30,10)] keeping the constant distance (3 meters away for the first round, and 2 meters away from the second round) from the building, then fly back to the original take-off position and land.",
+  "prompt": [
+    "You are a drone pilot. You need to make a series of function calls to completed the given task.",
+    "Don't make assumptions about what values to plug into functions.",
+    "Ask for clarification if a user request is ambiguous.",
+    "Call next_manifgest as soon as the results are returned."
+  ]
+}
