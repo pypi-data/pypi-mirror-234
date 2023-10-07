@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "plateau-py"
+version = "0.0.1a4"
+description = "Parsing the PLATEAU 3D City Models (CityGML) used in Japan."
+
+authors = ["MIERUNE Inc. <info@mierune.co.jp>"]
+readme = "README.md"
+packages = [{include = "plateau", from = "src"}]
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.9.1"
+pytest = "^7.4.2"
+pytest-cov = "^4.1.0"
+pyright = "^1.1.327"
+ruff = "^0.0.291"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = ">=1.24"
+lxml = "^4.9.3"
+
+[tool.ruff]
+select = ["F", "E", "W", "B", "N", "I", "UP", "C90", "ANN"]
+ignore = ["ANN101", "E501"]
+target-version = "py38"
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["ANN"]
+
+[tool.pyright]
+executionEnvironments = [{ root = "tests", extraPaths = ["src"] }]
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+addopts = ["--import-mode=importlib"]
+
+[tool.coverage.run]
+source = ['plateau']
