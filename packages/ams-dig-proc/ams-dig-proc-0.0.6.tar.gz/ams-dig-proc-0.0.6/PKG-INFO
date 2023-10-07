@@ -1,0 +1,73 @@
+Metadata-Version: 2.1
+Name: ams-dig-proc
+Version: 0.0.6
+Summary: Package for AMS-DIG-PROC board by VIGO PHOTONICS
+Author-email: Paweł Sałek <psalek@vigo.com.pl>
+License: MIT License
+        
+        Copyright (c) [2023] [VIGO PHOTONICS]
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+Project-URL: Homepage, https://ams-dig-proc.readthedocs.io/en/latest/index.html
+Project-URL: Bug Tracker, https://gitlab.com/vigophotonics/ams-dig-proc
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.0
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# AMS-DIG-PROC python library
+
+<img src="docs/source/ams-dig-proc_small.jpg" style="float: right;">
+
+[AMS-DIG-PROC board](https://vigophotonics.com/product/ams-dig-proc/) is an digital extension board to AMS family of [infrared detection modules](https://vigophotonics.com/products/infrared-detection-modules/inassb-affordable-detection-modules/).
+
+This board provides 7Msamples/s 16-bit data aquisition and 32-bit real time processing capabilities. Onboard processing reduces data rate on the
+communication link, therefore simple 1Mbit UART is sufficient in most applications. There is also [USB adapter](https://vigophotonics.com/product/ams-dig-usb/) available, providing power supply and communication interface over a single micro-USB connector.
+
+This repository contains python libraries and C source files to handle communication with the board.
+
+## Python or C? Which should I use?
+For Windows/Linux - Python API is recommended. It provides ctypes structs and methods to cast and calculate CRC. Also serial port management and separate reader thread is provided to prevent from blocking the main thread.
+
+For other operating systems or bare metal embedded aplications - C is recommended since it does not introduce any dependencies or specific requirements.
+It is designed to be portable and as simple as possible.
+
+
+## Python installation
+```bash
+pip install ams-dig-proc
+```
+
+## C installation
+There is no special requirements or installation procedure for C.
+
+There is a header file available (`C/Inc/protocol.h`).
+It contains definitions of all structs (messages) and constants required to work with AMS-DIG-PROC board.
+
+`C/Src/ams_dig_proc_crc.c` contains function that can be used for CRC calculations.
+
+
+
+## Examples and documentation
+There are many C and Python examples available in the [documentation](https://ams-dig-proc.readthedocs.io/en/latest/index.html)
+
+For more informations about the board and the protocol please check the [AMS-DIG-PROC product page](https://vigophotonics.com/product/ams-dig-proc/)
+
