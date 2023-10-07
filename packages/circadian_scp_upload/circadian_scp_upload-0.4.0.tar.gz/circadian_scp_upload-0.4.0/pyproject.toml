@@ -1,0 +1,94 @@
+[tool.poetry]
+name = "circadian_scp_upload"
+version = "0.4.0"
+description = "Resumable, interruptible, SCP upload client for any files or directories generated day by day"
+authors = ["Moritz Makowski <moritz@dostuffthatmatters.dev>"]
+readme = "README.md"
+packages = [{ include = "circadian_scp_upload" }]
+license = "AGPL-3.0-only"
+documentation = "https://github.com/dostuffthatmatters/circadian-scp-upload"
+repository = "https://github.com/dostuffthatmatters/circadian-scp-upload"
+keywords = [
+    "python",
+    "library",
+    "utilities",
+    "scp",
+    "ssh",
+    "synchronization",
+    "upload",
+    "files",
+    "directories",
+    "checksum",
+    "daily",
+    "data",
+    "time-series",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Pydantic",
+    "Framework :: Pydantic :: 2",
+    "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Internet",
+    "Topic :: Internet :: File Transfer Protocol (FTP)",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Oceanography",
+    "Topic :: Scientific/Engineering :: Hydrology",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System",
+    "Topic :: System :: Archiving",
+    "Topic :: System :: Filesystems",
+    "Topic :: System :: Logging",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fabric = "^3.2.2"
+pydantic = "^2.4.2"
+filelock = "^3.12.4"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.5.1"
+pytest = "^7.4.2"
+pytest-order = "^1.1.0"
+pytest-cov = "^4.1.0"
+yapf = "^0.40.2"
+
+[tool.yapf]
+based_on_style = "facebook"
+coalesce_brackets = true
+split_before_dict_set_generator = true
+each_dict_entry_on_separate_line = false
+spaces_around_subscript_colon = true
+
+[tool.mypy]
+strict = true
+implicit_reexport = true
+no_warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["fabric.*", "dotenv"]
+ignore_missing_imports = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
