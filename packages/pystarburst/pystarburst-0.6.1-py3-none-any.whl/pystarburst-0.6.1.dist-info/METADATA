@@ -1,0 +1,107 @@
+Metadata-Version: 2.1
+Name: pystarburst
+Version: 0.6.1
+Summary: PyStarburst DataFrame API allows you to query and transform data in Starburst products in a data pipeline without having to download the data locally.
+Home-page: https://starburst.io
+Author: Starburst Data
+Author-email: info@starburstdata.com
+Requires-Python: >=3.9,<4.0
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Provides-Extra: pandas
+Requires-Dist: backports-zoneinfo (>=0.2.1,<0.3.0) ; python_version < "3.9"
+Requires-Dist: pandas (>=1.5.2,<2.0.0) ; extra == "pandas"
+Requires-Dist: pydantic (>=1.10.10,<2.0.0)
+Requires-Dist: python-dateutil (>=2.8.2,<3.0.0)
+Requires-Dist: trino (>=0.326.0,<0.327.0)
+Requires-Dist: typing-extensions (>=4.7.1,<5.0.0)
+Project-URL: Repository, https://github.com/starburstdata/pystarburst-examples
+Description-Content-Type: text/markdown
+
+# PyStarburst DataFrame API
+
+PyStarburst DataFrame API allows you to query and transform data in Starburst products in a data pipeline without having to download the data locally.
+## Getting started
+
+Install pystarburst
+
+```bash
+pip install pystarburst
+```
+
+### Connect to a Trino server
+
+The parameters are the same connect parameters as in Trino Python Client.
+
+```python
+from pystarburst import Session
+
+connection_parameters = {
+    "host": "localhost",
+    "port": 8080,
+    "user": "admin",
+    "catalog": "tpch",
+    "schema": "tiny"
+}
+
+session = Session.builder.configs(connection_parameters).create()
+```
+
+### Using SQL
+
+```python
+from pystarburst import Session
+
+session = Session.builder.configs({ ... }).create()
+
+session.sql("SELECT 1 as a").show()
+```
+
+### Querying a table
+
+```python
+from pystarburst import Session
+
+session = Session.builder.configs({ ... }).create()
+
+df = session.table("nation")
+print(df.schema)
+df.show()
+
+```
+
+### Filtering a data frame
+
+```python
+from pystarburst import Session
+
+session = Session.builder.configs({ ... }).create()
+
+df = session.table("nation")
+df.filter(df.col("regionkey") == 0).show()
+```
+
+### Joining data frames
+
+```python
+from pystarburst import Session
+
+session = Session.builder.configs({ ... }).create()
+
+df = session.table("nation")
+df.filter(df.col("regionkey") == 0).show()
+```
+
+### Aggregation
+
+```python
+from pystarburst import Session
+from pystarburst.functions import col
+
+session = Session.builder.configs({ ... }).create()
+df = session.table("nation")
+df.agg((col("regionkey"), "max"), (col("regionkey"), "avg")).show()
+```
+
