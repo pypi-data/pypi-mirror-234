@@ -1,0 +1,58 @@
+# e-DNE Correios Loader
+
+[![PyPI - Version](https://img.shields.io/pypi/v/edne-correios-loader.svg)](https://pypi.org/project/edne-correios-loader)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/edne-correios-loader.svg)](https://pypi.org/project/edne-correios-loader)
+
+Programa de linha de comando para carregar arquivos do e-DNE Basico dos Correios para um banco de
+dados (PostgreSQL, MySQL, SQLite e outros) e criar uma tabela única para consulta de CEPs.
+
+---
+
+## Funcionalidades
+
+- Carrega arquivos do DNE Básico dos Correios para um banco de dados
+- Cria uma tabela unificada para consulta de CEPs
+- Suporta os bancos de dados PostgreSQL, MySQL, SQLite entre outros
+- Permite atualização dos dados sem interrupção do serviço
+ 
+
+## Propósito
+
+O DNE (Diretório Nacional de Endereços), é um banco de dados, oficial e exclusivo dos Correios,
+que contém mais de 900 mil CEP de todo o Brasil, constituído de elementos de endereçamento
+(descrição de logradouros, bairros, municípios, vilas, povoados) e Códigos de Endereçamento
+Postal - CEP.
+
+Esse banco de dados é disponibilizado em duas versões, o __e-DNE Básico__ e o __e-DNE Máster__.
+Ambas contêm todos os CEPs do Brasil, com elementos de endereçamento até nível de seção
+de logradouro, porém diferem no formato. O e-DNE Básico é composto por vários arquivos de texto
+(`.txt`) que precisam ser processados e transferidos para um banco de dados para poderem ser
+consultados. Já o e-DNE Máster é um banco de dados no formato MS-Access (`.mdb`) pronto para uso.
+
+O DNE é de propriedade dos Correios e pode ser adquirido através de seu e-commerce. Atualmente
+(Outubro de 2023) a versão Máster custa R$ 3.187,65 e a versão Básica custa R$ 1.402,5.
+Ambas versões garantem um ano de atualizações após a data da compra.
+
+[__Para clientes com contrato com os Correios, o e-DNE Básico pode ser adquirido gratuitamente.__](https://www.correios.com.br/enviar/marketing-direto/saiba-mais-nacional)
+
+Esse projeto facilita o uso do e-DNE Básico, que é mais barato e mais fácil de ser adquirido,
+processando os arquivos de texto e transferindo-os para um banco de dados, ele também cria uma
+tabela única para consulta de CEPs (não inclusa no DNE, onde CEPs de diferentes tipos ficam em
+tabelas diferentes) e permite que sua base seja atualizada com novas versões do e-DNE, lançadas
+quinzenalmente pelos Correios.
+
+
+## Instalação
+
+O `edne-correios-loader` pode ser instalado através do `pip`:
+
+```console
+pip install edne-correios-loader
+```
+
+Também será necessário instalar o driver do banco de dados que será utilizado.
+Para o MySQL e o PostgreSQL, isso pode ser feito diretamente
+
+## Licença
+
+`edne-correios-loader` é distribuido sob os termos da licença [MIT](https://spdx.org/licenses/MIT.html).
