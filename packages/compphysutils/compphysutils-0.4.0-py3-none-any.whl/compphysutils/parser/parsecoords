@@ -1,0 +1,19 @@
+#!/usr/bin/python3
+import argparse
+import sys
+from compphysutils.parser import writeFile, readFile
+
+ap = argparse.ArgumentParser(description="Parses coordinate files from one format to another.")
+ap.add_argument("source_filename", help="Filename of the source file that contains the coordinates in the source_format.")
+ap.add_argument("source_format", help="The format of the source_filename file.")
+ap.add_argument("target_format", help="Format in which the coordinates are outputed. The output is written into stdout.")
+ap.add_argument("--source_parser_args", nargs="*", default=False, help="Optional args to be given to the source parser.")
+ap.add_argument("--target_parser_args", nargs="*", default=False, help="Optional args to be given to the target parser.")
+
+args = ap.parse_args()
+
+# Read input file
+dataset = readFile(args.source_filename, args.source_format, args.source_parser_args)
+# Write output file
+writeFile(False, args.target_format, dataset, args.target_parser_args)
+sys.exit(0)
