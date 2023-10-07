@@ -1,0 +1,165 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+
+name: CI
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.11.0
+    - name: Install Python Poetry
+      uses: abatilo/actions-poetry@v2.3.0
+      with:
+        poetry-version: 1.3.1
+    - name: Configure poetry
+      shell: bash
+      run: python -m poetry config virtualenvs.in-project true
+    - name: View poetry version
+      run: poetry --version
+    - name: Install dependencies
+      run: |
+        python -m poetry install
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        python -m poetry run flake8 . --exclude .venv --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        python -m poetry run flake8 . --exclude .venv --count --exit-zero --max-complexity=31 --max-line-length=140 --statistics
+
+  testing:
+    needs: quality
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        db: [ postgres ]
+        python-version: [ 3.11.0 ]
+        include:
+          - db: postgres
+            db_port: 5432
+            db_user: devuser
+            db_password: changeme
+
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: devuser
+          POSTGRES_PASSWORD: changeme
+        options: --mount type=tmpfs,destination=/var/lib/postgresql/data --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: psycopg prerequisites
+        run: sudo apt-get install libpq-dev
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install apprise braintree coverage coveralls
+
+      - name: Run migrations
+        run: |
+          python manage.py makemigrations
+          python manage.py migrate
+        env:
+          SYSTEM_ENV: GITHUB_WORKFLOW
+
+      - name: Run Tests
+        env:
+          SYSTEM_ENV: GITHUB_WORKFLOW
+          DB: ${{ matrix.db }}
+          DB_PORT: ${{ matrix.db_port }}
+          DB_USER: ${{ matrix.db_user }}
+          DB_PASSWORD: ${{ matrix.db_password }}
+        run: |
+          coverage run --omit=*/migrations/*,*/management/*,*/manage.py,*/setup.py,*/asgi.py,*/wsgi.py --source='.' manage.py test tests/ && coverage report
+        timeout-minutes: 5
+
+      - name: Coveralls
+        if: matrix.db == 'postgres'
+        run: coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v3
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          # If you use a different name, update COMMENT_ARTIFACT_NAME accordingly
+          name: python-coverage-comment-action
+          # If you use a different name, update COMMENT_FILENAME accordingly
+          path: python-coverage-comment-action.txt
+  release:
+    needs: testing
+    runs-on: ubuntu-latest
+    concurrency: release
+    environment: release
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clear dist_build directory
+        run: rm -rf dist_build/
+
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@master
+        with:
+          github_token: ${{ secrets.DJANGO_TOKEN }}
+
+      - name: Install pypa/build
+        run: python3 -m pip install build --user
+
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build --sdist --wheel --outdir dist_build/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: dist_build
+          path: dist_build/
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: dist_build
+          path: dist_build/
+
+      - name: Publish package distributions 📦 to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist_build/
+        if: steps.release.outputs.released == 'true'
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist_build/
+        # NOTE: DO NOT wrap the conditional in ${{ }} as it will always evaluate to true.
+        # See https://github.com/actions/runner/issues/1173
+        if: steps.release.outputs.released == 'true'
