@@ -1,0 +1,169 @@
+Metadata-Version: 2.1
+Name: intel-xai
+Version: 0.6.0
+Summary: Intel® Explainable AI Tools
+Home-page: https://github.com/IntelAI/intel-xai-tools
+Author: IntelAI
+Author-email: IntelAI@intel.com
+License: Apache 2.0
+Keywords: XAI,explainer
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: captum ==0.6.0
+Requires-Dist: intel-tensorflow ==2.13.0
+Requires-Dist: ipywidgets ==7.8.1
+Requires-Dist: opencv-python ==4.8.0.76
+Requires-Dist: plotly ==5.17.0
+Requires-Dist: scikit-plot ==0.3.7
+Requires-Dist: shap ==0.42.1
+Requires-Dist: torch ==2.0.1
+Requires-Dist: transformers ==4.33.2
+Requires-Dist: grad-cam ==1.4.8
+Requires-Dist: pandas ==1.5.3
+Requires-Dist: scikit-learn ==1.3.1
+Requires-Dist: seaborn ==0.12.2
+Requires-Dist: Jinja2 ==3.1.2
+Requires-Dist: absl-py ==1.4.0
+Requires-Dist: attrs ==21.4.0
+Requires-Dist: dataclasses ==0.6
+Requires-Dist: grpcio-status ==1.48.2
+Requires-Dist: joblib ==1.3.2
+Requires-Dist: jsonschema[format-nongpl] ==4.17.3
+Requires-Dist: protobuf ==3.20.3
+Requires-Dist: semantic-version ==2.10.0
+Requires-Dist: numpy ==1.22.4 ; python_version < "3.10"
+Requires-Dist: tensorflow-data-validation ==1.13.0 ; python_version < "3.10"
+Requires-Dist: tensorflow-model-analysis ==0.44.0 ; python_version < "3.10"
+Requires-Dist: numpy ==1.24.3 ; python_version == "3.10"
+Requires-Dist: tensorflow-data-validation ==1.14.0 ; python_version == "3.10"
+Requires-Dist: tensorflow-model-analysis ==0.45.0 ; python_version == "3.10"
+Requires-Dist: scipy ==1.10.1 ; python_version == "3.8"
+Requires-Dist: matplotlib ==3.7.3 ; python_version == "3.8"
+Requires-Dist: scipy ==1.11.2 ; python_version > "3.8"
+Requires-Dist: matplotlib ==3.8.0 ; python_version > "3.8"
+Provides-Extra: pytorch
+Requires-Dist: torch ==2.0.1 ; extra == 'pytorch'
+Requires-Dist: torchvision ==0.15.2 ; extra == 'pytorch'
+Provides-Extra: test
+Requires-Dist: deepdiff ==6.5.0 ; extra == 'test'
+Requires-Dist: pytest ==7.4.2 ; extra == 'test'
+Requires-Dist: tensorflow-hub ==0.14.0 ; extra == 'test'
+Requires-Dist: torch ==2.0.1 ; extra == 'test'
+Requires-Dist: torchvision ==0.15.2 ; extra == 'test'
+Requires-Dist: datasets ==2.10.1 ; (python_version < "3.10") and extra == 'test'
+Requires-Dist: datasets ==2.14.4 ; (python_version == "3.10") and extra == 'test'
+
+# Intel® Explainable AI Tools
+
+This repository provides tools for data scientists and MLOps engineers that have requirements specific to AI model interpretability.
+
+## Overview
+
+The Intel Explainable AI Tools are designed to help users detect and mitigate against issues of fairness and interpretability, while running best on Intel hardware.
+There are two Python* components in the repository:
+
+* [Model Card Generator](model_card_gen)
+  * Creates interactive HTML reports containing model performance and fairness metrics
+* [Explainer](explainer)
+  * Runs post-hoc model distillation and visualization methods to examine predictive behavior for both TensorFlow* and PyTorch* models via a simple Python API including the following modules:
+    * [Attributions](explainer/attributions/): Visualize negative and positive attributions of tabular features, pixels, and word tokens for predictions
+    * [CAM (Class Activation Mapping)](explainer/cam/): Create heatmaps for CNN image classifications using gradient-weight class activation CAM mapping
+    * [Metrics](explainer/metrics/): Gain insight into models with the measurements and visualizations needed during the machine learning workflow
+
+## Get Started
+
+### Requirements
+* Linux system or WSL2 on Windows (validated on Ubuntu* 20.04/22.04 LTS)
+* Python 3.8, 3.9, 3.10
+* Install required OS packages with `apt-get install build-essential python3-dev`
+* git (only required for the "Developer Installation")
+
+### Create and activate a Python3 virtual environment
+We encourage you to use a python virtual environment (virtualenv or conda) for consistent package management.
+There are two ways to do this:
+
+a. Using `virtualenv`:
+   ```
+   python3.9 -m virtualenv xai_env
+   source xai_env/bin/activate
+   ```
+
+b. Or `conda`:
+   ```
+   conda create --name xai_env python=3.9
+   conda activate xai_env
+   ```
+
+### Basic Installation
+```
+pip install intel-xai
+```
+### Developer Installation
+Use these instructions to install the Intel Explainable AI Tools with a clone of the
+GitHub repository. This can be done instead of the basic pip install, if you plan
+on making code changes.
+
+1. Clone this repo and navigate to the repo directory:
+   ```
+   git clone https://github.com/IntelAI/intel-xai-tools.git
+
+   cd intel-xai-tools
+   ```
+2. Install the Intel Explainable AI Tools using the following command:
+   ```
+   make install
+   ```
+
+### Additional Feature-Specific Steps
+Notebooks may require additional dependencies listed in their associated documentation.
+
+### Verify Installation
+
+Verify that your installation was successful by using the following commands, which display the Explainer and Model Card Generator versions:
+```
+python -c "from explainer import version; print(version.__version__)"
+python -c "from model_card_gen import version; print(version.__version__)"
+```
+
+## Running Notebooks
+
+The following links have Jupyter* notebooks showing how to use the Explainer and Model Card Generator APIs in various ML domains and use cases:
+* [Model Card Generator Notebooks](notebooks#model-card-generator-tutorial-notebooks)
+* [Explainer Notebooks](notebooks#explainer-tutorial-notebooks)
+
+## Support
+
+The Intel Explainable AI Tools team tracks bugs and enhancement requests using
+[GitHub issues](https://github.com/intelai/intel-xai-tools/issues). Before submitting a
+suggestion or bug report, search the existing GitHub issues to see if your issue has already been reported.
+
+*Other names and brands may be claimed as the property of others. [Trademarks](http://www.intel.com/content/www/us/en/legal/trademarks.html)
+
+#### DISCLAIMER
+These scripts are not intended for benchmarking Intel platforms. For any performance and/or benchmarking information on specific Intel platforms, visit https://www.intel.ai/blog.
+ 
+Intel is committed to the respect of human rights and avoiding complicity in human rights abuses, a policy reflected in the Intel Global Human Rights Principles. Accordingly, by accessing the Intel material on this platform you agree that you will not use the material in a product or application that causes or contributes to a violation of an internationally recognized human right.
+ 
+#### License
+Intel® Explainable AI Tools is licensed under Apache License Version 2.0.
+ 
+#### Datasets and Models
+To the extent that any data, datasets, or models are referenced by Intel or accessed using tools or code on this site such data, datasets and models are provided by the third party indicated as the source of such content. Intel does not create the data, datasets, or models, provide a license to any third-party data, datasets, or models referenced, and does not warrant their accuracy or quality. By accessing such data, dataset(s) or model(s) you agree to the terms associated with that content and that your use complies with the applicable license. [DATASETS](DATASETS.md)
+
+Intel expressly disclaims the accuracy, adequacy, or completeness of any data, datasets or models, and is not liable for any errors, omissions, or defects in such content, or for any reliance thereon. Intel also expressly disclaims any warranty of non-infringement with respect to such data, dataset(s), or model(s). Intel is not liable for any liability or damages relating to your use of such data, datasets, or models.
