@@ -1,0 +1,63 @@
+NAME
+
+::
+
+    OPV - Object Programming Version
+
+
+SYNOPSIS
+
+::
+
+    >>> from opv.objects import Object, read, write
+    >>> o = Object()
+    >>> o.a = "b"
+    >>> write(o, "test")
+    >>> oo = Object()
+    >>> read(oo, "test")
+    >>> print(oo)
+    {"a": "b"}
+
+
+DESCRIPTION
+
+::
+
+
+    OPV is a python3 object that tries to provide JSON dump/load, it
+    factors the methods of the base class out into functions to provide
+    a clean namespace (no methods in __dict__.
+
+    Standard dict functions are provided for the objects as well as 
+    a seperate copy constructor. A storage class that manages objects
+    stored in a dedicated directory is also there, as well as basic
+    db functions like find (locate objects).
+
+    Object are stamped with a type/uuid/date/time stamp to provided
+    identity to objects.
+
+    A dedicated ObjectDecoder/ObjectEncoder should provide dump and
+    loading of inherited classes (working on it).
+
+
+INSTALL
+
+
+::
+
+    $ pipx install opv
+
+
+AUTHOR
+
+
+::
+
+    Bart Thate <bthate@dds.nl>
+
+
+COPYRIGHT
+
+::
+
+    OPV is placed in the Public Domain.
