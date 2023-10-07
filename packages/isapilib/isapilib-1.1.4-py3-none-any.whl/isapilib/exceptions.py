@@ -1,0 +1,2 @@
+class SepaException(BaseException):
+    pass
