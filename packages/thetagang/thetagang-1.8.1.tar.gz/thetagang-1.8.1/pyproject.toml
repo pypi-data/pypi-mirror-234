@@ -1,0 +1,70 @@
+[tool.poetry]
+authors = ["Brenden Matthews <brenden@brndn.io>"]
+description = "ThetaGang is an IBKR bot for getting money"
+documentation = "https://github.com/brndnmtthws/thetagang/blob/master/README.md"
+homepage = "https://github.com/brndnmtthws/thetagang"
+license = "AGPL-3.0-only"
+name = "thetagang"
+readme = "README.md"
+repository = "https://github.com/brndnmtthws/thetagang.git"
+version = "1.8.1"
+
+[tool.poetry.dependencies]
+click = "^8.1.3"
+click-log = "^0.4.0"
+ib_insync = "^0.9.86"
+python = ">=3.9,<3.13"
+python-dateutil = "^2.8.1"
+pytimeparse = "^1.1.8"
+schema = "^0.7.5"
+toml = "^0.10.2"
+rich = "^13.3.5"
+more-itertools = ">=9.1,<11.0"
+numpy = "^1.26.0"
+
+[tool.poetry.group.dev.dependencies]
+autoflake = "^2.0"
+autohooks = "^23.4.0"
+autohooks-plugin-black = ">=22.11,<24.0"
+autohooks-plugin-isort = ">=22.8,<24.0"
+autohooks-plugin-pylint = ">=22.8.1,<24.0.0"
+black = "^23.1.0"
+isort = "^5.12.0"
+pylint = "^2.16.2"
+pytest = "^7.2.1"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/brndnmtthws/thetagang/issues"
+"GitHub" = "https://github.com/brndnmtthws/thetagang"
+
+[tool.poetry.scripts]
+thetagang = 'thetagang.entry:cli'
+
+[tool.pylint.messages_control]
+disable = "C0330, C0326"
+
+[tool.pylint.format]
+max-line-length = "120"
+
+[tool.isort]
+ensure_newline_before_comments = true
+force_grid_wrap = 0
+include_trailing_comma = true
+line_length = 88
+multi_line_output = 3
+use_parentheses = true
+
+[tool.autohooks]
+mode = "poetry"
+pre-commit = [
+    "autohooks.plugins.black",
+    "autohooks.plugins.isort",
+    "autohooks.plugins.pylint",
+]
+
+[build-system]
+build-backend = "poetry.masonry.api"
+requires = ["poetry>=0.12"]
+
+[tool.autohooks.plugins.pylint]
+arguments = ["-E"]
