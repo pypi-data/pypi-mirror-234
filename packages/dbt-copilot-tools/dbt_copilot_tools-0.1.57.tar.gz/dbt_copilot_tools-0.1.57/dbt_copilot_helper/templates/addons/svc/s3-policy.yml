@@ -1,0 +1,58 @@
+# {% version_info %}
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W2001 # Parameter not used
+
+Parameters:
+  # Copilot required Parameters...
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+  Name:
+    Type: String
+    Description: The name of the service, job, or workflow being deployed.
+
+Mappings:
+  {{ service.prefix }}BucketNameMap:
+    # Create an entry for each environment
+    {% for env_name, config in service.environments.items() %}
+    {{ env_name }}:
+      BucketName: '{{ config.bucket_name }}'
+    {% endfor %}
+
+Resources:
+  {{ service.prefix }}S3AccessPolicy:
+    Metadata:
+      'aws:copilot:description': 'An IAM ManagedPolicy for your service to access the bucket'
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Grants Read access to the S3 bucket.
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: S3ObjectActions
+            Effect: Allow
+            Action:
+{%- if service.readonly %}
+              - s3:GetObject
+{% else %}
+              - s3:*Object
+{% endif %}
+            Resource: !Sub
+              - "arn:aws:s3:::${ bucket_name }/*"
+              - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+          - Sid: S3ListAction
+            Effect: Allow
+            Action: s3:ListBucket
+            Resource: !Sub
+              - "arn:aws:s3:::${ bucket_name }"
+              - bucket_name: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+Outputs:
+  {{ service.prefix }}AccessPolicy:
+    Description: "The IAM::ManagedPolicy to attach to the task role"
+    Value: !Ref {{ service.prefix }}S3AccessPolicy
