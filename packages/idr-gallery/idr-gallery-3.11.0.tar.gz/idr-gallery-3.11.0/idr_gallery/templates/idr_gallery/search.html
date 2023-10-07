@@ -1,0 +1,190 @@
+
+{% extends "idr_gallery/base.html" %}
+
+{% block content %}
+
+<style>
+  .study{
+    width: 247px;
+    height: 247px;
+  }
+  .study a:hover {
+    color: #1e94e6;
+  }
+  .maprViewerLink {
+    position: relative;
+  }
+  a.maprViewerLink div {
+    display: inline-block;
+    position:relative;
+  }
+  a.maprViewerLink i {
+    visibility: hidden;
+    color: white;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+  a.maprViewerLink:hover i{
+    visibility: visible;
+  }
+  .exampleImages .thumbnail {
+    max-height: 45px;
+    max-width: 45px;
+  }
+  table td {
+    white-space: nowrap;
+  }
+  .filterMessage {
+    font-size: 120%;
+  }
+  .filterMessage strong {
+    color: #1976d2;
+  }
+  #results td, #results th {
+    text-align: center;
+  }
+  #filterCount {
+    clear: right;
+  }
+
+  /* 'Search' button hidden for now */
+  button[type='submit'] {
+    display: none;
+    background: #1976d2;
+    float: right;
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    margin: 5px;
+  }
+</style>
+
+<link rel="stylesheet" href="{% static 'idr_gallery/css/search_form_styles.css' %}?_={{VERSION}}" />
+
+<div class="row column">
+  <!-- Home button - bit painful to handle /cell/search etc -->
+  <a  {% if super_category %}
+        {% for c, data in super_categories.items %}
+          {% if c == category %} href="{% url 'gallery_super_category' super_category=c %}" {% endif %}
+        {% endfor %}
+      {% else %}
+        href="{% url 'idr_gallery_index' %}"
+      {% endif %}
+        style="background: #263238; border-radius: 10px; color: #eceff1; padding: 10px; margin:10px 5px 5px; display: inline-block; font-weight: normal;">
+    <i class="fa fa-caret-left"></i> Home
+  </a>
+</div>
+
+<div class="row column">
+
+<div class="small-12 small-centered medium-12 medium-centered columns">
+
+    <div class="row horizontal">
+
+      <form id="search_form">
+      </form>
+
+      <div id="filterCount" class="row horizontal text-center">
+        <!-- results message here -->
+      </div>
+    </div>
+
+    <div id="filterSpinner" class="row horizontal text-center">
+      <div id="filterSpinnerMessage">
+        <!-- Show a waiting... message here -->
+      </div>
+      <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="sync" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-sync fa-w-16 fa-spin fa-lg"><path fill="currentColor" d="M440.65 12.57l4 82.77A247.16 247.16 0 0 0 255.83 8C134.73 8 33.91 94.92 12.29 209.82A12 12 0 0 0 24.09 224h49.05a12 12 0 0 0 11.67-9.26 175.91 175.91 0 0 1 317-56.94l-101.46-4.86a12 12 0 0 0-12.57 12v47.41a12 12 0 0 0 12 12H500a12 12 0 0 0 12-12V12a12 12 0 0 0-12-12h-47.37a12 12 0 0 0-11.98 12.57zM255.83 432a175.61 175.61 0 0 1-146-77.8l101.8 4.87a12 12 0 0 0 12.57-12v-47.4a12 12 0 0 0-12-12H12a12 12 0 0 0-12 12V500a12 12 0 0 0 12 12h47.35a12 12 0 0 0 12-12.6l-4.15-82.57A247.17 247.17 0 0 0 255.83 504c121.11 0 221.93-86.92 243.55-201.82a12 12 0 0 0-11.8-14.18h-49.05a12 12 0 0 0-11.67 9.26A175.86 175.86 0 0 1 255.83 432z" class=""></path></svg>
+    </div>
+
+    <div id="studies" class="row horizontal">
+    </div>
+
+    <ul id="results" class="resultsList"></ul>
+</div>
+
+</div>
+
+<script>
+  // Various global constants from omero config set...
+  var FILTER_KEYS = {{ filter_keys|safe }};
+  var FILTER_MAPR_KEYS = {{ filter_mapr_keys|safe }};
+  // e.g. GALLEY_INDEX/api-gallery/thumbnails for loading from IDR
+  const GALLERY_INDEX = "{{ gallery_index }}";
+  // this is the home of this app, e.g. for GALLERY_HOME/search/
+  const GALLERY_HOME = "{% url 'idr_gallery_index' %}";
+  const BASE_URL = "{{ base_url }}";
+  const CATEGORY_QUERIES = {{ category_queries|safe }};
+  var TITLE_KEYS = {{ TITLE_KEYS|safe }};
+  var STUDY_SHORT_NAME = {{ STUDY_SHORT_NAME|safe }};
+  var SUPER_CATEGORIES = {{ SUPER_CATEGORIES|safe }};
+  var SUPER_CATEGORY {% if super_category %} = {{ super_category|safe }} {% endif %};
+  var STATIC_DIR = "{% static 'gallery/' %}";
+  var SEARCH_ENGINE_URL = `${BASE_URL}searchengine/api/v1/`;
+</script>
+
+<script src="{% static 'idr_gallery/omero_search_form.js' %}?_={{VERSION}}"></script>
+
+<script>
+  const searchForm = new OmeroSearchForm("search_form", SEARCH_ENGINE_URL, "results");
+
+  // custom handling of search results, not handled by OmeroSearchForm
+  searchForm.on("results", function(event, data) {
+    console.log("on.results", event, data);
+    let studiesList = data.results?.results || [];
+    let imgCount = studiesList.reduce((prev, study) => prev += study["image count"], 0);
+    let studies = studiesList.length === 1 ? DISPLAY_TYPES[studiesList[0].type] : 'experiments/screens';
+    let searchQuery = searchForm.getHumanReadableQuery();
+    let msg = `<p class="filterMessage">
+      Search ${searchQuery} found <strong>${imgCount}</strong> images in <strong>${studiesList.length}</strong> ${studies}
+    </p>`;
+    document.getElementById("filterCount").innerHTML = msg;
+  });
+
+  searchForm.on("form_updated", function(event, data) {
+    // Update URL, adding to browser's history
+    let search_query = searchForm.getCurrentQuery();
+    // for now, we only support the first AND clause...
+    const clause = search_query.query_details.and_filters[0];
+    let params = new URLSearchParams();
+    params.append("key", clause.name);
+    params.append("value", clause.value);
+    params.append("operator", clause.operator);
+    params.append("resource", clause.resource);
+    history.pushState(null, "", "?" + params.toString());
+  });
+
+
+  function searchFromUrl() {
+    const searchParams = new URLSearchParams(window.location.search);
+    let key = searchParams.get("key");
+    let value = searchParams.get("value");
+    let resource = searchParams.get("resource") || "image";
+    if (key && value) {
+      let operator = searchParams.get("operator") || "equals";
+      searchForm.setKeyValueQuery({key, value, operator, resource});
+      searchForm.submitSearch();
+    }
+    // 'hidden' support for ?advanced=true to show AND/OR buttons
+    let advanced = searchParams.get("advanced");
+    if (advanced) {
+      searchForm.setAdvanced(true);
+    } else {
+      searchForm.setAdvanced(false);
+    }
+  }
+
+
+  searchForm.on("ready", function(){
+    searchFromUrl();
+  });
+
+
+  window.onpopstate = (event) => {
+    console.log(`onpopstate location: ${document.location}, state: ${JSON.stringify(event.state)}`)
+    searchFromUrl();
+  }
+
+</script>
+
+{% endblock %}
