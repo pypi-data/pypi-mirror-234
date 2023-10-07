@@ -1,0 +1,65 @@
+Metadata-Version: 2.1
+Name: certbot-dns-pdns
+Version: 0.1.0
+Summary: DNS Authenticator for certbot using the PowerDNS API
+Home-page: https://github.com/kaechele/certbot-dns-pdns
+License: Apache-2.0
+Keywords: certbot,powerdns,acme,letsencrypt,dns
+Author: Felix Kaechele
+Author-email: felix@kaechele.ca
+Requires-Python: >=3.11,<4.0
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Plugins
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Security
+Classifier: Topic :: System :: Installation/Setup
+Classifier: Topic :: System :: Networking
+Classifier: Topic :: System :: Systems Administration
+Classifier: Topic :: Utilities
+Requires-Dist: certbot (>=2.7.0)
+Requires-Dist: dns-lexicon (>=3.15.0)
+Project-URL: Repository, https://github.com/kaechele/certbot-dns-pdns
+Description-Content-Type: text/markdown
+
+# Certbot DNS Authenticator for PowerDNS
+
+PowerDNS DNS Authenticator plugin for [Certbot](https://certbot.eff.org).
+This plugin uses the PowerDNS HTTP API to request modifications for the DNS-01 challenge.
+
+## Usage
+
+Create a credentials file to use with this plugin:
+
+`~/pdns-credentials.ini`
+
+```ini
+dns_pdns_endpoint = https://pdns-api.example.com
+dns_pdns_api_key = <Your API Key>
+dns_pdns_server_id = localhost # see https://doc.powerdns.com/authoritative/http-api/server.html
+dns_pdns_disable_notify = false # Disable notification of secondaries after record changes
+```
+
+The available configuration options correspond to the [DNS-Lexicon settings for the PowerDNS provider](https://dns-lexicon.readthedocs.io/en/latest/configuration_reference.html#powerdns).
+
+Run Certbot using the plugin as the authenticator:
+
+```shell
+certbot certonly \
+    --authenticator dns-pdns \
+    --dns-pdns-credentials ~/pdns-credentials.ini \
+    ...
+```
+
+## License
+
+Apache License 2.0
+
+## Maintainer
+
+- Felix Kaechele <felix@kaechele.ca>
+
