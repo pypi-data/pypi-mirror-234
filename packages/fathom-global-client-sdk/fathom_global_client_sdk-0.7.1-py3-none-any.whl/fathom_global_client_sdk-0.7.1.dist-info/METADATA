@@ -1,0 +1,60 @@
+Metadata-Version: 2.1
+Name: fathom_global_client_sdk
+Author: Fathom
+Home-page: https://fathom.global
+Description-Content-Type: text/markdown
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Requires-Dist: protoc-gen-validate==0.10.1
+Requires-Dist: googleapis-common-protos==1.56.2
+Requires-Dist: grpcio==1.50.0
+Requires-Dist: requests>=2,<3
+Version: 0.7.1
+
+# Fathom Python SDK client
+
+The Python SDK client for communicating with the Fathom API
+
+Example usage:
+
+[//]: # "Example is expanded below"
+```python
+"""An example usage of the Fathom API client."""
+import os
+
+from fathom.sdk.v2 import Client, point, polygon, write_tiffs
+
+if __name__ == "__main__":
+    client = Client(
+        os.getenv("FATHOM_CLIENT_ID"),
+        os.getenv("FATHOM_CLIENT_SECRET"),
+        os.getenv("FATHOM_API_ADDR"),
+    )
+
+    layer_ids = [
+        "GLOBAL-1ARCSEC-00_OFFSET-1in10-PLUVIAL-DEFENDED-DEPTH-2020-PERCENTILE50-v0.0.0_test",
+        "GLOBAL-1ARCSEC-00_OFFSET-1in100-PLUVIAL-DEFENDED-DEPTH-2020-PERCENTILE50-v0.0.0_test",
+    ]
+
+    # Get from points
+    pt = point(lat=50.8162643, lng=-1.1081944)
+    points_response = client.geo.get_points(([pt]), layer_ids)
+
+    # Or using a polygon
+    poly = polygon(
+        [
+            point(51.45, 0),
+            point(51.55, 0),
+            point(51.55, -0.1),
+            point(51.45, -0.1),
+            point(51.45, 0),
+        ]
+    )
+    polygon_response = client.geo.get_polygon(poly, layer_ids)
+    write_tiffs(
+        polygon_response,
+        output_dir,
+    )
+```
+
