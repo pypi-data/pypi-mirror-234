@@ -1,0 +1,40 @@
+{% macro community(list) -%}
+{{ "both" if list|length >= 2 else list[0] }}
+{%- endmacro %}
+!
+router bgp {{ vdata.as|default(bgp.as) }} vrf {{ vname }}
+ no bgp ebgp-requires-policy
+ no bgp default ipv4-unicast
+{% for n in vdata.bgp.neighbors|default([]) %}
+{%   for af in ['ipv4','ipv6'] if n[af] is defined %}
+ neighbor {{ n[af] }} remote-as {{ n.as }}
+ neighbor {{ n[af] }} description {{ n.name }}
+{%     if n.local_as is defined %}
+  neighbor {{ n[af] }} local-as {{ n.local_as }} {{ 'no-prepend replace-as' if n.replace_global_as|default(True) else '' }}
+{%     endif %}
+{%   endfor %}
+{% endfor %}
+{% for af in ['ipv4','ipv6'] if vdata.af[af]|default(False) %}
+ address-family {{ af }} unicast
+  redistribute connected
+  label vpn export auto
+  export vpn
+  import vpn
+  rd vpn export {{ vdata.rd }}
+  rt vpn import {{ vdata.import|join(" ") }}
+  rt vpn export {{ vdata.export|join(" ") }}
+{%   if af == 'ipv4' and 'ospf' in vdata %}
+  redistribute ospf
+{%   endif %}
+{%   for n in vdata.networks|default([]) if af in n %}
+  network {{ n[af]|ipaddr('0') }}
+{%   endfor %}
+{%   for n in vdata.bgp.neighbors|default([]) if n[af] is defined %}
+  neighbor {{ n[af] }} activate
+{%     if bgp.community.ebgp|default([]) %}
+  neighbor {{ n[af] }} send-community {{ community(bgp.community.ebgp) }}
+{%     endif %}
+{%   endfor %}
+ exit-address-family
+{% endfor %}
+!

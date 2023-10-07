@@ -1,0 +1,21 @@
+- block:
+  - wait_for_connection:
+      timeout: 120
+      sleep: 3
+  - wait_for:
+      timeout: 120
+      path: /tmp/vyos-config-status
+  when: |
+    netlab_provider == 'clab' and vyos_booted is not defined
+
+- set_fact:
+    vyos_booted: 1
+
+- template:
+    src: "{{ config_template }}"
+    dest: /tmp/config-{{ netsim_action }}.sh
+
+- name: "execute config-{{ netsim_action }}.sh to deploy {{ netsim_action }} config from {{ config_template }}"
+  command: "/bin/vbash /tmp/config-{{ netsim_action }}.sh"
+  become: true
+  tags: [ print_action, always ]

@@ -1,0 +1,29 @@
+router ospf
+{% if ospf.router_id|ipv4 %}
+ ospf router-id {{ ospf.router_id }}
+{% endif %}
+{% if ospf.reference_bandwidth is defined %}
+ auto-cost reference-bandwidth {{ ospf.reference_bandwidth }}
+{% endif %}
+exit
+!
+{% if 'ipv4' in loopback %}
+interface {{ loopback_name }}
+ ip ospf area {{ ospf.area }}
+{% endif %}
+!
+{% for l in interfaces|default([]) if 'ospf' in l and 'ipv4' in l %}
+interface {{ l.ifname }}
+! {{ l.name|default("") }}
+ ip ospf area {{ l.ospf.area }}
+{%   if l.ospf.network_type is defined %}
+ ip ospf network {{ l.ospf.network_type }}
+{%   endif %}
+{%   if l.ospf.cost is defined %}
+ ip ospf cost {{ l.ospf.cost }}
+{%   endif %}
+{%   if l.ospf.passive|default(False) %}
+ ip ospf passive
+{%   endif %}
+!
+{% endfor %}

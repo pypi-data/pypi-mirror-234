@@ -1,0 +1,74 @@
+# BGP default settings and attributes
+#
+# Also supported on: eos, csr, frr, iosv, nxos, vyos, routeros, dellos10, routeros7, arubacx, junos (vmx, vsrx, vptx)
+#
+supported_on: [ cumulus, cumulus_nvue, asav,
+  srlinux, sros, none, iosxr, none ]
+ebgp_role: external
+advertise_roles: [ stub ]
+advertise_loopback: True
+community:
+  ibgp: [ standard, extended ]
+  ebgp: [ standard ]
+no_propagate:
+  ebgp_role:
+  advertise_roles:
+  rr_list:
+  as_list:
+transform_after: [ vlan ]
+next_hop_self: true
+attributes:
+  global:
+    af:
+      _list_to_dict: True
+      _alt_types: [ NoneType ]
+      ipv4: bool
+      ipv6: bool
+    as: asn
+    next_hop_self: bool
+    rr_cluster_id: { type: ipv4, use: id }
+    rr_list: list
+    ebgp_role: str
+    as_list: dict
+    sessions:
+      ipv4: [ ibgp, ebgp ]
+      ipv6: [ ibgp, ebgp ]
+    activate:
+      ipv4: [ ibgp, ebgp ]
+      ipv6: [ ibgp, ebgp ]
+    advertise_loopback: bool
+    advertise_roles: list
+    community:
+      ibgp: [ standard, extended ]
+      ebgp: [ standard, extended ]
+      _alt_types: [ str, BoxList ]
+    replace_global_as: bool
+  node:
+    af:
+    as:
+    next_hop_self:
+    rr: bool
+    rr_cluster_id:
+    originate: list
+    advertise_loopback:
+    sessions:
+    activate:
+    community:
+    router_id: { type: ipv4, use: id }
+    local_as: asn
+    replace_global_as: bool
+  vrf:
+    router_id: { type: ipv4, use: id }
+  node_copy: [ local_as, replace_global_as ]
+  link:
+    advertise: bool
+  interface:
+    local_as: asn
+    replace_global_as: bool
+features:
+  local_as: Supports local-as functionality
+  vrf_local_as: Supports local-as within a VRF
+  local_as_ibgp: Can use local-as to create IBGP sesssion
+  activate_af: Can control activation of individual address families
+  ipv6_lla: Can run EBGP sessions over IPv6 link-local addresses
+  rfc8950: Can run IPv4 AF over IPv6 LLA EBGP session

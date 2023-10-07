@@ -1,0 +1,53 @@
+{% from "templates/initial/sros.j2" import if_name with context %}
+
+updates:
+- path: configure/router[router-name=Base]
+  val:
+   mpls:
+    admin-state: enable
+    interface:
+    - interface-name: system
+      admin-state: enable
+{% for l in interfaces if ('ldp' in l) and not l.ldp.passive %}
+    - interface-name: {{ if_name(l.ifname) }}
+      admin-state: enable
+{% endfor %}
+   rsvp: # RSVP interface must be present along with MPLS interface
+    admin-state: enable
+    interface:
+    - interface-name: system
+      admin-state: enable
+{% for l in interfaces if ('ldp' in l) and not l.ldp.passive %}
+    - interface-name: {{ if_name(l.ifname) }}
+      admin-state: enable
+{% endfor %}
+   ldp:
+    admin-state: enable
+    implicit-null-label: {{ not ldp.explicit_null|default(False) }}
+{%  for l in interfaces if ('ldp' in l) and not l.ldp.passive %}
+{%   if loop.first %}
+    interface-parameters:
+     interface:
+{%   endif %}
+     - ip-int-name: "{{ if_name(l.ifname) }}"
+       admin-state: enable
+{%   for af in ('ipv4','ipv6') if af in l %}
+       {{ af }}:
+        admin-state: enable
+        transport-address: system
+{%   endfor %}
+{%  endfor %}
+
+{# LDP/IGP sync is enabled by default, disable if requested #}
+{% if not ldp.igp_sync|default(True) %}
+{% if 'ospf' in module %}
+   ospf:
+   - ospf-instance: 0
+     ldp-sync: False
+{% endif %}
+{% if 'isis' in module %}
+   isis:
+   - isis-instance: 0
+     ldp-sync: False
+{% endif %}
+{% endif %}

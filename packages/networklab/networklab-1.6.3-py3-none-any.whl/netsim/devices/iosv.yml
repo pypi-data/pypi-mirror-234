@@ -1,0 +1,59 @@
+description: Cisco IOSv
+interface_name: GigabitEthernet0/{ifindex}
+loopback_interface_name: Loopback{ifindex}
+tunnel_interface_name: Tunnel{ifindex}
+group_vars:
+  ansible_user: vagrant
+  ansible_ssh_pass: vagrant
+  ansible_become_method: enable
+  ansible_become_password: vagrant
+  ansible_network_os: ios
+  ansible_connection: network_cli
+  netlab_device_type: ios
+libvirt:
+  image: cisco/iosv
+  create_template: iosv.xml.j2
+#      create:
+#        virt-install --connect=qemu:///system --name=vm_box --os-type=linux --arch=x86_64 --cpu host --vcpus=1
+#          --noacpi --machine=pc-1.0 --virt-type=kvm --watchdog i6300esb,action=reset --ram=512
+#          --disk path=vm.qcow2,bus=virtio,format=qcow2,cache=writethrough
+#          --network=network:vagrant-libvirt,model=e1000 --graphics none --import
+virtualbox:
+  image: cisco/iosv
+features:
+  bfd: true
+  bgp:
+    local_as: true
+    vrf_local_as: true
+    local_as_ibgp: true
+    activate_af: true
+  initial:
+    ipv4:
+      unnumbered: false
+    ipv6:
+      lla: true
+  ospf:
+    unnumbered: true
+  isis:
+    unnumbered:
+      ipv4: true
+      ipv6: true
+      network: true
+  eigrp: true
+  mpls:
+    ldp: true
+    bgp: true
+    vpn: true
+    6pe: true
+  vlan:
+    model: router
+    svi_interface_name: BVI{bvi}
+    subif_name: "{ifname}.{subif_index}"
+    mixed_trunk: true
+    native_routed: true
+  vrf: true
+  gateway:
+    protocol: [ vrrp ]
+external:
+  image: none
+graphite.icon: router

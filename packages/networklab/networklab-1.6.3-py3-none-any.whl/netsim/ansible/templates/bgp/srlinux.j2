@@ -1,0 +1,12 @@
+updates:
+
+{#
+  Define default import/export policies for iBGP and eBGP: accept all
+#}
+- path: routing-policy/policy[name=accept_all]
+  val:
+   default-action:
+    policy-result: "accept"
+
+{% from "srlinux.macro.j2" import bgp_config with context %}
+{{ bgp_config('default',bgp.as,bgp.router_id,bgp,{ 'af' : af }) }}

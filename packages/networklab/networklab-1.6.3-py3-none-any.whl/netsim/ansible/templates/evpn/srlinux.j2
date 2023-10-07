@@ -1,0 +1,60 @@
+{#
+ Enables the EVPN address family for eBGP or iBGP peers (ipv4 for now)
+
+ Assumes bgp.as == AS used for EVPN
+#}
+
+updates:
+{% for type in evpn.session %}
+- path: network-instance[name=default]/protocols/bgp
+  val:
+   group:
+   - group-name: {{ 'ibgp-ipv4' if type=='ibgp' else 'ebgp' }} # Could create a dedicated group for EVPN only?
+{%  if type=='ebgp' %}
+     export-policy: "accept_all"
+{%  endif %}
+     afi-safi:
+     - afi-safi-name: evpn
+       admin-state: enable
+{%  if bgp.rr|default(0) %}
+     next-hop-self: False
+{%  endif %}
+   route-advertisement:
+    rapid-withdrawal: True
+   afi-safi:
+   - afi-safi-name: evpn
+     evpn:
+      rapid-update: True
+{% endfor %}
+
+{# Enable IP advertisement for all irb interfaces in EVPN vlans #}
+{% if vrfs is defined and vrfs %}
+{% for i in interfaces if i.vrf is defined and vrfs[i.vrf].evpn is defined and i.type=='svi' and i.vlan.mode|default('irb')=='irb' %}
+{%  set vrf = vrfs[i.vrf] %}
+{%  set symmetric_irb = 'transit_vni' in vrf.evpn %}
+- path: /interface[name=irb0]/subinterface[index={{ i.ifname.split('.')[1] }}]
+  val:
+{%  for ip,arpnd in [('ipv4','arp'),('ipv6','neighbor-discovery')] %}
+{%   if ip in i %}
+   {{ ip }}:
+     {{ arpnd }}:
+       learn-unsolicited: {{ True if ip=='ipv4' else 'both' }}
+       evpn:
+        advertise: # Type of ARP/ND entries to be advertised
+        - route-type: dynamic
+          _annotate: "Advertise dynamically learned IPs"
+        - route-type: static
+          _annotate: "Advertise local irb interface IPs"
+{%    if symmetric_irb %}
+       host-route:
+        _annotate: "Create host routes of type 'arp-nd' in ip-vrf route table"
+        populate:
+        - route-type: dynamic
+        # - route-type: static
+        # - route-type: evpn # not for entries learned through EVPN
+{%    endif %}
+{%   endif %}
+
+{%  endfor %}
+{% endfor %}
+{% endif %}
