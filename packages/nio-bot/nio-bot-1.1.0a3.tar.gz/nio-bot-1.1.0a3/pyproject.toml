@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "nio-bot"
+description = "Making matrix bots simple"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9,<3.12"
+license = { text = "GNU GPLv3" }
+authors = [
+    {name = "Nexus", email = "pip@nexy7574.co.uk"}
+]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+Source = "https://github.com/nexy7574/niobot"
+Tracker = "https://github.com/nexy7574/niobot/issues"
+Documentation = "https://nexy7574.github.io/niobot/"
+"Matrix Room" = "https://matrix.to/#/#niobot:nexy7574.co.uk"
+Funding = "https://ko-fi.com/nexy7574"
+
+
+[project.optional-dependencies]
+e2ee = ['matrix-nio[e2e]']
+cli = ['httpx', 'click']
+dev = [
+    'mkdocs',
+    'mkdocs-material',
+    'black',
+    'mkdocs-autorefs',
+    'mkdocs-glightbox',
+    'mkdocstrings[python]',
+    'mkdocs-git-revision-date-localized-plugin',
+    'isort',
+    'build',
+    'pep440',
+    'pycodestyle'
+]
+
+[project.scripts]
+niocli = "niobot.__main__:cli_root [cli]"
+
+[tool.setuptools_scm]
+write_to = "src/niobot/__version__.py"
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}
+
+[tool.black]
+line-length = 120
+target-versions = ["py39", "py310", "py311"]
+include = 'src/niobot(/utils)?/.+\.py'
+
+[tool.isort]
+profile = "black"
+src_paths = ["src/niobot"]
