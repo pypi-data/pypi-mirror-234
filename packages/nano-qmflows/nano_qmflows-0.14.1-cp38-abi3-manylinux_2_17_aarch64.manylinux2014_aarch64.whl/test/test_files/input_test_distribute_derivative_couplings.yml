@@ -1,0 +1,41 @@
+workflow:
+  distribute_derivative_couplings
+
+project_name: Cd33Se33
+dt: 1
+active_space: [10, 10]
+algorithm: "levine"
+tracking: False
+path_hdf5: "test/test_files/Cd33Se33.hdf5"
+path_traj_xyz: "test/test_files/Cd33Se33_fivePoints.xyz"
+scratch_path: "/tmp/namd"
+workdir: "."
+blocks: 2
+
+job_scheduler:
+  free_format: "
+  #! /bin/bash\n
+  #SBATCH --job-name=Cd33Se33\n
+  #SBATCH -N 1\n
+  #SBATCH -t 00:15:00\n
+  #SBATCH -p short\n
+
+  source activate qmflows\n
+  module load cp2k/3.0\n\n"
+
+cp2k_general_settings:
+  basis:  "DZVP-MOLOPT-SR-GTH"
+  potential: "GTH-PBE"
+  cell_parameters: 28.0
+  file_cell_parameters: "test/test_files/file_distribute_cell_parameters.txt"
+  periodic: none
+  executable: cp2k.ssmp
+
+  cp2k_settings_main:
+    specific:
+      template: pbe_main
+
+  cp2k_settings_guess:
+    specific:
+      template:
+        pbe_guess
