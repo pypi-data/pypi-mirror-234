@@ -1,0 +1,45 @@
+[package]
+name = "py-rattler"
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+
+[lib]
+name = "rattler"
+crate-type = ["cdylib"]
+
+[features]
+default = ["native-tls"]
+native-tls = ["rattler_networking/native-tls", "rattler_repodata_gateway/native-tls"]
+rustls-tls = ["rattler_networking/rustls-tls", "rattler_repodata_gateway/rustls-tls"]
+vendored-openssl = ["openssl", "openssl/vendored"]
+
+[dependencies]
+anyhow = "1.0.75"
+futures = "0.3.28"
+
+rattler = { path = "local_dependencies/rattler", default-features = false }
+rattler_repodata_gateway = { path = "local_dependencies/rattler_repodata_gateway", default-features = false, features = [
+    "sparse",
+] }
+rattler_conda_types = { path = "local_dependencies/rattler_conda_types", default-features = false }
+rattler_networking = { path = "local_dependencies/rattler_networking", default-features = false }
+rattler_shell = { path = "local_dependencies/rattler_shell", default-features = false }
+rattler_virtual_packages = { path = "local_dependencies/rattler_virtual_packages", default-features = false }
+rattler_solve = { path = "local_dependencies/rattler_solve", default-features = false, features = ["resolvo"] }
+
+pyo3 = { version = "0.19", features = [
+    "abi3-py38",
+    "extension-module",
+    "multiple-pymethods",
+] }
+pyo3-asyncio = { version = "0.19", features = ["tokio-runtime"] }
+tokio = { version = "1.32" }
+
+thiserror = "1.0.44"
+url = "2.4.1"
+
+openssl = { version = "0.10", optional = true }
+
+# Prevent package from thinking it's in the workspace
+[workspace]
