@@ -1,0 +1,2 @@
+class InvalidDefinitionException(Exception):
+    pass
