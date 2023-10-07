@@ -1,0 +1,81 @@
+include:
+  - project: computing/gitlab-ci-templates
+    file:
+      - python.yml
+
+stages:
+  - build
+  - test
+  - docs
+  - pages
+
+# -- dist -------------------
+
+# Build source distribution
+sdist:
+  extends:
+    # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:build
+    - .python:build
+  stage: build
+  variables:
+    WHEEL: "false"
+  artifacts:
+    paths:
+      - '*.tar.gz'
+
+# -- test -------------------
+
+lint:
+  extends:
+    # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:flake8
+    - .python:flake8
+  stage: test
+  variables:
+    FLAKE8_PLUGINS: flake8-black
+
+typecheck:
+  stage: test
+  image: python:3.10
+  variables:
+    PYTHON: "python"
+  script:
+    - ${PYTHON} -m pip install .[dev]
+    - ${PYTHON} -m mypy --ignore-missing-imports ezdag
+
+test:
+  stage: test
+  image: python:3.10
+  variables:
+    PYTHON: "python"
+  script:
+    - ${PYTHON} -m pip install .[test]
+    - ${PYTHON} -m pytest --cov=ezdag -ra -v -s --pyargs ezdag.tests --junit-xml=${CI_PROJECT_DIR}/junit.xml
+  artifacts:
+    reports:
+      junit: junit.xml
+  coverage: '/^TOTAL\s+.*\s+(\d+\.?\d*)%/'
+
+# -- docs -------------------
+
+# Generate documentation
+docs:
+  stage: docs
+  extends:
+    # https://computing.docs.ligo.org/gitlab-ci-templates/python/#.python:mkdocs
+    - .python:mkdocs
+  image: python:3.10  # NOTE: htcondor package not available for 3.11 yet
+  variables:
+    REQUIREMENTS: ".[docs]"
+
+# Publish docs
+pages:
+  stage: pages
+  script:
+    - mv -v site public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+  dependencies:
+    - docs
