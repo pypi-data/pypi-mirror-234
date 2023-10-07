@@ -1,0 +1,192 @@
+version: 2
+
+integration_steps:
+  ssh-keys:  &ssh-keys
+    add_ssh_keys:
+      fingerprints:
+        - "50:b7:1d:44:fd:c4:f4:06:9a:4c:0f:16:0c:e1:3b:91"
+
+  update-pip: &update-pip
+    run:
+      name: Update Pip
+      command: |
+        pip install -U pip
+
+
+  install-docker-compose: &install-docker-compose
+    run:
+      name: Install Docker Compose
+      command: |
+        pip install docker-compose
+
+  run-env: &run-env
+    run:
+      name: Get the environment up and running with Docker Compose
+      command: |
+        cd tests/integration && make && make run
+
+  run-tests: &run-tests
+    run:
+      name: Run integration tests
+      command: |
+        cd tests/integration && make test
+
+  dump-girder-logs: &dump-girder-logs
+    run:
+      name: Dump girder docker logs
+      command: |
+        cd tests/integration && docker-compose logs girder
+      when: on_fail
+
+  dump-worker-logs: &dump-worker-logs
+    run:
+      name: Dump girder_worker docker logs
+      command: |
+        cd tests/integration && docker-compose logs girder_worker
+      when: on_fail
+
+
+unit_steps:
+  virtual-env: &virtual-env
+    run:
+      name: Setup virtual environment
+      command: |
+        if [ ! -d girder_env ]; then python -m virtualenv girder_env || python -m venv girder_env; fi
+        echo ". $CIRCLE_WORKING_DIRECTORY/girder_env/bin/activate" >> $BASH_ENV
+
+  ci-deps: &ci-deps
+    run:
+      name: Install CI dependencies
+      command: pip install codecov tox
+
+  upload-coverage: &upload-coverage
+    run:
+      name: Upload coverage to codecov
+      command: coverage combine && codecov
+
+
+jobs:
+  py3_integration_tests:
+    machine: true
+    working_directory: /home/circleci/project
+    steps:
+      - run:
+          name: Set up Python 3.8
+          command: |
+             pyenv install 3.8 || true
+             pyenv global 3.8
+
+      - *ssh-keys
+      - checkout
+      - *update-pip
+      - *install-docker-compose
+      - *run-env
+      - *run-tests
+      - *dump-girder-logs
+      - *dump-worker-logs
+
+  unit_tests:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - *virtual-env
+      - *update-pip
+      - *ci-deps
+      - run:
+          name: Run unit tests
+          command: tox -e py38
+      - *upload-coverage
+
+  unit_tests_311:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - *virtual-env
+      - *update-pip
+      - *ci-deps
+      - run:
+          name: Run unit tests
+          command: tox -e py311
+      - *upload-coverage
+
+  lint:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - *virtual-env
+      - *update-pip
+      - *ci-deps
+      - run:
+          name: Run linting tests
+          command: tox -e lint
+
+  release:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - *virtual-env
+      - *update-pip
+      - *ci-deps
+      - run:
+          name: Release to PyPI
+          command: tox -e release
+
+  publish_docker:
+    working_directory: ~/project
+    machine:
+      image: ubuntu-2004:202111-02
+    steps:
+      - checkout
+      - run:
+          name: Build girder_worker docker
+          command: docker build --force-rm -t girder/girder_worker .
+      - run:
+          name: Publish images to Docker Hub
+          command: |
+              echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+              docker push girder/girder_worker:latest
+              if [[ $CIRCLE_TAG =~ ^v.*$ ]]; then
+              docker tag girder/girder_worker:latest "girder/girder_worker:$CIRCLE_TAG"
+              docker push "girder/girder_worker:$CIRCLE_TAG"
+              fi
+
+workflows:
+  version: 2
+
+  ci:
+    jobs:
+      - unit_tests:
+          filters:
+            tags:
+              only: /^v.*/
+      - unit_tests_311:
+          filters:
+            tags:
+              only: /^v.*/
+      - lint:
+          filters:
+            tags:
+              only: /^v.*/
+      - release:
+          requires:
+            - unit_tests
+            - lint
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only:
+                - master
+      - publish_docker:
+          requires:
+            - release
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only:
+                - master
