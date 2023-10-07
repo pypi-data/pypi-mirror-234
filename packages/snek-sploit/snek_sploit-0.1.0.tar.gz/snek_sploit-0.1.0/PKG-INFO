@@ -1,0 +1,70 @@
+Metadata-Version: 2.1
+Name: snek-sploit
+Version: 0.1.0
+Summary: Python RPC client for Metasploit Framework
+Home-page: https://github.com/SadParad1se/snek-sploit
+License: MIT
+Keywords: metasploit,msf,rpc,client
+Author: Jiří Rája
+Author-email: jiri.raja@gmail.com
+Maintainer: Jiří Rája
+Maintainer-email: jiri.raja@gmail.com
+Requires-Python: >=3.8,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: msgpack (>=1.0.7,<2.0.0)
+Requires-Dist: requests (>=2.31.0,<3.0.0)
+Project-URL: Repository, https://github.com/SadParad1se/snek-sploit
+Description-Content-Type: text/markdown
+
+# snek-sploit
+Python RPC client for Metasploit Framework.
+
+```python
+from snek_sploit import Client, api
+
+if __name__ == '__main__':
+    client = Client("msf", "root")
+    print(client.call(api.SESSION_LIST))
+
+```
+
+## Installation
+
+```shell
+pip install snek-sploit
+```
+
+## Starting MSF RPC server
+In console
+```shell
+load msgrpc ServerHost=127.0.0.1 ServerPort=55553 User=msf Pass='root' SSL=true
+```
+
+In the background
+```shell
+msfrpcd -U msf -P root
+```
+
+More information can be found in the [official documentation](https://docs.rapid7.com/metasploit/rpc-api/).
+
+## Running MSF with RPC using Docker
+In case you don't want to install and run MSF RPC on your own:
+```shell
+docker run --rm --network host --tty -d -e MSF_RPC_USERNAME=msf -e MSF_RPC_PASSWORD=root registry.gitlab.ics.muni.cz:443/cryton/configurations/metasploit-framework:latest
+```
+
+[Link to the documentation](https://cryton.gitlab-pages.ics.muni.cz/cryton-documentation/latest/docker-settings/#metasploit-framework).
+
+## Useful links
+
+- https://docs.rapid7.com/metasploit/standard-api-methods-reference/
+- https://docs.metasploit.com/docs/using-metasploit/advanced/RPC/how-to-use-metasploit-messagepack-rpc.html#example-workflows
+
+## TODO
+async vs sync version?
+
