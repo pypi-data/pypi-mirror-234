@@ -1,0 +1,94 @@
+#
+# Copyright (c) 2020-2023 Julian Heinovski <heinovski@ccs-labs.org>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+
+[tool.poetry]
+name = "plafosim"
+version = "0.16.2"
+description = "A simple and scalable simulator for platoon formation."
+license = "GPL-3.0-or-later"
+authors = [
+    "Julian Heinovski <heinovski@ccs-labs.org>",
+    "Dominik S. Buse <buse@ccs-labs.org",
+]
+maintainers = [
+    "Julian Heinovski <heinovski@ccs-labs.org>",
+]
+readme = "README.md"
+homepage = "https://www.plafosim.de"
+repository = "https://github.com/heinovski/plafosim"
+documentation = "https://plafosim.readthedocs.io/"
+keywords = [
+    "Algorithm",
+    "Engineering",
+    "Experiment",
+    "Platoon",
+    "Platoon Formation",
+    "Platooning",
+    "Platoon Maneuver",
+    "Research",
+    "Science",
+    "Simulation",
+    "Simulator",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",  # TODO set to stable with release 1.0.0
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+]
+packages = [
+    { include = "plafosim", from="src" },
+]
+include = [
+    "CHANGELOG",
+    "LICENSE",
+]
+
+[tool.poetry.urls]
+Changelog = "https://github.com/heinovski/plafosim/blob/master/CHANGELOG.md"
+
+[tool.poetry.dependencies]
+python = "^3.7, <3.10"  # 3.10 is not yet possible due to incompatible dependencies
+
+# These packages are mandatory and form the core of this package’s distribution.
+numpy = "^1.19"
+ortools = "~9.0"
+pandas = "^1.1"
+tqdm = "^4.61"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^4.0.1"
+isort = "^5.10.1"
+matplotlib = "^3.4"
+pytest = "^6.2"
+seaborn = "^0.11"
+statsmodels = "^0.12"
+
+[tool.poetry.scripts]
+plafosim = "plafosim.cli.plafosim:main"
+plafosim-replay = "plafosim.cli.trace_replay:main"
+# with poetry 1.2, we can be more flexible, since it will introduce the exec plugin
+# see https://github.com/python-poetry/poetry/issues/241
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
