@@ -1,0 +1,62 @@
+Metadata-Version: 2.1
+Name: transfer_lmir
+Version: 0.0.7
+Summary: Functions to perform calibration transfer with LMIR
+Author: Giverny Robert, Francis B. Lavoie, Ryan Gosselin
+Author-email: giverny.robert@usherbrooke.ca, francis.b.lavoie@usherbrooke.ca, ryan.gosselin@usherbrooke.ca
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+
+Functions to perform calibration transfer by likelihood maximization: a standard-free approach capable of handling non-overlapping wavelength ranges.        
+        
+In this approach, calibration for spectral data on primary instrument is performed by likelihood maximization inverse regression (LMIR).        
+Based on a limited number of spectra from a secondary instrument and the corresponding reference values, an estimation model is created based on block pairs.        
+The latter can then be used to estimate spectra from secondary instrument in the domain of primary instrument to be able to use to primary calibration.        
+        
+Cf: F.B. Lavoie, A. Langlet, K. Muteki, R. Gosselin, Likelihood Maximization Inverse Regression: A novel non-linear multivariate model, Chemom. Intell. Lab. Syst. 194 (2019) 103844. https://doi.org/10.1016/j.chemolab.2019.103844.        
+        
+F.B. Lavoie, G. Robert, A. Langlet, R. Gosselin, Calibration transfer by likelihood maximization : A standard-free approach capable of handling non-overlapping wavelength ranges, Chemom. Intell. Lab. Syst. 234 (2023) 104766. https://doi.org/10.1016/j.chemolab.2023.104766.        
+        
+# Call function        
+model, ypred = LMIR_create(X1,Y1,linear=True)        
+        
+R1_all, g1_all, R2_all, g2_all = estimation_model(X1, Y1, X2c, Y2c,factor_k,nb_pairs=30,B)        
+        
+ypred_ct, x1hat_ct, covx1_ct = estimation_exploit(R1_all,g1_all,R2_all,g2_all,X2v,X1,model)        
+        
+# Input arguments        
+1. X1 (n1,k1): spectral data from primary instrument        
+2. Y1 (n1,1): reference values for spectra from primary instrument        
+3. X2c (n2,k2): spectral data from secondary instrument        
+4. Y2c (n2,1): reference values for spectra from secondary instrument        
+5. factor_k: parameter for supervised selection of observations for estimation model        
+6. X2v: spectral data from secondary instrument for validation        
+        
+# Optional input arguments        
+7. linear: option to create linear or non-linear models linking y to each varibale in X for LMIR modeling (default_value=True for linear modeling)        
+8. nb_pairs: number of block pairs in estimation model (default_value=30)        
+9. B: number of variable bootstrapping trials (default_value=3*max(k1,k2))        
+        
+# Outputs        
+1. model: model created by LMIR        
+2. ypred: predicted values by LMIR        
+3. R1_all, g1_all, R2_all, g2_all: blocks pairs in estimation model        
+4. ypred_ct: predicted values using estimation model and LMIR model from spectra from secondary instrument        
+5. x1hat_ct: estimated spectra in domain of primary instrument        
+6. covx1_ct: uncertainty associated to estimation of spectra in domain of primary instrument        
+        
+# Examples        
+Two full examples, along with datasets are provided in folder 'tests' of 'Download Files'.        
+- Example 1: Tablet shootout dataset        
+- Example 2: Coating times dataset        
+- Example 3: Wheat shootout dataset        
+        
+# Compatibility        
+transfer_lmir tested on Python 3.8 using the following modules:        
+- numpy 1.20.1        
+- matplotlib 3.3.4        
+- SciPy 1.6.2
