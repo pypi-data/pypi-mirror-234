@@ -1,0 +1,67 @@
+Metadata-Version: 2.1
+Name: vaticinator
+Version: 0.0.7
+Summary: Yet another Python fortune implementation
+Home-page: https://github.com/hazelmollusk/vaticinator
+Author: Matt Barry
+Author-email: matt@hazelmollusk.org
+License: MIT
+Project-URL: webpage, https://github.com/hazelmollusk/vaticinator
+Project-URL: Documentation, https://vaticinator.readthedocs.io/en/latest/
+Project-URL: Changelog, https://github.com/hazelmollusk/vaticinator/blob/main/CHANGELOG.rst
+Project-URL: Issue Tracker, https://github.com/hazelmollusk/vaticinator/issues
+Project-URL: Discussion Forum, https://github.com/hazelmollusk/vaticinator/discussions
+Keywords: fortune,games
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: GNU General Public License v2 (GPLv2)
+Classifier: Intended Audience :: System Administrators
+Classifier: Natural Language :: English
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Games/Entertainment :: Fortune Cookies
+Requires-Python: >=3.11, <4
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+vaticinator(6)
+==============
+v0.0.7
+======
+
+Vaticinator is yet another Python implementation of the
+ancient and (in)famous `fortune` program from the 
+`bsdgames` package.
+
+My motivation for writing it was more to have a 
+portable library I could use to fetch fortunes for
+use in other projects.  It's possible that one or
+more of the existing ones have this (I looked
+albeit briefly), but it was an itch I didn't mind
+scratching.
+
+It is still alpha maturity level, though the majority 
+of `fortune` behavior is implemented at the moment.
+
+Example integration
+=====================
+
+This is a the code for a Django template tag that
+displays a random fortune inside a template (with
+all the options from the command line available).
+This is basically why I created this project::
+
+	from django.template import Library
+	from vaticinator.vaticinator import Vaticinator
+
+	register = Library()
+	vaticinator = Vaticinator()
+
+	@register.simple_tag
+	def random_fortune(**kwargs):
+		vaticinator.set_default_options()
+		vaticinator.process_options(**kwargs)
+		return vaticinator.fortune
+
+And the template::
+
+	<span>{% random_fortune 'short' 'all' %}</span>
