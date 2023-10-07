@@ -1,0 +1,237 @@
+#!python
+
+import os
+import sys
+import argparse
+import pybio
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, add_help=False)
+parser.add_argument('commands', help="which command to run?", nargs='*')
+parser.add_argument("-version", "--version", help="Print version", action="store_true")
+parser.add_argument("-nostar", "--nostar", help="Do not process genome with STAR (index)", action="store_true")
+parser.add_argument("-nosalmon", "--nosalmon", help="Do not process transcripts with salmon (index)", action="store_true")
+parser.add_argument("-species", "--species", help="Species name, e.g. homo_sapiens")
+parser.add_argument("-genome_version", "--genome_version", help="Version of the genome, e.g. ensembl109; if not provided, the latest Ensembl version is used")
+parser.add_argument("-fasta", "--fasta", help="Process sequences from fasta file")
+parser.add_argument("-gtf", "--gtf", help="GTF file to import")
+parser.add_argument("-threads", "--threads", default="1", help="Number of threads to use (default: 1)")
+parser.add_argument("-help", "-h", "--help", action="store_true")
+args = parser.parse_args()
+
+help_0 = """
+Usage: pybio <command> [options]
+
+Commands:
+  -- Genome
+     genome species        Download and prepare genome
+
+  -- Search
+     search search_text    Displays all available genomes matching search_text
+
+  -- Configuration
+     config [folder]       If no folder provided, prompts for location of genomes data folder
+     path species          Prints FASTA and GTF file path for provided species (+genome version)
+
+Options:
+
+     -genome_version       Specify genome version (e.g. ensembl109)
+     -nostar, -nosalmon    Avoid building STAR and samlmon index for the genome
+     -threads n            Number of threads to use (STAR mapping, etc), default: 1
+     -fasta fasta_file     Fasta file for custom genome
+     -gtf gtf_file         GTF file for custom genome
+     -version              Display pybio version
+
+"""
+
+help_genome = """
+To download genomes, please specify species.
+
+Example:
+
+$ pybio genome homo_sapiens
+
+The above will download the latest Ensembl human genome.
+"""
+
+help_star = """
+Aligning reads to a reference genome with STAR:
+
+Example:
+
+# single-end sequencing
+$ pybio star homo_sapiens r1.fastq.gz output.bam
+
+# paired-end sequencing
+$ pybio star homo_sapiens r1.fastq.gz r2.fastq.gz output.bam
+"""
+
+help_sam2bam = """
+Convert .sam to .bam file:
+
+Example:
+
+$ pybio sam2bam file1.sam file1.bam
+"""
+
+print(f"[pybio] v{pybio.version}, https://github.com/grexor/pybio")
+print(f"[pybio] config file: {pybio.config.config_fname()}")
+print(f"[pybio] genomes folder: {pybio.config.genomes_folder}")
+print()
+
+if args.version:
+    sys.exit(0)
+
+if len(args.commands)==0 and args.help:
+    print(help_0)
+    sys.exit(0)
+
+def is_known_species(species):
+    species = species.lower()
+    return species in pybio.core.genomes.species_db
+
+def determine_species(species):
+    provided_species = species
+    id_species = None
+    species = species.lower()
+    potential_hits = []
+    for species_id, species_data in pybio.core.genomes.species_db.items():
+        display_name = species_data["display_name"].lower()
+        if display_name.find(species)!=-1 or species_id.find(species)!=-1:
+            potential_hits.append((len(display_name), species_id, display_name))
+    potential_hits.sort()
+    if len(potential_hits)>0:
+        return potential_hits
+    return []
+
+def display_potential_hits(potential_hits, search_text):
+    print(f"We found {len(potential_hits)} genome hits for your provided genome species `{search_text}`.\nPlease choose the species genome you would like to download:\n")
+    for hit in potential_hits:
+        print(f"Species = '{hit[1]}', display name = '{hit[2]}'")
+    if len(potential_hits)>0:
+        print(f"\nFor example, to download the first hit from the list above, you could write:\n")
+        print(f"$ pybio genome {potential_hits[0][1]}")
+        print()
+    sys.exit(1)
+
+def resolve_species_version(species, args):
+    known_species = is_known_species(species)
+    potential_hits = []
+    if not known_species:
+        potential_hits = determine_species(species)
+        if len(potential_hits)==1:
+            species = potential_hits[0][1]
+    if args.genome_version!=None:
+        genome_version = args.genome_version
+    else:
+        try:
+            genome_version = args.commands[2]
+            if genome_version.find("ensembl")==-1:
+                genome_version = None
+        except:
+            genome_version = pybio.core.genomes.species_db.get(species, {}).get("genome_version", None)
+    return species, genome_version, potential_hits
+
+if len(args.commands)>0:
+
+    if args.commands[0]=="path":
+        if len(args.commands)<2:
+            print("Please provide species, e.g.:\n\n$ pybio path homo_sapiens\n")
+            sys.exit(0)
+        species = args.commands[1]
+        species, genome_version, potential_hits = resolve_species_version(species, args)
+        annotation_folder = os.path.join(pybio.config.genomes_folder, "%s.annotation.%s" % (species, genome_version))
+        assembly_folder = os.path.join(pybio.config.genomes_folder, "%s.assembly.%s" % (species, genome_version))
+        fasta_file = os.path.join(assembly_folder, f"{species}.fasta")
+        gtf_file = os.path.join(annotation_folder, f"{species}.gtf.gz")
+        gff3_file = os.path.join(annotation_folder, f"{species}.gff3.gz")
+        print(fasta_file)
+        print(gtf_file)
+        print(gff3_file)
+        sys.exit(0)
+
+    if args.commands[0] in ["species", "search"]:
+        if len(args.commands)>1:
+            potential_hits = determine_species(args.commands[1])
+            display_potential_hits(potential_hits, args.commands[1])
+
+    if args.commands[0]=="genome":
+        if len(args.commands)==1:
+            print("All genomes data stored at: " + pybio.config.genomes_folder)
+            print(help_genome)
+            sys.exit(0)
+        species = args.commands[1]
+        species, genome_version, potential_hits = resolve_species_version(species, args)
+        if len(potential_hits)>1:
+            display_potential_hits(potential_hits, species)
+        if genome_version==None:
+            print("Unknown genome version, examples: ensembl109 or ensemblgenomes56")
+            sys.exit(1)
+        if genome_version.find("ensembl")!=-1:
+            pybio.genome_download(species, genome_version, args)
+            pybio.genome_prepare(species, genome_version, args)
+        elif args.fasta!=None and args.gtf!=None: # provided genome, specified species, fasta, gtf and genome_version, ok
+            pybio.genome_import(species, genome_version, args)
+            pybio.genome_prepare(species, genome_version, args)
+        elif (args.fasta==None or args.gtf==None) and (genome_version.find("ensembl")==-1):
+            print(f"Could not find a match for the species '{species}'.")
+            print("If you would like to import a custom genome from your own FASTA and GTF files,\nan example call would be:\n")
+            print("$ pybio genome custom_species -fasta /path/to/fasta -gtf /path/to/gtf -genome_version genome_v1\n")
+            print("The above imported genome would be reachable under species 'custom_species' and genome_version 'genome_v1'.\n")
+            print("In case you would like to import an Ensembl ready genome:\n")
+            print("$ pybio genome homo_sapiens ensembl109\n")
+            print("Ommiting the genome version will download the latest Ensembl release.\n")
+
+    if args.commands[0]=="config":
+        if len(args.commands)>1:
+            pybio.config.init(args.commands[1]) # pybio config genome_folder
+
+    if args.commands[0]=="sam2bam":
+        if len(args.commands) not in [3]:
+            print(help_sam2bam)
+            sys.exit()
+        input_fname = args.commands[1]
+        output_fname = args.commands[2]
+        os.system(f"samtools view -F 4 -bS {input_fname} -o {output_fname} # -F 4 means only mapped reads -@ {args.threads}")
+        os.system(f"samtools sort {output_fname} -o {output_fname} -@ {args.threads}")
+        os.system(f"samtools index {output_fname} -@ {args.threads}")
+
+    if args.commands[0]=="star":
+        if len(args.commands) not in [4,5]:
+            print(help_star)
+            sys.exit()
+        
+        species = args.commands[1]
+        if args.genome_version!=None:
+            genome_version = args.genome_version
+        else:
+            genome_version = pybio.core.genomes.species_db.get(species, {}).get("genome_version", None)
+        if genome_version==None:
+            print("Could not determine genome version")
+            sys.exit(0)
+        star_folder = os.path.join(pybio.config.genomes_folder, f"{species}.assembly.{genome_version}.star")
+        if len(args.commands)==4:
+            file1=args.commands[2]
+            file2=None
+            output = args.commands[3]
+        else:
+            file1=args.commands[2]
+            file2=args.commands[3]
+            output = args.commands[4]
+
+        # remove .bam if provided
+        if output.endswith(".bam"):
+            output = output[:-4]
+
+        # --outFilterMultimapNmax 1
+        if file2!=None: # paired-end
+            print(f"STAR --runThreadN {args.threads} --outFileNamePrefix {output}_  --genomeDir {star_folder} --readFilesIn {file1} {file2} --readFilesCommand zcat")
+            os.system(f"STAR --runThreadN {args.threads} --outFileNamePrefix {output}_  --genomeDir {star_folder} --readFilesIn {file1} {file2} --readFilesCommand zcat")
+        if file2==None: # single-end
+            os.system(f"STAR --runThreadN {args.threads} --outFileNamePrefix {output}_  --genomeDir {star_folder} --readFilesIn {file1} --readFilesCommand zcat")
+
+        os.system(f"pybio sam2bam {output}_Aligned.out.sam {output}.bam -threads {args.threads}")
+        os.system(f"mv {output}_Log.final.out {output}.stats.txt")
+        os.system(f"mv {output}_Log.out {output}.log.txt")
+        os.system(f"mv {output}_Log.progress.out {output}.progress.txt")
+        os.system(f"rm {output}_Aligned.out.sam")
+        os.system(f"mv {output}_SJ.out.tab {output}.splice.tab")
