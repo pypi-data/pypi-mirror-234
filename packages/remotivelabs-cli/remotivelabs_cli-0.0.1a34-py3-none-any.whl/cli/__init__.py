@@ -1,0 +1,1 @@
+from .remotive import app
