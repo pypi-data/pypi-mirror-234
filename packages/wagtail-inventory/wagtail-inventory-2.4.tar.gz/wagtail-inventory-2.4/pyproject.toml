@@ -1,0 +1,107 @@
+[project]
+name = "wagtail-inventory"
+version = "2.4"
+description = "Wagtail report to filter pages by block content"
+readme = "README.rst"
+requires-python = ">=3.8"
+license = {text = "CC0"}
+authors = [
+    {name = "CFPB", email = "tech@cfpb.gov" }
+]
+dependencies = [
+    "tqdm>=4.15.0,<5",
+    "wagtail>=3",
+    "django-autocomplete-light>=3.9",
+]
+classifiers = [
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Framework :: Wagtail",
+    "Framework :: Wagtail :: 3",
+    "Framework :: Wagtail :: 4",
+    "Framework :: Wagtail :: 5",
+    "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
+    "License :: Public Domain",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+testing = [
+    "coverage[toml]",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/cfpb/wagtail-inventory"
+"Bug Reports" = "https://github.com/cfpb/wagtail-inventory/issues"
+"Source" = "https://github.com/cfpb/wagtail-inventory"
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+inventory = [
+    "templates/wagtailinventory/*",
+]
+
+[tool.black]
+line-length = 79
+target-version = ["py38"]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.tox
+    | \*.egg-info
+    | _build
+    | build
+    | dist
+    | migrations
+  )/
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 79
+lines_after_imports = 2
+skip = [".tox", "migrations", ".venv", "venv"]
+known_django = ["django"]
+known_wagtail = ["wagtail"]
+default_section = "THIRDPARTY"
+sections = [
+    "STDLIB",
+    "DJANGO",
+    "WAGTAIL",
+    "THIRDPARTY",
+    "FIRSTPARTY",
+    "LOCALFOLDER"
+]
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".tox",
+    "__pycache__",
+    "*/migrations/*.py",
+    "*/tests/testapp/migrations/*.py",
+    "docs",
+    ".venv",
+    "venv",
+]
+ignore = []
+select = [
+    "E",
+    "F",
+    "W",
+]
+
+[tool.coverage.run]
+omit = [
+    "wagtailinventory/tests/*",
+]
