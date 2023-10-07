@@ -1,0 +1,499 @@
+#! /usr/bin/env python
+"""SearchSource: Unknown source (default for all other sources)"""
+from __future__ import annotations
+
+import re
+import typing
+from dataclasses import dataclass
+from enum import Enum
+from pathlib import Path
+
+import dacite
+import zope.interface
+from dacite import from_dict
+from dataclasses_jsonschema import JsonSchemaMixin
+from thefuzz import fuzz
+
+import colrev.env.language_service
+import colrev.env.package_manager
+import colrev.exceptions as colrev_exceptions
+import colrev.ops.load_utils_bib
+import colrev.ops.load_utils_md
+import colrev.ops.load_utils_ris
+import colrev.ops.search
+import colrev.record
+import colrev.ui_cli.cli_colors as colors
+
+# pylint: disable=unused-argument
+# pylint: disable=duplicate-code
+
+
+@zope.interface.implementer(
+    colrev.env.package_manager.SearchSourcePackageEndpointInterface
+)
+@dataclass
+class UnknownSearchSource(JsonSchemaMixin):
+    """Unknown SearchSource"""
+
+    settings_class = colrev.env.package_manager.DefaultSourceSettings
+    endpoint = "colrev.unknown_source"
+
+    source_identifier = "colrev.unknown_source"
+    search_types = [
+        colrev.settings.SearchType.DB,
+        colrev.settings.SearchType.OTHER,
+        colrev.settings.SearchType.BACKWARD_SEARCH,
+        colrev.settings.SearchType.FORWARD_SEARCH,
+        colrev.settings.SearchType.TOC,
+    ]
+
+    ci_supported: bool = False
+    heuristic_status = colrev.env.package_manager.SearchSourceHeuristicStatus.na
+    short_name = "Unknown Source"
+    docs_link = (
+        "https://github.com/CoLRev-Environment/colrev/blob/main/"
+        + "colrev/ops/built_in/search_sources/unknown_source.md"
+    )
+
+    HTML_CLEANER = re.compile("<.*?>")
+    __padding = 40
+
+    def __init__(
+        self, *, source_operation: colrev.operation.Operation, settings: dict
+    ) -> None:
+        converters = {Path: Path, Enum: Enum}
+        self.search_source = from_dict(
+            data_class=self.settings_class,
+            data=settings,
+            config=dacite.Config(type_hooks=converters, cast=[Enum]),  # type: ignore
+        )
+        self.review_manager = source_operation.review_manager
+        self.language_service = colrev.env.language_service.LanguageService()
+
+    @classmethod
+    def heuristic(cls, filename: Path, data: str) -> dict:
+        """Source heuristic for unknown sources"""
+
+        result = {"confidence": 0.1}
+
+        return result
+
+    @classmethod
+    def add_endpoint(
+        cls,
+        operation: colrev.ops.search.Search,
+        params: str,
+        filename: typing.Optional[Path],
+    ) -> colrev.settings.SearchSource:
+        """Add SearchSource as an endpoint (based on query provided to colrev search -a )"""
+        if filename:
+            query_file = operation.get_query_filename(
+                filename=filename, instantiate=True
+            )
+            add_source = colrev.settings.SearchSource(
+                endpoint=cls.endpoint,
+                filename=filename,
+                search_type=colrev.settings.SearchType.DB,
+                search_parameters={"query_file": str(query_file)},
+                comment="",
+            )
+
+            return add_source
+
+        raise NotImplementedError
+
+    def run_search(self, rerun: bool) -> None:
+        """Run a search of Crossref"""
+
+        if self.search_source.search_type == colrev.settings.SearchType.DB:
+            if self.review_manager.in_ci_environment():
+                raise colrev_exceptions.SearchNotAutomated(
+                    "DB search for UnknownSource not automated."
+                )
+
+    def get_masterdata(
+        self,
+        prep_operation: colrev.ops.prep.Prep,
+        record: colrev.record.Record,
+        save_feed: bool = True,
+        timeout: int = 10,
+    ) -> colrev.record.Record:
+        """Not implemented"""
+        return record
+
+    def __ris_fixes(self, *, entries: dict) -> None:
+        for entry in entries:
+            if "title" in entry and "primary_title" not in entry:
+                entry["primary_title"] = entry.pop("title")
+
+            if "publication_year" in entry and "year" not in entry:
+                entry["year"] = entry.pop("publication_year")
+
+    def __rename_erroneous_extensions(self) -> None:
+        if self.search_source.filename.suffix in [".xls", ".xlsx"]:
+            return
+        data = self.search_source.filename.read_text(encoding="utf-8")
+        # # Correct the file extension if necessary
+        if re.findall(
+            r"^%0", data, re.MULTILINE
+        ) and self.search_source.filename.suffix not in [".enl"]:
+            new_filename = self.search_source.filename.with_suffix(".enl")
+            self.review_manager.logger.info(
+                f"{colors.GREEN}Rename to {new_filename} "
+                f"(because the format is .enl){colors.END}"
+            )
+            self.search_source.filename.rename(new_filename)
+            self.review_manager.dataset.add_changes(
+                path=self.search_source.filename, remove=True
+            )
+            self.search_source.filename = new_filename
+            self.review_manager.dataset.add_changes(path=new_filename)
+            self.review_manager.create_commit(
+                msg=f"Rename {self.search_source.filename}"
+            )
+            return
+
+        if re.findall(
+            r"^TI ", data, re.MULTILINE
+        ) and self.search_source.filename.suffix not in [".ris"]:
+            new_filename = self.search_source.filename.with_suffix(".ris")
+            self.review_manager.logger.info(
+                f"{colors.GREEN}Rename to {new_filename} "
+                f"(because the format is .ris){colors.END}"
+            )
+            self.search_source.filename.rename(new_filename)
+            self.review_manager.dataset.add_changes(
+                path=self.search_source.filename, remove=True
+            )
+            self.search_source.filename = new_filename
+            self.review_manager.dataset.add_changes(path=new_filename)
+            self.review_manager.create_commit(
+                msg=f"Rename {self.search_source.filename}"
+            )
+
+    def __load_ris(self, *, load_operation: colrev.ops.load.Load) -> dict:
+        ris_loader = colrev.ops.load_utils_ris.RISLoader(
+            load_operation=load_operation, source=self.search_source
+        )
+        ris_loader.apply_ris_fixes(filename=self.search_source.filename)
+        ris_entries = ris_loader.load_ris_entries()
+        self.__ris_fixes(entries=ris_entries)
+        records = ris_loader.convert_to_records(entries=ris_entries)
+        return records
+
+    def __load_bib(self, *, load_operation: colrev.ops.load.Load) -> dict:
+        records = colrev.ops.load_utils_bib.load_bib_file(
+            load_operation=load_operation, source=self.search_source
+        )
+        return records
+
+    def __load_csv(self, *, load_operation: colrev.ops.load.Load) -> dict:
+        csv_loader = colrev.ops.load_utils_table.CSVLoader(
+            load_operation=load_operation, source=self.search_source
+        )
+        table_entries = csv_loader.load_table_entries()
+        records = csv_loader.convert_to_records(entries=table_entries)
+        return records
+
+    def __load_xlsx(self, *, load_operation: colrev.ops.load.Load) -> dict:
+        excel_loader = colrev.ops.load_utils_table.ExcelLoader(
+            load_operation=load_operation, source=self.search_source
+        )
+        table_entries = excel_loader.load_table_entries()
+        records = excel_loader.convert_to_records(entries=table_entries)
+        return records
+
+    def __load_md(self, *, load_operation: colrev.ops.load.Load) -> dict:
+        md_loader = colrev.ops.load_utils_md.MarkdownLoader(
+            load_operation=load_operation, source=self.search_source
+        )
+        records = md_loader.load()
+        return records
+
+    def __load_enl(self, *, load_operation: colrev.ops.load.Load) -> dict:
+        enl_loader = colrev.ops.load_utils_enl.ENLLoader(
+            load_operation=load_operation, source=self.search_source
+        )
+        entries = enl_loader.load_enl_entries()
+        records = enl_loader.convert_to_records(entries=entries)
+        return records
+
+    def load(self, load_operation: colrev.ops.load.Load) -> dict:
+        """Load the records from the SearchSource file"""
+
+        if not self.search_source.filename.is_file():
+            return {}
+
+        self.__rename_erroneous_extensions()
+
+        __load_methods = {
+            ".ris": self.__load_ris,
+            ".bib": self.__load_bib,
+            ".csv": self.__load_csv,
+            ".xls": self.__load_xlsx,
+            ".xlsx": self.__load_xlsx,
+            ".md": self.__load_md,
+            ".enl": self.__load_enl,
+        }
+
+        if self.search_source.filename.suffix not in __load_methods:
+            raise NotImplementedError
+
+        return __load_methods[self.search_source.filename.suffix](
+            load_operation=load_operation
+        )
+
+    def __heuristically_fix_entrytypes(
+        self, *, record: colrev.record.PrepRecord
+    ) -> None:
+        """Prepare the record by heuristically correcting erroneous ENTRYTYPEs"""
+
+        # Journal articles should not have booktitles/series set.
+        if record.data["ENTRYTYPE"] == "article":
+            if "booktitle" in record.data and "journal" not in record.data:
+                record.update_field(
+                    key="journal",
+                    value=record.data["booktitle"],
+                    source="unkown_source_prep",
+                )
+                record.remove_field(key="booktitle")
+            if "series" in record.data and "journal" not in record.data:
+                record.update_field(
+                    key="journal",
+                    value=record.data["series"],
+                    source="unkown_source_prep",
+                )
+                record.remove_field(key="series")
+
+        if self.search_source.filename.suffix == ".md":
+            if record.data["ENTRYTYPE"] == "misc" and "publisher" in record.data:
+                record.update_field(
+                    key="ENTRYTYPE", value="book", source="unkown_source_prep"
+                )
+            if record.data.get("year", "year") == record.data.get("date", "date"):
+                record.remove_field(key="date")
+            if (
+                "inbook" == record.data["ENTRYTYPE"]
+                and "chapter" not in record.data
+                and "title" in record.data
+            ):
+                record.rename_field(key="title", new_key="chapter")
+
+        if (
+            "dissertation" in record.data.get("fulltext", "NA").lower()
+            and record.data["ENTRYTYPE"] != "phdthesis"
+        ):
+            prior_e_type = record.data["ENTRYTYPE"]
+            record.update_field(
+                key="ENTRYTYPE", value="phdthesis", source="unkown_source_prep"
+            )
+            self.review_manager.report_logger.info(
+                f' {record.data["ID"]}'.ljust(self.__padding, " ")
+                + f"Set from {prior_e_type} to phdthesis "
+                '("dissertation" in fulltext link)'
+            )
+
+        if (
+            "thesis" in record.data.get("fulltext", "NA").lower()
+            and record.data["ENTRYTYPE"] != "phdthesis"
+        ):
+            prior_e_type = record.data["ENTRYTYPE"]
+            record.update_field(
+                key="ENTRYTYPE", value="phdthesis", source="unkown_source_prep"
+            )
+            self.review_manager.report_logger.info(
+                f' {record.data["ID"]}'.ljust(self.__padding, " ")
+                + f"Set from {prior_e_type} to phdthesis "
+                '("thesis" in fulltext link)'
+            )
+
+        if (
+            "this thesis" in record.data.get("abstract", "NA").lower()
+            and record.data["ENTRYTYPE"] != "phdthesis"
+        ):
+            prior_e_type = record.data["ENTRYTYPE"]
+            record.update_field(
+                key="ENTRYTYPE", value="phdthesis", source="unkown_source_prep"
+            )
+            self.review_manager.report_logger.info(
+                f' {record.data["ID"]}'.ljust(self.__padding, " ")
+                + f"Set from {prior_e_type} to phdthesis "
+                '("thesis" in abstract)'
+            )
+
+    def __format_inproceedings(self, *, record: colrev.record.PrepRecord) -> None:
+        if record.data.get("booktitle", "UNKNOWN") == "UNKNOWN":
+            return
+
+        if (
+            "UNKNOWN" != record.data["booktitle"]
+            and "inbook" != record.data["ENTRYTYPE"]
+        ):
+            record.format_if_mostly_upper(key="booktitle", case="title")
+
+            stripped_btitle = re.sub(r"\d{4}", "", record.data["booktitle"])
+            stripped_btitle = re.sub(r"\d{1,2}th", "", stripped_btitle)
+            stripped_btitle = re.sub(r"\d{1,2}nd", "", stripped_btitle)
+            stripped_btitle = re.sub(r"\d{1,2}rd", "", stripped_btitle)
+            stripped_btitle = re.sub(r"\d{1,2}st", "", stripped_btitle)
+            stripped_btitle = re.sub(r"\([A-Z]{3,6}\)", "", stripped_btitle)
+            stripped_btitle = stripped_btitle.replace("Proceedings of the", "").replace(
+                "Proceedings", ""
+            )
+            stripped_btitle = stripped_btitle.lstrip().rstrip()
+            record.update_field(
+                key="booktitle",
+                value=stripped_btitle,
+                source="unkown_source_prep",
+                keep_source_if_equal=True,
+            )
+
+    def __format_article(self, record: colrev.record.PrepRecord) -> None:
+        if (
+            record.data.get("journal", "UNKNOWN") != "UNKNOWN"
+            and len(record.data["journal"]) > 10
+            and "UNKNOWN" != record.data["journal"]
+        ):
+            record.format_if_mostly_upper(key="journal", case="title")
+
+        if record.data.get("volume", "UNKNOWN") != "UNKNOWN":
+            record.update_field(
+                key="volume",
+                value=record.data["volume"].replace("Volume ", ""),
+                source="unkown_source_prep",
+                keep_source_if_equal=True,
+            )
+
+    def __format_fields(self, *, record: colrev.record.PrepRecord) -> None:
+        """Format fields"""
+
+        if record.data.get("ENTRYTYPE", "") == "inproceedings":
+            self.__format_inproceedings(record=record)
+        elif record.data.get("ENTRYTYPE", "") == "article":
+            self.__format_article(record=record)
+
+        if record.data.get("author", "UNKNOWN") != "UNKNOWN":
+            # fix name format
+            if (1 == len(record.data["author"].split(" ")[0])) or (
+                ", " not in record.data["author"]
+            ):
+                record.update_field(
+                    key="author",
+                    value=colrev.record.PrepRecord.format_author_field(
+                        input_string=record.data["author"]
+                    ),
+                    source="unkown_source_prep",
+                    keep_source_if_equal=True,
+                )
+            # Replace nicknames in parentheses
+            record.data["author"] = re.sub(r"\([^)]*\)", "", record.data["author"])
+            record.data["author"] = record.data["author"].replace("  ", " ").rstrip()
+
+        if record.data.get("title", "UNKNOWN") != "UNKNOWN":
+            record.format_if_mostly_upper(key="title")
+
+        if "pages" in record.data:
+            record.unify_pages_field()
+            if (
+                not re.match(r"^\d*$", record.data["pages"])
+                and not re.match(r"^\d*--\d*$", record.data["pages"])
+                and not re.match(r"^[xivXIV]*--[xivXIV]*$", record.data["pages"])
+            ):
+                self.review_manager.report_logger.info(
+                    f' {record.data["ID"]}:'.ljust(self.__padding, " ")
+                    + f'Unusual pages: {record.data["pages"]}'
+                )
+
+        if (
+            "url" in record.data
+            and "fulltext" in record.data
+            and record.data["url"] == record.data["fulltext"]
+        ):
+            record.remove_field(key="fulltext")
+
+        if "language" in record.data:
+            try:
+                self.language_service.unify_to_iso_639_3_language_codes(record=record)
+                record.update_field(
+                    key="language",
+                    value=record.data["language"],
+                    source="unkown_source_prep",
+                    keep_source_if_equal=True,
+                )
+            except colrev_exceptions.InvalidLanguageCodeException:
+                del record.data["language"]
+
+    def __remove_redundant_fields(self, *, record: colrev.record.PrepRecord) -> None:
+        if (
+            record.data["ENTRYTYPE"] == "article"
+            and "journal" in record.data
+            and "booktitle" in record.data
+        ):
+            similarity_journal_booktitle = fuzz.partial_ratio(
+                record.data["journal"].lower(), record.data["booktitle"].lower()
+            )
+            if similarity_journal_booktitle / 100 > 0.9:
+                record.remove_field(key="booktitle")
+
+        if record.data.get("publisher", "") in ["researchgate.net"]:
+            record.remove_field(key="publisher")
+
+        if (
+            record.data["ENTRYTYPE"] == "inproceedings"
+            and "journal" in record.data
+            and "booktitle" in record.data
+        ):
+            similarity_journal_booktitle = fuzz.partial_ratio(
+                record.data["journal"].lower(), record.data["booktitle"].lower()
+            )
+            if similarity_journal_booktitle / 100 > 0.9:
+                record.remove_field(key="journal")
+
+    def __impute_missing_fields(self, *, record: colrev.record.PrepRecord) -> None:
+        if "date" in record.data and "year" not in record.data:
+            year = re.search(r"\d{4}", record.data["date"])
+            if year:
+                record.update_field(
+                    key="year",
+                    value=year.group(0),
+                    source="unkown_source_prep",
+                    keep_source_if_equal=True,
+                )
+
+    def __unify_special_characters(self, *, record: colrev.record.PrepRecord) -> None:
+        # Remove html entities
+        for field in list(record.data.keys()):
+            # Skip dois (and their provenance), which may contain html entities
+            if field in [
+                "colrev_masterdata_provenance",
+                "colrev_data_provenance",
+                "doi",
+            ]:
+                continue
+            if field in ["author", "title", "journal"]:
+                record.data[field] = re.sub(r"\s+", " ", record.data[field])
+                record.data[field] = re.sub(self.HTML_CLEANER, "", record.data[field])
+
+    def prepare(
+        self, record: colrev.record.PrepRecord, source: colrev.settings.SearchSource
+    ) -> colrev.record.Record:
+        """Source-specific preparation for unknown sources"""
+
+        if not record.has_quality_defects() or record.masterdata_is_curated():
+            return record
+
+        # TODO : assign fields (e.g., to colrev.pubmed.pubmedid)
+
+        self.__heuristically_fix_entrytypes(
+            record=record,
+        )
+
+        self.__impute_missing_fields(record=record)
+
+        self.__format_fields(record=record)
+
+        self.__remove_redundant_fields(record=record)
+
+        self.__unify_special_characters(record=record)
+
+        return record
