@@ -1,0 +1,175 @@
+[tool.poetry]
+name = "darkseid"
+version = "3.2.1"
+description = "A library to interact with comic archives"
+authors = ["Brian Pepple <bdpepple@gmail.com>"]
+license = "GPL-3.0-or-later"
+maintainers = ["Brian Pepple <bdpepple@gmail.com>"]
+readme = "README.rst"
+packages = [{ include = "darkseid" }]
+include = [{ path = "tests", format = "sdist" }]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Utilities",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: POSIX",
+  "Operating System :: POSIX :: BSD",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
+]
+keywords = ["comics", "comic", "metadata", "tagging", "tagger"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Pillow = "^10.0.1"
+natsort = "^8.0.0"
+rarfile = "^4.0"
+pycountry = "^22.3.5"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+pytest = "^7.0.0"
+pytest-cov = "^2.12.1"
+seed-isort-config = "^2.2.0"
+pre-commit = "^2.14.0"
+tox = "^3.24.4"
+lxml = "^4.9.1"
+ruff = "^0.0.280"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx-rtd-theme = "^0.5.2"
+sphinxcontrib-napoleon = "^0.7"
+
+[build-system]
+requires = ["poetry-core>=1.1.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 95
+target-version = ["py39"]
+exclude = "/(.git|.mypy_cache|.pytest_cache|.venv|__pycache__|dist|node_modules|test-results|typings)/"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 95
+default_section = "THIRDPARTY"
+known_first_party = []
+known_third_party = ["PIL", "lxml", "natsort", "pycountry", "pytest", "rarfile"]
+
+[tool.poetry.urls]
+"Homepage" = "https://github.com/Metron-Project/darkseid"
+"Bug Tracker" = "https://github.com/Metron-Project/darkseid/issues"
+
+[tool.coverage.run]
+source = ["darkseid"]
+branch = true
+concurrency = ["multiprocessing"]
+omit = [
+  ".git/*",
+  ".mypy_cache/*",
+  ".pytest_cache/*",
+  ".venv/*",
+  "*__pycache__*",
+  "dist/*",
+  "node_modules/*",
+  "tests/*",
+  "test-results/*",
+  "typings/*",
+]
+
+[tool.ruff]
+fix = true
+line-length = 95
+show-fixes = true
+target-version = "py39"
+ignore = ["A001", "A003"]
+select = [
+  "A",
+  "ANN",
+  "ARG",
+  "B",
+  "BLE",
+  "C40",
+  "COM",
+  "CPY",
+  "DTZ",
+  "E",
+  "ERA",
+  "F",
+  "G",
+  "I",
+  "ICN",
+  "INP",
+  "ISC",
+  "N",
+  "NPY",
+  "PD",
+  "PGH",
+  "PIE",
+  "PLC",
+  "PLE",
+  "PLW",
+  "PT",
+  "PTH",
+  "PYI",
+  "Q",
+  "RET",
+  "RSE",
+  "RUF",
+  "S",
+  "SIM",
+  "SLF",
+  "T10",
+  "T20",
+  "TCH",
+  "TID",
+  "UP",
+  "W",
+  "YTT"
+]
+
+[tool.ruff.flake8-annotations]
+allow-star-arg-any = true
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.isort]
+combine-as-imports = true
+
+[tool.ruff.per-file-ignores]
+"tests/test_*.py" = ["S101", "S320"]
+
+[tool.pytest.ini_options]
+addopts = """
+  -ra
+  --strict-markers
+  --cov
+  --cov-report=html
+  --cov-report=term
+  --ignore=.git
+  --ignore=.pytest_cache
+  --ignore=.venv
+  --ignore=dist
+  --ignore=node_modules
+  --ignore=test-results
+  --ignore=typings
+  --ignore-glob=*__pycache__*
+  -p no:warnings
+"""
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.coverage.html]
+directory = "test-results/coverage"
