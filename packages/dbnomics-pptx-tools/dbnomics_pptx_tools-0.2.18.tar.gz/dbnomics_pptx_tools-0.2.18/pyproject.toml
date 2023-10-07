@@ -1,0 +1,134 @@
+[project]
+name = "dbnomics_pptx_tools"
+version = "0.2.18"
+description = "DBnomics PowerPoint (pptx) tools"
+authors = [{ name = "Christophe Benz", email = "christophe.benz@nomics.world" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "daiquiri",
+  "DBnomics",
+  "isodate",
+  "lxml",
+  "more-itertools",
+  "parsy",
+  "pydantic < 2.0",
+  "python-pptx",
+  "python-slugify",
+  "PyYAML",
+  "requests",
+  "tabulate",
+  "typer[all]",
+  "webcolors",
+]
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "mypy",
+  "pip-tools",
+  "pre-commit",
+  "ruff",
+  "types-python-slugify",
+  "types-PyYAML",
+  "types-requests",
+  "types-tabulate",
+]
+
+[project.scripts]
+dbnomics-pptx = "dbnomics_pptx_tools.cli.app:app"
+
+[project.urls]
+"Homepage" = "https://git.nomics.world/dbnomics/dbnomics-pptx-tools"
+"Bug Tracker" = "https://git.nomics.world/dbnomics/dbnomics-pptx-tools/-/issues"
+
+[tool.black]
+line-length = 120
+
+[tool.mypy]
+packages = ["dbnomics_pptx_tools"]
+plugins = ["pydantic.mypy"]
+strict = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = [
+  "dbnomics",
+  "isodate",
+  "lxml.*",
+  "pandas",
+  "parsy",
+  "pptx.*",
+  "webcolors",
+]
+
+[tool.ruff]
+exclude = [
+  "__pycache__",
+  ".cache",
+  ".eggs",
+  ".git",
+  ".mypy_cache",
+  ".pytest_cache",
+  ".venv",
+  "*.egg-info",
+  "build",
+  "dist",
+]
+ignore = [
+  "ANN101",
+  "ANN102",
+  "ANN401",
+  "BLE001",
+  "COM",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "N818",
+  "PD",
+  "S101",
+]
+line-length = 120
+select = ["ALL"]
+unfixable = ["COM", "ERA", "F841"]
+
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
+[tool.ruff.flake8-builtins]
+builtins-ignorelist = ["set"]
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "double"
+
+[tool.ruff.flake8-type-checking]
+runtime-evaluated-base-classes = ["pydantic.BaseModel"]
+
+[tool.ruff.isort]
+known-first-party = ["dbnomics_pptx_tools"]
+
+[tool.ruff.pep8-naming]
+classmethod-decorators = [
+  "classmethod",
+  "pydantic.root_validator",
+  "pydantic.validator",
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F403"]
+"src/dbnomics_pptx_tools/cli/*.py" = ["FBT001", "FBT003", "UP007"]
+
+[tool.ruff.pylint]
+max-args = 11
