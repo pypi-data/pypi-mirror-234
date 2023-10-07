@@ -1,0 +1,48 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = [
+        "setuptools>=42.0.0",
+        "wheel>=0.34.2",
+        "numpy;python_version >= '3.9' and platform_python_implementation == 'PyPy'",
+        "oldest-supported-numpy;python_version < '3.9' or platform_python_implementation != 'PyPy'",
+        "pybind11>=2.5.0"
+        ]
+build-backend = "setuptools.build_meta"
+
+
+[tool.cibuildwheel]
+test-command = "pytest {project}/test"
+test-extras = ["test"]
+
+# Skipping pypy 3.10 because there's no numpy wheel
+[tool.cibuildwheel.linux]
+skip = ["pp37*", "cp36-*", "cp37-*"]
+test-command = ""
+before-all = [
+    "yum install -y git openssl-devel ruby",
+    "bash {package}/scripts/build-ocl.sh",
+]
+before-build = [
+    "pip install numpy -Csetup-args=-Dallow-noblas=true",
+]
+repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel}"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux*"
+before-all = [
+    "apk add ruby git openssl-dev",
+    "bash {package}/scripts/build-ocl.sh",
+]
+repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel}"
+
+[tool.cibuildwheel.macos]
+skip = ["pp*", "cp36-*", "cp37-*", "cp312-*"]
+before-all = "bash {package}/scripts/build-ocl-macos.sh"
+test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
+# https://github.com/conda-forge/pyopencl-feedstock/blob/6f3c5de59b18c9518abba3cb94f6ae92964553f8/recipe/meta.yaml#L62-L63
+
+[tool.cibuildwheel.windows]
+skip = ["*-win32", "pp*", "cp36-*", "cp37-*", "cp312-*"]
+test-command = ""
+before-all = "bash {package}/scripts/build-ocl-windows.sh"
+before-build = "python configure.py --cl-inc-dir=D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include --cl-lib-dir=\"C:/Program Files/OpenCL-ICD-Loader/lib\""
