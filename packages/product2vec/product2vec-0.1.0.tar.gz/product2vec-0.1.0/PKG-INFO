@@ -1,0 +1,94 @@
+Metadata-Version: 2.1
+Name: product2vec
+Version: 0.1.0
+Summary: Product2Vec model for finding complementary and fungible products
+Author-email: Theo Vall <fedorvall.ds@gmail.com>
+License: MIT License
+        
+        Copyright (c) 2023 Theo Vall
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Homepage, https://github.com/TheoVall-DS/product2vec
+Keywords: Word2Vec,complementary goods,fungible goods
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Scientific/Engineering
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: gensim>=4.3.1
+Requires-Dist: joblib>=1.2.0
+Requires-Dist: numpy>=1.24.3
+Requires-Dist: scipy>=1.10.1
+Provides-Extra: dev
+Requires-Dist: black>=22.6.0; extra == "dev"
+Requires-Dist: isort>=5.9.3; extra == "dev"
+Requires-Dist: pylint>=2.14.5; extra == "dev"
+Requires-Dist: pytest>=7.1.3; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![pipeline](https://github.com/TheoVall-DS/product2vec/actions/workflows/python-app.yml/badge.svg)](https://github.com/TheoVall-DS/product2vec/actions/workflows/python-app.yml)
+[![codecov](https://codecov.io/gh/TheoVall-DS/product2vec/graph/badge.svg?token=QYUC5D65PT)](https://codecov.io/gh/TheoVall-DS/product2vec)
+
+# product2vec
+
+product2vec is a Python library that implements Product2Vec model. It is capable of finding complements and substitutes among products given shopping baskets. Current implementation is based on the original paper: https://ssrn.com/abstract=3519358
+
+# Installation
+
+```
+pip install product2vec
+```
+
+# Usage
+
+```
+>>> from product2vec import Product2Vec
+>>> # toy dataset with two baskets and 4 products
+>>> data = [
+...     ['coffee', 'cookies', 'chocolate'],
+...     ['tea', 'cookies', 'chocolate'],
+... ]
+>>> prod2vec = Product2Vec(vector_size=3, min_count=1, sample=0, seed=1, workers=1)
+>>> _ = prod2vec.fit(data)
+>>> prod2vec.show_substitutes(product='tea', topn=2)
+[('coffee', 0.024425969), ('chocolate', 0.023691988)]
+>>> prod2vec.show_complements(product='cookies', topn=2)
+[('chocolate', 0.5030633), ('coffee', 0.5007087)]
+```
+
+Refer to `usage_example.ipynb` which can be found in GitHub repository for short model description and elaborate usage.
+
+# Contributing
+
+If you spot any bugs or have suggestions don't hesitate to open an issue.
