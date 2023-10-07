@@ -1,0 +1,40 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2022, Globex Corporation
+# All rights reserved.
+#
+from connect.eaas.core.enums import ResultType
+
+from {{ package_name }}.tfnapp import {{ project_slug|replace("_", " ")|title|replace(" ", "") }}TransformationsApplication
+
+
+def test_copy_columns(connect_client, logger, mocker):
+    app = {{ project_slug|replace("_", " ")|title|replace(" ", "") }}TransformationsApplication(
+        connect_client,
+        logger,
+        mocker.MagicMock(),
+        installation_client=connect_client,
+        installation={'id': 'EIN-0000'},
+        context=mocker.MagicMock(),
+        transformation_request={
+            'transformation': {
+                'settings': [
+                    {'from': 'ColumnA', 'to': 'NewColC'},
+                    {'from': 'ColumnB', 'to': 'NewColD'},
+                ],
+            },
+        },
+    )
+
+    response = app.copy_columns(
+        {
+            'ColumnA': 'ContentColumnA',
+            'ColumnB': 'ContentColumnB',
+        },
+    )
+    assert response.status == ResultType.SUCCESS
+    assert response.transformed_row == {
+        'NewColC': 'ContentColumnA',
+        'NewColD': 'ContentColumnB',
+    }
+

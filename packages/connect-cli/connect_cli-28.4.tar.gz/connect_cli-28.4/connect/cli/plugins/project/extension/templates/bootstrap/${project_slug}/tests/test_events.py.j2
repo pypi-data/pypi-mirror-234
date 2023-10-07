@@ -1,0 +1,61 @@
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) {% now 'utc', '%Y' %}, {{ author }}
+# All rights reserved.
+#
+{% if use_asyncio == 'y' -%}
+import pytest
+
+{% endif -%}
+from {{ package_name }}.events import {{ project_slug|replace("_", " ")|title|replace(" ", "") }}EventsApplication
+
+{% for bg_event in background -%}
+{% if use_asyncio == 'y' %}
+@pytest.mark.asyncio
+{%- endif %}
+{% if use_asyncio == 'y' %}async {% endif %}def test_handle_{{ bg_event }}(
+    {% if use_asyncio == 'y' %}async_connect_client{% else %}connect_client{% endif %},
+    {% if use_asyncio == 'y' %}async_client_mocker_factory{% else %}client_mocker_factory{% endif %},
+    logger,
+):
+    config = {}
+    request = {'id': 1}
+    ext = {{ project_slug|replace("_", " ")|title|replace(" ", "") }}EventsApplication({% if use_asyncio == 'y' %}async_connect_client{% else %}connect_client{% endif %}, logger, config)
+    result = {% if use_asyncio == 'y' %}await {% endif %}ext.handle_{{ bg_event }}(request)
+    assert result.status == 'success'
+
+{% endfor -%}
+
+{% for interactive_event in interactive -%}
+{% if use_asyncio == 'y' %}
+@pytest.mark.asyncio
+{%- endif %}
+{% if use_asyncio == 'y' %}async {% endif %}def test_handle_{{ interactive_event }}(
+    {% if use_asyncio == 'y' %}async_connect_client{% else %}connect_client{% endif %},
+    {% if use_asyncio == 'y' %}async_client_mocker_factory{% else %}client_mocker_factory{% endif %},
+    logger,
+):
+    config = {}
+    request = {'id': 1}
+    ext = {{ project_slug|replace("_", " ")|title|replace(" ", "") }}EventsApplication({% if use_asyncio == 'y' %}async_connect_client{% else %}connect_client{% endif %}, logger, config)
+    result = {% if use_asyncio == 'y' %}await {% endif %}ext.handle_{{ interactive_event }}(request)
+    assert result.status == 'success'
+    assert result.body == request
+
+{% endfor -%}
+
+{% if 'scheduled' in event_types -%}
+{% if use_asyncio == 'y' %}
+@pytest.mark.asyncio
+{%- endif %}
+{% if use_asyncio == 'y' %}async {% endif %}def test_execute_scheduled_processing(
+    {% if use_asyncio == 'y' %}async_connect_client{% else %}connect_client{% endif %},
+    {% if use_asyncio == 'y' %}async_client_mocker_factory{% else %}client_mocker_factory{% endif %},
+    logger,
+):
+    config = {}
+    request = {'id': 1}
+    ext = {{ project_slug|replace("_", " ")|title|replace(" ", "") }}EventsApplication({% if use_asyncio == 'y' %}async_connect_client{% else %}connect_client{% endif %}, logger, config)
+    result = {% if use_asyncio == 'y' %}await {% endif %}ext.execute_scheduled_processing(request)
+    assert result.status == 'success'
+{% endif -%}

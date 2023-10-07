@@ -1,0 +1,6 @@
+FROM cloudblueconnect/connect-extension-runner:{{runner_version}}
+
+COPY pyproject.toml poetry.* package*.json /extension/
+WORKDIR /extension
+RUN poetry update && poetry install --no-root
+RUN if [ -f "/extension/package.json" ]; then npm install; fi

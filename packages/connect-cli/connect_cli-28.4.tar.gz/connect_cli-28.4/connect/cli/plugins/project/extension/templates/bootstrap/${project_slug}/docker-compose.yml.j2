@@ -1,0 +1,51 @@
+version: '3'
+
+{%- if webapp_supports_ui == 'y'%}
+volumes:
+  node_modules:
+{%- endif %}
+
+services:
+  {{project_slug}}_dev:
+    container_name: {{project_slug}}_dev
+    build:
+      context: .
+    working_dir: /extension
+    command: cextrun -d --no-rich-logging
+    volumes: 
+      - .:/extension
+      {%- if webapp_supports_ui == 'y'%}
+      - node_modules:/extension/node_modules
+      {%- endif %}
+    env_file:
+      - .{{ project_slug }}_dev.env
+
+  {{project_slug}}_bash:
+    container_name: {{project_slug}}_bash
+    build:
+      context: .
+    working_dir: /extension
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/extension
+      {%- if webapp_supports_ui == 'y'%}
+      - node_modules:/extension/node_modules
+      {%- endif %}
+    env_file:
+      - .{{ project_slug }}_dev.env
+
+  {{project_slug}}_test:
+    container_name: {{project_slug}}_test
+    build:
+      context: .
+    working_dir: /extension
+    command: extension-test
+    volumes:
+      - .:/extension
+      {%- if webapp_supports_ui == 'y'%}
+      - node_modules:/extension/node_modules
+      {%- endif %}
+    env_file:
+      - .{{ project_slug }}_dev.env
