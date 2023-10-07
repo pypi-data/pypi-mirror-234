@@ -1,0 +1,25 @@
+- Cambio:
+  - Alocação neutra 20%, indo de -20% -> +20% (0% - 40%)
+
+  - Testar market timing com e sem carrego (spread cdi x fed funds)
+
+- Indicadores:
+  - [ ] Donchian channels USDBRL
+  - [ ] auto regressão USDBRL x Dias
+  - [ ] USDBRL/DXEmergentes
+  - [ ] USDBRL/DXY  (USDBRL/max(USDBRL) / 0.0072)
+  - [ ] Balanço pagamentos
+  - [ ] BRCOINDX Index (Mensal, inclui metal e petroleo) | BRICMBR Index (diario, não inclui metal e petr)
+  - [ ] Terms of trade (quanto mais alto, melhor pro Brasil)
+  - [ ] Diff juros (selic - fed funds)
+  - [ ] Diff juros futuros (selic 1year - fed funds 1year)
+  - [ ] Sharpe (selic - fed funds) / vol_brasil 
+  - [ ] TODO fazer sharpe Brasil X Emergentes
+  - [ ] CDS Brasil
+  - [ ] Selic/CDS
+  - [ ] Growth/Value empresas US
+  - [ ] VIX
+  - [ ] Uncertainty (quanto mais alto, pior para brasil)
+  - [ ] contratos
+  - [ ] regressão multipla: $USDBRL = \beta_0 + \beta_1DXY + \beta_2BRCOINDX + \beta_3DifJuros + \beta_4Uncertainty$
+    - [ ] refazer com terms of trade no lugar de BRCOINDX
