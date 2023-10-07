@@ -1,0 +1,105 @@
+from . import Fuzz
+import ctypes
+
+
+argtypes_dict = {
+    'scalar_multiplication': [ctypes.c_char_p, ctypes.c_char_p],
+    'scalar_multiplications': [ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p],
+    'get_x_to_y': [ctypes.c_char_p, ctypes.c_bool, ctypes.c_char_p],
+    'point_increment': [ctypes.c_char_p, ctypes.c_char_p],
+    'point_negation': [ctypes.c_char_p, ctypes.c_char_p],
+    'point_doubling': [ctypes.c_char_p, ctypes.c_char_p],
+    'privatekey_to_coinaddress': [ctypes.c_int, ctypes.c_int, ctypes.c_bool, ctypes.c_char_p],
+    'privatekey_to_address': [ctypes.c_int, ctypes.c_bool, ctypes.c_char_p],
+    'hash_to_address': [ctypes.c_int, ctypes.c_bool, ctypes.c_char_p],
+    'pubkey_to_address': [ctypes.c_int, ctypes.c_bool, ctypes.c_char_p],
+    'privatekey_to_h160': [ctypes.c_int, ctypes.c_bool, ctypes.c_char_p, ctypes.c_char_p],
+    'privatekey_loop_h160': [ctypes.c_ulonglong, ctypes.c_int, ctypes.c_bool, ctypes.c_char_p, ctypes.c_char_p],
+    'privatekey_loop_h160_sse': [ctypes.c_ulonglong, ctypes.c_int, ctypes.c_bool, ctypes.c_char_p, ctypes.c_char_p],
+    'pubkey_to_h160': [ctypes.c_int, ctypes.c_bool, ctypes.c_char_p, ctypes.c_char_p],
+    'pbkdf2_hmac_sha512_dll': [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int],
+    'pbkdf2_hmac_sha512_list': [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulonglong, ctypes.c_int, ctypes.c_ulonglong],
+    'pub_endo1': [ctypes.c_char_p, ctypes.c_char_p],
+    'pub_endo2': [ctypes.c_char_p, ctypes.c_char_p],
+    'b58_encode': [ctypes.c_char_p],
+    'b58_decode': [ctypes.c_char_p],
+    'bech32_address_decode': [ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p],
+    'get_sha256': [ctypes.c_char_p],
+    'create_baby_table': [ctypes.c_void_p],
+    'point_addition': [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p],
+    'point_subtraction': [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p],
+    'point_loop_subtraction': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p],
+    'point_loop_addition': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p],
+    'point_vector_addition': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p],
+    'point_sequential_increment_P2': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p],
+    'point_sequential_increment_P2_mcpu': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p],
+    'point_sequential_increment': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p],
+    'point_sequential_decrement': [ctypes.c_ulonglong, ctypes.c_char_p, ctypes.c_char_p],
+    'pubkeyxy_to_ETH_address': [ctypes.c_char_p],
+    'pubkeyxy_to_ETH_address_bytes': [ctypes.c_char_p, ctypes.c_char_p],
+    'privatekey_to_ETH_address': [ctypes.c_char_p],
+    'privatekey_to_ETH_address_bytes': [ctypes.c_char_p, ctypes.c_char_p],
+    'privatekey_group_to_ETH_address': [ctypes.c_char_p],
+    'privatekey_group_to_ETH_address_bytes': [ctypes.c_char_p, ctypes.c_char_p],
+    'init_P2_Group': [ctypes.c_char_p],
+    'free_memory': [ctypes.c_void_p],
+    'bloom_check_add': [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ubyte, ctypes.c_char_p],
+    'bloom_batch_add': [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ubyte, ctypes.c_char_p],
+    'bloom_check_add_mcpu': [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ubyte, ctypes.c_char_p],
+    'bloom_batch_add_mcpu': [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ubyte, ctypes.c_char_p],
+    'create_bsgs_bloom_mcpu': [ctypes.c_int, ctypes.c_ulonglong, ctypes.c_ulonglong, ctypes.c_ubyte, ctypes.c_char_p],
+    'bsgs_2nd_check_prepare': [ctypes.c_ulonglong],
+    'bsgs_2nd_check': [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_ulonglong, ctypes.c_char_p],
+    'Load_data_to_memory': [ctypes.c_char_p, ctypes.c_bool],
+    'check_collision': [ctypes.c_char_p]
+
+}
+
+restype_dict = {
+    'privatekey_to_coinaddress': ctypes.c_void_p,
+    'privatekey_to_address': ctypes.c_void_p,
+    'privatekey_to_address_bytes': ctypes.c_void_p,
+    'hash_to_address': ctypes.c_void_p,
+    'pubkey_to_address': ctypes.c_void_p,
+    'pubkey_to_address_bytes': ctypes.c_void_p,
+    'pubkey_group_to_address': ctypes.c_void_p,
+    'pubkey_group_to_address_bytes': ctypes.c_void_p,
+    'pubkey_to_h160': ctypes.c_void_p,
+    'pubkey_to_h160_bytes': ctypes.c_void_p,
+    'pbkdf2_hmac_sha512': ctypes.c_void_p,
+    'pbkdf2_hmac_sha512_list': ctypes.c_void_p,
+    'pbkdf2_hmac_sha512_list_mcpu': ctypes.c_void_p,
+    'pub_endo1': ctypes.c_void_p,
+    'pub_endo2': ctypes.c_void_p,
+    'b58_encode': ctypes.c_void_p,
+    'b58_decode': ctypes.c_void_p,
+    'bech32_address_decode': ctypes.c_void_p,
+    'get_sha256': ctypes.c_void_p,
+    'create_baby_table': ctypes.c_void_p,
+    'point_addition': ctypes.c_void_p,
+    'point_subtraction': ctypes.c_void_p,
+    'point_loop_subtraction': ctypes.c_void_p,
+    'point_loop_addition': ctypes.c_void_p,
+    'point_vector_addition': ctypes.c_void_p,
+    'point_sequential_increment_P2': ctypes.c_void_p,
+    'point_sequential_increment_P2_mcpu': ctypes.c_void_p,
+    'point_sequential_increment': ctypes.c_void_p,
+    'point_sequential_decrement': ctypes.c_void_p,
+    'pubkeyxy_to_ETH_address': ctypes.c_void_p,
+    'pubkeyxy_to_ETH_address_bytes': ctypes.c_void_p,
+    'privatekey_to_ETH_address': ctypes.c_void_p,
+    'privatekey_to_ETH_address_bytes': ctypes.c_void_p,
+    'privatekey_group_to_ETH_address': ctypes.c_void_p,
+    'bloom_check_add': ctypes.c_void_p,
+    'bsgs_2nd_check': ctypes.c_void_p,
+    'check_collision': ctypes.c_bool
+
+}
+
+
+for func_name, args in argtypes_dict.items():
+    getattr(Fuzz, func_name).argtypes = args
+
+
+for func_name, restype in restype_dict.items():
+    getattr(Fuzz, func_name).restype = restype
