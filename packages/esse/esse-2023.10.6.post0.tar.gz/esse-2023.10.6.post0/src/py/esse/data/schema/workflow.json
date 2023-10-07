@@ -1,0 +1,63 @@
+{
+    "$id": "workflow",
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "workflow schema",
+    "type": "object",
+    "allOf": [
+        {
+            "$ref": "workflow/base.json"
+        }
+    ],
+    "properties": {
+        "subworkflows": {
+            "description": "Array of subworkflows. Subworkflow can be an instance of workflow to allow for nesting",
+            "type": "array",
+            "items": {
+                "allOf": [
+                    {
+                        "$ref": "workflow/subworkflow.json"
+                    }
+                ]
+            }
+        },
+        "units": {
+            "description": "Contains the Units of the Workflow",
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {
+                        "$ref": "workflow/unit.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/io.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/map.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/reduce.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/condition.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/assertion.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/execution.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/assignment.json"
+                    },
+                    {
+                        "$ref": "workflow/unit/processing.json"
+                    }
+                ]
+            }
+        }
+    },
+    "required": [
+        "units",
+        "subworkflows"
+    ]
+}
