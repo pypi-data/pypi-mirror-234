@@ -1,0 +1,8 @@
+FUNCTION = "function"
+DATA_SAMPLE = "data_sample"
+DATASET = "dataset"
+MODEL = "model"
+METRIC = "metric"
+TASK = "task"
+COMPUTE_PLAN = "compute_plan"
+ORGANIZATION = "organization"
