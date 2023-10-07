@@ -1,0 +1,64 @@
+Metadata-Version: 2.1
+Name: npc-lims
+Version: 0.1.79
+Summary: Tools to fetch and update paths, metadata and state for Mindscope Neuropixels sessions, in the cloud.
+Author-email: Arjun Sridhar <arjun.sridhar@alleninstitute.org>, Ben Hardcastle <ben.hardcastle@alleninstitute.org>
+License: MIT
+Project-URL: Repository, https://github.com/AllenInstitute/npc_lims
+Project-URL: Issues, https://github.com/AllenInstitute/npc_lims/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: typing-extensions >=4.7.1
+Requires-Dist: npc-session >=0.1.0
+Requires-Dist: redis >=4.1.4
+Requires-Dist: universal-pathlib >=0.1.1
+Requires-Dist: aind-codeocean-api >=0.2.4
+Requires-Dist: s3fs >=2023.6.0
+Requires-Dist: types-redis >=4.6.0.3
+Requires-Dist: pydbhub-bjh >=0.0.8
+Requires-Dist: pyyaml >=6.0.1
+Requires-Dist: types-PyYAML >=6.0.12.11
+Requires-Dist: python-dotenv >=1.0.0
+Requires-Dist: pyopenssl >=23.2.0
+
+# npc_lims
+
+**n**euro**p**ixels **c**loud **l**ab **i**nformation **m**anagement **s**ystem
+Tools to fetch and update paths, metadata and state for Mindscope Neuropixels sessions, in the cloud.
+
+[![PyPI](https://img.shields.io/pypi/v/npc-lims.svg?label=PyPI&color=blue)](https://pypi.org/project/npc-lims/)
+[![Python version](https://img.shields.io/pypi/pyversions/npc-lims)](https://pypi.org/project/npc-lims/)
+
+[![Coverage](https://img.shields.io/codecov/c/github/alleninstitute/npc_lims?logo=codecov)](https://app.codecov.io/github/AllenInstitute/npc_lims)
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/alleninstitute/npc_lims/publish.yml?label=CI/CD&logo=github)](https://github.com/alleninstitute/npc_lims/actions/workflows/publish.yml)
+[![GitHub
+issues](https://img.shields.io/github/issues/alleninstitute/npc_lims?logo=github)](https://github.com/alleninstitute/npc_lims/issues)
+
+## quickstart
+
+```bash
+pip install npc_lims
+```
+
+Get some minimal info on all the tracked sessions available to work with:
+
+```python
+>>> from npc_lims import get_session_info;
+
+# each record in the sequence has info about one session:
+>>> tracked_sessions = get_session_info()
+>>> tracked_sessions[0]             # doctest: +SKIP
+SessionInfo(id='626791_2022-08-15', subject=626791, date='2022-08-15', idx=0, project='DRPilotSession', is_ephys=True, is_sync=True, allen_path=PosixUPath('//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/DRpilot_626791_20220815'))
+>>> tracked_sessions[0].is_ephys
+True
+>>> all(s.date.year >= 2022 for s in tracked_sessions)
+True
+
+```
