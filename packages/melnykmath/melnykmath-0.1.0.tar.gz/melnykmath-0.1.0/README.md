@@ -1,0 +1,29 @@
+# my_python_library
+
+щоб створити власну бібліотеку
+1. встановити :
+% pip install wheel 
+% pip install setuptools 
+% pip install twine
+
+
+2. створити папку, яку буде імпортуватись
+3. обовʼязковий файл setup.py
+'''
+from setuptools import find_packages, setup
+
+setup(
+    name='mypythonlib',
+    packages=find_packages(include=['mypythonlib']),
+    version='0.1.0',
+    description='My first Python library',
+    author='Me',
+    install_requires=[],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest==4.4.1'],
+    test_suite='tests',
+)
+'''
+4. python setup.py bdist_wheel
+
+Install library - pip install /path/to/wheelfile.whl
