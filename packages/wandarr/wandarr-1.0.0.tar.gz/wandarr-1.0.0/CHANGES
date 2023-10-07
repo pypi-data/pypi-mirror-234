@@ -1,0 +1,199 @@
+
+### Version History
+
+Version 2.2.7:
+    * Fixed streaming host class where spaces in filenames weren't being recognized by Windows
+
+Version 2.2.6:
+    * Added new templates which can be used instead of the more complicated profiles
+
+Version 2.2.5:
+    * Much overdue doc updates
+    * Addition of agent mode as alternative to using ssh.
+    * Fixed issue cleaning up temp files on Windows host in streaming mode.
+
+Version 2.2.4:
+    * Fixed issue where sometimes the wrong video stream is detected when there are multiple
+
+Version 2.2.3:
+    * Minor issue with host name status during clustered transcoding
+
+Version 2.2.1:
+    * Bug fix when no mixins given.
+
+Version 2.2:
+    * Removed unportable is_mount detection. Now always default to any designated temp drive/path for transcoding.
+    * Added mixins as a better alternative to includes (see docs).
+
+Version 2.1.0:
+    * Added experimental support for HandBrakeCLI.
+    * Requires Python 3.7 or higher
+    * Removed Plex integration.
+    * Removed Sonarr integration
+    * Fixed typo in sample.yml and updated Cuda examples.
+
+Version 2.0.14:
+    * Fixed ffprobe output parsing problem - thanks Grant.
+
+Version 2.0.13
+    * Added support for ffprobe media analysis as a fallback if normal ffmpeg info dump parsing fails.
+    * Fixed a regex issue where certain patterns in a "path" criteria didn't match
+    * Tweaks to the sample transcode.yml
+
+Version 2.0.12
+    * Fixed bad unlink() reference in threshold cleanup.
+
+Version 2.0.11
+    * Fixed bug preventing completed work items from being removed from the queue file.
+
+Version 2.0.10
+    * Fixed but on Windows trying to detect mounted filesystem.  Not available under Windows.
+
+Version 2.0.9
+    * Added 'fls_path' option to transcode.yml, which allows designating a "fast local storage" path where
+      output is written during transcode rather than thrashing your network share/NAS with many small reads
+      and writes. Final output is moved to the share when complete.  Only applicable if the input file is on
+      a detected network share.
+
+    * Configuration files now require lists to use the multi-line YAML format for consistency (see updated example included)
+
+Version 2.0.8
+    * Fixed automap=No recognition problem using non-clustered transcoding.
+
+Version 2.0.7
+    * Fixed minor string formatting problem on abort of encode.
+
+Version 2.0.6
+    * Suppress summary on --dry-run
+
+Version 2.0.5
+    * Fixed another unhandled exception collecting statistics when using non-clustered transcoding.
+
+Version 2.0.4
+    * Fixed unhandled exception collecting statistics when using non-clustered transcoding.
+
+Version 2.0.3
+    * Prevent error message when remote host health testing times out.
+    * Fixed erroneous "queue file not found" message.
+
+Version 2.0.2
+    * Added summary output of full job with elapsed time
+    * Fixed output bug which failed to report proper filename on termination of encode job.
+
+Version 2.0.1
+    * Added "automap" setting to Global and Profile sections to expressly enable or disable mapping (default is ENABLED).
+    * Added include_languages to "audio" and "subtitle" profile sections.  Use Include or Exclude, not both.  If you
+      use both then Includes will take precedence.
+    * Enabled audio and subtitle filtering in cluster mode too.
+    * Fixed bug in inverted vcodec check (ex. vcodec !h264)
+    * Fixed bug where cluster mode wasn't removing completed jobs from the queue file.
+    * Been running reliably and well for months now - time for a version bump to 2.0!
+    * Added a ctrl-c (sigint) handler to prevent threads from removing original media during termination.
+      This seems to be a python 3.7 thing.
+
+Version 1.5.12
+    * Merging of input_options and output_options supported at the option level. For example, if the included
+      profiles has "-c:a copy" and the including profile has "-c:a libmp3lame", the including profile option will
+      take precedence.
+
+Version 1.5.11
+    * Default behavior is to now auto-map all audio and subtitle streams during transcode.
+        May be disabled at the global or profile level with  automap: no
+    * More unit test fixes and improvements.
+    * Updated sample transcode.yml for better feature reference
+
+Version 1.5.10
+    * Fixed broken unit tests from previous release
+    * Fixed rule predicates matching on runtime after conversion to seconds-level detail.
+
+Version 1.5.9
+    * Added new optional "include" directive in profiles to help reduce profile repetition.
+    * Fixed error message when input file not found.
+    * Fixed divide-by-zero error when video runtime < 1 minute. Calculations how include seconds rather than just whole minutes
+
+Version 1.5.8
+    * Updated yaml loader to support latest pyyaml library.
+
+Version 1.5.7
+    * Threshold check termination resulted in a misleading error message.
+    * Windows wildcard expansion fixed.
+    * Changed rule criteria for range matching to be inclusive. So 30-60 now mean between 30 and 60 inclusively.
+
+Version 1.5.5
+    * Threshold check termination resulted in a misleading error message.
+    * Doc link to video series part 2.
+    * Cluster documentation revised and corrected.
+
+Version 1.5.4
+    * Fixed bug that suppressed certain ffmpeg error condition messages.
+    * -k flag ignored under certain situations.
+    * Doc link to video series part 1.
+    * Fixed some code inconsistencies regarding global flags
+
+Version 1.5.3
+    * Removed requirement for queue configuration if not using queues.
+    * Documentation and Pipfile tweaks.
+
+Version 1.5.2
+    * Fixed media info parsing problem with file generated from Final Cut Pro X
+    * Fixed regex problem matching pathname in a rule
+    * Fixed divide by zero error on status output when not using hardware acceleration
+    * Tightened up the output
+    * Fixed color output
+    * Better test coverage with mocking.
+
+Version 1.4.7
+    * Multi-queue support in cluster mode. Run multiple concurrent jobs on remote machines now.
+    * import error in utils.py
+    * -t option removed from ssh as it was screwing up the local terminal output
+
+Version 1.4.6
+    * Configuration file change: "rules" section of each rule renamed to "criteria" for clarity.
+
+Version 1.4.5
+    * Calculate and show compression % in progress output
+    * Allow cluster mode profile override
+    * Added threshold_check to enable threshold checking to start at designated percentage done.
+    * Cluster mode -k option fix.
+
+Version 1.4.4
+    * Optional colorized terminal output.
+    * Encode runs are logged for inspection if something goes wrong.
+    * Cluster mode not honoring default queue file.
+    * Cluster mode --host override fixed.
+
+Version 1.4.1
+    * Regex problem monitoring ffmpeg output.
+    * Refactored ffmpeg control into a class
+
+Version 1.3
+    * Added support for local host in the cluster so that the same host managing work also does work.
+    * Monitoring of ffmpeg jobs and progress reporting.
+    * Support for multiple allowed profiles for a host.
+    * New --host commandline option to force cluster encodes on a designated host only
+    * Large code refactoring.
+
+Version 1.2.2
+    * Path to ssh is now configurable.
+
+Version 1.2.1
+    * Multiple queue definitions, allowing for more fine threading control.
+    * New cluster mode to allow for agent-less, multi-machine encode offloading.
+    * Cluster host definitions support Linux, MacOS, and Windows.
+    * Support for running on Windows 10.
+    * Rule criteria now allows for range testing with numeric types.
+    * Continue to improve unit testing suite.
+    * Documentation revisions.
+
+Version 1.1.0
+    * Fixed bug that would not allow empty input options in profile definition.
+
+Version 1.0.1
+    * Added support for use as a Sonarr connection custom script.
+    * Fixed broken unit test.
+    * Install sample transcode.yml file in /usr/share/pytranscoder folder.
+    * Revised some details in README.md
+    * Started this CHANGES file.
+
+Version 1.0.0
+    * Initial Release to pypi.org
