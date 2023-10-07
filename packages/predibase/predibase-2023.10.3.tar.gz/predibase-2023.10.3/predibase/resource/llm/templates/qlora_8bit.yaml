@@ -1,0 +1,50 @@
+template_meta:
+  name: qlora_8bit
+  description: |
+    Fine-tuning with 8-bit quantization of the model weights. Slightly
+    slower and may require larger and more expensive GPUs to train than
+    qlora_4bit, but may improve fine-tuned model performance.
+
+model_type: llm
+base_model: {base_model}
+
+quantization:
+  bits: 8
+
+adapter:
+  type: lora
+
+prompt:
+  template: |
+    {prompt_template}
+
+input_features:
+  - name: prompt
+    type: text
+    preprocessing:
+      max_sequence_length: null
+
+output_features:
+  - name: {target}
+    type: text
+    preprocessing:
+      max_sequence_length: null
+
+preprocessing:
+  split:
+    type: random
+    probabilities: [0.95, 0, 0.05]
+
+trainer:
+  type: finetune
+  epochs: 3
+  batch_size: 1
+  eval_batch_size: 2
+  learning_rate: 0.0002
+  learning_rate_scheduler:
+    decay: cosine
+    warmup_fraction: 0.03
+  optimizer:
+    type: paged_adam
+  gradient_accumulation_steps: 16
+  enable_gradient_checkpointing: true
