@@ -1,0 +1,1 @@
+These tutorial notebooks can be executed without install through [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/git/https%3A%2F%2Fgitlab.cta-observatory.org%2Fcta-consortium%2Faswg%2Ftools%2Fspefit/master?filepath=tutorials)
