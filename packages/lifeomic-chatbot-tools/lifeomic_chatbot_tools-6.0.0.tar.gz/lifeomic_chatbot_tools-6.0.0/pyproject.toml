@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "lifeomic-chatbot-tools"
+version = "6.0.0"
+description = "Utilities for machine learning, web services, and cloud infrastructure."
+authors = ["LifeOmic Development <development@lifeomic.com>"]
+license = "MIT"
+readme = "README.md"
+
+# These are the scripts that can be run in this repo after the dependencies are installed.
+# They can be run by executing e.g. `poetry run poe lint`.
+[tool.poe.tasks]
+lint = "scripts/lint.sh"
+"test:unit" = { shell = "poetry run coverage run && poetry run coverage report" }
+"test:integration" = "scripts/integration_test.sh"
+ci = ["lint", "test:unit", "test:integration"]
+"docs" = "scripts/build_docs.sh"
+publish = "scripts/publish.sh"
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+fastapi = "^0.103.2"
+pydantic = "^2.4.2"
+requests = "^2.21.0"
+loguru = "^0.5.1"
+boto3 = { version = "^1.21.7", optional = true }
+numpy = { version = "^1.19.2", optional = true }
+scikit-learn = { version = "^0.24.2", optional = true }
+networkx = { version = "^2.5.1", optional = true }
+httpx = "^0.23.1"
+
+[tool.poetry.extras]
+ml = ["numpy", "scikit-learn", "networkx"]
+aws = ["boto3"]
+
+[tool.poetry.group.dev.dependencies]
+Sphinx = "^4.2.0"
+myst-parser = "^0.15.2"
+sphinx-rtd-theme = "^1.0.0"
+toml = "^0.10.2"
+pre-commit = "^2.21.0"
+torch = "^1.9.1"
+transformers = "^4.10.2"
+sentencepiece = "^0.1.96"
+black = "^22.3.0"
+mangum = "^0.15.1"
+coverage = "^6.5.0"
+poethepoet = "^0.24.0"
+pyright = "^1.1.329"
+flake8 = "^6.1.0"
+isort = "^5.12.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+line_length = 120
+lines_after_imports = 2
+known_first_party = "lifeomic_chatbot_tools,test"
+
+[tool.pyright]
+include = ["lifeomic_chatbot_tools", "test"]
+typeCheckingMode = "basic"
+reportUnboundVariable = "warning"
+
+[tool.black]
+line-length = 120
+
+[tool.coverage.run]
+branch = true
+include = ["lifeomic_chatbot_tools/*"]
+command_line = " -m unittest discover -s test/unit/ -p test*.py -v "
+
+[tool.coverage.report]
+skip_empty = true
+fail_under = 90
+show_missing = true
