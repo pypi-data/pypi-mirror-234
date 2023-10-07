@@ -1,0 +1,104 @@
+{% block headings %}
+{% import 'macros/heading_render.html' as heading %}
+<h1 style="color: #5e9ca0; text-align: center;"><span style="color: #000000;">Test Execution Report</span></h1>
+
+<p style="color: #2e6c80;"><h2><span style="color: #000000;">Test Case Name : </span></h2>
+<span>{{ Test_Name }}</span></p>
+<p style="color: #2e6c80;"><h2><span style="color: #000000;">Description :</span></h2>
+<span>{{ Test_Objective }}</span></p>
+
+
+
+<table style="width:100%">
+  <colgroup>
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 70%;">
+  </colgroup>
+  <tbody>
+  <tr>
+    <th style="text-align: left;">JIRA User Story ID</th>
+    <td style="text-align: left;">{{ USId }}</td>
+  </tr>
+  <tr>
+    <th style="text-align: left;">JIRA Test Case ID</th>
+    <td style="text-align: left;">{{ TCName }}</td>
+  </tr>
+  <tr>
+    <th style="text-align: left;">JIRA Test Execution ID</th>
+    <td style="text-align: left;">{{ ExecID }}</td>
+  </tr>
+  <tr>
+    <th style="text-align: left;">Labels</th>
+    <td style="text-align: left;">{{ var }}</td>
+  </tr>
+  <tr>
+    <tr>
+    <th style="text-align: left;">Test Environment</th>
+    <td style="text-align: left;">{{ env }}</td>
+  </tr>
+  <tr>
+    <th style="text-align: left;">Version</th>
+    <td style="text-align: left;">1.0</td>
+  </tr>
+  <tr>
+    <th style="text-align: left;">Executed by</th>
+    <td style="text-align: left;">{{ executed }}</td>
+  </tr>
+<!--  <tr>-->
+<!--    <th style="text-align: left;">Test Environment</th>-->
+<!--    <td style="text-align: left;">{{ Envname }}</td>-->
+<!--  </tr>-->
+<!--  <tr>-->
+<!--    <th style="text-align: left;">OS</th>-->
+<!--    <td style="text-align: left;">{{ OS }}</td>-->
+<!--  </tr>-->
+<!--  <tr>-->
+<!--    <th style="text-align: left;">Browser</th>-->
+<!--    <td style="text-align: left;">{{ Browser }}</td>-->
+<!--  </tr>-->
+<!--    <tr>-->
+<!--    <th style="text-align: left;">Browser Version</th>-->
+<!--    <td style="text-align: left;">{{ BrowserVer }}</td>-->
+<!--  </tr>-->
+  <tbody/>
+</table>
+
+{% if Overall_status.startswith("PASS") %}
+    <p style="color: #2e6c80;"><h2><span style="color: #000000;">Test Result : <font color="#00CC00;">{{ Overall_status }}</font></span></h2></p>
+{% elif Overall_status.startswith("FAIL") %}
+    <p style="color: #2e6c80;"><h2><span style="color: #000000;">Test Result : <font color="#ff0000;">{{ Overall_status }}</font></span></h2></p>
+{% else %}
+    <p style="color: #2e6c80;"><h2><span style="color: #000000;">Test Result : <font color="#ff0000;">{{ Overall_status }}</font></span></h2></p>
+{% endif %}
+
+<hr>
+
+<p style="color: #2e6c80;"><h2><span style="color: #000000;">Test Execution Time:</span></h2></p>
+
+<table style="width:100%">
+  <colgroup>
+       <col span="1" style="width: 40%;">
+       <col span="1" style="width: 40%;">
+       <col span="1" style="width: 20%;">
+  </colgroup>
+  <tbody>
+  <tr>
+    <th style="text-align: center; padding: 6px;">Test Start Time</th>
+    <th style="text-align: center; padding: 6px;">Test End Time</th>
+    <th style="text-align: center; padding: 6px;">Test Total Time</th>
+  </tr>
+  <tr>
+    <td>{{ Overall_test_start }}</td>
+    <td>{{ Overall_end_start }}</td>
+    <td>{{ Timediff }} seconds</td>
+  </tr>
+</table>
+
+<hr>
+
+<p style="color: #2e6c80;"><h2><span style="color: #000000;">Execution Details:</span></h2></p>
+
+
+<!--<p style="page-break-before: always">-->
+
+{% endblock %}

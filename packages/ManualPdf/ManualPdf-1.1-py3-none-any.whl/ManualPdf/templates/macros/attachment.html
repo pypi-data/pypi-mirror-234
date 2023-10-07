@@ -1,0 +1,17 @@
+{% macro add_attachment(evidences) -%}
+    {% if evidences %}
+        <hr/>
+        <p>&nbsp;</p>
+        <h3 style="color: #2e6c80;">Evidence(s):</h3>
+    {% endif %}
+    {% for evidence in evidences %}
+        <p><strong>Title:</strong>{{ evidence.get("title") }}</p>
+        <p><strong>Last Modification time:</strong> {{ evidence.get("last_modification") }}</p>
+        {% if evidence.get("content_type") != "image" %}
+            <p><a title='{{ evidence.get("title") }}' href='{{ evidence.get("path") | safe}}'>{{ evidence.get("title") }}</a></p>
+        {% else %}
+            <p><img title='{{ evidence.get("title") }}' src='{{ evidence.get("path") | safe}}' alt='{{ evidence.get("title") }}'/></p>
+        {% endif %}
+    {% endfor %}
+    <hr/>
+{%- endmacro %}
