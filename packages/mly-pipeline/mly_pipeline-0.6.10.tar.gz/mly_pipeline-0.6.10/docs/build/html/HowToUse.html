@@ -1,0 +1,262 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>How to use &#8212; mlyPipeline 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Installation" href="Installation.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="Installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mlyPipeline 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">How to use</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="how-to-use">
+<h1>How to use<a class="headerlink" href="#how-to-use" title="Permalink to this heading">¶</a></h1>
+<section id="search-functionality">
+<h2><strong>Search functionality</strong><a class="headerlink" href="#search-functionality" title="Permalink to this heading">¶</a></h2>
+<p>The main functionality is running a search on a provided stream of data. The suggested use of the pipeline is running the <cite>search.py</cite> script with appropriate options through terminal as it will be shown below.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python search.py --option1 value1 --option2 value2 ...
+</pre></div>
+</div>
+<p>We will describe the different options and how to use them. When you run <cite>search.py</cite>, you call the main function of the script with the following options:</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="search.main">
+<span class="sig-prename descclassname"><span class="pre">search.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/search.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#search.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main functionality of the search script. Given the arguments
+provided it conducts a real time search on gravitational wave data. It
+uses a predefined given model for iference.</p>
+<dl class="simple">
+<dt>detectors: {‘HL’,’HLV’}</dt><dd><p>It specifies which detectors to use to conduct the search. If ‘HL’ is
+chosen, it generates gaussian noise that follows Virgo background(x32),
+to provide nominal data for Virgo.</p>
+</dd>
+<dt>channels: {‘NOISE’,’INJ’}</dt><dd><p>It specifies which channel to use for the search.
+‘NOISE’ represents a predefined set of channels without injections.
+‘INJ’ represents a predifned set of channels with injections.</p>
+</dd>
+<dt>threshold<span class="classifier">float</span></dt><dd><p>The minimum score for witch the search will issue a trigger event.</p>
+</dd>
+<dt>output_directory: str (path, optional)</dt><dd><p>The path of the directory where the search will save the output of the model
+for each instance processed. If not specified it doesn’t save the outputs.</p>
+</dd>
+<dt>trigger_directory: str (path, optional)</dt><dd><p>The path of the directory where the search will save the output of the model
+for each instance that was above the threshold value. If not specified
+it doesn’t save anything. It is important to have this directory specified if
+you want to send triggers to GraceDB (using mly_to_grace.py).</p>
+</dd>
+<dt>triggerplot_directory: str (path, optional)</dt><dd><p>The path of the file where the search will save a plot of the timeseries data
+for each instance that was above the threshold value and issued a trigger.</p>
+</dd>
+<dt>trigger_destination: {‘test, ‘playground’, ‘dev1’, None}</dt><dd><p>The GraceDB domain for the triggers to be uploaded. Each option represent
+a corresponding url. If equals to None, it will not issue an GraceDB event.</p>
+</dd>
+<dt>splitter: list</dt><dd><p>A way to split the search into different parallel jobs. The list must have
+two parameters. The first is the amount of scripts this search is split into.
+The second is which part of the split this function will run. For example a 
+splitter value of [4,1] means that we will splitted the search into 4 scripts
+where each script processes every other 4 seconds, and that this function will
+run the every 4 plus 1 seconds part. For a full search we will have to run the
+same function for splitter values of: [4,0], [4,1], [4,2], [4,3]. If not 
+specified it is equal to [1,0]</p>
+</dd>
+<dt>skymap: bool</dt><dd><p>If True it will allow the creation of a skymap whenever it issues events. This
+is passed to another function ‘mly_to_grace’.</p>
+</dd>
+<dt>time_reference: float</dt><dd><p>A unix time reference so that should be the same among different functions when
+used splitter. It is suggested to use <cite>unixtime=$(date +%s)</cite> at the beggining of
+the script and pass <cite>$unixtime</cite> as time_reference.</p>
+</dd>
+<dt>fileSystem: str/path</dt><dd><p>A path to a valid file system directory. A valid file system
+directory needs to have subfolders with the initials of all
+detectors used and a ‘temp’ file that also includes subfolders
+with initials of all detectors. This is used for the calculation
+of continues false alarm rates. If not specified, it will not save data 
+into the file system.</p>
+</dd>
+<dt>bufferDirectory: str/path</dt><dd><p>A directory path where it will save the buffer data around each second
+to be used for the calculation of efficiencies. If not specified, it 
+will not save the buffer data.</p>
+</dd>
+</dl>
+<p>This function doesn’t return anything. It runs until it is stoped or until it
+raises an Exception.</p>
+</dd></dl>
+
+<section id="examples">
+<h3><strong>Examples</strong><a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h3>
+<p>Let’s see some examples of parameter combination:</p>
+<section id="test-run">
+<h4>Test run<a class="headerlink" href="#test-run" title="Permalink to this heading">¶</a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python search.py --detectors HLV --channels NOISE --threshold <span class="m">0</span>.5
+</pre></div>
+</div>
+<p>The above command will run a search whenever all three detectors are available. It will use the channles without injections (just pure O3 noise). If the model output has a score greater or equal ot 0.5, then it considers it a trigger. Although, given that there are no other options specified, it doesn’t have any information about where to save the triggers. So the above script <strong>will not save triggers</strong> and it is used only to test that the search is running.</p>
+</section>
+<section id="background-search">
+<h4>Background search<a class="headerlink" href="#background-search" title="Permalink to this heading">¶</a></h4>
+<p>This code is the one we used for the O3-replay.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python search.py --detectors HL --channels NOISE --threshold <span class="m">0</span>.5 --outputfile path/my_output_directory
+</pre></div>
+</div>
+<p>The above command will run a search whenever H1 and L1 are active using the data provided. It will always use artificial noise (similar to the one used for training) for Virgo data. As before it will run a search on the only noise channels. Although now, it has been provided with an outputfile path. This will be the directory where all the outputs will be saved for each second of inference using the models.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When you provide an outputfile path, it will fill the path provided with many json files as the time passes. You should always have an active manager for those files (see …). Otherwise your filesystem will be overwhelmed and processes will freeze.</p>
+</div>
+</section>
+<section id="moch-data-challenge-mdc-search">
+<h4>Moch Data Challenge (MDC) search<a class="headerlink" href="#moch-data-challenge-mdc-search" title="Permalink to this heading">¶</a></h4>
+<p>This example is the code we used for the MDC challenge.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python search.py --detectors HLV --channels INJ --threshold <span class="m">0</span>.96 --triggerfile path/my_trigger_directory --triggerplotfile path/my_trigger_plot_directory
+</pre></div>
+</div>
+<p>For the MDC challenge, we were provided with specific frames (<cite>–channels INJ</cite>) that have a CBC injection every two minutes. Note that we don’t specify a <cite>outputfile</cite> option here, because we only want to save outputs that trigger the search. Additionally we also included the option <cite>triggerplotfile</cite>, so that we can visuallise the data passed in the models that caused the trigger. Again the <cite>triggerplotfile</cite> option is optional.</p>
+</section>
+<section id="splitter">
+<h4>Splitter<a class="headerlink" href="#splitter" title="Permalink to this heading">¶</a></h4>
+<p>The time it takes to process the data and</p>
+</section>
+</section>
+</section>
+<section id="trigger-handling">
+<h2><strong>Trigger handling</strong><a class="headerlink" href="#trigger-handling" title="Permalink to this heading">¶</a></h2>
+<p>Assuming the search is already run and it has produced some trigger output files (.json) we can now use <cite>mly_to_grace.py</cite> script to push the triggers into GraceDB. This script is expected to run at the same time as the above search script. Every second it checks if there are any triggers inside the <cite>trigger_directory</cite> (defined also in the search function above as the destination for the tirggers), and then pushes the triggers into the selected domain in GraceDB. When it pushes a trigger, it automatically deletes it from <a href="#id1"><span class="problematic" id="id2">``</span></a>trigger_director`. The domain in which it pushes the triggers is specified by the <cite>destination</cite> parameter. There are only two parameters for this script:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><strong>destination:</strong> It refers to which GraceDB domain is going to send the trigger. Currently we have two options:</dt><dd><ul>
+<li><p><cite>test</cite> which sends the alerts to: “<a class="reference external" href="https://gracedb-test.ligo.org/api">https://gracedb-test.ligo.org/api</a>”</p></li>
+<li><p><cite>playground</cite> which sends the alerts to: “<a class="reference external" href="https://gracedb-playground.ligo.org/api">https://gracedb-playground.ligo.org/api</a>”</p></li>
+<li><p><cite>dev1</cite> which sends the alerts to: “<a class="reference external" href="https://gracedb-dev1.ligo.org/api">https://gracedb-dev1.ligo.org/api</a>”</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><strong>trigger_directory:</strong> The directory in which the triggers are saved from the search routine.</p></li>
+</ul>
+<p>The code bellow is supposed to be running at the same time as the search script.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python mly_to_grace.py --destination playground --trigger_directory path/my_trigger_directory
+</pre></div>
+</div>
+<p>The above code it is run at the same time with the search script, will check every second if the <cite>trigger_directory</cite> has a <cite>.json</cite> event file. When it does, it will upload the event to GraceDB playground (”<a class="reference external" href="https://gracedb-playground.ligo.org">https://gracedb-playground.ligo.org</a>”). Then it will delete that event file from <cite>trigger_directory</cite>.</p>
+</section>
+<section id="event-manager">
+<h2><strong>Event manager</strong><a class="headerlink" href="#event-manager" title="Permalink to this heading">¶</a></h2>
+<p>While the search function is running, it can optionally return the output of every second it processes. This will create a big amount of output files that will overwhelm the filesystem. For that reason we need to run a manager function every couple of minutes that will put all those files into a <cite>pandas.Dataframe</cite>. This manager will save the output files in chuncks of 3600 seconds. Every five minutes it will put all output files produced in a dataframe and then delete them.</p>
+<p>After managing the outputfiles, this function will produce false alarm rate plots for each search and update them with the new outputs that are produced. The manager function needs also to be run at the same time as the search.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python manager.py
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The manager functionality is under development and it currently assumes that the output file is in the same place as the function</p>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">How to use</a><ul>
+<li><a class="reference internal" href="#search-functionality"><strong>Search functionality</strong></a><ul>
+<li><a class="reference internal" href="#examples"><strong>Examples</strong></a><ul>
+<li><a class="reference internal" href="#test-run">Test run</a></li>
+<li><a class="reference internal" href="#background-search">Background search</a></li>
+<li><a class="reference internal" href="#moch-data-challenge-mdc-search">Moch Data Challenge (MDC) search</a></li>
+<li><a class="reference internal" href="#splitter">Splitter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#trigger-handling"><strong>Trigger handling</strong></a></li>
+<li><a class="reference internal" href="#event-manager"><strong>Event manager</strong></a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Installation.html"
+                          title="previous chapter">Installation</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/HowToUse.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="Installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mlyPipeline 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">How to use</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Vasileios Skliris.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>

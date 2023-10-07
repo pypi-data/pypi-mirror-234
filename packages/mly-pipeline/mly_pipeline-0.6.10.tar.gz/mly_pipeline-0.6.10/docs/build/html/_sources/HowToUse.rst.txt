@@ -1,0 +1,100 @@
+How to use
+##########
+
+
+**Search functionality**
+========================
+The main functionality is running a search on a provided stream of data. The suggested use of the pipeline is running the `search.py` script with appropriate options through terminal as it will be shown below.
+
+
+.. code-block:: bash
+    
+    python search.py --option1 value1 --option2 value2 ...
+    
+We will describe the different options and how to use them. When you run `search.py`, you call the main function of the script with the following options:
+
+.. autofunction:: search.main
+
+
+**Examples**
+------------
+
+Let's see some examples of parameter combination:
+
+Test run
+""""""""
+.. code-block:: bash
+
+    python search.py --detectors HLV --channels NOISE --threshold 0.5
+
+The above command will run a search whenever all three detectors are available. It will use the channles without injections (just pure O3 noise). If the model output has a score greater or equal ot 0.5, then it considers it a trigger. Although, given that there are no other options specified, it doesn't have any information about where to save the triggers. So the above script **will not save triggers** and it is used only to test that the search is running.
+
+Background search
+"""""""""""""""""
+
+This code is the one we used for the O3-replay.
+
+.. code-block:: bash
+
+    python search.py --detectors HL --channels NOISE --threshold 0.5 --outputfile path/my_output_directory
+    
+The above command will run a search whenever H1 and L1 are active using the data provided. It will always use artificial noise (similar to the one used for training) for Virgo data. As before it will run a search on the only noise channels. Although now, it has been provided with an outputfile path. This will be the directory where all the outputs will be saved for each second of inference using the models.
+
+.. warning:: When you provide an outputfile path, it will fill the path provided with many json files as the time passes. You should always have an active manager for those files (see ...). Otherwise your filesystem will be overwhelmed and processes will freeze.
+
+
+Moch Data Challenge (MDC) search 
+""""""""""""""""""""""""""""""""
+
+This example is the code we used for the MDC challenge.
+
+.. code-block:: bash
+
+    python search.py --detectors HLV --channels INJ --threshold 0.96 --triggerfile path/my_trigger_directory --triggerplotfile path/my_trigger_plot_directory
+    
+For the MDC challenge, we were provided with specific frames (`--channels INJ`) that have a CBC injection every two minutes. Note that we don't specify a `outputfile` option here, because we only want to save outputs that trigger the search. Additionally we also included the option `triggerplotfile`, so that we can visuallise the data passed in the models that caused the trigger. Again the `triggerplotfile` option is optional.
+
+
+Splitter
+""""""""
+
+The time it takes to process the data and
+
+**Trigger handling**
+=====================
+
+Assuming the search is already run and it has produced some trigger output files (.json) we can now use `mly_to_grace.py` script to push the triggers into GraceDB. This script is expected to run at the same time as the above search script. Every second it checks if there are any triggers inside the `trigger_directory` (defined also in the search function above as the destination for the tirggers), and then pushes the triggers into the selected domain in GraceDB. When it pushes a trigger, it automatically deletes it from ``trigger_director`. The domain in which it pushes the triggers is specified by the `destination` parameter. There are only two parameters for this script:
+
+* **destination:** It refers to which GraceDB domain is going to send the trigger. Currently we have two options:
+    * `test` which sends the alerts to: "https://gracedb-test.ligo.org/api"
+    * `playground` which sends the alerts to: "https://gracedb-playground.ligo.org/api"
+    * `dev1` which sends the alerts to: "https://gracedb-dev1.ligo.org/api"
+    
+* **trigger_directory:** The directory in which the triggers are saved from the search routine. 
+
+The code bellow is supposed to be running at the same time as the search script.
+
+.. code-block:: bash
+
+    python mly_to_grace.py --destination playground --trigger_directory path/my_trigger_directory
+
+The above code it is run at the same time with the search script, will check every second if the `trigger_directory` has a `.json` event file. When it does, it will upload the event to GraceDB playground ("https://gracedb-playground.ligo.org"). Then it will delete that event file from `trigger_directory`.
+
+
+**Event manager**
+=================
+
+While the search function is running, it can optionally return the output of every second it processes. This will create a big amount of output files that will overwhelm the filesystem. For that reason we need to run a manager function every couple of minutes that will put all those files into a `pandas.Dataframe`. This manager will save the output files in chuncks of 3600 seconds. Every five minutes it will put all output files produced in a dataframe and then delete them.
+
+After managing the outputfiles, this function will produce false alarm rate plots for each search and update them with the new outputs that are produced. The manager function needs also to be run at the same time as the search. 
+
+.. code-block:: bash
+
+    python manager.py 
+
+.. note::
+
+   The manager functionality is under development and it currently assumes that the output file is in the same place as the function
+
+
+

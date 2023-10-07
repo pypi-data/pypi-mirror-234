@@ -1,0 +1,337 @@
+
+
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Getting Started &#8212; mlyPipeline 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/bizstyle.css" />
+    
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/bizstyle.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <!--[if lt IE 9]>
+    <script src="_static/css3-mediaqueries.js"></script>
+    <![endif]-->
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mlyPipeline 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Getting Started</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this heading">¶</a></h1>
+<div class="section" id="setting-up-directories">
+<h2>Setting up directories<a class="headerlink" href="#setting-up-directories" title="Permalink to this heading">¶</a></h2>
+<p>To run an MLy-Pipeline search we need a directory structure that will be used
+by the features of the pipeline. To make the creation of such directory
+structure easy we have a command automate the creation for us. Assumimg
+that there is a local MLy-Pipeline installation (located at <code class="docutils literal notranslate"><span class="pre">./mlyPipeline</span></code>) we
+can create the directory structure by simply typing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>./mlyPipeline/initialisation.py<span class="w"> </span>-p<span class="w"> </span>./mysearch
+</pre></div>
+</div>
+<p>Where instead of <code class="docutils literal notranslate"><span class="pre">mysearch</span></code> you can use a more apropriate name that fits your
+need. The command above will create the directory <code class="docutils literal notranslate"><span class="pre">./mysearch</span></code> and also the subdirectories
+below (these are their default names):</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>triggerplot_directory</p></li>
+<li><p>trigger_directory</p></li>
+<li><p>output_directory</p></li>
+<li><p>masterDirectory</p></li>
+<li><p>bufferDirectory</p></li>
+<li><p>falseAlarmRates</p></li>
+<li><p>efficiencies</p></li>
+</ul>
+</div></blockquote>
+<p>You can change the names of these directories by adding their new names as extra
+parameters in the command. For example if we want to have a custom name for
+masterDirectory we can do:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>./mlyPipeline/initialisation.py<span class="w"> </span>-p<span class="w"> </span>./mysearch<span class="w"> </span>--masterDirectory<span class="w"> </span>customName
+</pre></div>
+</div>
+<p>This applies for all the other directories.</p>
+<p>In addition to that it will also create a script to run the search called runall.sh
+and a config file of .json format that has the parameters that are used by the search.
+<strong>It is up to the user to change those parameters to conduct the search the way they want.</strong></p>
+<div class="section" id="running-the-search-under-different-circumstances">
+<h3>Running the search under different circumstances<a class="headerlink" href="#running-the-search-under-different-circumstances" title="Permalink to this heading">¶</a></h3>
+<p>If you want to just run the search as it would be run in low latency (in real time) are set.
+In case you want to run the search on MDC data, which means you need a fixed background, then
+there is a light version of the same command. When we run on MDC we do not need some of the
+directories, and also some configuration parameters will need to change to ignore specific
+functionalities. The comand below will create a version of the search that does not do the
+continious FAR estimation and neither does efficiency tests. It also points the search to the
+MDC frames and channels.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>./mlyPipeline/initialisation.py<span class="w"> </span>-p<span class="w"> </span>./mysearch<span class="w"> </span>--mode<span class="w"> </span>MDC
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can use the same “mode” to initialise a search directory for a moch data chalenge that
+has different frames and channels. The only thing you need to do is go to the config file
+(see below) and edit the frames and channels parameter.</p>
+</div>
+</div>
+</div>
+<div class="section" id="the-runall-sh-script">
+<h2>The runall.sh script<a class="headerlink" href="#the-runall-sh-script" title="Permalink to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">runall.sh</span></code> is the only thing that you need to run from inside <code class="docutils literal notranslate"><span class="pre">./mysearch</span></code>
+(or however you named it) directory for the search to comence. Processing a second
+during a search, doing inference and issiuing a possible alert takes more than a second. For that reason we split our
+search into many scripts to avoid queing delays. Hence is only one parameter that
+can be adjusted in the inside the runall script and that is the <code class="docutils literal notranslate"><span class="pre">STEP</span></code> parameter.
+This paramater breaks the search into <code class="docutils literal notranslate"><span class="pre">STEP</span></code> in number, non overlaping scripts.
+The search as it is takes around 2 to maximum 3 seconds (rarely) to process a second.
+To be sure we set the <code class="docutils literal notranslate"><span class="pre">STEP=4</span></code> in case there are any delays. We suggest that
+you keep that parameter fixed unless there is strong evidence that the latency
+of individual scripts is bigger than <code class="docutils literal notranslate"><span class="pre">STEP</span></code>.</p>
+<p>Inside the <code class="docutils literal notranslate"><span class="pre">runall.sh</span></code> script you will three main functions to be called,
+<code class="docutils literal notranslate"><span class="pre">search.py</span></code> , <code class="docutils literal notranslate"><span class="pre">manager.py</span></code> and <code class="docutils literal notranslate"><span class="pre">continuesFAR.py</span></code>.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">search.py</span></code> runs the online search, saves the outputs and issues events when the output is bigger than the threshold where we define detections. The event creation is a paralell process that sends an alert to GraceDB and creates an event directory with the name of the GraceDB id. Inside this directory. it also creates plots of the data fed to the model and the skymap.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">manager.py</span></code> runs every 5 minutes. It organises all outputs into pandas data frames (saved in pickle format) and in fixed intervals it runs efficiency tests. It also creates plots and clears files that no longer are needed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">continuesFAR.py</span></code> is called with two different parameters does two things in parallel.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">continuesFAR.py</span> <span class="pre">--mode</span> <span class="pre">generation</span></code> takes the data of the last hour saved in the masterDirectory and generates condor jobs. Each jobs greates a specific amount of timeshifted versions of these data and saves them in a temporary file in the scrach directory (falseAlarmRates/temp), ready to be used for background testing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">continuesFAR.py</span> <span class="pre">--mode</span> <span class="pre">inference</span></code> does inference on the data generated using available GPUs or the GPUs specified in <code class="docutils literal notranslate"><span class="pre">selectedGPUs</span></code> parameter. This script will load any time-lag data available and return a pandas data frame with the results. The asemble of those files is done by the managers script.</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="configuration-file">
+<h2>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this heading">¶</a></h2>
+<p>All the above functions get their parameters from the <code class="docutils literal notranslate"><span class="pre">config.json</span></code> file. Below we are going to give descriptions about each config parameter. By changing the
+config you change the way the search will run, so make sure that you check that
+config is the way you want it after you create the search directory.</p>
+<div class="section" id="file-names-and-paths">
+<h3>File Names and Paths<a class="headerlink" href="#file-names-and-paths" title="Permalink to this heading">¶</a></h3>
+<p>The following are just the directory names of the directories created by with
+the <code class="docutils literal notranslate"><span class="pre">initialisation.py</span></code>. If the default names were used, this will look like:</p>
+<ul class="simple">
+<li><p><strong>output_directory</strong>:”output_directory”</p></li>
+<li><p><strong>trigger_directory</strong>:”trigger_directory”</p></li>
+<li><p><strong>triggerplot_directory</strong>:”triggerplot_directory”</p></li>
+<li><p><strong>masterDirectory</strong>:”masterDirectory”</p></li>
+<li><p><strong>bufferDirectory</strong>:”bufferDirectory”</p></li>
+<li><p><strong>falseAlarmRates</strong>:”falseAlarmRates”</p></li>
+<li><p><strong>efficiencies</strong>:”efficiencies”</p></li>
+</ul>
+<p>After this we have the path to your local mlyPipeline installation. This is
+identified automatically when you run the <code class="docutils literal notranslate"><span class="pre">initialisation.py</span></code>, and it will look
+like below, do not edit that unles you moved your mlyPipeline directory.</p>
+<ul class="simple">
+<li><p><strong>mlyPipelineSource</strong>:”/home/&lt;albert.einstein&gt;/extraPath/mlyPipeline”</p></li>
+</ul>
+<p>User and accounting group for condor jobs.</p>
+<ul class="simple">
+<li><p><strong>user_name</strong>: This is automatically filled by the enviroment</p></li>
+<li><p><strong>accounting_group</strong>: “allsky.mlyonline”</p></li>
+</ul>
+<p>This is the name of the search directory, in our case it will look like:</p>
+<ul class="simple">
+<li><p><strong>path</strong> :”./mysearch”</p></li>
+</ul>
+</div>
+<div class="section" id="generator-function-parameters">
+<h3>Generator Function Parameters<a class="headerlink" href="#generator-function-parameters" title="Permalink to this heading">¶</a></h3>
+<p>The following parameters are passed to the generator function that processes
+the data before inference. The values assigned are the default values.</p>
+<ul class="simple">
+<li><p><strong>fs</strong>:1024 Sample frequency</p></li>
+<li><p><strong>duration</strong>:1 Duration of processing window</p></li>
+<li><p><strong>detectors</strong>:”HLV” Detectors used for the search</p></li>
+</ul>
+<p>The prefix dictionary of the paths of directories where O3-replay and MDC data are. If the
+source of the data you use is different, you need to edit this parameter, after
+creating the search directory.</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><strong>prefixes</strong>:</dt><dd><ul>
+<li><p>0:”/dev/shm/kafka/H1_O3ReplayMDC/H-H1_O3ReplayMDC_llhoft-“</p></li>
+<li><p>1:”/dev/shm/kafka/L1_O3ReplayMDC/L-L1_O3ReplayMDC_llhoft-“</p></li>
+<li><p>2:”/dev/shm/kafka/V1_O3ReplayMDC/V-V1_O3ReplayMDC_llhoft-“</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Indicating which data to use “MDC” for MDC or “NOISE” for O3-replay.</p>
+<ul class="simple">
+<li><p><strong>channels</strong>:”NOISE”</p></li>
+</ul>
+</div>
+<div class="section" id="requesting-data-parameters">
+<h3>Requesting Data Parameters<a class="headerlink" href="#requesting-data-parameters" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>parallel_scripts</strong>: 4 This is the STEP parameter insided the runall.sh script (see above).</p></li>
+<li><p><strong>wait</strong>:0.5 Time to wait before requesting a segment of data again</p></li>
+<li><p><strong>timeout</strong>:20 How many times to try requesting a data segment before going to the next.</p></li>
+<li><p><strong>required_buffer</strong>:16 How many seconds of data to request.</p></li>
+<li><p><strong>start_lag</strong>:92 How many seconds before the current gps time to start the search from. We expect that given the reset time below this will be reseted in the first attempt.</p></li>
+<li><p><strong>gps_reset_time</strong>:32 The amount of time difference in seconds where we reset the gps that we request to the current one. This is for cases where latency is running behind momenterily.</p></li>
+<li><p><strong>farfile</strong>: “/home/vasileios.skliris/mly-hermes/outputs/FARfile” The path to an initial FAR directory. When the search starts there will be no background estimation yet. This will take sometime to be produced and until then we use another background. <strong>The initial FAR estimation will be used until one year of background has been estimated. Then the manager will overight this path to the path of the search</strong>: <code class="docutils literal notranslate"><span class="pre">mysearch/falseAlarmRates/FARfile</span></code></p></li>
+</ul>
+</div>
+<div class="section" id="models">
+<h3>Models<a class="headerlink" href="#models" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>model1_path</strong>:”/home/mly/models/model1_32V_No5.h5” Coinsidence model (model 1).</p></li>
+<li><p><strong>model2_path</strong>:”/home/mly/models/model2_32V_No6.h5” Coherency model (model 2).</p></li>
+<li><p><strong>td_pe_model_path</strong>:”/home/mly/models/td_model” Time domain parameter estimation model.</p></li>
+<li><p><strong>fd_pe_model_path</strong>:”/home/mly/models/fd_model” Frequency domain parameter estimation model.</p></li>
+</ul>
+</div>
+<div class="section" id="skymap">
+<h3>Skymap<a class="headerlink" href="#skymap" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>skymap</strong>:true Option for generation of skymaps with each issued event.</p></li>
+<li><p><strong>nside</strong>:64 Parameter related to the resolution of the skymap.</p></li>
+</ul>
+</div>
+<div class="section" id="efficiecy-calculation-parameters">
+<h3>Efficiecy Calculation Parameters<a class="headerlink" href="#efficiecy-calculation-parameters" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>eff_config</strong> A dictionary of parameters that are related to the efficiency tests.</p>
+<ul>
+<li><p><strong>injectionDirectoryPath</strong>:”/home/mly/injections/” The path were all injection type directories are.</p></li>
+<li><p><strong>injectionsWithHRSS</strong>: [“SGE70Q3”, “SGE153Q8d9”, “SGL153Q8d9”, “WNB250”] The list of the injection directories that use HRSS.</p></li>
+<li><p><strong>injectionsWithSNR</strong>: [“cbc_20_20”, “wnb_03_train_pod”, “cusp_00”] The list of the injection directories that use SNR.</p></li>
+<li><p><strong>injectionHRSS</strong>:”1e-22,1e-21,1e-22” Intervals for tests that use HRSS (first, last, step).</p></li>
+<li><p><strong>injectionSNR</strong>:”0,50,5” Intervals for tests that use SNR (first, last step).</p></li>
+<li><p><strong>testSize</strong>:”100” Number of tests on each value of HRSS or SNR respectively.</p></li>
+<li><p><strong>howOften</strong>: 360 After how many successfull inferences to run an efficiency test.</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="continious-far-estimation-parameters">
+<h3>Continious FAR estimation Parameters<a class="headerlink" href="#continious-far-estimation-parameters" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>far_config</strong> A dictionary of parameters that are related to the continious FAR tests.</p>
+<ul>
+<li><p><strong>batch_size</strong>: 1024 Batch size of inference. Used by hermes client inference.</p></li>
+<li><p><strong>threshold</strong>: 2.3148e-05 Default for once per 2 days (Hz). <strong>Used to define what is an event and what not.</strong></p></li>
+<li><p><strong>restriction</strong>: 0.0001 The minimum score of an inference to keep it in the history.</p></li>
+<li><p><strong>max_lag</strong>: 3600 The maximum time distane allowed, between two lagged segments.</p></li>
+<li><p><strong>lags</strong>: 1024 The number of timeshifts applied on the zero-laged data to produced background tests.</p></li>
+<li><p><strong>batches</strong>: The amount of condor jobs to break the generation of background tests. <strong>This can be adjusted if they do not finish within the hour.</strong></p></li>
+<li><p><strong>visible_gpu_devices</strong>: “local” GPU devices to use. Local will make all the local GPUs visible.</p></li>
+<li><p><strong>selectedGPUs</strong>: [0] An index list to choose which GPUs are to be used. Default is to use the first visible.</p></li>
+<li><p><strong>parallelGenerations</strong>: 3 How many dags ( each corresponding to an hour of data) are allowed to run at the same time. This is actually a condor_job number restriction. As the default values are, it will restrict the jobs to dags + jobs &lt; parallelGenerations*batches.</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="misc">
+<h3>Misc<a class="headerlink" href="#misc" title="Permalink to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>maxDataFrameSize</strong>:360 The number of outputs grouped together in one data frame from the manager.</p></li>
+<li><p><strong>trigger_destination</strong>:null Which domain of GraceDB to send the event (test,dev,playground). When left empty it it does not send an event but it creates follow-up and seves it in a file with made up ID.</p></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Getting Started</a><ul>
+<li><a class="reference internal" href="#setting-up-directories">Setting up directories</a><ul>
+<li><a class="reference internal" href="#running-the-search-under-different-circumstances">Running the search under different circumstances</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-runall-sh-script">The runall.sh script</a></li>
+<li><a class="reference internal" href="#configuration-file">Configuration File</a><ul>
+<li><a class="reference internal" href="#file-names-and-paths">File Names and Paths</a></li>
+<li><a class="reference internal" href="#generator-function-parameters">Generator Function Parameters</a></li>
+<li><a class="reference internal" href="#requesting-data-parameters">Requesting Data Parameters</a></li>
+<li><a class="reference internal" href="#models">Models</a></li>
+<li><a class="reference internal" href="#skymap">Skymap</a></li>
+<li><a class="reference internal" href="#efficiecy-calculation-parameters">Efficiecy Calculation Parameters</a></li>
+<li><a class="reference internal" href="#continious-far-estimation-parameters">Continious FAR estimation Parameters</a></li>
+<li><a class="reference internal" href="#misc">Misc</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="installation.html"
+                          title="previous chapter">Installation</a></p>
+  </div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/gettingstarted.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">mlyPipeline 0.1 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Getting Started</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Vasileios Skliris.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.2.
+    </div>
+  </body>
+</html>
