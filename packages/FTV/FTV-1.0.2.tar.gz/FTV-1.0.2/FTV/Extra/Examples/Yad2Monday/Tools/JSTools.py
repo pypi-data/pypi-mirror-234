@@ -1,0 +1,4 @@
+class JSFunction(object):
+    pass
+
+
