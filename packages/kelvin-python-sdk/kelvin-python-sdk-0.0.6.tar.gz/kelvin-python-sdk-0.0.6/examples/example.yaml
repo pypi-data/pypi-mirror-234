@@ -1,0 +1,74 @@
+app:
+  kelvin:
+    logging_level: DEBUG
+    assets:
+      - name: asset1
+        parameters:
+          param-number:
+            value: 7.5
+          param-string:
+            value: goodbye
+
+    language:
+      type: python
+      python:
+        entry_point: the_kapp:App
+        requirements: requirements.txt
+    inputs:
+      - name: input-number
+        data_type: number
+        sources:
+          - names: [input-number-datastream]
+
+    outputs:
+      - name: output-number
+        data_type: number
+        targets:
+          - names: [output-number-datastream]
+
+      - name: output-random-number
+        data_type: number
+        targets:
+          - names: [output-random-number-datastream]
+
+      - name: output-random-boolean
+        data_type: boolean
+        targets:
+          - names: [output-random-boolean-datastream]
+
+      - name: output-random-string
+        data_type: string
+        targets:
+          - names: [output-random-string-datastream]
+
+      - name: output-cc-number
+        data_type: number
+        control_change: true
+        targets:
+          - names: [output-cc-number-datastream]
+
+    parameters:
+      - name: param-number
+        data_type: number
+        default:
+          value: 3.5
+      - name: param-string
+        data_type: string
+        default:
+          value: hello world
+
+    configuration:
+      foo:
+        bar: hello world
+
+  type: kelvin
+info:
+  description: example app
+  name: example-app
+  title: example-app
+  version: 1.0.1
+spec_version: 4.10.0
+system:
+  environment_vars:
+  - name: KELVIN_GW_MODE
+    value: SOCKETS
