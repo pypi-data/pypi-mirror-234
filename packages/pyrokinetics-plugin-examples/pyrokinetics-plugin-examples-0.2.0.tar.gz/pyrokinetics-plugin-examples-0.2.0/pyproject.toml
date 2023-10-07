@@ -1,0 +1,87 @@
+[project]
+name = "pyrokinetics-plugin-examples"
+description = "A collection of example plugins for Pyrokinetics"
+readme = "README.md"
+authors = [
+  {name = "Liam Pattinson", email = "liam.pattinson@york.ac.uk"}
+]
+license = {file = "LICENSE"}
+dynamic = ["version"]
+keywords = ["gyrokinetics", "analysis", "plasma", "research"]
+classifiers = [
+  "Programming Language :: Python",
+  "Development Status :: 3 - Alpha",
+  "Natural Language :: English",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+requires-python = ">=3.8"
+dependencies = [
+  "numpy",
+  "pyrokinetics",
+]
+
+[project.optional-dependencies]
+test = [
+ "pytest",
+ "pytest-sugar",
+]
+lint = [
+  "black",
+  "ruff",
+  "isort",
+  "refurb; python_version >= '3.10'",
+  "docformatter",
+]
+
+[project.entry-points."pyrokinetics.equilibrium"]
+_test = "pyrokinetics_plugin_examples.equilibrium:EquilibriumReader"
+
+[project.entry-points."pyrokinetics.kinetics"]
+_test = "pyrokinetics_plugin_examples.kinetics:KineticsReader"
+
+[project.entry-points."pyrokinetics.gk_input"]
+_test = "pyrokinetics_plugin_examples.gk_input:MyGKInput"
+
+[project.entry-points."pyrokinetics.gk_output"]
+_test = "pyrokinetics_plugin_examples.gk_output:GKOutputReader"
+
+[project.urls]
+Source = "https://github.com/LiamPattinson/pyrokinetics-plugin-examples"
+Tracker = "https://github.com/LiamPattinson/pyrokinetics-plugin-examples/issues"
+
+[build-system]
+requires = [
+  "setuptools >= 65",
+  "setuptools_scm >= 8.0",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+write_to = "src/pyrokinetics_plugin_examples/_version.py"
+fallback_version = "0.0.1"
+local_scheme = "no-local-version" # Allow dev versions to be published to TestPyPI
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+select = ["E", "F", "W", "RUF"]
+ignore-init-module-imports = true
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
+[tool.docformatter]
+black = true
+recursive = true
