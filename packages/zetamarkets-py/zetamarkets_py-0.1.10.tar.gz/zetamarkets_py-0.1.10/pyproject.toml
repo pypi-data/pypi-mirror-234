@@ -1,0 +1,72 @@
+[tool.poetry]
+name = "zetamarkets_py"
+version = "0.1.10"
+description = "Python SDK for Zeta Markets"
+license = "apache-2.0"
+authors = ["Tristan0x <tristan@sierra.team>"]
+readme = "README.md"
+repository = "https://github.com/zetamarkets/zetamarkets-py"
+packages = [
+    { include = "zetamarkets_py" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+solana = "^0.30.2"
+solders = "^0.18.1"
+requests = "^2.31.0"
+anchorpy = "^0.18.0"
+
+[tool.poetry.group.dev.dependencies]
+poethepoet = "^0.22.1"
+ruff = "^0.0.284"
+isort = "^5.12.0"
+black = "^23.7.0"
+mypy = "^1.5.1"
+
+[tool.poetry.group.examples]
+optional = true
+
+[tool.poetry.group.examples.dependencies]
+python-dotenv = "^1.0.0"
+nest-asyncio = "^1.5.7"
+matplotlib = "^3.7.2"
+ipympl = "^0.9.3"
+python-binance = "^1.0.19"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.2.6"
+furo = "^2023.9.10"
+
+[tool.poetry.extras]
+
+[tool.poe]
+poetry_command = ""
+
+[tool.poe.tasks]
+black = "black zetamarkets_py examples"
+isort = "isort zetamarkets_py examples"
+format = ["black", "isort"]
+lint = "ruff check zetamarkets_py examples"
+mypy = "mypy zetamarkets_py examples"
+docs = "make -C docs html"
+
+[tool.ruff]
+line-length=120
+exclude = ["zetamarkets_py/zeta_client", "zetamarkets_py/serum_client" , "zetamarkets_py/solana_client", ".venv"]
+
+[tool.black]
+line-length=120
+
+[tool.isort]
+profile = "black"
+skip = []
+
+[tool.poetry.scripts]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
