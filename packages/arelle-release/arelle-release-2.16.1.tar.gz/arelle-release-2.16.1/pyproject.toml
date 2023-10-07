@@ -1,0 +1,170 @@
+[build-system]
+requires = ["setuptools~=68.0", "wheel~=0.40", "setuptools_scm[toml]~=7.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arelle-release"
+dynamic = ['version']
+readme = "README.md"
+license = {text = "Apache-2.0"}
+description = "An open source XBRL platform."
+authors = [
+    {name = "arelle.org", email = "support@arelle.org"}
+]
+keywords = ["xbrl"]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: End Users/Desktop',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: Apache Software License',
+    'Natural Language :: English',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Operating System :: OS Independent',
+    'Topic :: Text Processing :: Markup :: XML'
+]
+requires-python = ">=3.8"
+dependencies = [
+    'certifi',
+    'isodate==0.*',
+    'lxml==4.*',
+    'numpy==1.*',
+    'openpyxl==3.*',
+    'pyparsing==3.*',
+    'regex',
+]
+
+[project.optional-dependencies]
+Crypto = [
+    'pycryptodome==3.*',
+]
+DB = [
+    'pg8000==1.*',
+    'PyMySQL==1.*',
+    'pyodbc==4.*',
+    'rdflib==5.*',
+]
+EFM = [
+    'holidays==0.*',
+]
+ESEF = [
+    'tinycss2==1.*',
+]
+ObjectMaker = [
+    'graphviz==0.*',
+]
+WebServer = [
+    'cheroot>=8,<11',
+    'CherryPy==18.*',
+    'tornado==6.*',
+]
+
+[project.scripts]
+arelleCmdLine = "arelle.CntlrCmdLine:main"
+
+[project.gui-scripts]
+arelleGUI = "arelle.CntlrWinMain:main"
+
+[project.urls]
+"Homepage" = "https://arelle.org/"
+"Downloads" = "https://arelle.org/arelle/pub/"
+"Documentation" = "https://arelle.org/arelle/documentation/"
+"Blog" = "https://arelle.org/arelle/blog/"
+"Source Code" = "https://github.com/Arelle/Arelle/"
+"Bug Reports" = "https://github.com/Arelle/Arelle/issues/"
+"Support" = "https://groups.google.com/g/arelle-users/"
+
+[tool.setuptools]
+platforms = ["any"]
+
+[tool.setuptools.packages.find]
+namespaces = false
+
+[tool.setuptools_scm]
+tag_regex = "^(?:[\\w-]+-?)?(?P<version>[vV]?\\d+(?:\\.\\d+){0,2}[^\\+]*)(?:\\+.*)?$"
+write_to = "arelle/_version.py"
+
+[tool.pytest.ini_options]
+xfail_strict = true
+empty_parameter_set_mark = "fail_at_collect"
+addopts = "--strict-markers"
+markers = [
+    "fast: mark automatically applied to tests which don't have the \"slow\" mark applied (deselect with '-m \"not fast\"')",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+[tool.mypy]
+# Warn when a # type: ignore comment does not specify any error codes
+enable_error_code = "ignore-without-code"
+
+python_version = "3.11"
+
+show_error_codes = true
+
+# EFM-htm is an invalid Python package name
+exclude = "arelle/plugin/validate/EFM-htm"
+
+# --- per-module options ---
+[[tool.mypy.overrides]]
+module = [
+    'arelle.*',
+    'tests.*',
+]
+ignore_errors = true
+
+# --- strict typing ---
+# when a directory is converted, file entries are replaced by directory entry
+# when the library is converted, the above entry will be replaced (strict is demanded)
+[[tool.mypy.overrides]]
+module = [
+    'arelle.BetaFeatures',
+    'arelle.Cntlr',
+    'arelle.FileSource',
+    'arelle.Locale',
+    'arelle.ModelObject',
+    'arelle.ModelObjectFactory',
+    'arelle.ModelValue',
+    'arelle.ModelXbrl',
+    'arelle.RuntimeOptions',
+    'arelle.SocketUtils',
+    'arelle.SystemInfo',
+    'arelle.Updater',
+    'arelle.UrlUtil',
+    'arelle.ValidateXbrl',
+    'arelle.XbrlConst',
+    'arelle.XbrlUtil',
+    'arelle.XmlUtil',
+    'arelle.XmlValidate',
+    'arelle.XmlValidateConst',
+    'arelle.XmlValidateSchema',
+    'arelle.examples.plugin.validate.*',
+    'arelle.formula.FactAspectsCache',
+    'arelle.formula.XPathContext',
+    'arelle.formula.XPathParser',
+    'arelle.model.*',
+    'arelle.plugin.functionsMath',
+    'arelle.plugin.validate.ESEF.*',
+    'arelle.plugin.validate.ESEF_2022.*',
+    'arelle.plugin.validate.NL.*',
+    'arelle.utils.*',
+    'tests.integration_tests.*',
+]
+ignore_errors = false
+strict = true
+
+# --- Modules lacking stubs ---
+# Add any module missing library stubs or not having
+# the py.typed marker here
+[[tool.mypy.overrides]]
+module = [
+    'google.appengine.api.*',
+    'gtk',
+    'isodate.*',
+    'win32clipboard',
+    'win32gui',
+    'win32process',
+]
+ignore_missing_imports = true
