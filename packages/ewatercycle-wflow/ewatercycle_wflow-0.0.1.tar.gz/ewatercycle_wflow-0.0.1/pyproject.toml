@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/ewatercycle_wflow/__init__.py"
+
+[project]
+name = "ewatercycle-wflow"
+description = "eWaterCycle plugin for wflow hydrological model"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [
+  { name = "Bart Schilperoort, Peter Kalverla, Stefan Verhoeven", email = "b.schilperoort@esciencecenter.nl" },
+]
+keywords = ["ewatercycle", "hydrology"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+# Include here only the dependencies for the eWaterCycle wrapped model
+dependencies = [
+  "ewatercycle>=2.0.0b2",
+]
+dynamic = ["version"]
+
+# This registers the plugin such that it is discoverable by eWaterCycle
+[project.entry-points."ewatercycle.models"]
+Wflow = "ewatercycle_wflow.model:Wflow"
+[project.entry-points."ewatercycle.forcings"]
+WflowForcing = "ewatercycle_wflow.forcing:WflowForcing"
+[project.entry-points."ewatercycle.parameter_sets"]
+wflow_rhine_sbm_nc = "ewatercycle_wflow.parameter_sets:wflow_rhine_sbm_nc"
