@@ -1,0 +1,58 @@
+{% extends 'pbx_admin/base.html' %}
+
+{% load i18n %}
+
+{% block title %}{% trans 'Printbox Dashboard' %}{% endblock title %}
+
+{% block panel_heading %}
+Main
+<span class="badge">{{ groups_num }}</span>
+  <span class="panel-heading-action">
+
+    <a class="list-toolbar-btn" href=".">
+      <span title="" data-toggle="tooltip" class="label-tooltip" data-original-title="Refresh list" data-html="true" data-placement="left">
+        <i class="process-icon-refresh "></i>
+      </span>
+    </a>
+
+  </span>
+{% endblock panel_heading %}
+
+{% block content %}
+<table class="table tableDnD">
+    <thead></thead>
+    <tbody>
+        {% for group in groups %}
+        <tr class="{% cycle 'row1' 'row2' %}" data-href="{{ group.url }}">
+            <th class="field-name">
+                <a href="{{ group.url }}">{{ group.plural|title }}</a>
+            </th>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br />
+<br />
+<br />
+
+{% if can_edit_instance_config %}
+    <h3>Instance config</h3>
+    <div>
+        {% if instance_config %}
+        <a href="{% url 'pbx_admin:instanceconfig:edit' %}"><strong>{{ site_name }}</strong></a>
+        {% else %}
+        <i>No instance config defined - <a href="{% url 'pbx_admin:instanceconfig:add' %}"><stron>Create ...</stron></a></i>
+        {% endif %}
+    </div>
+    <br />
+    <br />
+    <br />
+{% endif %}
+
+{% if can_edit_exchange_rates %}
+    <h3>Exchange rates</h3>
+    <div>
+        <a href="{% url 'pbx_admin:exchange_rates' %}"><strong>Rates</strong></a>
+    </div>
+{% endif %}
+{% endblock content %}
