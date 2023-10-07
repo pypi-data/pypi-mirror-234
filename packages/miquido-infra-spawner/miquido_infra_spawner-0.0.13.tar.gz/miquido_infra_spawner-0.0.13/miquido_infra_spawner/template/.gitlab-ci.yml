@@ -1,0 +1,48 @@
+---
+include:
+    -   remote: 'https://raw.githubusercontent.com/miquido/gitlab-templates/1.3.86/docker-toolkit.yml'
+    -   remote: 'https://raw.githubusercontent.com/miquido/gitlab-templates/1.3.86/terraform-toolkit.yml'
+
+
+variables:
+    TF_PLUGIN_CACHE_DIR: "${CI_PROJECT_DIR}/plugin-cache"
+
+cache:
+    - key: "$CI_COMMIT_SHA"
+      paths:
+          - $CI_PROJECT_DIR/$TF_ROOT/.terraform
+    - key:
+        files:
+          - $CI_PROJECT_DIR/$TF_ROOT/.terraform.lock.hcl
+      paths:
+        - ${CI_PROJECT_DIR}/plugin-cache
+
+
+plan-<ENVIRONMENT>:
+    extends: .tf-plan
+    environment: <ENVIRONMENT>
+    variables:
+        TF_ROOT: <ENVIRONMENT>
+
+apply-<ENVIRONMENT>:
+    extends: .tf-apply
+    variables:
+        TF_ROOT: <ENVIRONMENT>
+    environment:
+        name: <ENVIRONMENT>
+        url: <SERVICE_URL>
+        on_stop: destroy-<ENVIRONMENT>
+    needs:
+        - plan-<ENVIRONMENT>
+
+destroy-<ENVIRONMENT>:
+    extends: .tf-destroy
+    variables:
+        TF_ROOT: <ENVIRONMENT>
+    environment:
+        name: <ENVIRONMENT>
+        url: <SERVICE_URL>
+        action: stop
+    needs:
+        - apply-<ENVIRONMENT>
+
