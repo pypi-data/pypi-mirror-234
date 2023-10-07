@@ -1,0 +1,218 @@
+# Project metadata guidelines:
+#   https://peps.python.org/pep-0621/
+#
+# ------------------------------------------------------------------------------
+# Setup
+# ------------------------------------------------------------------------------
+[project]
+dynamic = ["dependencies"]
+
+name = "flasket"
+version = "0.20.6"
+authors = [
+  {name = "Julien Lecomte", email = "julien@lecomte.at"}
+]
+readme  = "README.md"
+license = {text = "MIT"}
+description = "A flask + connexion + dash ensemble to quickly deploy an app."
+
+requires-python = ">=3.8"
+# See: https://pypi.python.org/pypi?:action=list_classifiers
+# List of python versions and their support status: https://en.wikipedia.org/wiki/CPython#Version_history
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Developers",
+  "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+  "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+  "Topic :: Internet :: WWW/HTTP :: WSGI :: Server",
+  "Framework :: Flask",
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+]
+
+[project.entry-points.pytest11]
+flasket = "flasket.testing"
+
+[project.urls]
+Homepage = "https://gitlab.com/jlecomte/python/flasket"
+Documentation = "https://jlecomte.gitlab.io/python/flasket/"
+"Source code" = "https://gitlab.com/jlecomte/python/flasket"
+"Bug tracker" = "https://gitlab.com/jlecomte/python/flasket/-/issues"
+
+[project.optional-dependencies]
+celery = ["celery", "redis"]
+
+[tool.setuptools]
+packages = [
+  "flasket",
+  "flasket.api",
+  "flasket.backends",
+  "flasket.clients",
+  "flasket.ext",
+  "flasket.middleware",
+]
+zip-safe = true
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[build-system]
+# These are the assumed default build requirements from pip:
+# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
+requires = ["setuptools>=63.0.0", "wheel"]
+
+# ------------------------------------------------------------------------------
+# Other tools
+# ------------------------------------------------------------------------------
+[tool.black]
+line-length = 120
+target_version = ["py37", "py38", "py39", "py310", "py311"]
+
+[tool.codespell]
+# https://github.com/codespell-project/codespell/blob/master/README.rst
+#
+# Dictionary is updated when codespell is updated, nevertheless, it can
+# be found here: .venv/lib/python3.*/site-packages/codespell_lib/data/dictionary.txt
+skip = "*.pyc,.git,.tox,.venv,public"
+builtin = "clear,informal,rare,names"
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+  "bin/*",
+  "docs/*",
+  "tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+  "@abc.abstractmethod",
+  "@abc.abstractproperty",
+  "_typeshed",
+  "except ImportError",
+  "if False",
+  "if __name__ == .__main__.:",
+  "lambda: None",
+  "pragma: no cover",
+  "raise NotImplemented",
+  "raise NotImplementedError",
+  "return NotImplemented",
+  "t.TYPE_CHECKING",
+]
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.isort]
+# https://pycqa.github.io/isort/docs/configuration/options.html
+profile = "black"
+line_length = 120
+atomic = true
+include_trailing_comma = true
+skip_gitignore = true
+use_parentheses = true
+known_local_folder = "tests"
+
+[tool.autoflake]
+# https://pypi.org/project/pyproject-autoflake/
+in-place = true
+# Use '# noqa: F401' to ignore a removal
+remove-all-unused-imports = true
+ignore-init-module-imports = true
+remove-duplicate-keys = true
+remove-unused-variables = true
+ignore-pass-after-docstring = true
+
+[tool.pylint.main]
+
+[tool.pylint.reports]
+# Deactivate the evaluation score.
+score = false
+
+[tool.pylint.exceptions]
+# Exceptions that will emit a warning when caught.
+overgeneral-exceptions = "builtins.BaseException"
+
+[tool.pylint."messages control"]
+# Disable the message, report, category or checker with the given id(s). You can
+# either give multiple identifiers separated by comma (,) or put this option
+# multiple times (only on the command line, not in the configuration file where
+# it should appear only once). You can also use "--disable=all" to disable
+# everything first and then re-enable specific checks. For example, if you want
+# to run only the similarities checker, you can use "--disable=all
+# --enable=similarities". If you want to run only the classes checker, but have
+# no Warning level messages displayed, use "--disable=all --enable=classes
+# --disable=W".
+disable = [
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "use-symbolic-message-instead",
+  # defaults above, custom below
+  "chained-comparison",            # disabled, less readable by habit
+  "duplicate-code",                # disabled, false positives
+  "line-too-long",                 # disabled, we use black so lines over 120 are intended
+  "logging-fstring-interpolation", # disabled, benefit outweighs cost
+  "missing-class-docstring",       # disabled, only relevant with sphinx
+  "missing-function-docstring",    # disabled, only relevant with sphinx
+  "missing-kwoa",                  # disabled, false positives
+  "missing-module-docstring",      # disabled, only relevant with sphinx
+  "no-member",                     # disabled, false positives
+  "too-few-public-methods",        # disabled, human knows best
+  "too-many-arguments",            # disabled, human knows best
+  "too-many-branches",             # disabled, human knows best
+  "too-many-instance-attributes",  # disabled, human knows best
+  "too-many-locals",               # disabled, human knows best
+  "too-many-statements",           # disabled, human knows best
+  "ungrouped-imports",             # disabled, we use isort so this is only volontary
+  "wrong-import-order",            # disabled, we use isort so this is only volontary
+  # local to this project
+]
+
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time (only on the command line, not in the configuration file where it
+# should appear only once). See also the "--disable" option for examples.
+enable = ["c-extension-no-member"]
+
+[tool.pylint.basic]
+# If variable isn't whitelisted here, it'll trigger an 'invalid-name' error
+good-names = [
+  "i",
+  "j",
+  "k",
+  "ex",
+  "Run",
+  "_",
+  # defaults above, custom below
+  "app", # application
+  "db",  # database
+  "fd",  # file descriptor
+  "fn",  # function (reserved word)
+  "rv",  # frequently used as 'retval', aka 'return value'
+  "v",   # as in `for k, v in {}.items()`
+  "x",   # frequently used in lambdas, more precise than i, j
+  "pk",  # used as primary key for API
+  # local to this project
+  "dash",
+]
+
+# Good variable names regexes, separated by a comma. If names match any regex,
+# they will always be accepted
+good-names-rgxs = "^_?(CONST_|K_)[A-Z0-9][_A-Z0-9]*$"
+
+
+[tool.pytest.ini_options]
+markers = [
+    "liveapp: Run tests that require a live application (unselect with '-m not \"liveapp\"')",
+]
