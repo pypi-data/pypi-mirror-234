@@ -1,0 +1,42 @@
+[package]
+name = "vmdrs-py"
+version = "0.2.1"
+edition = "2021"
+
+authors = ["jiafuei"]
+repository = "https://github.com/jiafuei/vmdrs-py"
+description = "Example Python project to use the Rust vmd-rs crate"
+license-file = "LICENSE.md"
+keywords = ["signal-processing", "vmd", "signal-analysis", "python"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "vmdrs_py"
+crate-type = ["cdylib"]
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+blas-src = { version = "0.9.0", features = ["intel-mkl"] }
+# openblas-src = { version = "0.10.8", features = ["static"] }
+openssl = { version = "0.10.56", features = ["vendored"] }
+
+[target.aarch64-unknown-linux-gnu.dependencies]
+blas-src = { version = "0.9.0", features = ["openblas"] }
+openblas-src = { version = "0.10.8", features = ["static"] }
+openssl = { version = "0.10.56", features = ["vendored"] }
+
+[target.x86_64-apple-darwin.dependencies]
+blas-src = { version = "0.9.0", features = ["accelerate"] }
+
+[target.aarch64-apple-darwin.dependencies]
+blas-src = { version = "0.9.0", features = ["accelerate"] }
+
+[target.x86_64-pc-windows-msvc.dependencies]
+blas-src = { version = "0.9.0", features = ["intel-mkl"] }
+
+[patch.crates-io]
+openblas-src = { git = "https://github.com/jiafuei/openblas-src.git", branch = "arm-cross-compile" }
+
+[dependencies]
+numpy = "0.19.0"
+pyo3 = "0.19.0"
+vmd-rs = { version = "0.2.0", features = ["blas"] }
