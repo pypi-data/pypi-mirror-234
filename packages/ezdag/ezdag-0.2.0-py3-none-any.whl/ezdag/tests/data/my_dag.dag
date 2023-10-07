@@ -1,0 +1,19 @@
+# BEGIN META
+# END META
+# BEGIN NODES AND EDGES
+JOB process_bins:00000 process_bins.sub
+VARS process_bins:00000 nodename="process_bins:00000" job_index="0" verbose="--verbose" bins="--bins 0 --bins 3 --bins 6" input_="--input data.txt" input_input_="data.txt" output_="output_0.txt" output_output_="output_0.txt" output_output__remap=""
+RETRY process_bins:00000 3
+JOB process_bins:00001 process_bins.sub
+VARS process_bins:00001 nodename="process_bins:00001" job_index="1" verbose="--verbose" bins="--bins 1 --bins 4 --bins 7" input_="--input data.txt" input_input_="data.txt" output_="output_1.txt" output_output_="output_1.txt" output_output__remap=""
+RETRY process_bins:00001 3
+JOB process_bins:00002 process_bins.sub
+VARS process_bins:00002 nodename="process_bins:00002" job_index="2" verbose="--verbose" bins="--bins 2 --bins 5 --bins 8" input_="--input data.txt" input_input_="data.txt" output_="output_2.txt" output_output_="output_2.txt" output_output__remap=""
+RETRY process_bins:00002 3
+PARENT process_bins:00000 CHILD combine_bins:00000
+PARENT process_bins:00001 CHILD combine_bins:00000
+PARENT process_bins:00002 CHILD combine_bins:00000
+JOB combine_bins:00000 combine_bins.sub
+VARS combine_bins:00000 nodename="combine_bins:00000" verbose="--verbose" input_="output_0.txt output_1.txt output_2.txt" input_input_="output_0.txt,output_1.txt,output_2.txt" output_="combined.txt" output_output_="combined.txt" output_output__remap=""
+RETRY combine_bins:00000 3
+# END NODES AND EDGES
