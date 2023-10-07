@@ -1,0 +1,286 @@
+Metadata-Version: 2.1
+Name: fovus
+Version: 1.1.17
+Summary: The Fovus Python CLI
+Author: Fovus Corporation
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Requires-Dist: boto3 >=1.28.51
+Requires-Dist: mypy-boto3-s3 >=1.28.36
+Requires-Dist: mypy-boto3-cognito-idp >=1.28.36
+Requires-Dist: dateparser >=1.1.8
+Requires-Dist: jsonschema >=3.2.0
+Requires-Dist: pycognito >=2023.5.0
+Requires-Dist: requests >=2.28.2
+Requires-Dist: tqdm >=4.59.0
+Requires-Dist: packaging >=23.1
+Requires-Dist: typing-extensions <5,>=4.7.1
+Requires-Dist: websockets >=11.0.3
+Provides-Extra: deploy
+Requires-Dist: build ; extra == 'deploy'
+Requires-Dist: pyarmor ; extra == 'deploy'
+Requires-Dist: twine ; extra == 'deploy'
+Provides-Extra: dev
+Requires-Dist: autoflake ; extra == 'dev'
+Requires-Dist: bandit ; extra == 'dev'
+Requires-Dist: black ; extra == 'dev'
+Requires-Dist: flake8 ; extra == 'dev'
+Requires-Dist: isort ; extra == 'dev'
+Requires-Dist: mypy ; extra == 'dev'
+Requires-Dist: pre-commit ; extra == 'dev'
+Requires-Dist: pycodestyle ; extra == 'dev'
+Requires-Dist: pydocstyle ; extra == 'dev'
+Requires-Dist: pydocstringformatter ; extra == 'dev'
+Requires-Dist: pylint ; extra == 'dev'
+Requires-Dist: pyupgrade ; extra == 'dev'
+Requires-Dist: types-requests ; extra == 'dev'
+Requires-Dist: types-dateparser ; extra == 'dev'
+Provides-Extra: test
+Requires-Dist: coverage ; extra == 'test'
+
+## Getting Started with Fovus CLI
+
+The official CLI tool for interacting with the Fovus Serverless HPC SaaS. Installation, setup, and usage documentation is provided here. Further detail is available via the CLI `--help` command or at our [CLI documentation website](https://fovus.github.io/).
+
+Features include job creation (with validation), job status checking, and job file downloading. In addition, reusable job and user configurations with optional command-line overriding are supported. Additional features are detailed in this README and in our help documentation (linked above).
+
+## Installation
+
+### Prerequisites
+
+1. Python and pip installation: https://www.python.org/downloads/
+    1. Click the "Download Python" button.
+    2. Select ALL of the following according to your operating system:
+        1. Windows
+            1. Install pip (should be selected by default).
+            2. Add Python to PATH.
+            3. Add Python to environment variables (this is generally found under "Customize Installation" and should be automatically enabled if you selected "Add Python to PATH").
+        2. Unix-based OS
+            1. Install or upgrade pip (under Customize)
+            2. Shell profile updater (under Customize)
+2. Close and reopen your Command Prompt/PowerShell (Windows) or terminal (Unix-based systems).
+3. Install fovus using pip with the following command:
+
+```
+pip install fovus
+```
+
+Note:
+
+1. The pip package is usually bundled with Python. If you have Python and you don't have pip, you can install pip at the following link: https://pip.pypa.io/en/stable/installation/.
+
+2. Windows: If you encounter a command not found error and have already installed Python, try re-running the Python installer, selecting "Modify". In the following menus (you may have to click "Next"), select the following options:
+    1. Install pip (should be selected by default).
+    2. Add Python to environment variables.
+
+3. Unix-based OS: If you encounter any Python-related issues, try reinstalling Python according to the instructions above.
+
+## Initial setup
+
+Before use, set up the following:
+
+1. User config
+2. Password environment variable
+
+### User config
+
+A user config is for a pre-existing user that is *already set up in the Fovus web UI*.
+
+The following values can be viewed on the Fovus web UI by clicking on your profile icon in the top right of the page:
+
+- `email`: the email address used for your account.
+- `workspaceId`: the ID for the workspace you would like to use. The workspace ID can be found by clicking on the user icon in the web UI.
+
+Set up your CLI user config with the following command:
+
+```
+fovus --configure
+```
+
+Note:
+
+1. This user config will save to `~/.fovus/user_configs/FOVUS_default_user_config.json`.
+2. To view all your configs, use `fovus --open-config-folder`.
+3. The user config can also be provided in the following ways (these will override default user config):
+    1. Using the following parameters: `--email your_email` and `--workspace-id your_workspace_id`.
+    2. Using the following parameter: `--user-config-file-path /path/to/your/user_config.json`
+
+### Password environment variable
+
+Export your Fovus password as an environment variable by following the instructions for your system:
+
+Unix-based systems
+```
+export FOVUS_CLI_PASSWORD='your_password_here'
+```
+
+Note: if you are using a Unix-based system and your password contains a single quote `'`,
+replace all instances of the single quote `'` with the following character sequence: `'\''`.
+
+Windows
+
+1. Run `setx FOVUS_CLI_PASSWORD "your_password_here"` in command prompt
+2. Close your command prompt and open a new one (to refresh the environment variables)
+
+### Post-installation setup
+
+Run `fovus --configure` and follow the prompts. If this results in an error, see below for common errors
+
+#### Windows - Python can't find script
+
+1. In "Run" (Windows + R), enter `sysdm.cpl`
+
+2. System Properties will open up. Go to Advanced -> Environment Variables
+
+3. Under "User variables for xxx", click the variable labeled "Path"
+
+4. Click the "Edit" button under the "User variables for xxx" section
+
+5. Click the "New" button in the "Edit environment variables" pane that opens
+
+6. In the terminal you used to install the Fovus CLI, run the following command: `pip show fovus` (this will show a message similar to the sample output provided after these instructions)
+
+7. Copy the "Location" value from the output of the above command (e.g., `C:\Users\TestFovusUser\AppData\Local\Programs\Python\Python311\Lib\site-packages`) and paste it as a new environment variable. Once it is pasted, replace the `\Lib\site-packages` with `\Scripts` (e.g., `C:\Users\TestFovusUser\AppData\Local\Programs\Python\Python311\Scripts`)
+
+8. Click "OK" on all open environment variable windows.
+
+Sample output for `pip show fovus` (reference from step 6 above):
+
+```
+PS C:\Users\TestFovusUser> pip show fovus
+Name: fovus
+Version: 1.0.6
+Summary: The Fovus Python CLI
+Home-page:
+Author: Fovus Corporation
+Author-email:
+License:
+Location: C:\Users\TestFovusUser\AppData\Local\Programs\Python\Python311\Lib\site-packages
+Requires: boto3, dateparser, jsonschema, pycognito, requests, tqdm
+Required-by:
+```
+
+Note: If the above fails, try reinstalling/modifying your Python and pip installation following the instructions under the "Prerequisites" section above.
+
+## Basic usage
+
+See the "Advanced Usage" section for additional options regarding file inclusion/exclusion for create job and download job files.
+
+### Viewing your config files
+```
+fovus --open-config-folder
+```
+
+Note:
+
+1. Contains empty job and user config files for reference and copying.
+
+### Creating jobs
+This command will upload files from the specified directory to Fovus and create a job.
+
+Upon job creation:
+
+1. The following will be validated: your job configuration structure (if provided as JSON), your job configuration values against your chosen benchmarking profile, and your software configurations (if job is monolithic).
+2. A `.fovus` folder will be created in your local file root directory, which will contain a `job_data.json` file (i.e., `/path/to/job/file/root/directory/.fovus/job_data.json`. This json is used to facilitate checking job status and downloading job files by tracking the job's `jobID`.
+
+```
+fovus --create-job --job-config-file-path "/path/to/job/config/file.json" --job-file-root-directory "/path/to/job/file/root/directory"
+```
+
+Note:
+
+1. To create your own job template, do the following:
+    1. Open the fovus config folder with `--open-config-folder`.
+    2. Make a copy of either `~/.fovus/job_configs/FOVUS_job_template_containerized.json` or `~/.fovus/job_configs FOVUS_job_template_monolithic.json`.
+    3. ***IMPORTANT: rename your copy, or it will be overwritten.***
+    4. Fill in the fields.
+2. Each subdirectory in your job file root directory will be treated as its own task.
+    1. Task folders must only contain the following characters (commas not included): `a-Z`, `0-9`, `-`, `_`. In addition, task folders must not start with a hyphen `-` or underscore `_`.
+4. You can add the optional argument `--job-name "your_job_name_here"` to set a custom job name.
+
+### Getting job status
+
+If you created the job using the Fovus CLI on the same local machine (i.e., the `.fovus` folder was created in your job root directory -- see "Creating job" section for details):
+
+```
+fovus --get-job-current-status --job-file-root-directory "/path/to/job/file/root/directory
+```
+
+If you did not create the job using the Fovus CLI:
+
+```
+fovus --get-job-current-status --job-id "your_job_id"
+```
+
+Note:
+
+1. Job ID is viewable in the Web UI.
+
+### Downloading completed job files
+
+If you created the job using the Fovus CLI on the same local machine (i.e., the `.fovus` folder was created in your job root directory -- see "Creating job" section for details):
+
+`fovus --download-job-files --job-file-root-directory "/path/to/job/file/root/directory"`
+
+If you did not create the job using the Fovus CLI:
+
+```
+fovus --download-job-files --job-file-root-directory "/path/to/job/file/root/directory" --job-id "your_job_id"
+```
+
+Note:
+
+1. Only new or updated files will be downloaded (checked using file hash).
+
+## Advanced usage
+
+### Include/Exclude file patterns
+
+When creating a job, the arguments `--include-input` and `--exclude-input` are available to you. These arguments are used to include/exclude filepaths for upload/download. Valid values for these arguments are alphanumeric along with the wildcards: * (matches any number of characters), ? (matches any single character).
+
+For example:
+
+- `--include-input "Car*/*" "config?/*"` includes:
+	- All files under any directory that begins with `Car`.
+	- All files in folders titled `configX`, where `X` is any character.
+- `--exclude-input "Car*/*.log" "local?/*"` uploads all files except:
+	- All `.log` filetypes within every directory that begins with `Car`.
+	- All files in any directory titled `localX` where `X` is any character.
+- The same logic applies for `--include-output` and `--exclude-output` except those are used for downloading job files.
+
+
+#### Usage with create job (--create-job)
+
+1. `--include-input` will **only** upload filepaths (relative to the job root directory) that match the expressions provided.
+2. `--exclude-input` will upload **all filepaths except** those that match the expression provided.
+
+#### Usage with download job files (--download-job-files)
+
+1. `--include-output` will **only** download filepaths (relative to the job root directory) that match the expressions provided.
+2. `--exclude-output` will download **all filepaths except** those that match the expression provided.
+
+### Overriding
+
+Any value in a job config or a user config can be overriden by providing the respective json key as an argument. Examples are given below, and more details are available in `--help`.
+
+#### Single-value arguments
+
+All single-value arguments (i.e., not lists) can be overriden using a single argument and a value.
+For example, the `benchmarkingProfileName` in your job config, you can do so by providing the argument `--benchmarkingProfileName "your_benchmarking_profile_name_here"`.
+
+#### Lists of values
+
+All lists of values can be overridden using a single argument and a list of values.
+For example, if you want to override the `supportedCpuArchitectures` in your job config, you can do so by providing the argument `--supportedCpuArchitectures "x86_64" "arm64"`.
+
+#### Lists of objects
+
+Currently, the only list of objects that exists is the `monolithicList`, which is only used for monolithic jobs. The only value that can be overridden in a `monolithicList` is `licenseCountPerTask`.
+To do this, use the command `--monolithic-override "vendor_name" "software_name" "license_feature" "your_new_license_count_here"`.
+
+Note:
+
+1. The monolithicList object must already exist in the job config JSON.
+2. The vendor name, software name, and license feature are used to reference the specific object within the list and do not override existing values.
+3. If an object that does not match the given vendor name, software name, and license feature does not exist, an error will be thrown.
