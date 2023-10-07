@@ -1,0 +1,152 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = [
+    "setuptools>=61.0",
+    "wheel>=0.21",
+    "oldest-supported-numpy",
+    "setuptools_scm[toml]>=6.2",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nano-qmflows"
+dynamic = [
+    "dependencies",
+    "optional-dependencies",
+    "version",
+    "readme",
+]
+description = "Derivative coupling calculation"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Felipe Zapata & Ivan Infante", email = "f.zapata@esciencecenter.nl" },
+]
+keywords = [
+    "chemistry",
+    "Photochemistry",
+    "Simulation",
+]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: C++",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Typing :: Typed",
+]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/SCM-NV/nano-qmflows"
+"Bug Tracker" = "https://github.com/SCM-NV/nano-qmflows/issues"
+Documentation = "https://qmflows-namd.readthedocs.io/en/latest/"
+
+[project.scripts]
+"run_workflow.py" = "nanoqm.workflows.run_workflow:main"
+"distribute_jobs.py" = "nanoqm.workflows.distribute_jobs:main"
+
+[tool.setuptools]
+license-files = ["LICENSE*.txt"]
+
+[tool.setuptools.packages.find]
+exclude = ["test"]
+
+[tool.setuptools.package-data]
+nanoqm = [
+    "basis/*.json",
+    "basis/BASIS*",
+    "basis/GTH_POTENTIALS",
+    "py.typed",
+    "*.pyi",
+]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["install_requirements.txt"] }
+optional-dependencies.test = { file = ["test_requirements.txt"] }
+optional-dependencies.doc = { file = ["doc_requirements.txt"] }
+optional-dependencies.lint = { file = ["linting_requirements.txt"] }
+readme = { file = ["README.rst"], content-type = "text/x-rst" }
+
+[tool.setuptools_scm]
+write_to = "nanoqm/_version.py"
+
+[tool.mypy]
+plugins = "numpy.typing.mypy_plugin"
+show_error_codes = true
+mypy_path = "typings"
+files = ["nanoqm", "typings"]
+
+[[tool.mypy.overrides]]
+module = [
+    "schema.*",
+    "matplotlib.*",
+]
+ignore_missing_imports = true
+
+[tool.pydocstyle]
+add_ignore = ["D401"]
+
+[tool.coverage.run]
+branch = true
+source = ["nanoqm"]
+
+[tool.pytest.ini_options]
+testpaths = "test"
+addopts = "--tb=short --cov --cov-report xml --cov-report term --cov-report html --cache-clear --pdbcls=IPython.terminal.debugger:TerminalPdb --durations=6"
+markers = [
+    "slow: A marker for slow tests requiring external quantum-chemical packages."
+]
+filterwarnings = [
+    "error::qmflows.warnings_qmflows.QMFlows_Warning",
+    "ignore:Generic keyword '_pytestfixturefunction' not implemented for package \\w+:qmflows.warnings_qmflows.Key_Warning",
+]
+
+[tool.flake8]
+max-line-length = 100
+per-file-ignores = [
+    "nanoqm/workflows/input_validation.py: E704,E501",
+    "nanoqm/analysis/tools.py: F821",
+]
+
+[tool.cibuildwheel]
+build = [
+    "cp39-manylinux_x86_64",
+    "cp39-manylinux-aarch64",
+    "cp39-macosx_x86_64",
+    "cp39-macosx_arm64",
+]
+before-all = "cp licenses/LICENSE_LIBHDF5.txt licenses/LICENSE_LIBINT2.txt ."
+build-frontend = "build"
+
+[tool.cibuildwheel.linux]
+environment = { QMFLOWS_INCLUDEDIR="", QMFLOWS_LIBDIR="", CFLAGS="-Werror", LDFLAGS="-Wl,--strip-debug" }
+manylinux-x86_64-image = "ghcr.io/nlesc-nano/manylinux2014_x86_64-qmflows:latest"
+manylinux-aarch64-image = "ghcr.io/nlesc-nano/manylinux2014_aarch64-qmflows:latest"
+repair-wheel-command = [
+    "auditwheel -v repair -w {dest_dir} {wheel}",
+    "pipx run abi3audit --strict --verbose --report {wheel}",
+]
+
+[tool.cibuildwheel.macos]
+environment = { QMFLOWS_INCLUDEDIR="", QMFLOWS_LIBDIR="", LDFLAGS="-Wl", MACOSX_DEPLOYMENT_TARGET="10.14" }
+repair-wheel-command = [
+    "delocate-listdeps {wheel}",
+    "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}",
+    "pipx run abi3audit --strict --verbose --report {wheel}",
+]
+
+[[tool.cibuildwheel.overrides]]
+select = "cp39-macosx_arm64"
+environment = { QMFLOWS_INCLUDEDIR="", QMFLOWS_LIBDIR="", LDFLAGS="-Wl", MACOSX_DEPLOYMENT_TARGET="11" }
