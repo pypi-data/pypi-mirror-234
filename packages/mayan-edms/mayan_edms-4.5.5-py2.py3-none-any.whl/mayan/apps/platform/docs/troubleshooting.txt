@@ -1,0 +1,70 @@
+.. _apps-platform-troubleshooting:
+
+
+===============
+Troubleshooting
+===============
+
+
+Python
+======
+
+How to upgrade an existing Python 2 virtualenv
+----------------------------------------------
+
+Use:
+
+.. code-block:: console
+
+    virtualenv <existing directory> -p <Python 3 binary path>
+
+If you followed the deployment instructions, the command line would be:
+
+.. code-block:: console
+
+    virtualenv /opt/mayan-edms -p /usr/bin/python3
+
+If using a dedicated user account for Mayan EDMS:
+
+.. code-block:: console
+
+    sudo -u mayan virtualenv --clear /opt/mayan-edms -p /usr/bin/python3
+
+
+Supervisord
+===========
+
+Supervisord error using direct deployment after upgrade to version 4.1
+----------------------------------------------------------------------
+
+.. code-block:: console
+
+    Error: Format string '%(ENV_MAYAN_GUNICORN_BIN)s --workers%(ENV_MAYAN_GUNICORN_WORKERS)s ...' for 'program:mayan-edms-gunicorn.command' contains names ('ENV_MAYAN_GUNICORN_BIN') which cannot be expanded. Available names: ... in section 'program:mayan-edms-gunicorn' (file: '/etc/supervisor/conf.d/mayan-edms.conf')
+
+This is a bug with Supervisord fixed in version 4.2.2:
+
+    "Fixed a bug where environment variables defined in environment= in the [supervisord] section or a [program:x] section could not be used in %(ENV_x)s expansions. Patch by MythRen."
+
+    http://supervisord.org/changes.html
+
+To solve this upgrade Supervisord to version 4.2.2.
+
+For Debian and Ubuntu:
+
+Install the ``supervisor_4.2.2-2_all.deb`` package from Debian
+"bullseye": https://packages.debian.org/bullseye/supervisor
+
+
+Text encoding
+=============
+
+Error: ``UnicodeEncodeError: 'ascii' codec can't encode characters in position ...``
+------------------------------------------------------------------------------------
+
+The operating system locale must support the Unicode character set. For Debian
+based distributions, modify the locale file ``/etc/default/locale``:
+
+.. code-block:: console
+
+    LANG="en_US.UTF-8"
+    LC_ALL="en_US.UTF-8"
