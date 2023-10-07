@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | dist
+  )/
+)
+'''
+
+[tool.isort]
+profile = "black"
+known_third_party = ["cryptography", "PyJWT", "requests", "setuptools"]
+
+[tool.flake8]
+ignore = "E203, E266, E501, W503, F403, F401"
+max-line-length = 88
+max-complexity = 18
+select = "B,C,E,F,W,T4,B9"
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=./ --cov-report=xml"
+cov_ignore = ["examples/*", "tests/*"]
