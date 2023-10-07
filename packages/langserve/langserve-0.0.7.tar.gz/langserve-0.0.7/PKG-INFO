@@ -1,0 +1,136 @@
+Metadata-Version: 2.1
+Name: langserve
+Version: 0.0.7
+Summary: 
+Home-page: https://github.com/langchain-ai/langserve
+License: LangServe
+Author: LangChain
+Requires-Python: >=3.8.1,<4.0.0
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Provides-Extra: all
+Provides-Extra: client
+Provides-Extra: server
+Requires-Dist: fastapi (>=0.90.1) ; extra == "server" or extra == "all"
+Requires-Dist: httpx (>=0.23.0)
+Requires-Dist: httpx-sse (>=0.3.1) ; extra == "client" or extra == "all"
+Requires-Dist: langchain (>=0.0.310)
+Requires-Dist: pydantic (>=1,<2)
+Requires-Dist: sse-starlette (>=1.3.0,<2.0.0) ; extra == "server" or extra == "all"
+Project-URL: Repository, https://github.com/langchain-ai/langserve
+Description-Content-Type: text/markdown
+
+# LangServe 🦜️🔗 
+
+## Overview
+
+`LangServe` is a library that allows developers to host their Langchain runnables / 
+call into them remotely from a runnable interface.
+
+## Examples
+
+For more examples, see the [examples](./examples) directory.
+
+### Server
+
+```python
+#!/usr/bin/env python
+from fastapi import FastAPI
+from langchain.prompts import ChatPromptTemplate
+from langchain.chat_models import ChatAnthropic, ChatOpenAI
+from langserve import add_routes
+from typing_extensions import TypedDict
+
+
+app = FastAPI(
+  title="LangChain Server",
+  version="1.0",
+  description="A simple api server using Langchain's Runnable interfaces",
+)
+
+
+add_routes(
+    app,
+    ChatOpenAI(),
+    path="/openai",
+)
+
+add_routes(
+    app,
+    ChatAnthropic(),
+    path="/anthropic",
+)
+
+model = ChatAnthropic()
+prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
+add_routes(app, prompt | model, path="/chain")
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=8000)
+```
+
+### Client
+
+```python
+
+from langchain.schema import SystemMessage, HumanMessage
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema.runnable import RunnableMap
+from langserve import RemoteRunnable
+
+openai = RemoteRunnable("http://localhost:8000/openai/")
+anthropic = RemoteRunnable("http://localhost:8000/anthropic/")
+joke_chain = RemoteRunnable("http://localhost:8000/chain/")
+
+joke_chain.invoke({"topic": "parrots"})
+
+# or async
+await joke_chain.ainvoke({"topic": "parrots"})
+
+prompt = [
+    SystemMessage(content='Act like either a cat or a parrot.'), 
+    HumanMessage(content='Hello!')
+]
+
+# Supports astream
+async for msg in anthropic.astream(prompt):
+    print(msg, end="", flush=True)
+    
+prompt = ChatPromptTemplate.from_messages(
+    [("system", "Tell me a long story about {topic}")]
+)
+    
+# Can define custom chains
+chain = prompt | RunnableMap({
+    "openai": openai,
+    "anthropic": anthropic,
+})
+
+chain.batch([{ "topic": "parrots" }, { "topic": "cats" }])
+```
+
+## Installation
+
+```bash
+pip install langserve[all]
+```
+
+or use `client` extra for client code, and `server` extra for server code.
+
+## Features
+
+- Deploy runnables with FastAPI
+- Client can use remote runnables almost as if they were local
+    - Supports async
+    - Supports batch
+    - Supports stream
+
+### Limitations
+
+- Chain callbacks cannot be passed from the client to the server
+
