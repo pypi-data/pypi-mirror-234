@@ -1,0 +1,7 @@
+EMPTY_STRING = '!!empty!!'
+EMPTY_LIST = []
+HASH_TAG = '~<>~'
+DOUBLE_LEFT_BRACKETS = '<~<~'
+DOUBLE_RIGHT_BRACKETS = '~>~>'
+SINGLE_QUOTE = "!!|!!"
+VALUE_QUALIFIER = '~~~'
