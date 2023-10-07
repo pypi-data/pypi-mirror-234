@@ -1,0 +1,84 @@
+version: 1
+disable_existing_loggers: false
+# colours from https://github.com/tqdm/tqdm/blob/master/tqdm/std.py#L151
+formatters:
+  system_local_stdout:
+    format: "\x1b[37m[SYSTEM]  %(asctime)s - [%(levelname)s] - %(message)s\x1b[0m"
+  system_remote_stdout:
+    format: "\x1b[37m[SYSTEM]  %(message)s\x1b[0m"
+  system_remote_stderr:
+    format: "\x1b[31m[SYSTEM]  %(message)s\x1b[0m"
+  system_local_file:
+    format: "[SYSTEM]  %(asctime)s - [%(levelname)s] - %(message)s"
+  system_remote_file:
+    format: "[SYSTEM]  %(message)s"
+  program:
+    format: "[PROGRAM] %(message)s"
+handlers:
+  system_local_stdout:
+    class: logging.StreamHandler
+    level: ${LOG_LEVEL}
+    formatter: system_local_stdout
+    stream: ext://sys.stdout
+  system_remote_stdout:
+    class: logging.StreamHandler
+    level: ${LOG_LEVEL}
+    formatter: system_remote_stdout
+    stream: ext://sys.stdout
+  system_remote_stderr:
+    class: logging.StreamHandler
+    level: ${LOG_LEVEL}
+    formatter: system_remote_stderr
+    stream: ext://sys.stderr
+  system_local_file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: system_local_file
+    filename: ${LOG_FILE_PATH}
+    encoding: utf8
+  system_remote_file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: system_remote_file
+    filename: ${LOG_FILE_PATH}
+    encoding: utf8
+  program_file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: program
+    filename: ${LOG_FILE_PATH}
+    encoding: utf8
+  program_stdout:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: program
+    stream: ext://sys.stdout
+  program_stderr:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: program
+    stream: ext://sys.stderr
+loggers:
+  datasphere:
+    level: DEBUG
+    handlers: [system_local_stdout, system_local_file]
+  datasphere_file:
+    level: DEBUG
+    handlers: [system_local_file]
+  system_stdout:
+    level: DEBUG
+    handlers: [system_remote_stdout, system_remote_file]
+  system_stderr:
+    level: DEBUG
+    handlers: [system_remote_stderr, system_remote_file]
+  program_stdout:
+    level: DEBUG
+    handlers: [program_stdout, program_file]
+  program_stderr:
+    level: DEBUG
+    handlers: [program_stderr, program_file]
+  lzy:
+    level: ERROR
+    handlers: [system_local_stdout, system_local_file]
+root:
+  level: WARNING
