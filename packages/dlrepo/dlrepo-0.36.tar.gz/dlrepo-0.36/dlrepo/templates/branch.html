@@ -1,0 +1,53 @@
+{# Copyright (c) 2021 Julien Floret #}
+{# Copyright (c) 2021 Robin Jarry #}
+{# SPDX-License-Identifier: BSD-3-Clause #}
+{% extends "base.html" %}
+
+{% block breadcrumbs %}
+{{breadcrumbs(['branches', branch.name])}}
+{% endblock %}
+
+{% block page_content %}
+{% set tags = branch.tags|sort(attribute='name')|list %}
+{% set released = tags|selectattr('released')|list|length %}
+{% set max_released = branch.cleanup_policy.max_released_tags %}
+{% set daily = tags|length - released %}
+{% set max_daily = branch.cleanup_policy.max_daily_tags %}
+{% set locked = tags|selectattr('locked')|list|length %}
+<section>
+  <div>
+    <span>
+      {{released}}{{'/%d' % max_released if max_released}} tag{{'s' if released > 1 or max_released}} released,
+      {{daily}}{{'/%d' % max_daily if max_daily}} daily{{' (%d locked)' % locked if locked}}.
+    </span>
+  </div>
+</section>
+{% set width = tags|map(attribute='name')|map('length')|max|default(80) %}
+{% set width = [width, 10]|max %}
+<section class="tags" style="column-width: {{width * 0.8}}em;">
+  {% if tags %}
+  <div>
+    <a href="latest/" class="tag alias">latest</a>
+  </div>
+  {% endif %}
+  {% if tags|selectattr("stable")|list %}
+  <div>
+    <a href="stable/" class="tag alias">stable</a>
+  </div>
+  {% if tags|selectattr("stable")|list|length > 1 %}
+  <div>
+    <a href="oldstable/" class="tag alias">oldstable</a>
+  </div>
+  {% endif %}
+  {% endif %}
+  {% for tag in tags %}
+  <div>
+    <a href="{{tag.name}}/"
+       class="tag {{'released' if tag.released}} {{'published' if tag.publish_status}} {{'locked' if tag.locked}}"
+       title="{{'released' if tag.released}} {{'published' if tag.publish_status}} {{'locked' if tag.locked}}">
+      {{tag.name}}
+    </a>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}
