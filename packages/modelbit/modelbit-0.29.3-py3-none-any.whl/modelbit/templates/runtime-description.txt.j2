@@ -1,0 +1,19 @@
+Deployment {{ format.bold(runtimeName) }}:
+{% if deployable %}
+  {{ format.green("Ready to Deploy") }}
+{% else %}
+  {{ format.red("Not Ready to Deploy") }}
+{% endif %}
+
+{% include 'runtime-notes.txt.j2'%}
+{% with headers=properties.headers, rows=properties.rows %}
+  {% include 'table.txt.j2'%}
+{% endwith %}
+
+{% if tests.rows | length > 0 %}
+
+Tests:
+{% with headers=tests.headers, rows=tests.rows %}
+  {% include 'table.txt.j2'%}
+{% endwith %}
+{% endif %}
