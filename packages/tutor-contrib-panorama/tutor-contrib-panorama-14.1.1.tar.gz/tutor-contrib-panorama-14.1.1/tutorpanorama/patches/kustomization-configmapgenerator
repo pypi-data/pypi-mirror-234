@@ -1,0 +1,18 @@
+# Config map with the configuration file for panorama-elt
+
+- name: panorama-elt-config
+  files:
+    - ../env/plugins/panorama/apps/panorama-elt/panorama_openedx_settings.yaml
+  options:
+    labels:
+        app.kubernetes.io/name: panorama-elt
+
+{% if PANORAMA_RUN_K8S_FLUENTBIT %}
+- name: fluent-bit-config
+  files:
+    - ../env/plugins/panorama/apps/panorama-elt/fluent-bit.conf
+    - ../env/plugins/panorama/apps/panorama-elt/parsers.conf
+  options:
+    labels:
+      app.kubernetes.io/name: fluentbit
+{% endif %}
