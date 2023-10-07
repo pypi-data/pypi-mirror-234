@@ -1,0 +1,62 @@
+Metadata-Version: 2.1
+Name: shell-command-launcher
+Version: 1.0.4
+Summary: A simple tool to launch shell command many times.
+Home-page: https://github.com/shenmishajing/shell_command_launcher
+Author: shenmishajing
+Author-email: shenmishajing@gmail.com
+License: MIT License
+Project-URL: Code, https://github.com/shenmishajing/shell_command_launcher
+Project-URL: Issue tracker, https://github.com/shenmishajing/shell_command_launcher/issues
+Platform: all
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Environment :: GPU :: NVIDIA CUDA
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Natural Language :: Chinese (Simplified)
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: jsonargparse[all]
+
+## Shell Command Launcher
+
+A simple tool to launch shell command many times.
+
+### Args
+
+#### command
+
+The command to run, which is a string. You can use `$<var_name>` or `${<var_name>}` to represent a var defined in arg_dict. For details, see the [template doc](https://docs.python.org/3/library/string.html#template-strings).
+
+#### arg_dict
+
+A dict of args to replace the var in cmd. The key is the var name, and the value is a list of the var value.
+
+The command will run with all combinations of the var values.
+
+#### log_dir
+
+The dir to save the log file. If set, the output of each command will be saved in `log_dir/<var_name1>_<var_value1>__<var_name2>_<var_value2>...__<var_namen>_<var_valuen>.log`.
+
+#### num
+
+The number of times to run the same command. If set, each command will run `num` times. If `log_dir` is also set, the output of each command will be saved in `log_dir/<var_name1>_<var_value1>__<var_name2>_<var_value2>...__<var_namen>_<var_valuen>_<num>.log`.
+
+#### parallel_num
+
+The number of tasks to run in parallel. If set, we will run `parallel_num` tasks in parallel.
+
+#### sleep_time
+
+The sleep time in seconds between each command, `0` by default. We will sleep `sleep_time` seconds between each command.
+
+#### other args
+
+Other args will be passed to `subprocess.Popen` as kwargs. For details, see the [doc](https://docs.python.org/3/library/subprocess.html#popen-constructor).
