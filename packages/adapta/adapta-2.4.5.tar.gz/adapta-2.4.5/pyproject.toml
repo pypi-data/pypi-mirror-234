@@ -1,0 +1,97 @@
+[tool.poetry]
+name = "adapta"
+version = "2.4.5"
+description = "Logging, data connectors, monitoring, secret handling and general lifehacks to make data people lives easier."
+authors = ["ECCO Sneaks & Data <esdsupport@ecco.com>"]
+maintainers = ['GZU <gzu@ecco.com>', 'JRB <ext-jrb@ecco.com>']
+license = 'Apache 2.0'
+readme = "README.md"
+repository = 'https://github.com/SneaksAndData/adapta'
+
+[tool.poetry.dependencies]
+python = ">=3.9, <3.12"
+requests = "^2.26"
+backoff = "^2.2"
+cryptography = "~36.0"
+pandas = { version = ">=2.0.0,<3.0", extras = ["performance"] }
+pyarrow = ">=7.0"
+dataclasses-json = "~0.6"
+
+cassandra-driver = { version = "~3.28.0", optional = true }
+
+deltalake = { version = "~0.8.1", optional = true }
+
+azure-identity = { version = "~1.7", optional = true }
+azure-storage-blob = { version = ">12.7.0,<=12.16.0", optional = true }
+azure-mgmt-storage = { version = "~19.1.0", optional = true }
+azure-keyvault-secrets = { version = "^4.3", optional = true }
+azure-servicebus = { version = "~7.6", optional = true }
+adlfs = { version = '~2023', optional = true }
+
+datadog = { version = "~0.44.0", optional = true }
+datadog-api-client = { version = "~1.12.0", optional = true }
+
+SQLAlchemy = { version = "~1.4", optional = true }
+pyodbc = { version = "~4.0", optional = true }
+
+mlflow-skinny = { version = "~2.4.1", optional = true }
+
+redis = { version = "~4.4.0", optional = true, extras = ['hiredis'] }
+
+hvac = { version = "0.11.2", optional = true }
+
+fsspec = { version = "2022.8.2" }
+
+trino = { version = "0.319.0", optional = true, extras = ['sqlalchemy'] }
+
+[tool.poetry.extras]
+azure = [
+    'azure-identity',
+    'azure-storage-blob',
+    'azure-mgmt-storage',
+    'azure-keyvault-secrets',
+    'azure-servicebus',
+    'adlfs'
+]
+datadog = [
+    'datadog',
+    'datadog-api-client'
+]
+databases = [
+    'SQLAlchemy',
+    'pyodbc'
+]
+ml = [
+    'mlflow-skinny'
+]
+caching = [
+    'redis'
+]
+
+hashicorp = [
+    'hvac'
+]
+
+trino = [
+    'trino'
+]
+
+storage = [
+    "deltalake",
+    "cassandra-driver"
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.1"
+pytest-mock = "~3.6.1"
+pytest-cov = "~2.12"
+pylint = "^2.12"
+cryptography = "~36.0"
+black = "^23"
+
+[tool.black]
+line-length = 120
+
+[build-system]
+requires = ["poetry-core>=1.2.0"]
+build-backend = "poetry.core.masonry.api"
