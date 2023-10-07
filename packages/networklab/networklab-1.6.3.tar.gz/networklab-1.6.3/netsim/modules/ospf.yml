@@ -1,0 +1,47 @@
+# OSPFv2/OSPFv3 default settings and attributes
+#
+# Also supported on csr, eos, frr, iosv, nxos, vyos, routeros, dellos10, routeros7, arubacx, junos (vmx, vsrx, vptx)
+#
+area: 0.0.0.0
+supported_on: [
+  arcos, cumulus, cumulus_nvue, fortios,
+  srlinux, sros, iosxr, none ]
+transform_after: [ vlan,vrf ]
+config_after: [ vlan ]
+attributes:
+  global:
+    af:
+      _list_to_dict: True
+      _alt_types: [ NoneType ]
+      ipv4: bool
+      ipv6: bool
+    area: { type: ipv4, use: id }
+    process: { type: int, min_value: 1 }
+    reference_bandwidth: { type: int, min_value: 1 }
+    bfd:
+      ipv4: bool
+      ipv6: bool
+      strict: bool                                              # Support RFC9355
+      strict_delay: { type: int, min_value: 0, max_value: 600 } # optional delay in seconds
+      _alt_types: [ bool ]
+  node:
+    af:
+    area:
+    process:
+    reference_bandwidth:
+    bfd:
+    router_id: { type: ipv4, use: id }
+  node_copy: [ area ]
+  vrf_aware: [ area ]
+  vrf:
+    active: bool
+    router_id: { type: ipv4, use: id }
+  link:
+    cost: { type: int, min_value: 1, max_value: 65534 }
+    area: { type: ipv4, use: id }
+    bfd: bool
+    passive: bool
+    network_type: { type: str, valid_values: [ point-to-point,point-to-multipoint,broadcast,non-broadcast ] }
+features:
+  unnumbered: Can run OSPFv2 over unnumbered IPv4 interfaces
+  strict_bfd: Supports strict BFD mode (RFC 9355)

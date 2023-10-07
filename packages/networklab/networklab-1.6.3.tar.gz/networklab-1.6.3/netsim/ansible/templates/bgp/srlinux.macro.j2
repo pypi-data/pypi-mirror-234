@@ -1,0 +1,252 @@
+{% macro bgp_policy(vrf,is_import,communities,vrf_context) %}
+{% set name = vrf + "_ebgp_" + ('import' if is_import else 'export') %}
+
+{% macro accept() %}
+{% if is_import or not communities %}
+      policy-result: "accept"
+{% else %}
+      policy-result: "accept"
+      # bgp:
+      #  communities:
+      #   add: "{{ name }}"
+{% endif %}
+{% endmacro %}
+
+- path: routing-policy/prefix-set[name={{vrf}}_export]
+  val:
+   prefix: [] # Make sure it exists
+
+- path: routing-policy/policy[name={{name}}]
+  val:
+   default-action:
+    policy-result: "reject"
+   statement:
+{% if is_import %}
+{%  for c in communities|default([]) %}
+   - name: {{ 10 + loop.index }}
+     match:
+      bgp:
+       community-set: "C{{ c|replace(':','_') }}"
+     action:
+{{    accept() }}
+{%  endfor %}
+{% else %}
+   - name: 5
+     match:
+      protocol: bgp
+      _annotate_protocol: "Accept and propagate prefixes received via BGP"
+     action:
+{{    accept() }}
+   - name: 10
+     match:
+      prefix-set: "{{ vrf }}_export"
+     action:
+{{    accept() }}
+{% endif %}
+{% endmacro %}
+
+{% macro bgp_export_prefix(vrf,prefix) %}
+- path: routing-policy/prefix-set[name={{vrf}}_export]
+  val:
+   prefix:
+   - ip-prefix: {{ prefix }}
+     mask-length-range: exact
+{% endmacro %}
+
+{% macro bgp_config(vrf,_as,router_id,vrf_bgp,vrf_context) %}
+
+{% if 'import' in vrf_context %}
+{% set import_policy = vrf + "_ebgp_import" %}
+{{ bgp_policy(vrf,1,vrf_context.import,vrf_context) }}
+{% else %}
+{% set import_policy = "accept_all" %}
+{% endif -%}
+
+{% set export_policy = vrf + "_ebgp_export" %}
+{{ bgp_policy(vrf,0,vrf_context.export|default({}),vrf_context) }}
+
+- path: network-instance[name={{vrf}}]/protocols/bgp
+  val:
+   admin-state: enable
+   autonomous-system: {{ _as }}
+   router-id: {{ router_id }}
+   ebgp-default-policy:
+    export-reject-all: False
+    import-reject-all: False
+   import-policy: {{ import_policy }}  # Set eBGP policy globally, override for iBGP
+   export-policy: {{ export_policy }}
+
+{# Configure BGP address families globally #}
+{% for af in ['ipv4','ipv6'] if af in vrf_context.af and vrf_context.af[af] %}
+   afi-safi:
+   - afi-safi-name: {{ af }}-unicast
+     admin-state: enable
+     multipath:
+      max-paths-level-1: 64
+      max-paths-level-2: 64 # indirect nexthops
+{% endfor %}
+
+{# Create route export policies #}
+{% for af in ['ipv4','ipv6'] if af in vrf_context.af and vrf_context.af[af] %}
+{% if loopback[af] is defined and bgp.advertise_loopback and vrf=='default' %}
+{{ bgp_export_prefix(vrf,loopback[af]|ipaddr('address')|ipaddr('host')) }}
+{% endif %}
+
+{% for l in interfaces|default([]) if l.bgp.advertise|default(0) and l[af]|default(False) is string and l.vrf|default('default')==vrf %}
+{{ bgp_export_prefix(vrf,l[af]|ipaddr('subnet')) }}
+{% endfor %}
+
+{% for pfx in vrf_bgp.originate|default([]) if af == 'ipv4' %}
+{{ bgp_export_prefix(vrf,pfx) }}
+{% endfor %}
+{% endfor %}
+
+{% macro bgp_families(neighbor,ipv4=True,ipv6=True) %}
+{% set activate = neighbor.activate|default( {'ipv4': True,'ipv6': True } ) %}
+   afi-safi:
+   - afi-safi-name: ipv4-unicast
+     admin-state: {{ 'enable' if activate.ipv4|default(False) and ipv4 else 'disable' }}
+{% if neighbor.ipv4_rfc8950|default(False) %}
+     ipv4-unicast:
+      advertise-ipv6-next-hops: True
+      receive-ipv6-next-hops: True
+{% endif %}
+   - afi-safi-name: ipv6-unicast
+     admin-state: {{ 'enable' if activate.ipv6|default(False) and ipv6 else 'disable' }}
+{% if 'evpn' in neighbor and neighbor.evpn %}
+   - afi-safi-name: evpn
+     admin-state: enable # Must have at least 1 address family enabled
+{% endif %}
+{% endmacro %}
+
+{% macro bgp_peer_group(name,type,neighbor,transport_ip) %}
+- path: network-instance[name={{vrf}}]/protocols/bgp/group[group-name={{name}}]
+  val:
+   admin-state: enable
+{{ bgp_families(neighbor) }}
+   timers:
+    connect-retry: 10
+    _annotate_connect-retry: "Reduce default 120s to 10s"
+    minimum-advertisement-interval: 1
+{% set list = vrf_bgp.community[type]|default([]) %}
+   send-community:
+    standard: {{ 'standard' in list }}
+    large: {{ 'standard' in list }}
+    _annotate_large: "Assuming 'standard' implies 'large' here"
+{% if 'ibgp' in type %}
+   import-policy: accept_all
+   export-policy: accept_all
+   peer-as: {{ neighbor.as }}
+   transport:
+    local-address: {{ transport_ip }}
+{%  if vrf_bgp.rr|default(0) %}
+    passive-mode: True
+    _annotate_passive-mode: "Improve robustness during startup"
+{%  else %}
+   next-hop-self: {{ vrf_bgp.next_hop_self|default(False) }}
+{%  endif %}
+{% endif %}
+{% if vrf_bgp.rr|default(0) %}
+   route-reflector:
+    cluster-id: {{ vrf_bgp.rr_cluster_id|default(False) or router_id }}
+    client: True
+{% endif %}
+{% endmacro %}
+
+{#
+  Define IPv4 and IPv6 BGP neighbors
+#}
+{% for n in vrf_bgp.neighbors %}
+{% for af in ['ipv4','ipv6'] if n[af] is defined %}
+
+{% if n[af] is string %}
+{# (Re)create peer group #}
+{% set peer_group = 'ebgp' if n.type=='ebgp' else 'ibgp-local-as' if n.type=='localas_ibgp' else ('ibgp-'+af) %}
+{% set transport_ip = loopback[af]|ipaddr('address') if af in loopback and n.type=='ibgp' else None %}
+{{ bgp_peer_group(peer_group,'ibgp' if 'ibgp' in n.type else 'ebgp',n,transport_ip) }}
+
+- path: network-instance[name={{vrf}}]/protocols/bgp
+  val:
+   neighbor:
+   - peer-address: "{{ n[af] }}"
+     description: {{ n.name }}
+     peer-group: {{ peer_group }}
+  {{ bgp_families(n,ipv4=(af=='ipv4' or 'ipv4' not in n),ipv6=(af=='ipv6')) | indent(2) }}
+{% if 'ebgp' in n.type %}
+     peer-as: {{ n.as }}
+{% elif vrf_bgp.rr|default(False) and n.rr|default(False) %}
+     route-reflector:
+      client: False # Don't reflect routes between ibgp route reflectors
+     transport:
+      passive-mode: False
+      _annotate_passive-mode: "Connect actively to other Route Reflectors"
+{% endif %}
+{% if n.local_as is defined %}
+     local-as:
+      as-number: {{ n.local_as }}
+      prepend-global-as: {{ not n.replace_global_as|default(True) }} # Don't include iBGP global AS in eBGP advertisements
+{% endif %}
+
+{% elif n[af]==True and af=='ipv6' %}
+{# BGP unnumbered for IPv6 LLA, not supported in combination with evpn #}
+{% if 'evpn' in n %}
+{{ raise_error | mandatory( 'EVPN not supported for BGP unnumbered peers' ) }}
+{% endif %}
+
+{% set peer_group = n.type + "-unnumbered" + (('-' + n.local_as|string()) if n.local_as is defined else '') %}
+{{ bgp_peer_group(peer_group,n.type,n,None) }}
+{% if n.local_as is defined %}
+   local-as:
+    as-number: {{ n.local_as }}
+    prepend-global-as: {{ not n.replace_global_as|default(True) }} # Don't include iBGP AS in eBGP advertisements
+{% endif %}
+
+{% if n.ipv4_rfc8950|default(False) %}
+- path: network-instance[name={{vrf}}]/ip-forwarding
+  val:
+   receive-ipv4-check: false
+   _annotate_receive-ipv4-check: "Allow IPv4 on IPv6 unnumbered interfaces"
+{% endif %}
+
+{% for i in interfaces|default([]) if i.ifindex == n.ifindex %}
+{% set if_name_index = i.ifname.split('.') %}
+{% set if_name = if_name_index[0] %}
+{% set if_index = if_name_index[1] if if_name_index|length > 1 else '0' %}
+- path: network-instance[name={{vrf}}]/protocols/bgp/dynamic-neighbors/interface[interface-name={{if_name}}.{{if_index}}]
+  val:
+   peer-group: "{{ peer_group }}"
+   allowed-peer-as: [ {{ n.as }}..{{ n.as }} ]
+
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+{#
+  Add extra IPv4 prefixes using static blackhole routes
+#}
+{% for pfx in vrf_bgp.originate|default([]) %}
+{% if loop.first %}
+- path: network-instance[name={{vrf}}]/next-hop-groups/group[name=blackhole]
+  val:
+   blackhole:
+     generate-icmp: True
+{% endif %}
+- path: network-instance[name={{vrf}}]/static-routes
+  val:
+   route:
+   - prefix: "{{ pfx }}"
+     next-hop-group: blackhole
+{% endfor %}
+
+{% if 'sr' in module|default([]) %}
+{# Configure BGP shortcuts via SR-ISIS #}
+- path: network-instance[name={{vrf}}]/protocols/bgp/afi-safi[afi-safi-name=ipv4-unicast]/next-hop-resolution
+  val:
+   ipv4-next-hops:
+    tunnel-resolution:
+     mode: prefer
+     _annotate_mode: "tunnel-table lookup over FIB"
+     allowed-tunnel-types: [ sr-isis ]
+{% endif %}
+{% endmacro %}

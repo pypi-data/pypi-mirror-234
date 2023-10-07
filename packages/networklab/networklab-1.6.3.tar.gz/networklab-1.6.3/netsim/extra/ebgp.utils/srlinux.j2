@@ -1,0 +1,58 @@
+{% macro ebgp_neighbor(n,af,vrf) -%}
+- path: network-instance[name={{vrf}}]/protocols/bgp
+  val:
+{% if n.type=='ebgp' and af=='ipv6' and n.ipv6|default(0) == True %}
+   group:
+   - group-name: "ebgp-unnumbered{{ ('-' + n.local_as|string()) if n.local_as is defined else '' }}"
+{% else %}
+   neighbor:
+   - peer-address: {{ n[af]|ipaddr('address') }}
+{% endif %}
+{% if n.default_originate|default(False) %}
+{%   set activate = n.activate|default( {'ipv4':True,'ipv6':True} ) %}
+     send-default-route:
+      ipv4-unicast: {{ activate.ipv4|default(False) }}
+      ipv6-unicast: {{ activate.ipv6|default(False) }}
+{% endif %}
+     as-path-options:
+{%   if n.allowas_in is defined %}
+      allow-own-as: {{ n.allowas_in|int }}
+{%   endif %}
+      replace-peer-as: {{ True if n.as_override|default(False) else False }}
+{%   if n.password is defined and (n.type!='ebgp' or n.ipv6|default('') is string) %}
+     authentication:
+      keychain: "peer-{{n.name}}"
+
+- path: system/authentication/keychain[name=peer-{{n.name}}]
+{% if n.tcp_ao|default('x')=='' or bgp.tcp_ao|default('')=='' %}
+{%  set type = 'tcp-md5' %}
+{%  set algorithm = 'md5' %}
+{% else %}
+{%  set type = 'tcp-ao' %} {# Note: Not yet supported in R23.7 #}
+{%  set algorithm = n.tcp_ao | default( bgp.tcp_ao ) %} 
+{% endif %}
+  val:
+   type: "{{ type }}"
+   key:
+   - index: 0
+     algorithm: "{{ algorithm }}"
+     authentication-key: "{{ n.password }}"
+{%   endif %}
+{%- endmacro %}
+
+updates:
+{% for af in ['ipv4','ipv6'] %}
+{%   for n in bgp.neighbors if n[af] is defined and (n[af] is string or (af=='ipv6' and n.ipv6)) %}
+{{     ebgp_neighbor(n,af,'default') -}}
+{%   endfor %}
+{% endfor %}
+
+{% if vrfs is defined %}
+{% for vname,vdata in vrfs.items() if vdata.bgp is defined %}
+{%   for af in ['ipv4','ipv6'] %}
+{%     for n in vdata.bgp.neighbors if n[af] is defined and (n[af] is string or (af=='ipv6' and n.ipv6)) %}
+{{       ebgp_neighbor(n,af,vname) -}}
+{%     endfor %}
+{%   endfor %}
+{% endfor %}
+{% endif %}
