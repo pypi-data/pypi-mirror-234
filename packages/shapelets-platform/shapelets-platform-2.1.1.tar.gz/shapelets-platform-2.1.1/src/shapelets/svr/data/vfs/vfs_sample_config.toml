@@ -1,0 +1,110 @@
+# required entry, it must resolve to a directory 
+# where the user running the python proces should 
+# be able to write (preferrably a decent solid 
+# state drive locally attached to the machine 
+# running the software).
+cache_root = "/home/user/.shapelets/cache"
+
+#
+# examples of possible configurations
+#
+
+[[vfs]]
+# Mount the local file system as fss://svr_local_fs/...
+kind = 'localfs'                  # sets the type of the file system
+mount_as = 'svr_local_fs'         # name in the fss url
+root = '/path/to/base/directory'  # this will be the root folder exposed in fss
+auto_mkdir = true                 # auto creates directories under root as necessary (defaults to True, optional)
+
+[[vfs]]
+# mount azure gen 1 protocol as fss://datalake/...
+kind = "azgen1"
+mount_as = "datalake"
+# this section is required, although the settings may be 
+# left empty to force the user to provide them or to 
+# be found in environment variables.
+# In this case the environment variables to look up will be 
+# datalake__tenant_id, datalake__client_id and 
+# datalake__client_secret.
+[vfs.credentials]
+# tenant_id = ''  
+# client_id = ''
+# client_secret = ''
+
+
+[[vfs]]
+# fully configured access to public datasets in azure
+# it will be exposed as fss://azpublic/...
+kind = "azgen2"
+mount_as = "azpublic"
+[vfs.credentials]
+cred_kind = "azanon"
+account_name = "azureopendatastorage"
+
+[[vfs]]
+# azure gen2 using an account key
+kind = "azgen2"
+mount_as = "azprivate"
+# an entry for credentials is required for azgen2
+[vfs.credentials]
+cred_kind = "azacckey"
+account_name = "private_account"
+# if you wish to make the account_key either 
+# provided by the user or to resolve it through 
+# environment variables, remove it from the 
+# configuration file.  the environment variable 
+# for this setting will be azprivate__account_key, 
+# that is, the name of the mount point (mount_as)
+# joined with the name of the missing property
+account_key = "private_account_key"
+
+# other credentials for azgen2 (same rules of resolution as before)
+# cred_kind = 'azsp', will resolve account_name, tenant_id, client_id, client_secret
+# cred_kind = 'azconn', will resolve connection_string
+# cred_kind = 'token', requires service entry set (you may want to fix this to 'azure' -- one of GC auth services) 
+#                      and token will be automatically generated.
+
+[[vfs]]
+# an ftp server mounted as fss://xyz/...
+kind = "ftp"
+mount_as = "xyz"
+host = "some.server.com"
+port = 27
+# this section is optional, if the server supports anonymous access
+[vfs.credentials]
+username = "pepe"
+password = "juan"
+account = "account" # this is optional, some servers need it
+
+[[vfs]]
+# same as before, but there is no anon access and the user 
+# has to provide all settings explicetly or through env variables 
+kind = "ftp"
+mount_as = "xyz"
+host = "some.server.com"
+port = 27
+[vfs.credentials] # add the section but leave it blank
+
+[[vfs]]
+# same as before, but the user has to provide a well-known password
+kind = "ftp"
+mount_as = "xyz"
+host = "some.server.com"
+port = 27
+[vfs.credentials] # add the section but leave it blank
+username = 'fixed_user_name'
+# password = , comment or remove this line
+
+
+[[vfs]]
+# a smb network share as fss://myshare/...
+mount_as = 'myshare'
+kind = 'smb'
+host = 'my.server.com' # or ip address
+#port = 12344 # this is an optional setting
+#share_access = 'r' # accepts 'r' for concurrent read, 'w' for concurrent write and 'd' for concurrent deletion
+  # same rules as ftp applies to smb
+[vfs.credentials]
+username = "pepe"
+password = "juan"
+workgroup = "workgroup"

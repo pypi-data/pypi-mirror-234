@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=42", "setuptools_scm[toml]==7.1.0", "psutil"]
+build-backend = "setuptools.build_meta"
+
+#
+# This section has been moved to setup.py
+# to permit a sdist distribution
+# 
+# [tool.setuptools_scm]
+# write_to = "modules/python/src/shapelets/_version.py"
+# root = "../.."
+# version_scheme = "guess-next-dev"
+# local_scheme="no-local-version"
+#
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+testpaths = ["tests"]
+
+[tool.mypy]
+files = "src"
+python_version = "3.8"
+warn_unused_configs = true
+strict = true
+show_error_codes = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+
+
+[tool.check-manifest]
+ignore = [
+  ".github/**",
+  "docs/**",
+  ".pre-commit-config.yaml",
+  "noxfile.py"
+]
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint.master]
+py-version = "3.8"
+ignore-paths= ["src/package/_version.py"]
+
+[tool.pylint.reports]
+output-format = "colorized"
+
+[tool.pylint.similarities]
+ignore-imports = "yes"
+
+[tool.pylint.messages_control]
+disable = [
+  "design",
+  "fixme",
+  "line-too-long",
+  "wrong-import-position"
+]
