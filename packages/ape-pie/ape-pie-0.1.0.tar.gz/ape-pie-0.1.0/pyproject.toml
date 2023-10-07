@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ape-pie"
+version = "0.1.0"
+authors = [
+  { name="Maykin Media", email="support@maykinmedia.nl" },
+  { name="Sergei Maertens", email="sergei@maykinmedia.nl" },
+]
+description = "A small API client abstraction layer on top of requests."
+readme = "README.rst"
+requires-python = ">=3.10"
+keywords = ["api client", "requests"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "furl",
+    "requests",
+]
+
+[project.urls]
+"Documentation" = "http://ape-pie.readthedocs.io/en/latest/"
+"Changelog" = "https://github.com/maykinmedia/ape-pie/blob/main/CHANGELOG.rst"
+"Bug Tracker" = "https://github.com/maykinmedia/ape-pie/issues"
+"Source Code" = "https://github.com/maykinmedia/ape-pie"
+
+[project.optional-dependencies]
+docs = ["sphinx", "sphinx-rtd-theme"]
+types = ["types-requests", "mypy"]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "requests-mock",
+    "tox",
+    "isort",
+    "black",
+    "flake8",
+    "tbump",
+    "tomli; python_version<'3.11'"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ape_pie" = ["py.typed"]
+
+[tool.distutils.egg_info]
+egg_base = "build"
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+pythonpath = "."
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["src"]
+
+[tool.coverage.report]
+skip_covered = true
