@@ -1,0 +1,116 @@
+[tool.poetry]
+name = "dfv"
+version = "0.28.0"
+description = "Django Function Views"
+authors = ["Roman Roelofsen <romanroe@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/romanroe/dfv"
+keywords = ["django", "python"]
+include = ["dfv"]
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+django = "^4.0.0"
+django-htmx = "^1.14.0"
+lxml = "^4.9.2"
+wrapt = "^1.15.0"
+typeguard = "*"
+pytest = "^7.4.0"
+pytest-django = "^4.5.2"
+pytest-xdist = "^3.3.1"
+
+# docs extras
+Sphinx = { version = "^4.3.2", optional = true }
+linkify-it-py = { version = "^1.0.3", optional = true }
+myst-parser = { version = "^0.16.1", optional = true }
+furo = { version = "^2021.11.23", optional = true }
+sphinx-copybutton = { version = "^0.4.0", optional = true }
+sphinx-autobuild = { version = "^2021.3.14", optional = true }
+toml = "^0.10.2"
+pytest-watcher = "^0.3.4"
+
+
+[tool.poetry.dev-dependencies]
+whitenoise = "^6.5.0"
+django-debug-toolbar = "*"
+django-browser-reload = "^1.7.0"
+django-widget-tweaks = "^1.4.12"
+django-extensions = "^3.1.5"
+black = {extras = ["d"], version = "^23.1.0"}
+django-click = "^2.3.0"
+ruff = "0.0.282"
+mypy = "1.4.1"
+coverage = "^7.2.1"
+psycopg = "^3.1.9"
+tblib = "^2.0.0"
+
+
+[tool.poetry.extras]
+docs = ["Sphinx", "linkify-it-py", "myst-parser", "furo", "sphinx-copybutton", "sphinx-autobuild", "toml"]
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line_length = 88
+extend_exclude = "migrations"
+
+[tool.ruff]
+exclude = [
+    "**/migrations/*",
+]
+select = [
+    "F", # Pyflakes
+    "E", # pycodestyle error
+    "W",
+    "N", # pep8-naming
+    "DJ", # Flake8 Django
+    "I", # isort
+    "RET", # return type
+    "SLF001", # private-member-access
+    "RUF100", # unused-noqa
+]
+
+ignore = [
+    "E501", # handled by black"
+    "RET504",
+    "RET501",
+    "I001",
+]
+
+[tool.pytest.ini_options]
+python_files = "tests.py test_*.py *_tests.py *_test.py"
+DJANGO_SETTINGS_MODULE = "project.settings"
+FAIL_INVALID_TEMPLATE_VARS = true
+#addopts = "-n 5"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+
+]
+norecursedirs = [
+    ".venv",
+    "*_cache",
+    "build",
+    "data"
+]
+
+[tool.pytest-watcher]
+now = true
+delay = 0.2
+runner_args = ["-n", "0", "--no-header"]
+
+[tool.mypy]
+warn_return_any = false
+warn_unused_configs = true
+show_error_context = true
+ignore_missing_imports = true
+check_untyped_defs = true
+plugins = []
+exclude = [
+    "migrations/",
+    "docs",
+]
