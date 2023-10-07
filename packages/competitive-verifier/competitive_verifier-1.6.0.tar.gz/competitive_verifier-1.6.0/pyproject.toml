@@ -1,0 +1,88 @@
+[tool.poetry]
+name = "competitive-verifier"
+version = "1.6.0"
+description = "Verifier for libraries of competitive programming"
+
+license = "MIT"
+authors = ["kzrnm <gengesa@gmail.com>"]
+
+repository = "https://github.com/competitive-verifier/competitive-verifier"
+homepage = "https://github.com/competitive-verifier/competitive-verifier"
+readme = "README.md"
+
+packages = [
+    { include = "competitive_verifier", from = "src" },
+    { include = "competitive_verifier_resources", from = "src" },
+    { include = "competitive_verifier_oj_clone", from = "src" },
+]
+include = [{ path = "tests", format = "sdist" }]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+competitive-verifier = "competitive_verifier.console.app:main"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+colorlog = "^6.7.0"
+online-judge-tools = "=11.5.1"
+colorama = "^0.4.6"
+pydantic = "^2.0.3"
+pyyaml = "^6.0"
+importlab = "^0.8"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.0"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = { version = "^6.0.0", extras = ["lint"] }
+black = { version = "^23.7.0", extras = ["lint"] }
+isort = { version = "^5.10.1", extras = ["lint"] }
+pyright = { version = "^1.1.277", extras = ["lint"] }
+pyproject-flake8 = { version = "^6.0.0.post1", extras = ["lint"] }
+poethepoet = "^0.16.4"
+
+[tool.poe.tasks]
+flake8 = "pflake8 src tests"
+isort = "isort src tests"
+black = "black src tests"
+pyright = "pyright src tests"
+format = ["isort", "black", "pyright", "flake8"]
+"lint:isort" = "isort --check-only --diff src tests"
+"lint:black" = "black --diff --check src tests"
+lint = ["lint:isort", "lint:black", "pyright", "flake8"]
+test = "pytest"
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+disable = """
+    missing-module-docstring,
+    missing-function-docstring,
+    consider-using-f-string
+"""
+
+[tool.black]
+target-version = ['py39']
+line-length = 88
+
+[tool.isort]
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.flake8]
+max-line-length = 500
+max-complexity = 18
+exclude = "examples,src/competitive_verifier_oj_clone/languages,src/competitive_verifier_resources/jekyll,"
+ignore = "E203,E266,W503,"
+
+[tool.pyright]
+pythonVersion = "3.9"
+typeCheckingMode = "strict"
+include = ["src", "tests"]
+exclude = ["src/competitive_verifier_resources/jekyll"]
+reportMissingImports = true
+reportMissingTypeStubs = false
