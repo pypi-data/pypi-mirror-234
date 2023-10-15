@@ -1,0 +1,97 @@
+[tool.poetry]
+authors = ["Ryan Bartling <ryan.bartling@gmail.com>"]
+description = "Generate structured code for APIs and documentation"
+include = ["README.md", "pyproject.toml"]
+name = "struct_writer"
+readme = "README.md"
+repository = "https://github.com/drbartling/struct-writer"
+version = "0.4.2"
+
+[tool.poetry.scripts]
+struct-writer = "struct_writer.generate_structured_code:main"
+
+[tool.poetry.dependencies]
+click = "^8.1.3"
+pydantic = "^2.3.0"
+python = "^3.11,<3.12"
+pyyaml = "^6.0.1"
+rich = "^13.5.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+coverage = "^7.2.1"
+devtools = "^0.10.0"
+isort = "^5.12.0"
+pre-commit = "^3.1.1"
+pyinstaller = "^5.8.0"
+pylint = "^2.17.0"
+pytest = "^7.2.2"
+pytest-cov = "^4.0.0"
+
+[tool.coverage.paths]
+source = ["src"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = ["struct_writer"]
+
+[tool.black]
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+include = '\.pyi?$'
+line-length = 80
+target-version = ['py310', 'py311']
+
+[tool.isort]
+line_length = 80
+profile = "black"
+
+[tool.pylint.basic]
+argument-rgx = '^([a-z_][a-z0-9]*)((_([a-z0-9]+|[A-Z0-9]+))*)?$'
+attr-rgx = '^([a-z_][a-z0-9]*)((_([a-z0-9]+|[A-Z0-9]+))*)?$'
+no-docstring-rgx = ""
+variable-rgx = '^([a-z_][a-z0-9]*)((_([a-z0-9]+|[A-Z0-9]+))*)?$'
+
+[tool.pylint.format]
+# black manages line formatting
+max-line-length = 1000
+
+[tool.pylint.main]
+recursive = true
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-module-docstring",
+    "too-few-public-methods",  # For dataclasses with no methods
+    "duplicate-code",  # For code generation samples
+    "too-many-locals",  # The straight forward solutions to this lead to harder to read code
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "-q",
+    "--cov-report=term-missing:skip-covered",
+    "--cov",
+    "--durations=5",
+    "--ignore=acceptance_test",
+]
+testpaths = ["tests"]
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
