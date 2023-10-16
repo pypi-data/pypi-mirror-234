@@ -1,0 +1,16 @@
+[Unit]
+Description=GNU Health Server
+After=syslog.target
+
+[Service]
+User=gnuhealth
+ExecStart=/opt/gnuhealth/venv/bin/uwsgi --ini /opt/gnuhealth/etc/uwsgi_trytond.ini
+RuntimeDirectory=uwsgi
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
