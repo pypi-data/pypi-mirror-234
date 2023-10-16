@@ -1,0 +1,96 @@
+import os
+import shutil
+import subprocess
+from enum import Enum
+
+from loguru import logger
+
+
+class SubSubCommand(Enum):
+    """命令的子命令的子命令"""
+
+    pass
+
+
+class CMD:
+    def __init__(self, path: str) -> None:
+        assert isinstance(path, str)
+        self.bin_path = path if os.path.exists(path) else shutil.which(path)
+        self._args = []
+
+    def reset(self):
+        self._args.clear()
+
+    def _build_cmds(self, cmd: list):
+        return [self.bin_path] + cmd
+
+    def build(self, arg: str):
+        self._args.append(arg)
+        return self
+
+    def build_args(self, args: list):
+        self._args += args
+        return self
+
+    def run(self, is_reset: bool = True):
+        result = self._run(self._args)
+        if is_reset:
+            self.reset()
+        return result
+
+    def run_async(self, is_reset: bool = True):
+        result = self._run_async(self._args)
+        if is_reset:
+            self.reset()
+        return result
+
+    def _run(self, cmd: list, shell: bool = False, encoding: str = None):
+        """运行阻塞命令"""
+        assert isinstance(cmd, list)
+        for item in cmd:
+            assert isinstance(item, str)
+
+        r = subprocess.run(
+            self._build_cmds(cmd),
+            shell=shell,  # 例如使用通配符、管道或重定向时，须使用shell
+            encoding=encoding,
+            capture_output=True,
+            text=True,
+        )
+        return r.stdout, r.stderr
+
+    def _run_async(self, args):
+        """运行非堵塞命令"""
+        cmd_list = self._build_cmds(args)
+        try:
+            adb_proc = subprocess.Popen(
+                cmd_list,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
+            )
+            output, error = adb_proc.communicate()
+            output = output.decode("utf-8")
+            error = error.decode("utf-8")
+
+            if adb_proc.returncode == 1:
+                logger.error(cmd_list)
+                return output, error
+
+            if len(output) == 0:
+                output = None
+            else:
+                output = [x.strip() for x in output.split("\n") if len(x.strip()) > 0]
+
+        except Exception as err:
+            logger.error(cmd_list)
+            logger.error(err)
+            raise err
+
+        return output, error
+
+    # TODO 这种方式感觉不大好，调用过于繁琐，最好能够直接使用。
+    def run_subcmd(self, scmd: SubSubCommand, args: list):
+        assert isinstance(scmd, SubSubCommand)
+        return self._run(scmd.value + args)
