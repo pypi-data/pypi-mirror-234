@@ -1,0 +1,61 @@
+[tool.poetry]
+name = "datar"
+version = "0.15.2"
+description = "A Grammar of Data Manipulation in python"
+authors = ["pwwang <pwwang@pwwang.com>"]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/pwwang/datar"
+repository = "https://github.com/pwwang/datar"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+simplug = "^0.3"
+pipda = "^0.13"
+python-simpleconf = {version = "^0.6", extras = ["toml"]}
+datar-numpy = {version = "^0.3.2", optional = true}
+datar-pandas = {version = "^0.5.2", optional = true}
+# datar-polars = {version = "^0.0.0", optional = true}
+datar-arrow = {version = "^0.1", optional = true}
+
+[tool.poetry.build]
+generate-setup-file = true
+
+[tool.poetry.extras]
+numpy = ["datar-numpy"]
+pandas = ["datar-pandas"]
+arrow = ["datar-arrow"]
+# modin = ["datar-pandas"]
+# polars = ["datar-polars"]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7"
+pytest-cov = "^4"
+six = "^1.16"
+numpy = "^1.17"
+python-slugify = "^8"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+ignore_missing_imports = true
+allow_redefinition = true
+disable_error_code = ["attr-defined", "no-redef", "union-attr"]
+show_error_codes = true
+strict_optional = false
+
+[tool.pytest.ini_options]
+addopts = "-vv -p no:asyncio --tb=short --cov-config=.coveragerc --cov=datar --cov-report xml:cov.xml --cov-report term-missing"
+filterwarnings = [
+    # "error"
+]
+console_output_style = "progress"
+junit_family = "xunit1"
+
+[tool.black]
+line-length = 80
+target-version = ['py37', 'py38', 'py39']
+include = '\.pyi?$'
