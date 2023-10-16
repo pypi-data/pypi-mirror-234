@@ -1,0 +1,177 @@
+[tool.poetry]
+name = "pyadconnector"
+version = "0.2.1"
+description = ""
+authors = ["Simone Dalla <simodalla@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "pyadconnector", from = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pydantic = { extras = ["email"], version = "^2.4.2" }
+python-ldap = "^3.4.3"
+pytz = "^2023.3"
+pydantic-settings-toml = "^0.2.0"
+pynteracta = "^0.4.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pre-commit = "^3.3.3"
+ipdb = "^0.13.13"
+mypy = "^1.4.1"
+pytest-sugar = "^0.9.7"
+black = "^23.7.0"
+isort = "^5.12.0"
+coverage = "^7.2.7"
+devtools = { extras = ["pygments"], version = "^0.12.2" }
+polyfactory = "^2.6.1"
+pytest-mock = "^3.11.1"
+bumpver = "^2023.1126"
+types-pytz = "^2023.3.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.bumpver]
+current_version = "0.2.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version v{old_version} -> v{new_version}"
+tag_message = "v{new_version}"
+tag_scope = "default"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"src/pyadconnector/__init__.py" = ["{version}"]
+
+[tool.pytest.ini_options]
+addopts = "-p no:warnings --pdbcls=IPython.core.debugger:Pdb -p no:randomly"
+filterwarnings = [
+  "error",
+  "ignore:This is a placeholder until pydantic-settings-toml.*:UserWarning",
+]
+pythonpath = "./src"
+testpaths = "tests"
+norecursedirs = [
+  ".*",
+  "templates",
+  "compose",
+  "docs",
+  "htmlcov",
+  "staticstorage",
+  "locale",
+]
+
+[tool.isort]
+profile = "black"
+default_section = "THIRDPARTY"
+known_first_party = ["pyadconnector"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+skip_glob = ["**/migrations/*.py"]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \._venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | migrations
+    | demo
+    | \.sh
+  )
+)
+'''
+
+[tool.ruff]
+# Docs: https://beta.ruff.rs/docs/
+# Rules: https://beta.ruff.rs/docs/rules/
+select = [
+  "B",
+  "C4",
+  "EXE",
+  "F",
+  "E",
+  "ISC",
+  "ICN",
+  "INP",
+  "PIE",
+  "SIM",
+  "W",
+  "T20",
+  "UP",
+  "T10",
+  "G",
+  "C90",
+  "ERA",
+]
+ignore = ["B008", "SIM102"]
+# unfixable = ["ALL" ]
+unfixable = ["ERA", "F401", "B", "F841"]
+fixable = [
+  "F",
+  "E",
+  "C4",
+  "EXE",
+  "ISC",
+  "ICN",
+  "INP",
+  "PIE",
+  "SIM",
+  "W",
+  "T20",
+  "UP",
+]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".git",
+  ".mypy_cache",
+  ".pre-commit-cache",
+  ".ruff_cache",
+  ".tox",
+  ".venv",
+  "venv",
+  "docs",
+  "__pycache",
+  "**/migrations/*",
+]
+# Same as Black.
+line-length = 100
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+# Assume Python 3.11.
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.mypy]
+python_version = 3.12
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+
+[tool.coverage.run]
+include = ["pyadconnector/*"]
+omit = ["*migrations*", "*tests*"]
+disable_warnings = ["already-imported"]
