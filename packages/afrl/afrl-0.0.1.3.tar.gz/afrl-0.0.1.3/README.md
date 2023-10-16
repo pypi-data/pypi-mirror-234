@@ -1,0 +1,97 @@
+## AFRL - All Forms of Reinforcement Learning
+
+The main goal of this project is to provide a framework for reinforcement learning research. The framework is designed to be modular and easy to extend. It is written in Python and built on top of [PyTorch](https://pytorch.org/). The framework is still in its early stages and is under active development.
+
+## Usage
+
+The framework is designed to be modular and easy to extend. The main components of the framework are:
+- **Environments**: The environments are the tasks that the agent is trying to solve.
+- **Agents**: The agents are the algorithms that are trying to solve the environment.
+- **Trainers**: The trainers are the methods the agents are training with.
+
+Here's the list of the trainers along with their current implementation status:
+- [ ] **[DQN](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf)**
+- [ ] **[DDQN](https://arxiv.org/abs/1509.06461)**
+- [ ] **[Dueling DQN](https://arxiv.org/abs/1511.06581)**
+- [ ] **[Double Dueling DQN](https://arxiv.org/abs/1511.06581)**
+- [ ] **[DDPG](https://arxiv.org/abs/1509.02971)**
+- [ ] **[SDDPG](https://arxiv.org/abs/1907.04388)**
+- [ ] **[Prioritized Experience Replay](https://arxiv.org/abs/1511.05952)**
+- [ ] **[TRPO](https://arxiv.org/abs/1502.05477)**
+- [ ] **[PPO](https://arxiv.org/abs/1707.06347)**
+- [ ] **[TD-Lambda](https://link.springer.com/article/10.1007/BF00992698)**
+- [ ] **[SARSA](https://link.springer.com/article/10.1007/BF00992698)**
+- [ ] **[REINFORCE](http://www-anw.cs.umass.edu/~barto/courses/cs687/williams92simple.pdf)**
+- [ ] **[Actor-Critic](https://papers.nips.cc/paper/1786-actor-critic-algorithms.pdf)**
+- [ ] **[A2C](https://arxiv.org/abs/1602.01783)**
+- [ ] **[A3C](https://arxiv.org/abs/1602.01783)**
+- [ ] **[SAC](https://arxiv.org/abs/1801.01290)**
+
+To make it easier to choose the right trainer for the right environment, here's a table that shows the different trainers and the environments that they support:
+
+| Method                                                                             | Discrete Action Space | Continuous Action Space | Single-Agent | Multi-Agent | Low-Dimensional Obs | High-Dimensional Obs |
+|------------------------------------------------------------------------------------|-----------------------|-------------------------|--------------|-------------|---------------------|----------------------|
+| [DQN](https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf)                              | ✔️                    | ❌                       | ✔️           | ❌           | ✔️                  | ❌                    |
+| [DDQN](https://arxiv.org/abs/1509.06461)                                           | ✔️                    | ❌                       | ✔️           | ❌           | ✔️                  | ❌                    |
+| [Dueling DQN](https://arxiv.org/abs/1511.06581)                                    | ✔️                    | ❌                       | ✔️           | ❌           | ✔️                  | ❌                    |
+| [Double Dueling DQN](https://arxiv.org/abs/1511.06581)                             | ✔️                    | ❌                       | ✔️           | ❌           | ✔️                  | ❌                    |
+| [DDPG](https://arxiv.org/abs/1509.02971)                                           | ❌                     | ✔️                      | ✔️           | ❌           | ✔️                  | ✔️                   |
+| [SDDPG](https://arxiv.org/abs/1907.04388)                                          | ❌                     | ✔️                      | ✔️           | ❌           | ✔️                  | ✔️                   |
+| [Prioritized Experience Replay](https://arxiv.org/abs/1511.05952)                  | ✔️                    | ✔️                      | ✔️           | ❌           | ✔️                  | ❌                    |
+| [TRPO](https://arxiv.org/abs/1502.05477)                                           | ✔️                    | ✔️                      | ✔️           | ❌           | ✔️                  | ✔️                   |
+| [PPO](https://arxiv.org/abs/1707.06347)                                            | ✔️                    | ✔️                      | ✔️           | ✔️          | ✔️                  | ✔️                   |
+| [TD-Lambda](https://link.springer.com/article/10.1007/BF00992698)                  | ✔️                    | ✔️                      | ✔️           | ❌           | ✔️                  | ❌                    |
+| [SARSA](https://link.springer.com/article/10.1007/BF00992698)                      | ✔️                    | ❌                       | ✔️           | ❌           | ✔️                  | ❌                    |
+| [REINFORCE](http://www-anw.cs.umass.edu/~barto/courses/cs687/williams92simple.pdf) | ✔️                    | ✔️                      | ✔️           | ❌           | ✔️                  | ✔️                   |
+| [Actor-Critic](https://papers.nips.cc/paper/1786-actor-critic-algorithms.pdf)      | ✔️                    | ✔️                      | ✔️           | ✔️          | ✔️                  | ✔️                   |
+| [A2C](https://arxiv.org/abs/1602.01783)                                            | ✔️                    | ✔️                      | ✔️           | ✔️          | ✔️                  | ✔️                   |
+| [A3C](https://arxiv.org/abs/1602.01783)                                            | ✔️                    | ✔️                      | ✔️           | ✔️          | ✔️                  | ✔️                   |
+| [SAC](https://arxiv.org/abs/1801.01290)                                            | ❌                     | ✔️                      | ✔️           | ❌           | ✔️                  | ✔️                   |
+
+## Characteristics of Different Environments for RL Algorithms
+
+Here is a list of characteristics of different environments, along with some environment examples that have those characteristics and some generic rules of thumb in order to choose the right method for your environment:
+
+### 1. Discrete vs Continuous Action Space
+- **Examples**: 
+  - **Discrete**: Tic-Tac-Toe, Grid Worlds
+  - **Continuous**: Robotic arm control, Portfolio management
+- **Rules of Thumb**: 
+  - For discrete action spaces, DQN variants and PPO are commonly used.
+  - For continuous action spaces, DDPG and SAC offer better performance.
+
+### 2. Single-Agent vs Multi-Agent
+- **Examples**: 
+  - **Single-Agent**: Mountain Car, Cartpole
+  - **Multi-Agent**: Poker, Multi-robot coordination
+- **Rules of Thumb**: 
+  - Single-agent tasks often use DQN, PPO, or DDPG.
+  - Multi-agent tasks typically benefit from specialized algorithms like MADDPG, or generic methods like PPO that are adapted for multi-agent scenarios.
+
+### 3. Low-Dimensional vs High-Dimensional Observation Space
+- **Examples**: 
+  - **Low-Dimensional**: Frozen Lake, Taxi-v3
+  - **High-Dimensional**: Atari games, Visual navigation
+- **Rules of Thumb**: 
+  - Low-dimensional problems can be tackled with simpler algorithms like SARSA or TD-Lambda.
+  - High-dimensional problems often require methods capable of handling complex function approximation, such as Convolutional Neural Networks (CNNs) in DQN for image-based tasks.
+
+### 4. Partially Observable vs Fully Observable
+- **Examples**: 
+  - **Partially Observable**: Poker, Hide and Seek
+  - **Fully Observable**: Chess, Go
+- **Rules of Thumb**: 
+  - Fully observable environments can make use of simpler methods such as DQN or PPO.
+  - Partially observable environments may require methods with memory capabilities like LSTM or GRU incorporated into the algorithm (e.g., DRQN).
+
+### 5. Sparse vs Dense Reward
+- **Examples**: 
+  - **Sparse Reward**: Maze navigation, robotic grasping
+  - **Dense Reward**: Cartpole, Lunar Lander
+- **Rules of Thumb**: 
+  - Dense reward problems can use most algorithms effectively.
+  - Sparse reward problems often benefit from algorithms designed for exploration, such as those utilizing curiosity-driven mechanisms or hierarchical methods.
+
+---
+
+By considering these environment characteristics and rules of thumb, one can make a more informed decision when selecting an appropriate reinforcement learning algorithm for a specific task.
