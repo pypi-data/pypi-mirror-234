@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2021 OpenSynergy Indonesia
+     Copyright 2021 PT. Simetri Sinergi Indonesia
+     License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl). -->
+<odoo>
+<record id="service_quotation_view_tree" model="ir.ui.view">
+    <field name="name">service.quotation tree</field>
+    <field name="model">service.quotation</field>
+    <field name="inherit_id" ref="ssi_service_quotation.service_quotation_view_tree" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='display_name']" position="after">
+                <field name="lead_id" optional="hide" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="service_quotation_view_form" model="ir.ui.view">
+    <field name="name">service.quotation form</field>
+    <field name="model">service.quotation</field>
+    <field name="inherit_id" ref="ssi_service_quotation.service_quotation_view_form" />
+    <field name="arch" type="xml">
+        <data>
+
+            <xpath expr="//field[@name='contact_partner_id']" position="after">
+                <field
+                        name="allowed_quotation_ids"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                <field name="lead_id" domain="[('id','in',allowed_quotation_ids)]" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+</odoo>
