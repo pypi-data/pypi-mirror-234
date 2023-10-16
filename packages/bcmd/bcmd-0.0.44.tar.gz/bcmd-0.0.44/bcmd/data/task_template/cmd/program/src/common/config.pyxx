@@ -1,0 +1,16 @@
+import asyncio
+import sys
+import traceback
+from typing import Final
+
+from beni import bfile, bcolor
+
+from common.define import CONFIG_FILE
+
+try:
+    _data = asyncio.run(bfile.readToml(CONFIG_FILE))
+    msg: Final = str(_data['msg'])
+except:
+    traceback.print_exc()
+    bcolor.printRed('配置文件读取失败')
+    sys.exit()
