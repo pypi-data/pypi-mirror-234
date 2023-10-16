@@ -1,0 +1,78 @@
+#!python
+from __future__ import division, print_function, unicode_literals
+
+import six
+from autobahn.twisted.component import Component, run
+from autobahn.twisted.wamp import ApplicationSession
+from hcam_drivers.config import load_config
+from hcam_widgets.globals import Container
+from hcam_widgets.compo.widgets import COMPOManualWidget
+from hcam_widgets.tkutils import addStyle
+from twisted.internet import reactor, tksupport
+from twisted.internet.defer import inlineCallbacks
+from twisted.logger import Logger
+
+if not six.PY3:
+    import Tkinter as tk
+else:
+    import tkinter as tk
+
+
+class GUI(tk.Tk):
+    def __init__(self):
+        tk.Tk.__init__(self)
+
+        # add a container object
+        self.globals = Container(telescope_names=['GTC', 'WHT'])
+        # load config
+        self.globals.cpars = dict()
+        load_config(self.globals)
+
+        # initialise WAMP session
+        self.globals.session = None
+        self.globals.clog = Logger()
+
+        # enable all buttons
+        self.globals.cpars['expert_level'] = 1
+
+        # style
+        addStyle(self)
+        # configure
+        self.title('compo gui')
+        self.protocol("WM_DELETE_WINDOW", self.ask_quit)
+        self.createcommand("::tk::mac::Quit", self.ask_quit)
+
+        # add and pack compo frame
+        self.compo = COMPOManualWidget(self)
+
+    def ask_quit(self):
+        reactor.stop()
+        tksupport.uninstall()
+
+    @inlineCallbacks
+    def on_wamp_session(self, session):
+        """
+        called when joining a WAMP session
+        """
+        self.globals.clog.info('joined WAMP session')
+        self.globals.session = session
+
+        # subscribe to compo telemetry
+        yield session.subscribe(self.compo.on_telemetry,
+                                "hipercam.compo.telemetry")
+
+
+class WampComponent(ApplicationSession):
+    def onJoin(self, details):
+        gui = self.config.extra['gui']
+        gui.on_wamp_session(self)
+
+
+if __name__ == "__main__":
+    # The main window.
+    gui = GUI()
+    tksupport.install(gui)
+    component = Component(transports='ws://localhost:8080/ws',
+                          realm='realm1', session_factory=WampComponent,
+                          extra={'gui': gui})
+    run([component], log_level=None)
