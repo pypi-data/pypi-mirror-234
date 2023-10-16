@@ -1,0 +1,5 @@
+from .container import DependencyContainer, SINGLETON, TRANSIENT, SCOPED, container
+from .loader import inject,load_modules_from_subdirectories,initializate
+from .scopeMiddleware import ScopeMiddleware ,ScoperMiddlewareManual
+
+__version__ = '0.7.0'
