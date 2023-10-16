@@ -1,0 +1,106 @@
+{
+    "name": "DevLake Repo Questions",
+    "description": "These questions come from devlake_repo_questions.json (without DRQ-3, 5, 6, 14, 16).",
+    "repo_url": "https://github.com/apache/incubator-devlake.git",
+    "cases": [
+        {
+            "id": "DRQ-1",
+            "question": "How is the lead time for changes calculated?",
+            "reference_answer": "The lead time for changes is calculated in the `CalculateChangeLeadTime` function by following these steps:\n\n1. Get pull requests by the project name.\n2. For each pull request, get the first commit and calculate the PR coding time as the time span between the first commit's authored date and the pull request's created date.\n3. Get the first review for the pull request (excluding comments from the PR creator) and calculate the PR pickup time as the time span between the pull request's created date and the first review's created date. Calculate the PR review time as the time span between the first review's created date and the pull request's merged date.\n4. Get the deployment for the pull request using the merge commit SHA and calculate the PR deploy time as the time span between the pull request's merged date and the deployment's finished date.\n5. Calculate the PR cycle time by adding the PR coding time, PR during time (time span between the pull request's created date and merged date), and PR deploy time.\n\nThe function returns a `ProjectPrMetric` object containing the calculated lead times for each pull request in the project.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "DRQ-2",
+            "question": "Why can the lead time for changes metric be null sometimes?",
+            "reference_answer": "The lead time for changes metric can be null sometimes because some of the time spans used to calculate it might be null. In the `CalculateChangeLeadTime` function, the PR coding time, PR pickup time, PR review time, and PR deploy time are calculated. If any of these time spans are null or have negative values, the final PR cycle time (lead time for changes) might not be calculated, resulting in a null value.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "QRD-4",
+            "question": "What data does the Azure DevOps plugin collect?",
+            "reference_answer": "The Azure DevOps plugin collects data related to Git repositories, Git pull requests, Git pull request commits, builds, and jobs. Specifically, it collects information such as:\n\n1. GitPullRequests: Base repository ID, head repository ID, status, original status, title, description, URL, author name, author ID, pull request key, created date, merged date, closed date, type, component, merge commit SHA, head reference, base reference, head commit SHA, and base commit SHA.\n\n2. GitPullRequestCommits: Commit SHA (commit_id), pull request ID, commit author name (author_name), commit author email (author_email), and commit authored date (author_date).\n\n3. Builds: Build's name, status, created date, finished date, result, duration in seconds, environment, type, and other related details like commit SHA, branch, repository ID, and repository URL.\n\n4. Jobs: Job ID, name, build ID, status, start time, finish time, result, type, duration in seconds, environment, and CICD scope ID.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "QRD-7",
+            "question": "How can I contribute to DevLake?",
+            "reference_answer": "You can contribute to DevLake in several ways:\n\n1. Create an Issue: Report a bug or feature request to Apache DevLake.\n2. Submit a PR (Pull Request): Start with good first issues or issues with no assignees. Read through the [Contributing Documentation](https://devlake.apache.org/community/), add relevant tests, documentation, and labels to the PR.\n3. Join Mailing list: Initiate or participate in project discussions on the mailing list.\n4. Write a Blog: Write a blog to share your use cases about Apache DevLake.\n5. Contribute a Plugin: Add a plugin to integrate Apache DevLake with more data sources for the community.\n\nPlease read the [contribution guidelines](https://devlake.apache.org/community) before you make a contribution.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "QRD-8",
+            "question": "Does DevLake's GitHub plugin support incremental sync?",
+            "reference_answer": "Yes, DevLake's GitHub plugin supports incremental sync. In the code, you can see the following line:\n\n`incremental := collectorWithState.IsIncremental()`\n\nThis line checks if the collector is running in incremental mode.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "QRD-9",
+            "question": "How can I create DevLake plugins in Python?",
+            "reference_answer": "To create a DevLake plugin in Python, follow these steps:\n\n1. Make sure you have [Poetry](https://python-poetry.org/docs/#installation) installed.\n2. Move to `python/plugins` and execute `poetry new myplugin`. This will generate a new directory for your plugin.\n3. In the `pyproject.toml` file, add the following line at the end of the `[tool.poetry.dependencies]` section:\n```\npydevlake = { path = \"../../pydevlake\", develop = true }\n```\n4. Run `poetry install`.\n5. Create a `main.py` file with the necessary content, including classes for connection, transformation rule, tool scope, and plugin.\n6. Create shell scripts `build.sh` and `run.sh` in the plugin root directory to build and run the plugin.\n7. Define connection parameters, transformation rule parameters, and tool scope type.\n8. Implement methods like `domain_scopes`, `remote_scope`, `remote_scope_groups`, and `test_connection`.\n9. Add a new data stream by creating a tool model, stream class, and API wrapper.\n10. Implement methods like `collect`, `extract`, and `convert` for the stream class.\n11. If needed, create substreams for hierarchical data sources.\n12. Test the plugin standalone using the `main.py` file with different commands.\n13. Write unit-tests for your plugin code, with test files ending in `_test.py`.\n\nHere's a general outline of a DevLake plugin class:\n\n```python\nfrom pydevlake.plugin import Plugin\n\nclass MyDevLakePlugin(Plugin):\n    # Implement required properties and methods here\n    # e.g., name, description, connection_type, tool_scope_type, transformation_rule_type, streams, etc.\n```\n\nYou would then need to implement the required properties and methods for your specific plugin, such as `name`, `description`, `connection_type`, `tool_scope_type`, `transformation_rule_type`, and `streams`. You can refer to the provided code's test functions (e.g., `assert_valid_name`, `assert_valid_description`, `assert_valid_connection_type`, etc.) to understand the requirements and constraints for each property and method.\n\nOnce you have implemented your plugin, you can use the provided test functions to validate your plugin and ensure it works correctly.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "QRD-10",
+            "question": "How do I resolve the 'panic: invalid encKey' error?",
+            "reference_answer": "To resolve the 'panic: invalid encKey' error, you need to ensure that you have a valid encryption key set in your environment or configuration. Here are some steps you can follow:\n\n1. Make sure you have a valid encryption key and it's being correctly fetched using the `plugin.EncodeKeyEnvStr` constant or a similar method in your code.\n2. If you are using a randomly generated encryption key, make sure to store it securely and use the same key for both encryption and decryption processes.\n3. Check that the environment variable specified by `plugin.EncodeKeyEnvStr` or a similar method is set with a valid encryption key.\n4. Verify that the encKey is being set and saved to the config properly using `v.Set(plugin.EncodeKeyEnvStr, encKey)` and `config.WriteConfig(v)` or similar methods in your code.\n\nIf the issue persists, you may need to provide more context or refer to the documentation of the specific software you are working with.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "QRD-11",
+            "question": "How does DevLake generate a pipeline based on a blueprint's setting?",
+            "reference_answer": "DevLake generates a pipeline based on a blueprint's setting through the following steps:\n\n1. The blueprint settings are defined in a JSON format, which includes the version, connections, plugin, connectionId, and scopes.\n\n2. The `PluginBlueprintV200.MakePipelinePlan` function is called with an array of scopes. The plugin returns a `PipelinePlan` in JSON format and an array of `Scope` for project_mapping.\n\n3. The framework maintains the project_mapping table based on the `[]Scope` array.\n\nThese steps help DevLake generate a pipeline plan based on the blueprint's settings, which can be used to execute the pipeline and collect data from various sources.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "QRD-12",
+            "question": "How does DevLake delete a project?",
+            "reference_answer": "DevLake deletes a project by following these steps:\n\n1. Verify the input project name is not empty.\n2. Begin a database transaction.\n3. Get the project by its name using the `getProjectByName` function.\n4. Delete the project from the `models.Project` table using the project name.\n5. Delete the project mapping from the `crossdomain.ProjectMapping` table using the project name.\n6. Delete the project metric setting from the `models.ProjectMetricSetting` table using the project name.\n7. Delete the project PR metric from the `crossdomain.ProjectPrMetric` table using the project name.\n8. Delete the project issue metric from the `crossdomain.ProjectIssueMetric` table using the project name.\n9. Commit the transaction.\n10. Get the blueprint associated with the project name using the `bpManager.GetDbBlueprintByProjectName` function.\n11. Delete the blueprint using the `bpManager.DeleteBlueprint` function with the blueprint ID.",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "QRD-13",
+            "question": "How does DevLake generate the template user_account_mapping.csv file?",
+            "reference_answer": "DevLake generates the template user_account_mapping.csv file using the GetUserAccountMapping function. This function retrieves all user/account mappings from the store, marshals them into CSV format using gocsv.MarshalBytes(accounts), and returns the CSV data as an OutputFile with ContentType \"text/csv\".",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "QRD-15",
+            "question": "How is the h.store.findAllAccounts function implemented?",
+            "reference_answer": "The h.store.findAllAccounts function is implemented as follows:\n\n```go\nfunc (d *dbStore) findAllAccounts() ([]account, errors.Error) {\n\tvar aa []crossdomain.Account\n\terr := d.db.All(&aa)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tvar ua []crossdomain.UserAccount\n\terr = d.db.All(&ua)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tvar a *account\n\treturn a.fromDomainLayer(aa, ua), nil\n}\n```\n\nIt retrieves all accounts and user accounts from the database, and then calls the fromDomainLayer function to convert them into the appropriate format.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        }
+    ]
+}
