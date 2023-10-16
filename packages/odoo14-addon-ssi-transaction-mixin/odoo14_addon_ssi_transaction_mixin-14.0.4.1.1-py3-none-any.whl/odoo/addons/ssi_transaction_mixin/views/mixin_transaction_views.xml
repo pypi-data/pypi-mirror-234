@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="mixin_transaction_view_search" model="ir.ui.view">
+    <field name="name">mixin.transaction - search</field>
+    <field name="model">mixin.transaction</field>
+    <field name="arch" type="xml">
+        <search>
+            <field name="id" />
+            <field name="name" />
+            <field name="company_id" groups="base.group_multi_company" />
+            <field name="user_id" />
+            <field name="state" />
+            <!-- Filter -->
+            <filter
+                    name="dom_my_data"
+                    string="My Responsibilities"
+                    domain="[('user_id','=',uid)]"
+                />
+            <separator name="state" />
+            <group name="dom_state">
+                <filter
+                        name="dom_draft"
+                        string="Draft"
+                        domain="[('state','=','draft')]"
+                    />
+            </group>
+            <separator name="activity" />
+            <filter
+                    string="Late Activities"
+                    name="activities_overdue"
+                    domain="[('my_activity_date_deadline', '&lt;', context_today().strftime('%Y-%m-%d'))]"
+                    help="Show all records which has next action date is before today"
+                />
+            <filter
+                    string="Today Activities"
+                    name="activities_today"
+                    domain="[('my_activity_date_deadline', '=', context_today().strftime('%Y-%m-%d'))]"
+                />
+            <filter
+                    string="Future Activities"
+                    name="activities_upcoming_all"
+                    domain="[('my_activity_date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))]"
+                />
+            <!-- Group -->
+            <group name="group_by">
+                <filter
+                        name="grp_company"
+                        string="Company"
+                        groups="base.group_multi_company"
+                        context="{'group_by':'company_id'}"
+                    />
+                <filter
+                        name="grp_responsible"
+                        string="Responsible"
+                        context="{'group_by':'user_id'}"
+                    />
+                <filter
+                        name="grp_state"
+                        string="State"
+                        context="{'group_by': 'state'}"
+                    />
+            </group>
+        </search>
+    </field>
+</record>
+
+<record id="mixin_transaction_view_tree" model="ir.ui.view">
+    <field name="name">mixin.transaction -tree</field>
+    <field name="model">mixin.transaction</field>
+    <field name="arch" type="xml">
+        <tree decoration-bf="message_unread==True">
+            <field name="message_unread" invisible="1" />
+            <field name="id" optional="hide" />
+            <field name="display_name" string="# Document" />
+            <field
+                    name="company_id"
+                    groups="base.group_multi_company"
+                    optional="hide"
+                />
+            <field name="user_id" optional="show" widget="many2one_avatar" />
+            <field name="activity_ids" widget="list_activity" optional="show" />
+            <field name="state" widget="badge" decoration-info="state == 'draft'" />
+        </tree>
+    </field>
+</record>
+
+<record id="mixin_transaction_view_form" model="ir.ui.view">
+    <field name="name">mixin.transaction - form</field>
+    <field name="model">mixin.transaction</field>
+    <field name="priority" eval="1" />
+    <field name="arch" type="xml">
+        <form>
+            <header>
+                <button
+                        name="action_restart"
+                        string="Restart"
+                        type="object"
+                        confirm="Restart data. Are you sure?"
+                        attrs="{'invisible':[('restart_ok','!=',True)]}"
+                        order="99"
+                    />
+                <field name="state" widget="statusbar" />
+            </header>
+            <sheet>
+                <div
+                        class="oe_right oe_button_box"
+                        style="width: 300px;"
+                        name="buttons"
+                    >
+                </div>
+                <div class="oe_left" style="width: 500px;">
+                    <div class="oe_title" style="width: 500px;">
+                        <label for="name" />
+                        <h1>
+                            <field
+                                    name="name"
+                                    class="oe_edit_only"
+                                    attrs="{'readonly':[('manual_number_ok','=',False)]}"
+                                />
+                            <field name="display_name" class="oe_read_only" />
+                        </h1>
+                    </div>
+                </div>
+                <group name="header" colspan="4" col="2">
+                    <group name="header_left" colspan="1" col="2">
+                        <field name="company_id" groups="base.group_multi_company" />
+                        <field name="user_id" widget="many2one_avatar" />
+                    </group>
+                    <group name="header_right" colspan="1" col="2" />
+                    <group name="header_center" colspan="2" col="2" />
+                </group>
+                <notebook>
+                    <page name="note" string="Note">
+                        <field name="note" colspan="4" nolabel="1" />
+                    </page>
+                    <page name="policy" string="Policies" groups="base.group_system">
+                        <group name="policy_1" colspan="4" col="2">
+                            <field name="policy_template_id" />
+                            <button
+                                    name="action_reload_policy_template"
+                                    type="object"
+                                    string="Reload Template Policy"
+                                    class="oe_highlight"
+                                    icon="fa-refresh"
+                                />
+
+                        </group>
+                        <group name="policy_2" colspan="4" col="2">
+                            <field name="restart_ok" order="98" />
+                            <field name="manual_number_ok" order="99" />
+                        </group>
+                    </page>
+                </notebook>
+                <group name="footer" colspan="4" col="2">
+                    <group name="footer_left" colspan="1" col="2" />
+                    <group name="footer_right" colspan="1" col="2" />
+                </group>
+            </sheet>
+            <div class="oe_chatter">
+                <field name="message_follower_ids" groups="base.group_user" />
+                <field name="activity_ids" />
+                <field name="message_ids" />
+            </div>
+        </form>
+    </field>
+</record>
+
+</odoo>
