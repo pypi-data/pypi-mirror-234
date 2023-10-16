@@ -1,0 +1,28 @@
+{{ vérifie(côtés ==  3, "Le nombre de côtés doit être égal à 3.") }}
+\documentclass[tikz]{standalone}
+
+\usetikzlibrary{calc}
+
+\tikzstyle{aretes}=[{{ style.aretes }}]
+\tikzstyle{bord}=[{{ style.bord }}]
+\tikzstyle{pair}=[{{ style.pair }}]
+\tikzstyle{impair}=[{{ style.impair }}]
+
+\begin{document}
+    \begin{tikzpicture}
+    \clip (-1pt, {-1/3}) rectangle ({{taille[0]-1.1}}, { {{taille[1]-5/3}} *sqrt(3)/3 });
+        {% for y in range(taille[1]) %}
+        {% for x in range(taille[0]) %}
+        \begin{scope}[
+            shift={(
+                { {{x}} {% if x%2==0 %}-1/3{% endif %} {% if y%2==0 %}+1{% endif %} },
+                { {{y}} *sqrt(3)/3 },
+            )},
+            {%- if x%2==0 %}rotate=180,{% endif -%}
+            ]
+            {{ polygone(3, tuiles.next(), durete=durete, pairimpair=True) }}
+        \end{scope}
+        {% endfor %}
+        {% endfor %}
+    \end{tikzpicture}
+\end{document}
