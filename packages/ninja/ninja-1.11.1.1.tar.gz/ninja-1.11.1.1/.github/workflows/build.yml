@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      overrideVersion:
+        description: Manually force a version
+  pull_request:
+  push:
+    branches:
+      - master
+      - main
+    tags:
+      - "*.*.*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.event.inputs.overrideVersion }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - uses: pre-commit/action@v3.0.0
+
+
+  build_wheels:
+    name: Build ${{ matrix.arch }} wheels on ${{ matrix.os }}
+    needs: [lint]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: "x86_64"
+          - os: ubuntu-22.04
+            arch: "i686"
+          - os: ubuntu-22.04
+            arch: "aarch64"
+          - os: ubuntu-22.04
+            arch: "ppc64le"
+          - os: ubuntu-22.04
+            arch: "s390x"
+          - os: windows-2019
+            arch: "AMD64"
+          - os: windows-2022
+            arch: "ARM64"
+          - os: windows-2019
+            arch: "x86"
+          - os: macos-11
+            arch: "universal2"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for versioneer to find tags
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3.0.0
+        if: runner.os == 'Linux'
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          CIBW_ARCHS: "${{ matrix.arch }}"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+      - name: Test wheel on host Linux
+        if: runner.os == 'Linux' && matrix.arch == 'x86_64'
+        run: |
+          pip install wheelhouse/*manylinux*x86_64*.whl
+          ninja --version
+          python -m ninja --version
+
+  build_sdist:
+    name: Build source distribution
+    needs: [lint]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # required for versioneer to find tags
+
+      - name: Build SDist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: dist/*.tar.gz
+
+  test_sdist:
+    name: Test SDist with python ${{ matrix.python }}
+    needs: [build_sdist]
+    # 22.04 doesn't have 2.7 or 3.6
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["2.7", "3.6", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        name: Install Python ${{ matrix.python }}
+        if: matrix.python != '2.7'
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install Ubuntu Python 2.7
+        if: matrix.python == '2.7'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python2 python3-virtualenv
+          virtualenv -p python2 ${HOME}/cp27
+          ${HOME}/cp27/bin/python -m pip install -U pip
+          ${HOME}/cp27/bin/python -m pip install -U setuptools wheel
+          echo "${HOME}/cp27/bin" >> $GITHUB_PATH
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: sdist
+
+      - name: Install SDist
+        env:
+          SKBUILD_CONFIGURE_OPTIONS: "-DBUILD_CMAKE_FROM_SOURCE:BOOL=OFF"
+        run: pip install sdist/*.tar.gz
+
+      - name: Install test dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Test installed SDist
+        run: pytest ./tests
+
+  check_dist:
+    name: Check dist
+    needs: [build_wheels, build_sdist, test_sdist]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - run: pipx run twine check --strict dist/*
+
+  upload_pypi:
+    name: Upload to PyPI
+    needs: [check_dist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.repository == 'scikit-build/ninja-python-distributions' && startsWith(github.ref, 'refs/tags/')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/ninja
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

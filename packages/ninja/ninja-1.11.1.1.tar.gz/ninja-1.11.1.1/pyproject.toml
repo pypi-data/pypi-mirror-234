@@ -1,0 +1,86 @@
+[build-system]
+requires = [
+    "setuptools >=42",
+    "setuptools-scm[toml]",
+    "scikit-build",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/ninja/_version.py"
+
+[tool.cibuildwheel]
+build = "cp39-*"
+build-verbosity = 1
+before-all = [
+    'pipx install -f --pip-args="-c {project}/constraints-ci.txt" cmake',
+    'cmake --version',
+]
+before-build = "pip install -r requirements-repair.txt"
+repair-wheel-command = "python scripts/repair_wheel.py -w {dest_dir} {wheel}"
+test-extras = "test"
+test-command = "pytest {project}/tests"
+test-skip = ["*-win_arm64", "*-macosx_universal2:arm64"]
+environment-pass = ["SETUPTOOLS_SCM_PRETEND_VERSION"]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-manylinux_{x86_64,i686}"
+manylinux-x86_64-image = "manylinux1"
+manylinux-i686-image = "manylinux1"
+environment = { LDFLAGS = "-static-libstdc++" }
+
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.9"
+
+[tool.cibuildwheel.windows]
+before-all = [
+    'pipx install -f --pip-args="-c {project}/constraints-ci.txt" cmake',
+    'cmake --version',
+    'pipx install -f --pip-args="-c {project}/constraints-ci.txt" ninja',
+    'ninja --version',
+]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux_*"
+environment = { LDFLAGS = "-static-libstdc++ -static-libgcc" }
+
+
+[tool.ruff]
+select = [
+  "E", "F", "W", # flake8
+  "B",           # flake8-bugbear
+  "I",           # isort
+  "ARG",         # flake8-unused-arguments
+  "C4",          # flake8-comprehensions
+  "ICN",         # flake8-import-conventions
+  "ISC",         # flake8-implicit-str-concat
+  "G",           # flake8-logging-format
+  "PGH",         # pygrep-hooks
+  "PIE",         # flake8-pie
+  "PL",          # pylint
+  "PT",          # flake8-pytest-style
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+  "SIM",         # flake8-simplify
+  "EXE",         # flake8-executable
+  "NPY",         # NumPy specific rules
+  "PD",          # pandas-vet
+]
+extend-ignore = [
+  "PLR",    # Design related pylint codes
+  "E501",   # Line too long
+  "RUF005", # Python 3 needed
+  "B904",   # Python 3 needed
+#  "SIM105", # Python 3 needed
+]
+src = ["src"]
+unfixable = [
+  "T20",  # Removes print statements
+  "F841", # Removes unused variables
+]
+exclude = ["versioneer.py", "src/ninja/version.py"]
+flake8-unused-arguments.ignore-variadic-names = true
+
+[tool.ruff.per-file-ignores]
+"*.pyi" = ["ARG001"]
+"noxfile.py" = ["PLW0603"] # Could be fixed if Python 2 dropped
