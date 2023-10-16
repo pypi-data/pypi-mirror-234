@@ -1,0 +1,207 @@
+Metadata-Version: 2.1
+Name: tilearn-llm
+Version: 0.5.12
+Summary: TILEARN for LLM
+Author-email: Bo Yang <boyyang@tencent.com>, Boyuan Deng <bryandeng@tencent.com>, Chenyang Guo <chenyangguo@tencent.com>, Run Li <danerli@tencent.com>, Yahui Chen <huecheng@tencent.com>, Jing Gong <jennygong@tencent.com>, Minhao Qin <lemonqin@tencent.com>
+License: Copyright (c) 2023 - 2023 TENCENT CORPORATION. All rights reserved.
+Project-URL: Homepage, https://cloud.tencent.com/document/product/1511/64787
+Keywords: pytorch,LLM
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: cryptography
+Requires-Dist: colossalai
+Requires-Dist: transformers
+Provides-Extra: test
+Requires-Dist: pytest >=6 ; extra == 'test'
+
+## Tilearn.llm使用说明
+
+### 1. CUDA Kernel（以LLAMA为例）
+
+支持显卡：Ampere, Ada, or Hopper GPUs (e.g., A100, A800, H100, H800)
+
+#### 新版本
+
+新版本Dependencies: pytorch >= 2.0.0
+
+该版本完全兼容huggingface接口，不需要额外的转模型操作
+
+LLAMA1/LLAMA2 A800 16GPU seq=1024相比deepspeed zero2训练加速约20%
+
+cuda kernel使用方法-启动脚本修改如下
+
+```shell
+### TIACC CUDA Kernel
+### Open: TIACC_TRAINING_CUDA_KERNEL=1
+### Close: TIACC_TRAINING_CUDA_KERNEL=0
+export TIACC_TRAINING_CUDA_KERNEL=1
+```
+cuda kernel使用方法-代码修改如下
+
+```python3
+### TIACC
+TIACC_TRAINING_CUDA_KERNEL = int(os.getenv('TIACC_TRAINING_CUDA_KERNEL', '0'))
+if TIACC_TRAINING_CUDA_KERNEL == 1:
+    from tilearn.llm.transformers import LlamaForCausalLM
+
+### 模型接口与标准huggingface一致
+model = LlamaForCausalLM.from_pretrained(...)
+```
+
+```python3
+### TIACC
+TIACC_TRAINING_CUDA_KERNEL = int(os.getenv('TIACC_TRAINING_CUDA_KERNEL', '0'))
+if TIACC_TRAINING_CUDA_KERNEL == 1:
+    from tilearn.llm.transformers import AutoModelForCausalLM
+
+### 模型接口与标准huggingface一致
+model = AutoModelForCausalLM.from_pretrained(...)
+```
+
+#### 旧版本
+
+旧版本Dependencies: flash-attention
+请安装https://github.com/Dao-AILab/flash-attention, 建议源码安装
+```bash
+### compile from source
+git clone --recursive https://github.com/Dao-AILab/flash-attention
+cd flash-attention && python setup.py install
+
+### install layer_norm, fused_dense and rotary kernel
+cd flash-attention/csrc/layer_norm && pip3 install .
+cd flash-attention/csrc/fused_dense_lib && pip install .
+cd flash-attention/csrc/rotary && pip install .
+```
+
+该版本不兼容huggingface接口，可直接读取huggingface模型和原始cuda kernel模型（训练保存的模型结构）
+
+由于训练保存的模型为原始cuda kernel模型，非huggingface结构，若需要huggingface模型则手动执行脚本转换
+
+LLAMA1/LLAMA2 A800 16GPU seq=1024相比deepspeed zero2训练加速约30%
+
+cuda kernel使用方法-启动脚本修改如下
+
+```shell
+### TIACC CUDA Kernel
+### Open: TIACC_TRAINING_CUDA_KERNEL_V0=1
+### Close: TIACC_TRAINING_CUDA_KERNEL_V0=0
+export TIACC_TRAINING_CUDA_KERNEL_V0=1
+export TIACC_TRAINING_MODEL_FORMAT=llama-hf
+```
+
+```shell
+# 若读取huggingface模型结构，则设置llama-hf
+export TIACC_TRAINING_MODEL_FORMAT=llama-hf
+# 若原始cuda kernel模型，则设置llama-origin
+export TIACC_TRAINING_MODEL_FORMAT=llama-origin
+```
+
+cuda kernel使用方法-代码修改如下
+
+```python3
+### TIACC
+TIACC_TRAINING_CUDA_KERNEL_V0 = int(os.getenv('TIACC_TRAINING_CUDA_KERNEL_V0', '0'))
+if TIACC_TRAINING_CUDA_KERNEL_V0 == 1:
+    from tilearn import llm
+
+### LLAMA模型初始化
+TIACC_TRAINING_MODEL_FORMAT = os.getenv('TIACC_TRAINING_MODEL_FORMAT', 'llama-origin')
+model = llm.models.llama(model_args.model_name_or_path, model_format=TIACC_TRAINING_MODEL_FORMAT)
+```
+
+### 2. Static Zero
+
+适用场景：在deepspeed zero1、zero2、zero3、offload、int8等不同优化状态间切换
+
+启动脚本修改如下
+
+```shell
+### TIACC STATIC ZERO
+### Open: TIACC_TRAINING_CUDA_KERNEL='O2' 
+### support 'O2' / 'O2.5' / 'O3' / 'O3.5' / 'O3_Q8'(doing)
+### Close: TIACC_TRAINING_CUDA_KERNEL='None'
+export TIACC_TRAINING_STATIC_ZERO='None' #'O2'
+```
+代码修改如下
+```python3
+from transformers import HfArgumentParser
+
+TIACC_TRAINING_STATIC_ZERO = os.getenv('TIACC_TRAINING_STATIC_ZERO', 'None')
+if TIACC_TRAINING_STATIC_ZERO != 'None':
+    from tilearn.llm.transformers import TrainingArguments
+	
+### 接口与标准huggingface一致
+parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+```
+
+### 3. Dynamic Zero
+
+适用场景：适用于zero3 + offload场景，大幅优化显存从而提升batchsize
+
+启动脚本修改如下
+
+```shell
+### TIACC DYNAMIC ZERO
+### Open: TIACC_TRAINING_DYNAMIC_ZERO=1 and set TIACC_ZERO_STAGE/TIACC_ZERO_STAGE/TIACC_PLACEMENT/TIACC_SHARD_INIT/TIACC_CPU_INIT
+### Close: TIACC_TRAINING_DYNAMIC_ZERO=0
+export TIACC_TRAINING_DYNAMIC_ZERO=0
+export TIACC_ZERO_STAGE=3 #work when TIACC_TRAINING_DYNAMIC_ZERO=1
+export TIACC_PLACEMENT='cpu' #'cuda' #work when TIACC_TRAINING_DYNAMIC_ZERO=1
+export TIACC_SHARD_INIT=0 #work when TIACC_TRAINING_DYNAMIC_ZERO=1
+export TIACC_CPU_INIT=1 #work when TIACC_TRAINING_DYNAMIC_ZERO=1
+
+if [ ${TIACC_TRAINING_DYNAMIC_ZERO} = 0 ]; then
+  #USE_DS="--deepspeed=./ds_config_zero3.json"
+  USE_DS="--deepspeed=${deepspeed_config_file}"
+else
+  USE_DS=""
+fi
+
+torchrun --nnodes 1 --nproc_per_node 8 run_clm.py \
+    ${USE_DS} \
+	...
+```
+
+代码修改如下
+```python3
+TIACC_TRAINING_DYNAMIC_ZERO = int(os.getenv('TIACC_TRAINING_DYNAMIC_ZERO', '0'))
+from contextlib import nullcontext
+if TIACC_TRAINING_DYNAMIC_ZERO == 1:
+    from tilearn.llm.trainer import TrainerTiacc as Trainer
+    from tilearn.llm import init as llm_init
+    from tilearn.llm import get_config as llm_get_config
+	
+
+	
+### init in main func
+def main():
+    if TIACC_TRAINING_DYNAMIC_ZERO == 1:
+        llm_config = llm_get_config()
+        llm_init_context = llm_init(init_in_cpu=llm_config.cpu_init,
+                                    shard_init=llm_config.shard_init,
+                                    model_dtype=torch.half)
+									
+### add init_context when model init
+    init_context = llm_init_context if TIACC_TRAINING_DYNAMIC_ZERO == 1 else nullcontext
+    with init_context():
+		### 接口与标准huggingface一致
+        model = LlamaForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            config=config,
+            low_cpu_mem_usage=False #True,
+			...
+        )
+		
+		
+### use trainer
+    ### 接口与标准huggingface一致
+    trainer = Trainer(
+        model=model,
+        ...
+    )
+```
