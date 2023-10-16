@@ -1,0 +1,167 @@
+Metadata-Version: 2.1
+Name: replay-rec
+Version: 0.12.0
+Summary: RecSys Library
+Home-page: https://sb-ai-lab.github.io/RePlay/
+License: Apache-2.0
+Author: AI Lab
+Requires-Python: >=3.7.1,<3.10
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Dist: cached-property (==1.5.2)
+Requires-Dist: d3rlpy (==1.1.1)
+Requires-Dist: gym (==0.17.2)
+Requires-Dist: hnswlib (==0.7.0)
+Requires-Dist: implicit (>=0.7.0,<0.8.0)
+Requires-Dist: lightautoml (>=0.3.1,<0.4.0)
+Requires-Dist: lightfm (==1.17)
+Requires-Dist: llvmlite (>=0.32.1)
+Requires-Dist: matplotlib (>=3.5.3,<4.0.0)
+Requires-Dist: nmslib (==2.1.1)
+Requires-Dist: numba (>=0.50)
+Requires-Dist: numpy (>=1.20.0)
+Requires-Dist: optuna (>=3.2.0,<3.3.0)
+Requires-Dist: pandas (>=1.3.5,<2.0.0)
+Requires-Dist: psutil (>=5.9.5,<5.10.0)
+Requires-Dist: pyarrow (>=12.0.1,<12.1.0)
+Requires-Dist: pyspark (>=3.0,<3.3)
+Requires-Dist: pytorch-ranger (>=0.1.1,<0.2.0)
+Requires-Dist: scikit-learn (>=1.0.2,<2.0.0)
+Requires-Dist: scipy (>=1.7.3,<1.8.0)
+Requires-Dist: seaborn (>=0.12.2,<0.13.0)
+Requires-Dist: torch (>=1.8,<2.0)
+Project-URL: Repository, https://github.com/sb-ai-lab/RePlay
+Description-Content-Type: text/markdown
+
+# RePlay
+
+RePlay is a library providing tools for all stages of creating a recommendation system, from data preprocessing to model evaluation and comparison.
+
+RePlay uses PySpark to handle big data.
+
+You can
+
+- Filter and split data
+- Train models
+- Optimize hyper parameters
+- Evaluate predictions with metrics
+- Combine predictions from different models
+- Create a two-level model
+
+Documentation is available [here](https://sb-ai-lab.github.io/RePlay/).
+
+<a name="toc"></a>
+# Table of Contents
+
+* [Installation](#installation)
+* [Quickstart](#quickstart)
+* [Resources](#examples)
+* [Contributing to RePlay](#contributing)
+
+
+<a name="installation"></a>
+## Installation
+
+Use Linux machine with Python 3.7-3.9, Java 8+ and C++ compiler.
+
+```bash
+pip install replay-rec
+```
+
+To get the latest development version or RePlay, [install it from the GitHab repository](https://sb-ai-lab.github.io/RePlay/pages/installation.html#development).
+It is preferable to use a virtual environment for your installation.
+
+If you encounter an error during RePlay installation, check the [troubleshooting](https://sb-ai-lab.github.io/RePlay/pages/installation.html#troubleshooting) guide.
+
+
+<a name="quickstart"></a>
+## Quickstart
+
+```python
+from rs_datasets import MovieLens
+
+from replay.preprocessing.data_preparator import DataPreparator, Indexer
+from replay.metrics import HitRate, NDCG
+from replay.models import ItemKNN
+from replay.utils.session_handler import State
+from replay.splitters import UserSplitter
+
+spark = State().session
+
+ml_1m = MovieLens("1m")
+
+# data preprocessing
+preparator = DataPreparator()
+log = preparator.transform(
+    columns_mapping={
+        'user_id': 'user_id',
+        'item_id': 'item_id',
+        'relevance': 'rating',
+        'timestamp': 'timestamp'
+    }, 
+    data=ml_1m.ratings
+)
+indexer = Indexer(user_col='user_id', item_col='item_id')
+indexer.fit(users=log.select('user_id'), items=log.select('item_id'))
+log_replay = indexer.transform(df=log)
+
+# data splitting
+user_splitter = UserSplitter(
+    item_test_size=10,
+    user_test_size=500,
+    drop_cold_items=True,
+    drop_cold_users=True,
+    shuffle=True,
+    seed=42,
+)
+train, test = user_splitter.split(log_replay)
+
+# model training
+model = ItemKNN()
+model.fit(train)
+
+# model inference
+recs = model.predict(
+    log=train,
+    k=K,
+    users=test.select('user_idx').distinct(),
+    filter_seen_items=True,
+)
+
+# model evaluation
+metrics = Experiment(test,  {NDCG(): K, HitRate(): K})
+metrics.add_result("knn", recs)
+```
+
+<a name="examples"></a>
+## Resources
+
+### Usage examples
+1. [01_replay_basics.ipynb](https://github.com/sb-ai-lab/RePlay/blob/main/experiments/01_replay_basics.ipynb) - get started with RePlay.
+2. [02_models_comparison.ipynb](https://github.com/sb-ai-lab/RePlay/blob/main/experiments/02_models_comparison.ipynb) - reproducible models comparison on [MovieLens-1M dataset](https://grouplens.org/datasets/movielens/1m/).
+3. [03_features_preprocessing_and_lightFM.ipynb](https://github.com/sb-ai-lab/RePlay/blob/main/experiments/03_features_preprocessing_and_lightFM.ipynb) - LightFM example with pyspark for feature preprocessing.
+3. [04_splitters.ipynb](https://github.com/sb-ai-lab/RePlay/blob/main/experiments/04_splitters.ipynb) - An example of using RePlay data splitters.
+3. [05_feature_generators.ipynb](https://github.com/sb-ai-lab/RePlay/blob/main/experiments/05_feature_generators.ipynb) - Feature generation with RePlay.
+
+
+### Videos and papers
+* **Video guides**:
+	- [Replay for offline recommendations, AI Journey 2021](https://www.youtube.com/watch?v=ejQZKGAG0xs)
+
+* **Research papers**:
+	- Yan-Martin Tamm, Rinchin Damdinov, Alexey Vasilev [Quality Metrics in Recommender Systems: Do We Calculate Metrics Consistently?](https://dl.acm.org/doi/10.1145/3460231.3478848)
+
+<a name="contributing"></a>
+## Contributing to RePlay
+
+We welcome community contributions. For details please check our [contributing guidelines](CONTRIBUTING.md).
+
