@@ -1,0 +1,99 @@
+[build-system]
+requires = ["hatchling>=0.7", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "module_qc_data_tools"
+dynamic = ["version"]
+authors = [
+  { name="Jay Chan", email="jay.chan@cern.ch" },
+]
+maintainers = [
+    { name = "Giordon Stark", email = "gstark@cern.ch" },
+]
+description = "Module qc data tools"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.6"
+dependencies = [
+    "numpy",
+    "tabulate",
+    "jsonschema"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools"
+"Bug Tracker" = "https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools/-/issues"
+"Source" = "https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools"
+
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/module_qc_data_tools/_version.py"
+
+[tool.hatch.build.targets.sdist]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "tbump>=6.7.0",
+    "pylint",
+    "build",
+    "twine",
+]
+
+[tool.hatch.envs.default.scripts]
+tag = "tbump {args}"
+lint = "pylint src"
+build = "python -m build"
+validate = "twine check dist/*"
+# https://github.com/linkchecker/linkchecker/issues/678
+build-check = [
+  "build",
+  "validate",
+]
+upload = "twine upload dist/*"
+
+[tool.hatch.envs.dev]
+template = "dev"
+# pylint and pytest needs to be installed into package environment
+detached = false
+dependencies = [
+    "pytest >=6",
+]
+
+[tool.hatch.envs.dev.scripts]
+test = "pytest -ra"
+
+[tool.isort]
+profile = "black"
+
+[tool.pylint]
+master.py-version = "3.6"
+master.ignore-paths= ["src/module_qc_data_tools/_version.py"]
+reports.output-format = "colorized"
+similarities.ignore-imports = "yes"
+messages_control.disable = [
+  "design",
+  "fixme",
+  "line-too-long",
+  "wrong-import-position",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+testpaths = [
+    "tests",
+]

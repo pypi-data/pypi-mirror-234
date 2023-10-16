@@ -1,0 +1,90 @@
+stages:
+  - check
+  - test
+  - build
+  - deploy
+
+variables:
+  # see https://docs.gitlab.com/ee/ci/caching/#cache-python-dependencies
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.cache/pre-commit"
+
+cache:
+  paths:
+    - .cache/pip
+    - .cache/pre-commit
+
+image: python:3.7-buster
+before_script:
+  # want to set up a virtualenv to cache
+  - apt-get install -y --no-install-recommends git
+  - python -V
+  - git config --global credential.helper 'cache'
+  - |
+    echo "protocol=https
+    host=gitlab.cern.ch
+    username=gitlab-ci-token
+    password=${CI_JOB_TOKEN}
+    " | git credential approve
+  - python -m venv venv
+  - source venv/bin/activate
+  - python -m pip install -U pip pipx
+  - python -m pipx ensurepath
+  - python -m pip freeze
+
+lint:
+  stage: check
+  script:
+    - python -m pip install pre-commit
+    - pre-commit run --all-files
+
+tests:
+  stage: test
+  image: $IMAGE
+  script:
+    - pipx run hatch run dev:test
+  parallel:
+    matrix:
+      - IMAGE:
+          [
+            "python:3.7-buster",
+            "python:3.8-buster",
+            "python:3.9-buster",
+            "python:3.10-buster",
+            "python:3.11-buster",
+          ]
+
+package:
+  stage: build
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - pipx run hatch run build-check
+  artifacts:
+    paths:
+      - dist/
+
+.deploy:
+  stage: deploy
+  dependencies:
+    - package
+  script:
+    - pipx run hatch run upload
+
+deploy_gitlab:
+  extends: .deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  variables:
+    TWINE_PASSWORD: "${CI_JOB_TOKEN}"
+    TWINE_USERNAME: "gitlab-ci-token"
+    TWINE_REPOSITORY_URL: "https://gitlab.cern.ch/api/v4/projects/${CI_PROJECT_ID}/packages/pypi"
+
+deploy_production:
+  extends: .deploy
+  only:
+    - tags
+  variables:
+    TWINE_REPOSITORY: pypi
+    TWINE_USERNAME: __token__
+    TWINE_PASSWORD: $PYPI_TOKEN
