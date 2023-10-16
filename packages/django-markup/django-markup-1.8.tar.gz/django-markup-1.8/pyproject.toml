@@ -1,0 +1,42 @@
+[tool.black]
+target-version = ['py311']
+include = '\.pyi?$'
+exclude = "migrations"
+
+[tool.ruff]
+target-version = "py38"
+exclude = ["migrations"]
+select = ["ALL"]
+ignore = [
+  "ANN401",   # Dynamically typed expressions (typing.Any) are disallowed in `**kwargs`"
+  "D",        # Missing or badly formatted docstrings
+  "FBT",      # Flake Boolean Trap (don't use arg=True in functions)
+  "S101",     # Use of `assert` detected
+  "ANN101",   # Missing Type Annotation for "self"
+]
+
+[tool.mypy]
+check_untyped_defs = true
+ignore_errors = false
+ignore_missing_imports = true
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+exclude = ".*/migrations/.*"
+
+[tool.pytest.ini_options]
+python_files = [
+  "tests.py",
+  "test_*.py",
+  "*_tests.py",
+]
+addopts = """
+    --ds=django_markup.tests.settings
+    --cov=./django_markup
+    --cov-append
+    --cov-branch
+    --nomigrations
+    --reuse-db
+"""
+filterwarnings = ["ignore::RuntimeWarning"]
