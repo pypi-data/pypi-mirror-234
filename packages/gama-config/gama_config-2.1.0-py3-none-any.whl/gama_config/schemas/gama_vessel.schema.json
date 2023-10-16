@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "title": "GamaVesselConfig",
+  "properties": {
+    "ros_domain_id": {
+      "type": "integer",
+      "default": 0
+    },
+    "namespace_vessel": {
+      "type": "string",
+      "default": "vessel"
+    },
+    "namespace_groundstation": {
+      "type": "string",
+      "default": "groundstation"
+    },
+    "variant": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Variant"
+        }
+      ],
+      "default": "whiskey_bravo"
+    },
+    "mode": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Mode"
+        }
+      ],
+      "default": "simulator"
+    },
+    "extensions": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/GamaVesselConfigExtensions"
+        }
+      ]
+    },
+    "network": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Network"
+        }
+      ],
+      "default": "shared"
+    },
+    "prod": {
+      "type": "boolean",
+      "default": false
+    },
+    "log_level": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/LogLevel"
+        }
+      ],
+      "default": "info"
+    },
+    "ubiquity_user": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ubiquity_pass": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ubiquity_ip": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ddsrouter_groundstation_ip": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ddsrouter_groundstation_port": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ddsrouter_vessel_ip": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "ddsrouter_vessel_port": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "greenstream": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/GamaVesselGreenstream"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "Variant": {
+      "title": "Variant",
+      "enum": [
+        "whiskey_bravo",
+        "educat"
+      ]
+    },
+    "Mode": {
+      "title": "Mode",
+      "enum": [
+        "simulator",
+        "hardware",
+        "stubs"
+      ]
+    },
+    "GamaVesselConfigExtensions": {
+      "type": "object",
+      "title": "GamaVesselConfigExtensions",
+      "properties": {
+        "lookout": {
+          "type": "boolean",
+          "default": false
+        },
+        "rviz": {
+          "type": "boolean",
+          "default": false
+        },
+        "groot": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "Network": {
+      "title": "Network",
+      "enum": [
+        "shared",
+        "vpn",
+        "host"
+      ]
+    },
+    "LogLevel": {
+      "title": "LogLevel",
+      "enum": [
+        "info",
+        "debug",
+        "warn",
+        "error",
+        "fatal"
+      ]
+    },
+    "Pipeline": {
+      "type": "object",
+      "title": "Pipeline",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "order": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "order",
+        "elements"
+      ]
+    },
+    "GamaVesselGreenstream": {
+      "type": "object",
+      "title": "GamaVesselGreenstream",
+      "properties": {
+        "pipeline_overrides": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "allOf": [
+                      {
+                        "$ref": "#/$defs/Pipeline"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A list of greenstream pipelines.\nThese will only take affect if the the mode is 'hardware'\n\nSet these to 'null' to ignore the override.",
+          "examples": [
+            "- null\n- name: bow\n  elements:\n  - v4l2src\n  - video/x-raw, format=RGB,width=1920,height=1080"
+          ]
+        }
+      }
+    }
+  }
+}
