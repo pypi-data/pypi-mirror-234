@@ -1,0 +1,109 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block filters %}
+{% endblock %}
+
+{% block search %}
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+
+<div id="m-changelist-filter" class="flex flex-wrap gap-x-5 gap-y-2 mt-2" style="display:none;">
+  {% if cl.has_filters %}
+      {% for spec in cl.filter_specs %}{% admin_list_filter cl spec %}{% endfor %}
+  {% endif %}
+  {% search_form cl %}
+</div>
+
+<script>
+  (function ($) {
+    // 删掉h1标题
+    $("#content > h1").remove()
+
+    // 修改search样式
+    $("#toolbar").attr("id", "m-toolbar")
+    $("#searchbar").attr("size", 30)
+    $("#changelist-search label").remove()
+    $("#changelist-search > div").addClass("flex items-center gap-x-2")
+    $("#changelist-search input:submit").addClass("!py-1.5 !px-3")
+    $("#changelist-search .small.quiet").remove()
+
+    // filters
+    $("#changelist-form").before($("#m-changelist-filter"))
+    $("#m-changelist-filter").show()
+
+    $("body").append(`<div id="m-popup" class="z-[9999] w-screen h-screen absolute left-0 top-0" style="display:none;">
+      <div id="m-popup-content" class="bg-white px-4 rounded absolute shadow border-lg transition-all min-w-[100px] max-h-[300px] overflow-y-scroll flex flex-col">
+      </div>
+    </div>`)
+
+    $(".m-filter-btn").click(function() {
+      var t = ''
+      var checkIcon = `<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+        <path d="M384 690l452-452 60 60-512 512-238-238 60-60z" fill="rgb(115,169,196)"></path>
+      </svg>`
+      for(var el of $(this).find(".m-option")) {
+        var uncheck = $(el).data("uncheck") == "1"
+        var val = $(el).attr("value")
+        var display = $(el).html()
+        t = t + `<a class="py-3 border-b last:border-none flex items-center" href="${val}">
+          <div class="grow text-center">${display}</div>
+          ${uncheck ? `<div class="w-4"></div>` : checkIcon}
+        </a>`
+      }
+      $("#m-popup-content").html(t)
+
+      $("#m-popup").show()
+      $("#m-popup-content").scrollTop(0)
+      var top = $(this).offset().top + $(this).height() + 12 + 'px'
+      var left = $(this).offset().left + ($(this).width() - $("#m-popup-content").width()) / 2 + 'px'
+      $("#m-popup-content").removeClass("transition-all")
+      $("#m-popup-content").addClass("scale-0")
+      $("#m-popup-content").css({left, top})
+      setTimeout(function() {
+        $("#m-popup-content").addClass("transition-all")
+        $("#m-popup-content").removeClass("scale-0")
+      })
+    })
+
+    $("#m-popup").click(function(e) {
+      if (e.target.id == "m-popup-content") return
+      $("#m-popup-content").addClass("transition-all scale-0")
+      setTimeout(function() {
+        $("#m-popup").hide()
+      }, 250)
+    })
+
+    // actions
+    if (!$("#changelist .actions").length) {
+      $("#m-changelist-filter").after(`<div id="#changelist"><div class="actions"></div></div>`)
+    }
+    $("#changelist .actions").addClass("flex items-center !px-0 gap-2")
+    $("#changelist .actions").append(`<input id="m-changelist-action" type="hidden" name="action">`)
+    for (var el of $("#changelist .actions option")) {
+      var val= $(el).prop("value")
+      if (!val) continue
+      var title = val == "delete_selected" ? "批量删除" : $(el).html()
+      var bg = val == "delete_selected" ? "bg-[rgb(177,28,28)]" : "bg-[rgb(115,169,196)]"
+      var actEl = `<div class="cact ${bg} rounded text-white text-sm py-1.5 px-4 hover:opacity-90 cursor-pointer" value="${val}">${title}</div>`
+      $("#changelist .actions").prepend(actEl)
+    }
+    $(".cact").click(function() {
+      var val = $(this).attr("value")
+      $("#m-changelist-action").val(val)
+      $("#changelist-form").submit()
+    })
+    $("#changelist .actions label").remove()
+    $("#changelist .actions button").attr("hidden", true)
+
+    // 把[增加]添加到actions
+    $(".object-tools li a").attr("class", "bg-[rgb(115,169,196)] rounded !text-white text-sm py-1.5 px-4 hover:opacity-90 cursor-pointer")
+    $(".object-tools li a").html("增加")
+    $("#changelist .actions").prepend($(".object-tools li a"))
+    $(".object-tools").remove()
+
+  })(django.jQuery)
+</script>
+{% endblock %}

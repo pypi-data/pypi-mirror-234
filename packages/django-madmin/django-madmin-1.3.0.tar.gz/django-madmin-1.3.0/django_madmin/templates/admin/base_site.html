@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+{% if request.resolver_match.url_name == "login" %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endif %}
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% comment %} ====== {% endcomment %}
+
+{% block extrahead %}
+{{ block.super }}
+{% if debug %}
+<script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+{% else %}
+<script type="text/javascript" src="{% static 'admin/js/vendor/jquery/jquery.min.js' %}"></script>
+{% endif %}
+<script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+<script src="{% static 'madmin/js/tailwindcss.min.js' %}"></script>
+<script>tailwind.config = { corePlugins: { preflight: false } }</script>
+<style>
+*, ::before, ::after { border-width: 0; border-style: solid; border-color: #eee; }
+.ant-upload-drag { height: unset !important;}
+{% if not request.resolver_match.url_name == "login" %}
+#container {display: none; min-width: unset;}
+{% endif %}
+</style>
+{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block footer %}
+{{ block.super }}
+{% if not request.resolver_match.url_name == "login" %}
+<div id="main-container" class="flex">
+  <div id="sidebar" class="w-52 bg-[rgb(65,118,144)] h-screen text-white fixed max-lg:hidden z-50 transition-all">
+    <div class="px-2 h-12 text-xl flex flex-col items-center justify-center">
+      <a class="!text-white" href="{% url 'admin:index' %}">
+        {{ site_header|default:_('Django administration') }}
+      </a>
+    </div>
+    <div class="flex flex-col h-[calc(100vh-48px)] overflow-y-scroll">
+    {% for app in available_apps %}
+      <div class="py-3 px-2 bg-[#444E] mb-1">{{ app.name }}</div>
+      {% for model in app.models %}
+      <div class="px-1 mb-1 flex flex-col">
+        <a href="{{ model.admin_url }}" class="app-model !text-white rounded px-2 py-2.5 hover:bg-[rgb(115,169,196)] 
+        {% if module_name == model.name or request.path|cut:model.admin_url|length != request.path|length %}bg-[rgb(115,169,196)]{% endif %}">
+          {{ model.name }}
+        </a>
+      </div>
+      {% endfor %}
+    {% endfor %}
+    </div>
+  </div>
+  <div id="sidebar-space" class="w-52 shrink-0 max-lg:hidden"></div>
+  <script>
+    (function ($) {
+      $("#header").addClass("!px-3 max-lg:!flex-col-reverse")
+      $("#header").prepend(`<div id="header-left" class="flex items-center max-lg:mt-2">
+        <div id="header-menu" class="cursor-pointer p-1 rounded bg-black bg-opacity-10 hover:bg-opacity-20 flex items-center max-lg:hidden" >
+          <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+            <path d="M133.31 296.552h757.207c19.782 0 35.951-16.169 35.951-35.95 0-19.782-15.997-35.952-35.95-35.952H133.31c-19.782 0-35.951 16.17-35.951 35.951 0 19.782 16.17 35.951 35.95 35.951zM890.517 476.135H133.311c-19.782 0-35.951 16.17-35.951 35.951 0 19.782 16.17 35.951 35.95 35.951h757.207c19.782 0 35.951-16.17 35.951-35.951 0-19.782-16.17-35.95-35.95-35.95zM890.517 727.448H133.311c-19.782 0-35.951 15.997-35.951 35.95s16.17 35.952 35.95 35.952h757.207c19.782 0 35.951-15.998 35.951-35.951s-16.17-35.951-35.95-35.951z" p-id="9598" fill="white"></path>
+          </svg>
+        </div>
+      </div>`)
+      $("#header-menu").click(function() {
+        var keyClass = "-translate-x-[208px]"
+        if ($("#sidebar").hasClass(keyClass)) {
+          $("#sidebar").removeClass(keyClass)
+          setTimeout(function() { $("#sidebar-space").removeClass("hidden") }, 150)
+        }
+        else {
+          $("#sidebar").addClass(keyClass)
+          $("#sidebar-space").addClass("hidden")
+        }
+      })
+      $(".breadcrumbs").addClass("!px-3 !py-0 !bg-[unset]")
+      $("#header-left").append($(".breadcrumbs"))
+      $("#content").addClass("!px-5")
+      $("body").append($("#main-container"))
+      $("#sidebar").after($("#container"))
+      $("#container").show()
+      $("#sidebar").after($("#sidebar-space"))
+    })(django.jQuery)
+  </script>
+</div>
+{% endif %}
+{% endblock %}
