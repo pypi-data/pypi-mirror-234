@@ -1,0 +1,194 @@
+[tool.poetry]
+name = "django-docutils"
+version = "0.19.0"
+description = "Docutils (a.k.a. reStructuredText, reST, RST) support for django."
+
+license = "MIT"
+
+authors = [
+  "Tony Narlock <tony@git-pull.com>",
+]
+
+readme = "README.md"
+packages = [
+  { include = "*", from = "src" },
+]
+include = [
+  { path = "tests", format = "sdist" },
+]
+
+classifiers = [
+  'Development Status :: 2 - Pre-Alpha',
+  'Framework :: Django',
+  'Framework :: Django :: 3.2',
+  'Framework :: Django :: 4.0',
+  'Framework :: Django :: 4.1',
+  'Framework :: Django :: 4.2',
+  'Intended Audience :: Developers',
+  'License :: OSI Approved :: MIT License',
+  'Natural Language :: English',
+  'Programming Language :: Python :: 3',
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10',
+  'Programming Language :: Python :: 3.11',
+  'Programming Language :: Python :: 3.12',
+  "Typing :: Typed",
+]
+keywords = ["django", "docutils", "reStructuredText", "rst", "reST"]
+
+homepage = "https://django-docutils.git-pull.com"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/tony/django-docutils/issues"
+Documentation = "https://django-docutils.git-pull.com"
+Repository = "https://github.com/tony/django-docutils"
+Changes = "https://github.com/tony/django-docutils/blob/master/CHANGES"
+"Q & A" = "https://github.com/tony/django-docutils/discussions"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Django = ">=3.2"
+docutils = "*"
+pygments = "<3"
+pytz = { version = "*", optional = true }
+
+[tool.poetry.group.dev.dependencies]
+### Docs ###
+sphinx = "*"
+furo = "*"
+gp-libs = "*"
+sphinx-autobuild = "*"
+sphinx-autodoc-typehints = "*"
+sphinx-click = "*"
+sphinx-inline-tabs = "*"
+sphinxext-opengraph = "<0.8" # https://github.com/wpilibsuite/sphinxext-opengraph/issues/100
+sphinx-copybutton = "*"
+sphinxext-rediraffe = "*"
+myst_parser = ">=0.18.1"
+
+### Testing ###
+pytest = "*"
+pytest-rerunfailures = "*"
+pytest-watcher = "*"
+pytest-django = "*"
+dj-inmemorystorage = "*"
+
+### Coverage ###
+codecov = "*"
+coverage = "*"
+pytest-cov = "*"
+
+### Lint ###
+black = "*"
+ruff = "*"
+mypy = "*"
+django-stubs = "*"
+types-Pygments = "*"
+docutils-stubs = "*"
+
+[tool.poetry.extras]
+# Development stuff
+docs = [
+  "sphinx",
+  "sphinx-click",
+  "sphinx-autodoc-typehints",
+  "sphinx-autobuild",
+  "sphinxext-rediraffe",
+  "sphinx-copybutton",
+  "sphinxext-opengraph",
+  "sphinx-inline-tabs",
+  "myst_parser",
+  "furo",
+  "gp-libs",
+]
+pytz = [
+  "pytz",
+]
+test = [
+  "pytest",
+  "pytest-rerunfailures",
+  "pytest-watcher",
+  "pytest-django",
+  "dj-inmemorystorage",
+]
+coverage = ["codecov", "coverage", "pytest-cov"]
+lint = [
+  "ruff",
+  "mypy",
+  "django-stubs",
+  "types-Pygments",
+  "docutils-stubs",
+]
+
+[tool.mypy]
+strict = true
+plugins = ["mypy_django_plugin.main"]
+files = [
+  "src/",
+  "tests/",
+]
+enable_incomplete_feature = ["Unpack"]
+
+[tool.django-stubs]
+django_settings_module = "tests.settings"
+
+[[tool.mypy.overrides]]
+module = [
+  "inmemorystorage.*",
+  "django_docutils.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py38"
+select = [
+  "E", # pycodestyle
+  "F", # pyflakes
+  "I", # isort
+  "UP", # pyupgrade
+  "B", # flake8-bugbear
+  "C4", # flake8-comprehensions
+  "Q", # flake8-quotes
+  "PTH", # flake8-use-pathlib
+  "SIM", # flake8-simplify
+  "TRY", # Trycertatops
+  "PERF", # Perflint
+  "RUF", # Ruff-specific rules
+  "D", # pydocstyle
+]
+
+[tool.ruff.isort]
+known-first-party = [
+  "django_docutils",
+]
+combine-as-imports = true
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.per-file-ignores]
+"*/__init__.py" = ["F401"]
+"src/**/*.py" = ["PTH"]
+
+[tool.pytest.ini_options]
+addopts = "--tb=short --no-header --showlocals --doctest-modules"
+doctest_optionflags = "ELLIPSIS NORMALIZE_WHITESPACE"
+testpaths = [
+  "src/django_docutils",
+  "tests",
+  "docs",
+]
+pythonpath = ". tests"
+filterwarnings = [
+  "ignore::PendingDeprecationWarning",
+  "ignore:The frontend.Option(Parser)? class.*:DeprecationWarning::",
+]
+
+# pytest-django
+django_find_project = false
+DJANGO_SETTINGS_MODULE = 'tests.settings'
+
+[build-system]
+requires = ["poetry_core>=1.0.0", "poetry>=1.1.12"]
+build-backend = "poetry.core.masonry.api"
