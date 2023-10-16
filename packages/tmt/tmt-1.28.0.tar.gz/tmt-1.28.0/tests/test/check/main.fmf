@@ -1,0 +1,26 @@
+summary: Test test checks
+tier: 2
+
+/dmesg:
+  test: ./test-dmesg.sh
+
+  environment:
+      PROVISION_METHODS: local container
+
+  adjust:
+    - when: how == full
+      environment:
+          PROVISION_METHODS: local container virtual
+      tag+: [additional_coverage]
+
+/avc:
+  test: ./test-avc.sh
+
+  environment:
+      PROVISION_METHODS: local
+
+  adjust:
+    - when: how == full
+      environment:
+          PROVISION_METHODS: local virtual
+      tag+: [additional_coverage]
