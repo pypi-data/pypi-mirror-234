@@ -1,0 +1,73 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "accentdatabase"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Accent Design Group Ltd", email = "support@accentdesign.co.uk" },
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python",
+]
+dependencies = [
+    "pydantic>=2.0.1,<2.5.0",
+    "pydantic-settings>=2.0.1,<2.1.0",
+    "sqlalchemy>=2.0.0,<2.1.0",
+]
+dynamic = ["version", "description"]
+
+[project.urls]
+Homepage = "https://github.com/accentdesign/accentdatabase"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "mypy",
+    "flake8",
+    "black",
+    "isort",
+]
+dev = [
+    "autoflake",
+    "flake8",
+]
+alembic = [
+    "alembic",
+]
+
+[tool.flit.sdist]
+include = [
+    "accentdatabase/"
+]
+exclude = [
+    "example/",
+    "scripts/",
+    "tests/",
+]
+
+[tool.isort]
+profile = "black"
+known_third_party = []
+
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = "accentdatabase.tests.*"
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+addopts = [
+  "--strict-config",
+  "--strict-markers",
+]
+xfail_strict = true
+filterwarnings = []
