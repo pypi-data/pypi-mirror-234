@@ -1,0 +1,97 @@
+﻿{
+    "COMMENT: All the 'COMMENT' lines in this file are just intended to describe the related items in the configuration, but aren't meant to be present in the actual session file.":"",
+  "sessionConfiguration" : {
+      "COMMENT: sessionConfiguration -> Main OSVE configuration object.":"",
+    "sessionID": "[OPTIONAL][NOT_USED] String with the identifier for this OSVE execution.",
+    "version": "[OPTIONAL][NOT_USED] String with the Session object version, just to have control if any keyword is updated/removed.",
+    "source": {
+        "COMMENT: source -> [OPTIONAL][NOT_USED] Object intended to define the origin of the provided data.":"",
+      "segmentation_info":{
+          "COMMENT: segmentation_info -> [OPTIONAL][NOT_USED] Object intended to define the source segmentation details.":"",
+        "plan_id": "[OPTIONAL][NOT_USED] String with the identifier of the source segmentation plan being used.",
+        "mnemonic": "[OPTIONAL][NOT_USED] String with the mnemonic of the source segmentation being used.",
+        "name": "[OPTIONAL][NOT_USED] String with the name of the source segmentation being used.",
+        "description": "[OPTIONAL][NOT_USED] String with the description of the source segmentation being used."
+       },
+      "trajectory_info": {
+          "COMMENT: trajectory_info -> [OPTIONAL][NOT_USED] Object intended to define the source trajectory details.":"",
+         "trajectory": "[OPTIONAL][NOT_USED] String with the source trajectory being used."
+       }
+    },
+    "simulationConfiguration": {
+        "COMMENT: simulationConfiguration -> [OPTIONAL] Object intended to define the simulation parammeters.":"",
+      "timeStep": "[OPTIONAL] Integer or double specifiying the time step or time resolution in seconds being used during the OSVE simulation. Default value is 1 second.",
+      "outputTimeStep": "[OPTIONAL] Integer or double specifiying the time step or time resolution in seconds being used by OSVE while generating the output data. In case of not specified the `timeStep` value will be used.",
+      "filterStartTime": "[OPTIONAL] String with the format `yyyy-mm-ddThh:mm:ss.mmmZ` specifiying the OSVE simulation start time. In not speciefied OSVE will take the latest start date from each of the timeline files (ITL, PTR, JSON).",
+      "filterEndTime": "[OPTIONAL] String with the format `yyyy-mm-ddThh:mm:ss.mmmZ` specifiying the OSVE simulation end time. If not specified OSVE will take the earliest end date from each of the timeline files (ITL, PTR, JSON).",
+      "resizePtrBlocks": "[OPTIONAL] Boolean specifiying if the PTR blocks shall be resized in case of possible during the PTR resolving step. Default value is false.",
+      "simulateTimeline": "[OPTIONAL] Boolean specifiying if the timelines shall be executed after the PTR resolving step. Default value is true."
+    },
+    "attitudeSimulationConfiguration": {
+        "COMMENT: attitudeSimulationConfiguration -> [OPTIONAL] Object intended to define the AGM (AGE) simulation parammeters.":"",
+      "kernelsList": {
+          "COMMENT: kernelsList -> [OPTIONAL] Object intended to define the SPICE Kernels to being used by AGM (AGE) during the simulation.":"",
+        "id": "[OPTIONAL][NOT_USED] String with the identifier of the kernel list to be used by AGM (AGE). E.g.: CREMA 3.0",
+        "version": "[OPTIONAL][NOT_USED] String with the kernelsList object version, just to have control if any keyword is updated/removed.",
+        "baselineRelPath": "[OPTIONAL] String with the relative path to reference all the kernels in the `fileList` array. Default empty string.",
+        "fileList": [
+            {"COMMENT: fileList -> [OPTIONAL] List of SPICE Kernels to being used by AGM (AGE) during the simulation.":""},
+          {
+            "fileRelPath": "String with the relative path of a SPICE kernel to load. Can be specified multiple times.",
+            "description": "[OPTIONAL] String with the description of the SPICE kernel to load."
+          }
+        ]
+      },
+      "baselineRelPath": "[OPTIONAL] String with the relative path to reference all the AGM configuration files. Default empty string.",
+      "ageConfigFileName": "String with the relative path to the AGM configuration file in XML format.",
+      "fixedDefinitionsFile": "String with the relative path of the AGM fixed definitions file in XML format.",
+      "predefinedBlockFile": "String with the relative path of the AGM predefined blocks file in XML format.",
+      "eventDefinitionsFile": "[OPTIONAL] String with the relative path of the AGM event definitions file in XML format."
+    },
+    "instrumentSimulationConfiguration": {
+        "COMMENT: instrumentSimulationConfiguration -> [OPTIONAL] Object intended to define the ISE (EPS) simulation parammeters.":"",
+      "baselineRelPath": "[OPTIONAL] String with the relative path to reference all the EPS configuration files. Default empty string.",
+      "unitFileName": "String with the relative path of the EPS Units definition file.",
+      "configFileName": "String with the relative path of the EPS configuration file.",
+      "eventDefFileName": "String with the relative path of the EPS event definitions file."
+    },
+    "inputFiles": {
+        "COMMENT: inputFiles -> [OPTIONAL] Object intended to define the input files to be provided to OSVE.":"",
+      "baselineRelPath": "[OPTIONAL] String with the relative path to reference all the input files. Default empty string.",
+      "jsonSegmentFilePath": "[OPTIONAL] String with the relative path of the JSON timeline file for AGM (AGE), could not be provided if `xmlPtrPath` is present. Default empty string.",
+      "xmlPtrPath": "[OPTIONAL] String with the relative path of the Pointing Requests file (PTR) for AGM (AGE), could not be provided if `jsonSegmentFilePath` is present. Default empty string.",
+      "segmentTimelineFilePath": "[OPTIONAL] String with the relative path of the Instrument Timeline (ITL) to simulate with EPS (ISE). Default empty string.",
+      "eventTimelineFilePath": "[OPTIONAL] String with the relative path of the Events file (EVF) for being used by ISE(EPS). Default empty string.",
+      "modellingConfiguration": {
+          "COMMENT: modellingConfiguration -> [OPTIONAL] Object intended to define the ISE (EPS) experiment modelling configuration.":"",
+        "baselineRelPath": "[OPTIONAL] String with the relative path to reference all the modelling files. Default empty string.",
+        "edfFileName": "String with the relative path of the Experiment Definitions file (EDF) for being used by EPS (ISE). Default empty string.",
+        "observationDefFileName": "[OPTIONAL] String with the relative path of the Observations Definitions file for being used by ISE(EPS). Default empty string."
+      }
+    },
+    "outputFiles": {
+        "COMMENT: outputFiles -> [OPTIONAL] Object intended to define the output files of OSVE execution":"",
+      "baselineRelPath": "[OPTIONAL] String with the relative path to reference all the output files, if defined it shall exist. Default empty string.",
+      "simOutputFilesPath": "[OPTIONAL] String with the relative path of the folder where EPS (ISE) will place all the simulation outputs, if not present or empty no simulation output will be generated. Default empty string.",
+      "ckAttitudeFilePath": "[OPTIONAL] String with the SPICE CameraKernel (CK) that AGE(AGM) will generate after the OSVE execution, if not present or empty, no CK will be generated. Default empty string.",
+      "ckConfig": {
+          "COMMENT: ckConfig -> [OPTIONAL] Object intended to define the parameters for the CK generation":"",
+        "ckFrameId": "[OPTIONAL] Integer specifiying the SPICE spacecraft reference frame identifier to use for the CK generation. This CK will map the attitude to pass from the specified reference frame to J2000 reference frame. Default frame id is -28001 that refers to JUICE_SPACECRAFT_PLAN found at the juice_v??.tf frames kernel found at the JUICE SPICE Kernel Dataset.",
+        "ckTimeStep": "[OPTIONAL] Integer specifiying the time resolution in seconds to use during the CK generation. Default is 300 seconds."
+      },
+      "txtAttitudeFilePath": "[OPTIONAL] String with the relative path where AGM (AGE) will place the CSV containing the spacecraft quaternions per timestep to pass from the spacecraft frame to J2000. Default empty string, the CSV will not be generated.",
+      "attitudeXmlPtr": "[OPTIONAL] String with the relative path where AGE(AGM) will place the resolved PTR. Default empty string, the PTR will not be generated.",
+      "simDataFilePath": "[OPTIONAL] String with the relative path where AGE(AGM) will place the CSV with some parameters extracted during the AGE(AGM) simulation (Solar arrays values, power and spacecraft quaternions). Default empty string, the CSV will not be generated.",
+      "powerFilePath": "[OPTIONAL] String with the relative path where AGE(AGM) will place the CSV with the Solar Arrays available power extracted during the AGE(AGM) simulation. Default empty string, the CSV will not be generated.",
+      "powerConfig": {
+          "COMMENT: powerConfig -> [OPTIONAL] Object intended to define the parameters for the CSV with the Solar Arrays available power":"",
+        "powerTimeStep": "Integer specifiying the time resolution in seconds to use during the power CSV generation. If not specifed, the `timeStep` value will be used."
+      }
+    },
+    "logging": {
+        "COMMENT: logging -> [OPTIONAL] Object intended to define the OSVE logging parameters":"",
+      "stdOutLogLevel": "[OPTIONAL] String with the log level defined for OSVE when writing on the standard output. Supported values: OK, DEBUG, INFO, WARNING, ERROR, FATAL, NONE. Default value is INFO.",
+      "jsonLogFile": "[OPTIONAL] String with the relative path where OSVE will write all the logs in JSON format. The log level for this JSON file is DEBUG. Default empty string, no JSON log file will be generated."
+    }
+  }
+}
