@@ -1,0 +1,91 @@
+stages:
+  - style
+  - test
+  - docs
+  - build
+
+style:
+  stage: style
+  image: python:3.10
+  script:
+    - python -m pip install --upgrade pip
+    - pip install flake8
+    - pip install flake8-class-attributes-order
+    - flake8
+    - pip install black
+    - black iocbio --check
+
+test:
+  stage: test
+  image: python:3.10
+  only:
+    - main
+  when: manual    
+  script:
+    - pip install -r requirements.txt .
+    - pip install pytest
+    - pip install unittest-data-provider
+    - python -m pytest test/unit
+
+pages:
+  stage: docs
+  image: python:buster
+  script:
+  - pip3 install --upgrade pip
+  - pip3 install mkdocs
+  - pip3 install sphinx sphinx-glpi-theme recommonmark
+  - mkdocs build
+  - ln -s ../img site/install/img
+  - ln -s ../img site/users/img
+  - mv site public
+  artifacts:
+    paths:
+    - public
+  only:
+  - main
+  
+.windows_build_task:
+  stage: build
+  tags:
+    - shared-windows
+    - windows
+    - windows-1809
+  script:
+    - choco install -y python3 --version=3.9.7
+    - $env:ChocolateyInstall = Convert-Path "$((Get-Command choco).Path)\..\.."
+    - Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+    - refreshenv
+    - python.exe -m pip install --upgrade pip
+    - pip.exe install virtualenv
+    - python.exe -m virtualenv .venv
+    - .venv\Scripts\activate
+    - pip.exe install msvc-runtime
+    - pip.exe install pywin32
+    - pip.exe install -r requirements.txt .
+    - pip.exe install pyinstaller
+    - copy .\packaging\pyinstaller\app.spec .
+    - pyinstaller app.spec
+    - copy .\packaging\pyinstaller\gel.bat .\dist\gel.bat
+    - ren dist Gel
+    - $env:TEST_APP_STARTUP_INTEGRITY = 'True'; & Gel\gel.bat
+    - 7z a Gel.zip .\Gel
+    - If ($CI_COMMIT_TAG -like '') {$NAME = 'gel-windows-dev.zip'}
+    - If ($CI_COMMIT_TAG -notlike '') {$NAME = -join('gel-windows-', $CI_COMMIT_TAG, '.zip')}
+    - ren gel.zip $NAME
+    - wget.exe --no-check-certificate https://dl.min.io/client/mc/release/windows-amd64/mc.exe
+    - .\mc.exe cp --insecure $NAME sysbio/iocbio-gel/
+    - .\mc.exe ls --insecure sysbio/iocbio-gel/
+
+build_windows_on_tags:
+  extends: .windows_build_task
+  only:
+    - tags
+
+build_windows_manually:
+  extends: .windows_build_task
+  when: manual
+  only:
+    - main
+    - /^bugfix*/
+    - /^feature.*/
+    - /^release.*/
