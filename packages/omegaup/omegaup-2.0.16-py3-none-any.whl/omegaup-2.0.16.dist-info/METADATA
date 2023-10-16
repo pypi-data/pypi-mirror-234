@@ -1,0 +1,71 @@
+Metadata-Version: 2.1
+Name: omegaup
+Version: 2.0.16
+Summary: Utilities for interacting with omegaUp
+Author-email: omegaUp <lhchavez@omegaup.org>
+Project-URL: Homepage, https://github.com/omegaup/libomegaup
+Project-URL: Bug Tracker, https://github.com/omegaup/libomegaup/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: requests >=2.22.0
+Provides-Extra: testing
+Requires-Dist: Jinja2 ==3.1.2 ; extra == 'testing'
+Requires-Dist: MarkupSafe ==2.1.1 ; extra == 'testing'
+Requires-Dist: Pygments ==2.13.0 ; extra == 'testing'
+Requires-Dist: astunparse ==1.6.3 ; extra == 'testing'
+Requires-Dist: docutils ==0.19 ; extra == 'testing'
+Requires-Dist: flake8 ==4.0.1 ; extra == 'testing'
+Requires-Dist: iniconfig ==1.1.1 ; extra == 'testing'
+Requires-Dist: mccabe ==0.6.1 ; extra == 'testing'
+Requires-Dist: mypy-extensions ==0.4.3 ; extra == 'testing'
+Requires-Dist: mypy ==0.910 ; extra == 'testing'
+Requires-Dist: pdoc ==12.2.0 ; extra == 'testing'
+Requires-Dist: pluggy ==1.0.0 ; extra == 'testing'
+Requires-Dist: py ==1.11.0 ; extra == 'testing'
+Requires-Dist: pycodestyle ==2.8.0 ; extra == 'testing'
+Requires-Dist: pyflakes ==2.4.0 ; extra == 'testing'
+Requires-Dist: pyparsing ==3.0.9 ; extra == 'testing'
+Requires-Dist: pytest ==6.2.5 ; extra == 'testing'
+Requires-Dist: toml ==0.10.2 ; extra == 'testing'
+Requires-Dist: types-requests >=2.22.0 ; extra == 'testing'
+Requires-Dist: typing-extensions ==4.0.1 ; extra == 'testing'
+
+# omegaUp
+
+Library for interacting with omegaUp.
+
+## `omegaup.validator.validatortest`
+
+Allows an input validator to be modeled as a standard unit test.
+
+To use, write your validator as if it were a normal
+[unittest.TestCase](https://docs.python.org/3/library/unittest.html#unittest.TestCase):
+
+```python
+import logging
+import unittest
+import sys
+
+from omegaup.validator import validatortest
+
+
+class MyTest(unittest.TestCase):
+  def test_foo(self):
+    contestant_output = sys.stdin
+    case_name = sys.argv[1]
+    with open('data.in', 'r') as original_input, \
+         open('data.out', 'r') as original_output:
+        logging.info('This will be printed to stderr')
+
+        self.assertAlmostEqual(
+            float(contestant_output.readline().strip()),
+            float(original_output.readline().strip()))
+
+
+if __name__ == '__main__':
+    validatortest.main()
+```
