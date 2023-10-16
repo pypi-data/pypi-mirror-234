@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Training Status</title>
+    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+    <style>
+           body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #F5F5F5;
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .content-container {
+            width: 100%; /* 调整为100% */
+            max-width: 95vw;
+            height: 50vh;
+            border: 1px solid #ddd;
+            background-color: #FFFFFF;
+            box-shadow: 0px 0px 8px rgba(0,0,0,.2);
+            overflow: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .chart-container {
+            width: 100%; /* 调整为100% */
+            max-width: 95vw;
+            height: 50vh;
+        }
+
+        .chart {
+            height: 100%;
+            padding: 10px;
+            width: 100%;
+            display: none;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            flex-shrink: 0;
+            width: 100%;
+            max-width: 95vw;
+        }
+
+        .tabs button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #ddd;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            flex-grow: 1; /* 让按钮均匀分布 */
+        }
+
+        .tabs button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Model Info Table -->
+    <div class="content-container">
+        <table>
+            <tr><th colspan="2">Model Information</th></tr>
+            {% for key, value in model_info.items() %}
+                <tr><td>{{key}}</td><td>{{value}}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Tabs for Charts -->
+    <div class="tabs">
+        <button class="active" onclick="showChart('epoch_loss')">Epoch Loss</button>
+        <button onclick="showChart('all_keys')">All Keys</button>
+    </div>
+
+    <!-- Charts -->
+    <div class="chart-container">
+        <div id="epoch_loss" class="chart"></div>
+        <div id="all_keys" class="chart"></div>
+    </div>
+
+    <!-- Echarts Script -->
+    <script type="text/javascript">
+        var myChart1 = echarts.init(document.getElementById('epoch_loss'));
+        var option1 = {
+            title: { text: 'Epoch Loss' },
+            tooltip: { trigger: 'axis' },
+            xAxis: {
+                data: {{ epoch_index|tojson }},
+                axisLabel: { interval: Math.floor({{ epoch_index|length }} / 10)}, // Adjust based on density
+            },
+            yAxis: {},
+            series: [{
+                name: 'Epoch Loss',
+                type: 'line',
+                data: {{ epoch_loss|tojson }}
+            }]
+        };
+        myChart1.setOption(option1);
+
+        var myChart2 = echarts.init(document.getElementById('all_keys'));
+        var option2 = {
+            title: { text: 'All Keys' },
+            tooltip: { trigger: 'axis' },
+            legend: { data: [{% for key in all_keys.keys() %}'{{key}}', {% endfor %}] },
+            xAxis: {
+                type: 'category',
+                data: {{ range(1, all_keys_data_length + 1)|list|tojson }},
+                axisLabel: { interval: Math.floor({{ all_keys_data_length }}/ 10) } // Adjust based on density
+            },
+            yAxis: { type: 'value' },
+            series: [
+                {% for key, values in all_keys.items() %}
+                {
+                    name:'{{key}}',
+                    type:'line',
+                    data:{{ values|tojson }}
+                },
+                {% endfor %}
+            ]
+        };
+        myChart2.setOption(option2);
+
+        // Show only the selected chart
+        function showChart(chartId) {
+            var charts = document.querySelectorAll('.chart');
+            charts.forEach(chart => chart.style.display = 'none');
+            document.getElementById(chartId).style.display = 'block';
+
+            var buttons = document.querySelectorAll('.tabs button');
+            buttons.forEach(button => button.classList.remove('active'));
+            document.querySelector(`.tabs button[onclick="showChart('${chartId}')"]`).classList.add('active');
+
+            // 重新调整图表大小
+            if (chartId === 'epoch_loss') {
+                myChart1.resize();
+            } else if (chartId === 'all_keys') {
+                myChart2.resize();
+            }
+        }
+
+        // Initially show only the first chart
+        showChart('epoch_loss');
+    </script>
+</body>
+</html>
