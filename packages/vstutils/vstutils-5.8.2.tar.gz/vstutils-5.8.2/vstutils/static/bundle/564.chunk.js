@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_vstconsulting_vstutils=self.webpackChunk_vstconsulting_vstutils||[]).push([[564],{63564:function(t,n,e){e.r(n);var s=e(19755),u=e.n(s);let o=u();"function"==typeof u().default&&(o=u().default),window.jQuery=o,window.$=o;const l=e(40686);"function"!=typeof o.prototype.select2&&l(o),n.default=o}}]);
