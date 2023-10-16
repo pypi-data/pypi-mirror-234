@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <link href="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.12/index.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.2.45/vue.global.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.12/index.full.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/element-plus/2.3.12/locale/zh-cn.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <title>测试报告</title>
+</head>
+<style>
+    body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    pre {
+        border: 1px solid #dedede;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        padding: 10px;
+    }
+
+    .title {
+        text-align: center;
+        font-weight: bolder;
+        background-color: #42b983;
+        margin: 0;
+        padding: 20px;
+        color: #4b4b4b;
+    }
+
+    .card-header span {
+        font-size: 13px;
+        margin-right: 10px;
+    }
+
+    .card-header .el-select {
+        margin-right: 40px;
+    }
+
+    .row-expand {
+        background-color: #f5f5f5;
+        padding: 10px;
+    }
+</style>
+<body>
+<div id="app">
+    <el-scrollbar height="100vh">
+        <h2 class="title">{{sourceData.title}}</h2>
+        <el-row style="margin: 10px;">
+            <el-col :span="20" :push="2">
+                <el-card>
+                    <template #header>
+                        <el-row>
+                            <el-col :span="12">
+                                <span style="font-weight: bolder; line-height: 32px; text-shadow: 3px 5px 5px #A8A8A8;">报告描述</span>
+                            </el-col>
+                        </el-row>
+                    </template>
+                    <el-row :gutter="50">
+                        <el-col :span="6" style="border-right: 1px solid rgba(228,231,237,0.82)">
+                            <el-form :model="form" label-width="100px">
+                                <el-form-item label="报告名称">
+                                    <el-input readonly v-model="sourceData.desc"></el-input>
+                                </el-form-item>
+                                <el-form-item>
+                                    <template #label>
+                                        <span style="color: #0f9165">成功总数</span>
+                                    </template>
+                                    <el-input readonly v-model="sourceData.passed"></el-input>
+                                </el-form-item>
+                                <el-form-item>
+                                    <template #label>
+                                        <span style="color: #94303f">失败总数</span>
+                                    </template>
+                                    <el-input readonly v-model="sourceData.failed"></el-input>
+                                </el-form-item>
+                                <el-form-item>
+                                    <template #label>
+                                        <span style="color: #636363">跳过总数</span>
+                                    </template>
+                                    <el-input readonly v-model="sourceData.skipped"></el-input>
+                                </el-form-item>
+                                <el-form-item>
+                                    <template #label>
+                                        <span style="color: #e6a23c">错误总数</span>
+                                    </template>
+                                    <el-input readonly v-model="sourceData.error"></el-input>
+                                </el-form-item>
+                                <el-form-item label="开始时间">
+                                    <el-input readonly v-model="sourceData.start_time"></el-input>
+                                </el-form-item>
+                                <el-form-item label="结束时间">
+                                    <el-input readonly v-model="sourceData.end_time"></el-input>
+                                </el-form-item>
+                                <el-form-item label="测试人员">
+                                    <el-input readonly v-model="sourceData.tester"></el-input>
+                                </el-form-item>
+                            </el-form>
+                        </el-col>
+                        <el-col :span="8" style="border-right: 1px solid rgba(228,231,237,0.82)">
+                            <div id="echart1" :style="{height: '350px'}"></div>
+                        </el-col>
+                        <el-col :span="10">
+                            <div id="echart2" :style="{height: '350px'}"></div>
+                        </el-col>
+                    </el-row>
+                </el-card>
+                <br/>
+                <!-- table详情 ---------------->
+                <el-card>
+                    <template #header>
+                        <el-row class="card-header">
+                            <el-col :span="20">
+                                <span>所属分类:</span>
+                                <el-select v-model="filterData.model_v" clearable @change="f_selectChange"
+                                           placeholder="全部" style="width: 400px">
+                                    <el-option v-for="item in filterData.model_options" :key="item" :label="item"
+                                               :value="item"></el-option>
+                                </el-select>
+                                <span>结果:</span>
+                                <el-select v-model="filterData.status_v" clearable @change="f_selectChange"
+                                           placeholder="全部">
+                                    <el-option label="成功" value="passed"></el-option>
+                                    <el-option label="失败" value="failed"></el-option>
+                                    <el-option label="错误" value="error"></el-option>
+                                    <el-option label="跳过" value="skipped"></el-option>
+                                </el-select>
+                            </el-col>
+                            <el-col :span="4" style="text-align: right">
+                                <el-tag size="large" effect="dark" round style="padding: 0 5px 0 15px">用例总数: {{tableData.length}}</el-tag>
+                            </el-col>
+                        </el-row>
+                    </template>
+                    <el-table :data="showTableData" ref="refTable" border v-loading="loadingShow" style="width: 100%" element-loading-background = "rgba(0, 0, 0, 0.6)" element-loading-text = "数据正在加载中">
+                        <el-table-column type="expand">
+                            <template #default="scope">
+                                <el-row class="row-expand">
+                                    <el-col>
+                                        <el-tabs type="border-card">
+                                            <el-tab-pane label="打印内容" v-if="scope.row.print">
+                                                <pre v-html="scope.row.print"></pre>
+                                            </el-tab-pane>
+                                            <el-tab-pane label="请求内容" v-if="scope.row.query">
+                                                <pre v-html="scope.row.query"></pre>
+                                            </el-tab-pane>
+                                            <el-tab-pane label="响应头" v-if="scope.row.resp_headers">
+                                                <pre v-html="scope.row.resp_headers"></pre>
+                                            </el-tab-pane>
+                                            <el-tab-pane label="响应内容" v-if="scope.row.response">
+                                                <pre v-html="scope.row.response"></pre>
+                                            </el-tab-pane>
+                                            <el-tab-pane label="跳过说明" v-if="scope.row.skipped">
+                                                <pre v-html="scope.row.skipped"></pre>
+                                            </el-tab-pane>
+                                            <el-tab-pane v-if="scope.row.msg_dict">
+                                                <template #label>
+                                                    <span style="background-color: #f6c3c6; padding: 2px 5px; border-radius: 3px">失败详情</span>
+                                                </template>
+                                                <div style="margin: 0 20px 5px 20px;">
+                                                    <el-tag style="width: 100%" size="large" type="danger" v-if="scope.row.typed">{{f_errorInfo(scope.row.typed)}}</el-tag>
+                                                    <pre v-html="scope.row.msg_dict"></pre>
+                                                </div>
+                                            </el-tab-pane>
+                                            <el-tab-pane label="图片预览" v-if="scope.row.img">
+                                                <el-image :src="scope.row.img" fit="contain" alt="图片"
+                                                          @error="f_handleImageLoadError"></el-image>
+                                                <span v-if="imgErrorText" style="color: #9d300b">{{imgErrorText}}</span>
+                                            </el-tab-pane>
+                                            <el-tab-pane v-if="scope.row.status_code" disabled>
+                                                <template #label>
+                                                    <span class="custom-tabs-label">
+                                                        <el-tag :type="scope.row.status_code==200?'success':'danger'">{{scope.row.status_code}}</el-tag>
+                                                    </span>
+                                                </template>
+                                            </el-tab-pane>
+                                        </el-tabs>
+                                    </el-col>
+                                </el-row>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="序号" type="index" width="70px" :index="f_indexMethod"></el-table-column>
+                        <el-table-column label="模块" prop="model" show-overflow-tooltip></el-table-column>
+                        <el-table-column label="类" prop="classed" show-overflow-tooltip></el-table-column>
+                        <el-table-column label="方法" prop="method" show-overflow-tooltip></el-table-column>
+                        <el-table-column label="描述" prop="doc" show-overflow-tooltip></el-table-column>
+                        <el-table-column label="响应时间" prop="duration" width="90px">
+                            <template #default="scope">
+                                <span>{{scope.row.duration}} s</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="结果" width="80px">
+                            <template #default="scope">
+                                <el-tag v-if="scope.row.status==='passed'" type="success">成功</el-tag>
+                                <el-tag v-else-if="scope.row.status==='error'" type="warning">错误</el-tag>
+                                <el-tag v-else-if="scope.row.status==='failed'" type="danger">失败</el-tag>
+                                <el-tag v-else-if="scope.row.status==='skipped'" type="info">跳过</el-tag>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+                <br/>
+                <!-- 分页 ---------------->
+                <el-card v-if="tableData.length > 200">
+                    <el-pagination background layout="->, sizes, prev, pager, next"
+                                   v-model:current-page="currentPage"
+                                   v-model:page-size="pageNum"
+                                   :page-sizes="[200, 500, 1000]"
+                                   :total="tableData.length"
+                                   @current-change="f_handleCurrentChange"
+                                   @size-change="setupInfo">
+                    </el-pagination>
+                </el-card>
+            </el-col>
+        </el-row>
+        <!-- 展开/折叠/top按钮 -->
+        <div style="right: 40px; position: absolute; width:40px;">
+            <el-affix position="bottom" :offset="150">
+                <el-row>
+                    <el-col style="margin-bottom: 20px;">
+                        <el-tooltip content="展开" placement="left">
+                            <el-button type="primary" plain circle size="large" @click="f_toggleRowExpansion(true)">+</el-button>
+                        </el-tooltip>
+                    </el-col>
+                    <el-col>
+                        <el-tooltip content="折叠" placement="left">
+                            <el-button type="primary" plain circle size="large" @click="f_toggleRowExpansion(false)">-</el-button>
+                        </el-tooltip>
+                    </el-col>
+                </el-row>
+            </el-affix>
+        </div>
+        <el-backtop target="#app .el-scrollbar__wrap"></el-backtop>
+    </el-scrollbar>
+</div>
+<script>
+    Object.assign(window, Vue)
+    const App = {
+        setup() {
+            const tableData = ref([])
+            const refTable = ref()
+            const showTableData = ref([])
+            const loadingShow = ref(false)
+            const runRespTimeList = ref([])       // 折线图主数据（响应时间）
+            const filterData = reactive({model_v: null, model_options: [], status_v: null,})
+            const form = reactive({passed: 0, failed: 0, error: 0, skipped: 0})
+            const sourceData = reactive(templateData)
+            const imgErrorText = ref('')
+            const pageNum = ref(1000)
+            const currentPage = ref(1)
+
+            const setupInfo = () => {
+                loadingShow.value = true
+                // 获取组列表
+                sourceData.cases.map(el => {
+                    if (filterData.model_options.indexOf(el['model']) === -1) {
+                        filterData.model_options.push(el['model'])
+                    }
+                })
+                f_selectChange()
+            }
+
+            const f_errorInfo = (typed) => {
+                if (typed == 10) {
+                    msg = "响应异常"
+                } else if (typed == 11) {
+                    msg = "断言类型错误"
+                } else if (typed == 12) {
+                    msg = "断言元素类型错误"
+                } else if (typed == 13) {
+                    msg = "断言元素key错误"
+                } else if (typed == 14) {
+                    msg = "响应内容不是JSON"
+                } else if (typed == 15) {
+                    msg = "断言type字段值错误"
+                } else if (typed == 20) {
+                    msg = "状态码错误"
+                } else if (typed == 21) {
+                    msg = "TEXT匹配失败"
+                } else if (typed == 22) {
+                    msg = "JSON匹配失败"
+                } else {
+                    msg = null
+                }
+                return msg
+            }
+
+            // 下拉框过滤
+            const f_selectChange = () => {
+                tableData.value = sourceData.cases.filter(el => {
+                    return (filterData.model_v || filterData.model_options).indexOf(el.model) !== -1 && (filterData.status_v || ["passed", "failed", "skipped", "error"]).indexOf(el.status) !== -1
+                })
+                form.passed = tableData.value.filter(el => {
+                    return el.status === "passed"
+                }).length
+                form.failed = tableData.value.filter(el => {
+                    return el.status === "failed"
+                }).length
+                form.error = tableData.value.filter(el => {
+                    return el.status === "error"
+                }).length
+                form.skipped = tableData.value.filter(el => {
+                    return el.status === "skipped"
+                }).length
+                // 响应时间列表
+                runRespTimeList.value = []
+                tableData.value.map(el => {
+                    runRespTimeList.value.push(el.duration)
+                })
+                // 当前页及table数据
+                currentPage.value = 1
+                showTableData.value = tableData.value.slice(0, pageNum.value)
+                loadingShow.value = false
+                // 图表
+                nextTick(() => {
+                    chart1()
+                    chart2()
+                })
+            }
+
+            //展开或者折叠
+            const f_toggleRowExpansion = (isExpansion) => {
+                tableData.value.map(el => {
+                    refTable.value.toggleRowExpansion(el, isExpansion)
+                })
+            }
+
+            // 图片加载失败
+            const f_handleImageLoadError = () => {
+                imgErrorText.value = "图片加载失败"
+            }
+
+            // 分页
+            const f_handleCurrentChange = (number) => {
+                loadingShow.value = true
+                showTableData.value = tableData.value.slice((number-1)*pageNum.value, number*pageNum.value)
+                loadingShow.value = false
+            }
+
+            // index显示
+            const f_indexMethod = (index) => {
+                return (currentPage.value - 1) * pageNum.value + index + 1
+            }
+
+            // 饼图
+            const chart1 = () => {
+                let seriesData = [
+                    {name: "成功", value: form.passed},
+                    {name: "失败", value: form.failed},
+                    {name: "错误", value: form.error},
+                    {name: "跳过", value: form.skipped}
+                ];
+                // 加载图像
+                let myChart = echarts.init(document.getElementById("echart1"));
+                let option = {
+                    title: {
+                        text: '执行结果',
+                        left: 0
+                    },
+                    legend: {
+                        orient: 'horizontal',
+                        right: 0,
+                        top: 0
+                    },
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    color: ['#0f9165', '#94303f', '#e6a23c', '#636363'],
+                    series: [
+                        {
+                            type: 'pie',
+                            name: '测试结果',
+                            radius: ['35%', '60%'],
+                            center: ['50%', '60%'],
+                            data: seriesData,
+                            zlevel: 1,
+                            z: 1,
+                            label: {
+                                show: true,
+                                formatter: "{b} : {d}%"
+                            },
+                            emphasis: {
+                                label: {
+                                    show: true,
+                                    fontSize: '15',
+                                    fontWeight: 'bold'
+                                }
+                            },
+                        }
+                    ]
+                };
+                myChart.setOption(option, true);
+                window.addEventListener("resize", () => {
+                    myChart.resize()
+                })
+            }
+
+            // 折线图
+            const chart2 = () => {
+                let seriesData = runRespTimeList.value;
+                let xAxisData = Array.from({length: seriesData.length}, (x, i) => i + 1);
+                // 加载图像
+                let myChart = echarts.init(document.getElementById("echart2"));
+                let option = {
+                    color: 'red',
+                    title: [
+                        {
+                            left: 'center',
+                            text: '响应时间'
+                        },
+                    ],
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: '序号：{b}<br/>响应时间：{c}s'
+                    },
+                    xAxis:
+                        {
+                            data: xAxisData,
+                        },
+                    yAxis:
+                        {},
+                    grid: {
+                        left: 40,
+                        right: 10,
+                        bottom: '20px',
+                    },
+                    series: [
+                        {
+                            type: 'line',
+                            name: '响应时间',
+                            showSymbol: false,
+                            data: seriesData,
+                            zlevel: 1,
+                            z: 1,
+                        }
+                    ]
+                };
+                myChart.setOption(option, true);
+                window.addEventListener("resize", () => {
+                    myChart.resize()
+                })
+            }
+
+            setupInfo()
+
+            return {
+                sourceData,
+                form,
+                filterData,
+                tableData,
+                refTable,
+                imgErrorText,
+                pageNum,
+                currentPage,
+                showTableData,
+                loadingShow,
+                setupInfo,
+                f_selectChange,
+                f_toggleRowExpansion,
+                f_errorInfo,
+                f_handleImageLoadError,
+                f_handleCurrentChange,
+                f_indexMethod,
+            }
+        },
+    }
+    const app = Vue.createApp(App)
+    app.use(ElementPlus, {locale: ElementPlusLocaleZhCn,})
+    app.mount("#app")
+</script>
+</body>
+</html>
