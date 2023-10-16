@@ -1,0 +1,68 @@
+[tool.poetry]
+name = "rogue-scholar-api"
+version = "0.6.0"
+description = "API for the Rogue Scholar science blogging platform."
+authors = ["Martin Fenner <martin@front-matter.io>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "rogue_scholar_api"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+Quart = "^0.19.2"
+tox = "^4.11.3"
+hypercorn = "^0.14.4"
+supabase = "^1.1.1"
+python-dotenv = "^1.0.0"
+quart-schema = "^0.17.1"
+typesense = "^0.17.0"
+pydash = "^6.0"
+commonmeta-py = "^0.8.4"
+pytest-asyncio = "^0.21.1"
+chardet = "^5.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+coverage = "*"
+pytest = "^7.2.0"
+pytest-cov = "^4.1.0"
+ruff = "^0.0.292"
+black = "^23.9.1"
+pytest-asyncio = "^0.21.1"
+pytest-recording = "^0.13.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+select = [
+    "F401",
+    "F403",
+]
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    min_version = 4.0
+    env_list =
+        py311
+
+    [testenv]
+    passenv = *
+    deps = 
+        pytest
+        pytest-cov
+    commands = pytest --cov=rogue_scholar_api --cov-report=xml
+
+    [coverage:run]
+    relative_files = True
+    branch = True
+"""
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.poetry.scripts]
+start = "rogue_scholar_api:run"
