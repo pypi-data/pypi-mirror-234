@@ -1,0 +1,37 @@
+package:
+  name: fedoo
+  version: "0.1.2"
+
+source:
+  git_url: https://github.com/3MAH/fedoo.git
+  
+build:
+  noarch: python
+  script: pip install .
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python>=3.8
+    - numpy>=1.22.4
+    - scipy
+    - pypardiso # [x86 or x86_64]
+    - scikit-umfpack # [(not x86) and (not x86_64)]
+    - vtk>=9.2
+    - pyvista>=0.39
+    - simcoon
+    - pytest
+
+test:
+  imports:
+    - fedoo
+  source_files:
+    - tests
+  requires:
+    - pytest
+  commands:
+    - cd $SRC_DIR/tests
+    - $PYTHON run_tests.py
+  
