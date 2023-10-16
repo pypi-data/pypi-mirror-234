@@ -1,0 +1,29 @@
+{% load i18n %}
+
+{% for action in actions %}
+    {% if all or tablet and action.tablet or mobile and action.mobile %}
+        <div class="panel-block">
+            {% if action.template %}
+                {% include action.template %}
+            {% else %}
+                {% if action.submit %}
+                    <input class="button is-fullwidth {{ action.class_list|join:' ' }}"
+                           type="submit" form={{ action.form_id }} value="{{ action.name }}"
+                           style="white-space: normal; height: auto"
+                           {{ action.attrs|join:' ' }}>
+                {% else %}
+                <a class="button is-fullwidth {{ action.class|join:' ' }}"
+                   href="{{ action.url }}{{ querystring }}{% if page %}&page={{ page.number }}{% endif %}" {{ action.attrs }}
+                   style="word-break: break-word">{{ action.name }}
+                </a>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+{% endfor %}
+
+{% if tablet and action_button.tablet or mobile and action_button.mobile %}
+    <div class="panel-block">
+        <button class="button panel-block action-modal-button">{% translate 'Actions' %}</button>
+    </div>
+{% endif %}

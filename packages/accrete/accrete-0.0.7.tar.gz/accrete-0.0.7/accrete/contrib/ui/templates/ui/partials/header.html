@@ -1,0 +1,65 @@
+{% load i18n %}
+
+<div style="position: sticky; top: 0; background: white; z-index: 10">
+    {% if list_pagination or detail_pagination %}
+        <div class="level is-hidden-tablet is-hidden-fullhd is-align-self-flex-start pt-3 mx-2 mb-0">
+            <div class="level-item is-align-content-flex-start">
+                {% if list_pagination %}
+                    {% include 'ui/partials/pagination_list.html' %}
+                {% elif detail_pagination %}
+                    {% include 'ui/partials/pagination_detail.html' %}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+    <div class="level pt-4 px-3 level-is-shrinkable is-flex {% if detail_pagination %}is-mobile {% endif %}{% if list_pagination %}mb-1 {% else %}mb-0{% endif %}">
+        <div class="level-left">
+            <div class="level-item has-text-weight-bold">
+                <nav class="breadcrumb" aria-label="breadcrumbs" style="white-space: unset; word-break: break-word">
+                    <ul>
+                        {% for crumb in breadcrumbs %}
+                            <li><a href="{{ crumb.url|default_if_none:'#' }}{{ querystring }}" aria-current="page">{{ crumb.name }}</a></li>
+                        {% endfor %}
+                        <li class="is-active"><a aria-current="page">{{ title }}</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% if list_pagination or detail_pagination %}
+            <div class="level-right is-mobile is-hidden-mobile is-hidden-fullhd px-3 mb-1 is-align-self-flex-start">
+                <div class="level-item">
+                    {% if list_pagination %}
+                        {% include 'ui/partials/pagination_list.html' %}
+                    {% elif detail_pagination %}
+                        {% include 'ui/partials/pagination_detail.html' %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="level p-0 m-0 is-mobile">
+        <div class="level-left">
+            <div class="level-item is-mobile is-hidden-tablet mr-0">
+                <div class="buttons">
+                    {% block mobile_actions %}
+                        {% if actions_template %}{% include actions_template with mobile=True %}{% endif %}
+                    {% endblock %}
+                </div>
+            </div>
+
+            <div class="level-item is-mobile is-hidden-fullhd is-hidden-mobile mr-0">
+                <div class="buttons">
+                    {% block tablet_actions %}
+                        {% if actions_template %}{% include actions_template with tablet=True %}{% endif %}
+                    {% endblock %}
+                </div>
+            </div>
+            <div class="level-item is-mobile is-hidden-fullhd is-hidden-mobile mr-0">
+                <div class="buttons">
+                    <button id="modal-filter-button" class="button">Filter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
