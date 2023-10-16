@@ -1,0 +1,16 @@
+import gradio as gr
+from gradio_imageslider import ImageSlider
+
+
+def fn(im):
+    return im
+
+
+with gr.Blocks() as demo:
+    img1 = ImageSlider()
+    btn = gr.Button("RUN")
+    img2 = ImageSlider()
+    btn.click(fn, inputs=img1, outputs=img2)
+
+
+demo.launch()
