@@ -1,0 +1,75 @@
+#!python
+
+# Copyright 2015 Earth Sciences Department, BSC-CNS
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Script for handling experiment monitoring"""
+import os
+import sys
+import traceback
+from io import StringIO  # for handling the traceback print
+
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+sys.path.append(scriptdir)
+sys.path.append(os.path.normpath(os.path.join(scriptdir, os.pardir)))
+# noinspection PyUnresolvedReferences
+from log.log import Log, AutosubmitCritical , AutosubmitError
+from autosubmit.autosubmit import Autosubmit
+
+
+# noinspection PyProtectedMember
+def main():
+    try:
+        Autosubmit.parse_args()
+        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
+            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        os._exit(0)
+    except AutosubmitError as e:
+        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
+            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        if e.trace is not None:
+            if e.trace != "": # trace might be int.
+                Log.error("Trace: {0}", e.trace)
+        Log.critical("{1} [eCode={0}]", e.code, e.message)
+        Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
+        os._exit(1)
+    except AutosubmitCritical as e:
+        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
+            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        str(traceback.print_exc())
+        if e.trace is not None or e.trace == "":
+            Log.error("Trace: {0}", e.trace)
+        Log.critical("{1} [eCode={0}]", e.code, e.message)
+
+        Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
+        os._exit(1)
+    except Exception as e:
+        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
+            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        Log.error("Trace: {0}", str(e))
+        if "temporarily unavailable" in str(e):
+            Log.critical(
+                "{0}\nAnother instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock".format(str(e)), 7000)
+        else:
+            exception_stream = StringIO()
+            traceback.print_exc(file=exception_stream)
+            Log.critical("{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),exception_stream.getvalue()), 7000)
+        os._exit(1)
+
+
+if __name__ == "__main__":
+    main()
