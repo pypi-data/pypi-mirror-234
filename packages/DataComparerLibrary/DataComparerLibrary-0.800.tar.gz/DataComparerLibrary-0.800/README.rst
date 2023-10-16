@@ -1,0 +1,140 @@
+DataComparerLibrary
+===================
+
+.. contents::
+   :local:
+
+Introduction
+------------
+
+The DataComparerLibrary can be used for:
+    - comparing csv-files or text-files
+    - comparing a 2d-matrix with a csv-file or text-file
+    - comparing a csv_file or text-file with a 2d-matrix
+    - comparing 2d-matrices
+
+In case a difference between actual and expected data is found an exception wil be given. In Robot Framework
+the result will be set to failed.
+A strait comparison can be made, but the DataComparerLibrary offers also some special comparison options described
+beneath.
+
+{PRESENT}
+With {PRESENT} in the expected data file you can make clear that data of a field of the actual data should be present.
+This can be helpful for fields that have constant changing values. For example generated id's.
+
+{EMPTY}
+With {EMPTY} in the expected data file you can make clear that data of a field of the actual data should be absent.
+
+{SKIP}
+With {SKIP} in the expected data file you can make clear that the comparison of data of a complete or part of a field
+of the actual data should be skipped. This can be helpful for fields or parts of fields that have constant changing
+values. For example time or generated id's.
+
+{INTEGER}
+With {INTEGER} in the expected data file you can make clear that the data of a field of the actual data should be an
+integer. This can be helpful for fields that have constant changing integer values. For example integer id's.
+
+{NOW()...:....}
+With {NOW()} in the expected data file you can make clear that the data of a field or part of a field of the actual
+data should be (a part of) a date. You can let calculate the current or a date in the past or future. Calculation is
+based on the "relativedelta" method from Python. Also you can style the date in the format you want. This can be
+helpful for fields that have constant changing date values, but which date values have a fixed offset linked to the
+current date. At "Examples comparing Actual Data with Expected Data" you can find some examples how to use it.
+
+Delimiter
+Default delimiter is ",". You can use the option "delimiter_actual_data" and "delimiter_expected_data" to set another
+delimiter like ";" or "tab".
+
+
+Installation
+------------
+
+If you already have Python with `pip <https://pip.pypa.io>`_ installed,
+you can simply run::
+
+    pip install DataComparerLibrary
+
+
+
+Import statement for the DataComparerLibrary in Python
+------------------------------------------------------
+
+from DataComparerLibrary.datacomparer import DataComparer
+
+
+Examples of using the DataComparerLibrary in Python
+---------------------------------------------------
+
+Below there are some examples how to call the methods of the DataComparerLibrary in Python::
+
+
+    a = DataComparer
+    a.compare_data_files(self, actual_file, expected_file)
+    a.compare_data_files(self, actual_file, expected_file, delimiter_actual_data=';', delimiter_expected_data=';')
+    a.compare_data_2d_array_with_file(self, actual_2d_matrix_data_input, expected_file, delimiter_expected_data='\t')
+    a.compare_data_file_with_2d_array(self, actual_file, expected_2d_matrix_data_input, delimiter_actual_data=';')
+    a.compare_data_2d_arrays(self, actual_2d_matrix_data_input, expected_2d_matrix_data_input)
+
+
+Examples of using the DataComparerLibrary keywords in Robot Framework
+---------------------------------------------------------------------
+
+Below there are some examples how to call the keywords of the DataComparerLibrary in Robot Framework::
+
+
+    *** Settings ***
+    Library     DataComparerLibrary
+
+    *** Test Cases ***
+    Testcase_1
+        Examples
+
+    *** Keywords ***
+    Examples
+        Run Keyword And Continue On Failure  DataComparerLibrary.Compare Data Files  C:\\Users\\actual.csv   C:\\Users\\expected.csv
+        DataComparerLibrary.Compare Data Files  C:\\Users\\actual.csv   C:\\Users\\expected.csv  delimiter_actual_data=;  delimiter_expected_data=;
+        DataComparerLibrary.Compare Data Files  C:\\Users\\actual.csv   C:\\Users\\expected.csv
+        DataComparerLibrary.Compare Data 2d Array With File  ${actual_2d_matrix_data_input}  C:\\Users\\expected.csv  delimiter_expected_data=\t
+        DataComparerLibrary.Compare Data File With 2d Array  C:\\Users\\actual.csv  ${expected_2d_matrix_data_input}  delimiter_actual_data=;
+        DataComparerLibrary.Compare Data 2d Arrays  ${actual_2d_matrix_data_input}  ${expected_2d_matrix_data_input}
+
+
+Examples comparing Actual Data with Expected Data
+-------------------------------------------------
+
+Below there is an example of actual and expected data with some different cases.
+
+
+
+Based on current datetime = 2023-09-06 19:04:00  (example):
+
+
++--------------------------------------------------------------------------------------------------+
+|                                   Actual csv file or 2d-array                                    |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| id           | name     | city         | start datetime                  | code    | password    |
++==============+==========+==============+=================================+=========+=============+
+| 87           | John     | London       | 2019-09-01 10:00:15             | abc1    | xxxxxxxx    |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| 88           | Bert     | Amsterdam    | 2023/09/06 19:02:00             |         | xxxxxxxx    |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| 89           | Klaas    | Brussel      | 23-8-6 12:04:17                 | 5ghi    | xxxxxxxx    |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| 90           | Joe      | Helsinki     | 08062025 12:04:17               | 99fg    | xxxxxxxx    |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+
+
++--------------------------------------------------------------------------------------------------+
+|                                   Expected csv file or 2d-array                                  |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| id           | name     | city         | start datetime                  | code    | password    |
++==============+==========+==============+=================================+=========+=============+
+| {INTEGER}    | John     | London       | {NOW()-4Y5D:YYYY-MM-DD}         | abc1    | {PRESENT}   |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| {INTEGER}    | Bert     | Amsterdam    | {NOW():YYYY/MM/DD} {SKIP}       | {EMPTY} | {PRESENT}   |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| {INTEGER}    | Klaas    | Brussel      | {NOW()-1M:YY-M-D} {SKIP}        | 5ghi    | {PRESENT}   |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+| {INTEGER}    | Joe      | Helsinki     | {NOW()+1Y9M2D:DDMMYYYY} {SKIP}  | {SKIP}  | {PRESENT}   |
++--------------+----------+--------------+---------------------------------+---------+-------------+
+
