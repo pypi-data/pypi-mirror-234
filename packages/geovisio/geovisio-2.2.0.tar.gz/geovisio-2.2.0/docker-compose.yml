@@ -1,0 +1,35 @@
+version: "3"
+services:
+  backend:
+    image: geovisio/api:latest
+    build:
+      context: .
+      cache_from:
+        - registry.gitlab.com/geovisio/api:build_cache # remote cache hosted on gitlab for faster build
+    command: api
+    volumes:
+      - pic_data:/data/360app
+    ports:
+      - 5000:5000
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_URL=postgres://gvs:gvspwd@db/geovisio
+  db:
+    image: postgis/postgis:13-3.2
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=gvs
+      - POSTGRES_PASSWORD=gvspwd
+      - POSTGRES_DB=geovisio
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  pic_data: {}

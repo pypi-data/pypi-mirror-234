@@ -1,0 +1,18 @@
+version: "3"
+services:
+  blurring:
+    image: geovisio/blurring:develop
+    environment:
+      STRATEGY: FAST
+    ports:
+      - "5500:80"
+    command: api
+    volumes:
+      - ./models:/opt/blur/models
+
+    healthcheck:
+      test: curl --fail http://localhost:5500/
+      interval: 2s
+      timeout: 5s
+      retries: 20
+      start_period: 5s

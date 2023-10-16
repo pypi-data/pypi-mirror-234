@@ -1,0 +1,35 @@
+services:
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2023-04-20T17-56-55Z
+    command: server --console-address ":9001" /mnt/data
+    ports:
+      - 9000
+      - 9001
+    volumes:
+      - minio-data:/mnt/data
+    environment:
+      MINIO_ROOT_USER: geovisio
+      MINIO_ROOT_PASSWORD: SOME_VERY_SECRET_KEY
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 2s
+      timeout: 5s
+      retries: 3
+
+  create-minio-buckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio http://minio:9000 geovisio SOME_VERY_SECRET_KEY;
+      /usr/bin/mc mb myminio/panoramax-public;
+      /usr/bin/mc mb myminio/panoramax-private;
+      /usr/bin/mc anonymous set download myminio/panoramax-public;
+      exit 0;
+      "
+
+volumes:
+  minio-data: {}
