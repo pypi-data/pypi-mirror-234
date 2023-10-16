@@ -1,0 +1,1 @@
+from .primer_generator import PrimerGeneratorApp
