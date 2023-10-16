@@ -1,0 +1,44 @@
+{% load mptt_tags menu_tags %}
+
+<aside class="navbar navbar-vertical navbar-expand-lg" id="navigation-bar">
+    <div class="container-fluid">
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#{{ menu.slug }}"
+                aria-controls="{{ menu.slug }}"
+                aria-expanded="{{ menu_active|yesno:'true,false' }}"
+                aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <h1 class="navbar-brand navbar-brand-autodark">
+            {% link with href="" extra=menu.parsed_attributes extra_classes=menu.attributes.class %}
+                <i class="material-icons-outlined navbar-brand-image mt-2"
+                   style="font-size: 45px!important">
+                    {{ menu.icon }}
+                </i>
+            {% endlink %}
+        </h1>
+        <div class="collapse navbar-collapse" id="{{ menu.slug }}">
+            <ul class="navbar-nav pt-lg-3 px-2">
+                {% if menu %}
+                    {% recursetree menu.items.roots %}
+                        {% if not node.is_leaf_node %}
+
+                            {% navigation_menu with menu_slug=node.slug menu_name=node.label menu_url=node.link menu_icon=node.icon extra=node.extras %}
+                                {% for sub_item in node.children.all %}
+                                    {% navigation_link item=sub_item %}
+                                {% endfor %}
+                            {% endnavigation_menu %}
+
+                        {% else %}
+
+                            {% navigation_link item=node %}
+
+                        {% endif %}
+                    {% endrecursetree %}
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</aside>
