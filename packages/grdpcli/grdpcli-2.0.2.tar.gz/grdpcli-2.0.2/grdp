@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+from grdpcli import *
+
+def callAllResources(args):
+    call_class = cmd(False, True)
+    sendOutput(ALL_RESOURCES_TEMPLATE.format(call_class.getPods(), call_class.getServices(), call_class.getPVC(), call_class.getIngress()).strip())
+
+def callExecCMD(args):
+    if not args.command and not args.podname:
+        PODS_NAMES_LIST = cmd(True).getPods()
+        selected_pod = questionary.select("Select pod to exec in:",choices=PODS_NAMES_LIST).ask()
+        cmd().execJoin(selected_pod)
+        exit(0)
+    if args.command and args.podname:
+        cmd().execSendCommand(args.podname, args.command)
+
+def callPortForwardCMD(args):
+    if not args.pod:
+        logger.error("Please provide pod name for PortForwarding. You can use: '$ grdp pods' command to get list of pods")
+        exit(1)
+    elif not args.pod_port:
+        logger.error("Please provide pod port for PortForwarding")
+        exit(1)
+    elif not args.local_port:
+        logger.error("Please provide local port for PortForwarding")
+        exit(1)
+    GRDPPortForward(args.pod, args.pod_port, args.local_port, args.ip)
+
+def callPodsCMD(args):
+    cmd().getPods()
+
+def callLogsCMD(args):
+    if not args.podname:
+        args.podname = questionary.select("Select pod to view logs:",choices=cmd(True).getPods()).ask()
+        args.follow = True
+    if args.follow:
+        cmd().getLogs(args.follow, args.podname)
+    cmd().getLogs(args.follow, args.podname)
+
+def callServicesCMD(args):
+    cmd().getServices()
+
+def callIngressCMD(args):
+    cmd().getIngress()
+
+def callPVCCMD(args):
+    cmd().getPVC()
+
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def _format_action(self, action):
+        if action.dest == 'help':
+            return ''
+        return super()._format_action(action)
+
+def doAuthorization(no_browser):
+    if not os.path.exists(GRDP_AUTH_CONFIG_PATH):
+        WEBSERVER = HTTPServer((LOCAL_HOSTNAME, LOCAL_SERVER_PORT), callbackServer)
+        is_open = False
+        if not no_browser:
+            is_open = webbrowser.open(AUTH_ADDRESS, new=0, autoraise=True)
+        if not is_open:
+            logger.info(f"Failed or can not open web browser")
+            logger.info(f"Please, get your manual authentification token and insert it here: {MANUAL_AUTH_ADDRESS}")
+            manual_auth = input("Enter grdp authentificated token: ")
+            try:
+                response = requests.get(f'{AUTH_ADDRESS}/refresh', headers={'Refresh-Token': manual_auth,}, json={'full_refresh': True,}).json()
+            except:
+                logger.error(f"Invalid auth token")
+                exit(1)
+            if checkToken(response['access_token']):
+                with open(GRDP_AUTH_CONFIG_PATH, "w") as json_file:
+                    json.dump(response, json_file)
+                logger.info(f"Successfully authentificated")
+                exit(0)
+        try:
+            WEBSERVER.serve_forever()
+        except KeyboardInterrupt:
+            pass
+
+    access_token = getConfigData()['access_token']
+    k8s_namespace = None
+    k8s_access_token = None
+    current_project_id = None
+    project_path_with_namespace = getGitProjectName()
+    all_projects = getProjectsListFromConfig()
+
+    if not checkToken(access_token):
+        refreshAccessToken()
+
+    try:
+        current_project_id = all_projects[project_path_with_namespace]
+    except:
+        logger.info("Project not found in config")
+        generateGitlabProjectsConfig()
+        all_projects = getProjectsListFromConfig()
+        try:
+            current_project_id = all_projects[project_path_with_namespace]
+        except:
+            logger.error("Project not found in your account, maybe smthng wrong with your access to project")
+            exit(1)
+
+    if current_project_id:
+        if getCurrentConfigData() and int(getCurrentConfigData()['id']) == int(current_project_id):
+            pass
+        else:
+            try:
+                k8s_namespace = getProjectVariables(current_project_id, access_token, 'K8S_NAMESPACE')['value']
+                k8s_access_token = getProjectVariables(current_project_id, access_token, 'K8S_ACCESS_TOKEN')['value']
+            except:
+                pass
+            if not k8s_namespace or not k8s_access_token:
+                logger.error(f"Required variables K8S_NAMESPACE or K8S_ACCESS_TOKEN is missing in GitLab project. Please contact GitLab administrator or slack to #gitlab-support")
+                exit(1)
+            updateCurrentConfig(current_project_id, project_path_with_namespace, k8s_namespace, k8s_access_token)
+
+def main():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.formatter_class = CustomHelpFormatter
+    parser.add_argument('-h', '--help', action='store_true')
+    parser.add_argument('-v', '--version', action='store_true')
+    parser.add_argument('-n', '--no-browser', action='store_true', default=False)
+    parser.add_argument('-p', '--print-kubectl-config', action='store_true', default=False)
+
+    subparsers = parser.add_subparsers()
+    all_parser = subparsers.add_parser('all')
+    all_parser.set_defaults(func=callAllResources)
+
+    exec_parser = subparsers.add_parser('exec')
+    exec_parser.add_argument('podname', nargs='?')
+    exec_parser.add_argument('command', nargs='?')
+    exec_parser.set_defaults(func=callExecCMD)
+
+    pods_parser = subparsers.add_parser('pods')
+    pods_parser.set_defaults(func=callPodsCMD)
+
+    services_parser = subparsers.add_parser('services')
+    services_parser.set_defaults(func=callServicesCMD)
+
+    ingress_parser = subparsers.add_parser('ingress')
+    ingress_parser.set_defaults(func=callIngressCMD)
+
+    pvc_parser = subparsers.add_parser('pvc')
+    pvc_parser.set_defaults(func=callPVCCMD)
+
+    logs_parser = subparsers.add_parser('logs')
+    logs_parser.add_argument('podname', nargs='?')
+    logs_parser.add_argument('-f', '--follow', action='store_true')
+    logs_parser.set_defaults(func=callLogsCMD)
+
+    pf_parser = subparsers.add_parser('pf')
+    pf_parser.add_argument('--pod', nargs='?', default=None)
+    pf_parser.add_argument('--pod-port', nargs='?', default=None)
+    pf_parser.add_argument('--local-port', nargs='?', default=None)
+    pf_parser.add_argument('--ip', nargs='?', default='127.0.0.1')
+    pf_parser.set_defaults(func=callPortForwardCMD)
+
+    help_parser = subparsers.add_parser('help')
+    help_parser.set_defaults(func=printHelp)
+
+    args = parser.parse_args()
+
+    if args.version:
+        logger.info(f"GRDP CLI version: {getCurrentVersion()}")
+        exit(0)
+
+    if args.print_kubectl_config:
+        printKubectlConfig()
+    if hasattr(args, 'func'):
+        if not os.path.exists(GRDP_PROJECTS_CONFIG_FILE):
+            doAuthorization(args.no_browser)
+            updateKubeConfig()
+        args.func(args)
+    else:
+        if args.help:
+            printHelp(args)
+        else:
+            logger.info(f"Please type: `grdp help` for more details")
+
+    if not args.help:
+        doAuthorization(args.no_browser)
+        updateKubeConfig()
+
+if __name__ == "__main__":
+    main()
