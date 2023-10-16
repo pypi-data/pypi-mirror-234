@@ -1,0 +1,49 @@
+# Changelog
+
+- 0.1.8
+  - remove ├ marks in execution errors
+- 0.1.7
+  - removed resume from free run
+  - added sqlite3 native support
+  - fixed unequal char to ├
+  - remove mismatch field in execution errors
+- 0.1.6
+  - flushing after each execution
+  - support for bash commands in run
+  - more test cases
+  - fixed unequal char to ╪, that looks better than ≠
+- 0.1.5
+  - fixed draft for typescript
+- 0.1.4
+  - fixed acesso invalido no caso de não haver erro de execução
+- 0.1.3
+  - fixed diff first failure mode
+- 0.1.2
+  - added tko config -d to change default diff mode
+  - added tko run [--updown | --sideby] to select diff mode
+  - added more tests for run mode
+  - checking if target files exist before run
+  - integrating list, exec and run in tko
+  - disabling update subcommand
+- 0.1.1
+  - added -m monocolor option
+  - improved layout for both diff
+- 0.1.0
+  - added bash guide with -b
+  - added tko guide with -g
+- 0.0.9
+  - removed tab from wdir.resume
+  - fixed type in whitespace
+  - added mismatch arrow
+  - added -g option to show simple guide
+- 0.0.8
+  - add colors in diff inside the line
+- 0.0.7
+  - fix esbuild incompatibility in windows
+- 0.0.6
+  - fix wls incompatibility
+- 0.0.5
+  - adding draft models to down
+  - removing conversion in js and ts entry code
+  - adding --config to tko
+  - changing @ for _ in downloaded problems folder name
