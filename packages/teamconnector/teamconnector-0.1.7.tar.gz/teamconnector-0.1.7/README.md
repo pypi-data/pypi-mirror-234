@@ -1,0 +1,120 @@
+# Team Connector CLI
+
+## Overview
+
+`teamconnector` is a command-line tool for interacting with various cloud storage and remote server platforms. It provides a simple and unified interface for managing files and directories across different platforms, making it easier to work with data in a distributed environment.
+
+## Installation
+
+Before installing `teamconnector`, make sure you create a Conda environment for your project.
+If you have our team Makefile, you can use the `make create-env` command to create a Conda environment.
+
+To install `teamconnector`, you can use pip:
+
+`pip install teamconnector`
+
+### User-specific parameters
+
+To use the Team Connector CLI, you need to set the following environment variables:
+
+- `REMOTE_USER`: The username for the remote cluster filesystem.
+- `REMOTE_HOST`: The hostname for the remote cluster filesystem.
+- `GOOGLE_ROOT`: The root directory for your Google Drive.
+- `MY_DRIVE`: The path to your Google Drive's "My Drive" folder.
+- `SHARED_DRIVE`: The path to your Google Drive's "Shared Drives" folder.
+- `ONE_DRIVE`: The path to your OneDrive folder.
+
+The following environment variables can be set in your bash profile (`~/.bash_profile` on Mac; `~/.bashrc` in Unix).
+
+However, I suggest you create an `.env` file in your root directory (`~`) with the following:
+
+```
+HOME=/Users/[Your_Username]
+REMOTE_USER=[Your_Remote_Username]
+REMOTE_HOST=[Your_Remote_Host]
+REMOTE_DIR=/gpfs/commons/groups/[Your_Group_Name]
+GOOGLE_ROOT="/Users/[Your_Username]/Library/CloudStorage/[Your_GoogleDrive_Account]"
+MY_DRIVE="/Users/[Your_Username]/Library/CloudStorage/[Your_GoogleDrive_Account]/My Drive"
+SHARED_DRIVE="/Users/[Your_Username]/Library/CloudStorage/[Your_GoogleDrive_Account]/Shared Drives"
+ONE_DRIVE="/Users/[Your_Username]/Library/CloudStorage/[Your_OneDrive_Account]"
+SLACK_USER_ID=[Your_Slack_User_ID]
+SLACK_BOT_TOKEN=[Your_Slack_Bot_Token]
+```
+
+Within your conda environment, run `tcinit ~` to load all the  parameters into your conda environment.
+
+### Project-specific parameters
+To configure your Conda environment, you'll need to set a few environment variables:
+
+1. `CLOUD_ROOT`: This is the base name of your Google bucket. For example, if your Google bucket URL is `gs://gpc_array`, then `CLOUD_ROOT` should be set to `gpc_array`.
+
+2. `PROJECT_ROOT`: This is the absolute path to your local project folder. Replace `<user>` with your username. For example, if your project is in the `/User/<user>/projects/gpc_array` folder, set `PROJECT_ROOT` accordingly.
+
+You can set these variables using the following command:
+
+```bash
+conda env config vars set CLOUD_ROOT=gpc_array PROJECT_ROOT=`pwd`
+```
+### Additional Configuration for `datatracker`
+
+If you're using `datatracker` and find yourself in more complex scenarios, you'll also need to set:
+
+1. `TRACKER_PATH`: This is the absolute path to the `db.json` file within your project. You can dynamically set this to the `db.json` file in your project folder using the `$PROJECT_ROOT` variable you've already set.
+
+Execute the following command to set `TRACKER_PATH`:
+
+```bash
+conda env config vars set TRACKER_PATH=$PROJECT_ROOT/db.json
+```
+
+## Usage
+
+### Environment Configuration
+
+Use `tc config` to display all the environment variables currently described in your `~/.bashrc` or Conda environment. To identify which environment variables must be configured for the connector to operate properly, run `tc -h`.
+
+
+### File Operations from Local to Google Drive
+
+#### List Files and Folders
+
+- Use `tc drive -ls` to list all files and folders in your Google Drive Shared directory.
+- Use `tc drive -ls -t personal` to list all files and folders in your Google Drive "Personal" directory.
+
+#### Open Directories
+
+- `tc drive -o -p aouexplore` opens the "aouexplore" shared drive in your Google Drive.
+- `tc drive -o -p aouexplore -s sample_qc` opens the "sample_qc" folder in the "aouexplore" shared drive.
+
+#### Upload Files and Folders
+
+- `tc --debug drive --dir up --subdir sample_qc` uploads the "sample_qc" folder to the parent directory of your Google Drive root directory, while enabling debug mode.
+- `tc drive --dir up --subdir sample_qc` performs the same upload operation without debug mode.
+
+### File Operations from Local to Google Cloud
+
+#### Environment Setup
+
+You need to set the `CLOUD_ROOT` variable both within your Makefile and Conda environment.
+
+#### List and Download Files
+
+- `tc gcp -ls` lists all the files and folders in the Google Cloud Storage bucket specified in `CLOUD_ROOT`.
+- `tc -n gcp --dir down --subdir phenotypes` downloads the "phenotypes" folder from your Google Cloud Storage bucket to your local machine.
+
+### File Operations from Remote Server to Local
+
+- `tc remote -r /gpfs/commons/groups/[Your_Group_Name]/projects/[Your_Project_Name]/ --dir down --subdir preprocessing` downloads the "preprocessing" folder from the specified remote server directory to your local machine.
+
+Replace the placeholder values with your specific information where needed.
+
+
+## Cite
+
+## Maintainer
+
+[Tarjinder Singh @ ts3475@cumc.columbia.edu](ts3475@cumc.columbia.edu)
+
+## Acknowledgements
+
+## Release Notes
