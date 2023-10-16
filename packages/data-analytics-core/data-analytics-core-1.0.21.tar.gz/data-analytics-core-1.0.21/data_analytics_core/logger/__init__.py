@@ -1,0 +1,1 @@
+from data_analytics_core.logger.da_core_logger import da_logger
