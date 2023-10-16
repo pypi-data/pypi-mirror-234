@@ -1,0 +1,2 @@
+
+from dftools.core.structure.api.structure_catalog_csv import StructureCatalogCsv

@@ -1,0 +1,2 @@
+
+from dftools.core.structure.template.structure_template import StructureTemplate
