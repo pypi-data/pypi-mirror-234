@@ -1,0 +1,84 @@
+#set
+// ported from patches.h DEF 126~138 - ventuz
+
+#ifndef NO_RANDO
+
+// Disable collapsing bridges in pyramids
+// by changing map data triggers' scripts to df2 (a blank one)
+@0x9ed77f + 4
+// patch 126
+f2 0d // disable d98
+
+@0x9ed785 + 4
+// patch 127
+f2 0d // disable d9b
+
+@0x9ed78b + 4 
+// patch 128
+f2 0d // disable d9e
+
+@0x9ed791 + 4
+// patch 129
+f2 0d // disable da1
+
+@0x9ed7c1 + 4
+// patch 130
+f2 0d // disable db9
+
+@0x9ed7c7 + 4
+// patch 131
+f2 0d // disable dbc
+
+@0x9ed7cd + 4
+// patch 132
+f2 0d // disable dbf
+
+@0x9ed7d3 + 4
+// patch 133
+f2 0d // disable dc2
+
+@0x9ed7d9 + 4
+// patch 134
+f2 0d // disable dc5
+
+@0x9ed881 + 4
+// patch 135
+f2 0d // disable df5
+
+@0x9ed887 + 4
+// patch 136
+f2 0d // disable df8
+
+@0x9ed88d + 4
+// patch 137
+f2 0d // disable dfb
+
+@0x9ed893 + 4
+// patch 138
+f2 0d // disable dfe
+@
+
+// simplify code that destroys the two walls in pyramid top
+// to make room for wall destroyed |= dog freed
+@0x95981d
+09 85 5e 04 04 00 // if not dog freed skip 4
+0c 54 04 b1       // set wall 0 destroyed = true
+09 85 54 04 03 00 // if not wall 0 destroyed skip 3
+5c b0 b5          // set obj 0 state = 5
+00                // end
+//@0x959831 (original 0x95982e)
+09 85 55 04 03 00 // if not wall 1 destroyed skip 3
+5c b1 b4          // set obj 1 state = 4
+00                // end
+@
+// change rcalls to 0x95982e to 0x959831
+@0x959868
+a5 c9 // RCALL -55 to ..31
+@0x959863
+a5 ce // RCALL -50 to ..31
+@
+// simplyify routine (rcall) when stepping on switch
+@0x959848
+a5 e5 // RCALL -27 to ..2d
+@
+#endif
