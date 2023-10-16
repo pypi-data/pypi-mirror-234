@@ -1,0 +1,92 @@
+Metadata-Version: 2.1
+Name: schug
+Version: 1.3
+Summary: Keep track of genes, transcripts and exons from different sources
+Author: moonso
+Author-email: mans.magnusson@scilifelab.se
+Requires-Python: >=3.7,<4.0
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: aiofiles (>=23.1.0,<24.0.0)
+Requires-Dist: fastapi (>=0.68.1,<0.69.0)
+Requires-Dist: gunicorn (>=20.1.0,<21.0.0)
+Requires-Dist: httpx (>=0.23.3,<0.24.0)
+Requires-Dist: importlib-resources (>=5.12.0,<6.0.0)
+Requires-Dist: pytest-mock (>=3.10.0,<4.0.0)
+Requires-Dist: requests (>=2.28.2,<3.0.0)
+Requires-Dist: sqlmodel (>=0.0.4,<0.0.5)
+Requires-Dist: typer (>=0.4.0,<0.5.0)
+Requires-Dist: uvicorn (>=0.21.1,<0.22.0)
+Description-Content-Type: text/markdown
+
+# Schug
+
+Schug :stew: is a service that gather data about genes, transcripts and exons from multiple sources and merge the
+information. There is a [REST API][rest-api] with relevant endpoints.
+
+## Test the app using Docker
+
+You can test Schug on your local computer using Docker. Make sure you have [Docker][docker] installed and type the following commands in a terminal window:
+
+```
+git clone https://github.com/Clinical-Genomics/schug
+cd schug
+docker-compose up
+```
+
+Then the app endpoints should be listed available at the following address http://localhost:8000/docs
+
+The command to stop the demo is `docker-compose down`.
+
+
+## Installation (development)
+
+Make sure [poetry][poetry] is installed
+
+```
+git clone https://github.com/Clinical-Genomics/schug
+cd schug
+poetry install
+schug serve --reload
+```
+Go to http://localhost:8000/docs and check out the API.
+
+## Ready-to-use endpoints
+
+Once having set up an instance of Schug, you can use the following endpoints:
+
+ - **/genes/ensembl_genes/**
+
+   Downloads genes from Ensembl in text format. Specify a genome build by using the parameters `37` or `38`.
+
+   Usage: `curl -X 'GET' 'http://0.0.0.0:8000/genes/ensembl_genes/?build=38' > genes_GRCh38.txt`
+
+ - **/transcripts/ensembl_transcripts/**
+
+   Downloads gene transcripts from Ensembl in text format. Specify a genome build by using the parameters `37` or `38`.
+
+   Usage: `curl -X 'GET' 'http://0.0.0.0:8000/transcripts/ensembl_transcripts/?build=38' > transcripts_GRCh38.txt`
+
+ - **/exons/ensembl_exons/**
+
+   Downloads gene exons from Ensembl in text format. Specify a genome build by using the parameters `37` or `38`.
+
+   Usage: `curl -X 'GET' 'http://0.0.0.0:8000/exons/ensembl_exons/?build=38' > exons_GRCh38.txt`
+
+## What is left to do?
+
+The basic structure is outlined and implemented, however there are many details left to implement before
+this can be used.
+Some of the basic endpoints are in place but these need to be extended according to the needs of the
+users. Also the gene information needs to be completed, this will be done in a similar fashion as in
+[Scout][scout-genes].
+
+[docker]: https://www.docker.com/
+[poetry]: https://python-poetry.org/docs/basic-usage/
+[rest-api]: https://realpython.com/api-integration-in-python/
+[scout-genes]: https://github.com/Clinical-Genomics/scout/blob/121e9577aaf837eadd6b0e231e0fc5f3e187b920/scout/load/setup.py#L41
+
