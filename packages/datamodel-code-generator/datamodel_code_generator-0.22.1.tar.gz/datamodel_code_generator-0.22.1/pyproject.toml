@@ -1,0 +1,151 @@
+[tool.poetry]
+name = "datamodel-code-generator"
+version = "0.22.1"
+description = "Datamodel Code Generator"
+authors = ["Koudai Aono <koxudaxi@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/koxudaxi/datamodel-code-generator"
+repository = "https://github.com/koxudaxi/datamodel-code-generator"
+
+
+classifiers = [
+        "Development Status :: 4 - Beta",
+        "Natural Language :: English",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: Implementation :: CPython"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry-dynamic-versioning]
+enable = false
+vcs = "git"
+# language=RegExp
+pattern = '^(?P<base>\d+\.\d+\.\d+)(-?((?P<stage>[a-zA-Z]+)\.?(?P<revision>\d+)?))?$'
+
+[tool.poetry-dynamic-versioning.substitution]
+files = ["*/version.py"]
+patterns = ["(^version: str = ')[^']*(')"]
+
+
+[tool.poetry.scripts]
+datamodel-codegen = "datamodel_code_generator.__main__:main"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+pydantic =  [
+    {extras = ["email"], version = ">=1.5.1,<3.0,!=2.4.0", python = "<3.10"},
+    {extras = ["email"], version = ">=1.9.0,<3.0,!=2.4.0", python = "~3.10"},
+    {extras = ["email"], version = ">=1.10.0,<3.0,!=2.4.0", python = "^3.11"}
+]
+argcomplete = ">=1.10,<4.0"
+prance = ">=0.18.2"
+openapi-spec-validator = ">=0.2.8,<=0.5.7"
+jinja2 = ">=2.10.1,<4.0"
+inflect = ">=4.1.0,<6.0"
+black = ">=19.10b0"
+isort = ">=4.3.21,<6.0"
+PySnooper = ">=0.4.1,<2.0.0"
+toml = ">=0.10.0,<1.0.0"
+genson = ">=1.2.1,<2.0"
+httpx = { version = "*", optional = true }
+packaging = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">6.0"
+pytest-benchmark = "*"
+pytest-cov = ">=2.12.1"
+pytest-mock = "*"
+mypy = ">=1.4.1,<1.5.0"
+black = "^23.3.0"
+freezegun = "*"
+types-Jinja2 = "*"
+types-PyYAML = "*"
+types-toml = "*"
+types-setuptools = ">=67.6.0.5,<69.0.0.0"
+pydantic= "^2.0b3"
+httpx = "*"
+ruff = "^0.0.290"
+ruff-lsp = ">=0.0.39,<0.0.41"
+
+[tool.poetry.extras]
+http = ["httpx"]
+
+[tool.ruff]
+line-length = 88
+extend-select = ['Q', 'RUF100', 'C4', 'UP', 'I']
+flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
+target-version = 'py37'
+ignore = ['E501', 'UP006', 'UP007']
+extend-exclude = ['tests/data']
+
+
+[tool.black]
+line-length = 88
+skip-string-normalization = true
+# language=RegExp
+exclude = '(tests/data|\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|_build|buck-out|build|dist|.*\/models\.py.*|.*\/models\/.*)'
+target-version = ['py37']
+
+[tool.ruff.isort]
+#multi-line-output = 3
+#include-trailing-comma = true
+#force-grid-wrap = 0
+#use-parentheses = true
+#line-length = 88
+#skip = "tests/data"
+
+[tool.mypy]
+plugins = "pydantic.mypy"
+
+ignore_missing_imports = true
+follow_imports = "silent"
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+disallow_untyped_defs = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = false
+warn_untyped_fields = true
+
+[tool.pytest.ini_options]
+filterwarnings = "ignore::DeprecationWarning:distutils"
+norecursedirs = "tests/data/*"
+
+[tool.coverage.run]
+source = ["datamodel_code_generator"]
+branch = true
+
+[tool.coverage.report]
+ignore_errors = true
+exclude_lines = [
+    "if self.debug:",
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if not TYPE_CHECKING:"]
+
+omit = ["tests/*"]
+
+
+[tool.pydantic-pycharm-plugin]
+ignore-init-method-arguments = true
+
+[tool.pydantic-pycharm-plugin.parsable-types]
+# str field may parse int and float
+str = ["int", "float"]
