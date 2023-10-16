@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import os
+import pathlib
+import subprocess
+import sys
+
+from neucli.version import __version__
+
+GITHUB_REPO_URL = 'https://github.com/neulabscom/neulabs-cli.git'
+
+NEULABS_PATH = pathlib.Path(os.getenv('NEULABS_PATH', ''), 'Taskfile.yml')
+
+SCRIPT_SELF_INSTALLER = """#!/bin/bash
+set -eE -o functrace
+
+failure() {
+  local lineno=$1
+  local msg=$2
+  echo "Failed at $lineno: $msg"
+}
+trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
+
+set -o pipefail
+
+WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/../.."
+
+main(){
+    if [ "${NEULABS_DEBUG}" == "true" ] ; then
+        python3 ${NEULABS_EXECUTION_CLI_PATH}/neucli/installer.py
+        exit 0
+    fi
+
+    _tmp_dir=/tmp/neulabs-cli
+    if [ -d ${_tmp_dir} ]; then
+        rm -rf ${_tmp_dir}
+    fi
+
+    git clone https://github.com/neulabscom/neulabs-cli.git ${_tmp_dir} && cd ${_tmp_dir}
+
+    python3 neucli/installer.py
+
+    cd - && rm -rf ${_tmp_dir}
+}
+
+main "$@"
+"""
+
+
+def args_parsing():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--debug', action='store_true', default=False)
+    parser.add_argument('--shell', action='store_true', default=False)
+    parser.add_argument('--installer', action='store_true', default=False)
+    parser.add_argument('help', action='store_true', default=False)
+
+    args, _ = parser.parse_known_args()
+
+    return args
+
+
+def args_taskfile_parsing(debug: bool, taskfile_filepath: str, argv: list):
+    argv = argv[1:]
+
+    if '--debug' in argv:
+        del argv[argv.index('--debug')]
+
+    if '--shell' in argv:
+        del argv[argv.index('--shell')]
+
+    if '--installer' in argv:
+        del argv[argv.index('--installer')]
+
+    if '--taskfile' not in argv:
+        if debug:
+            argv = ['--taskfile', 'Taskfile.yml'] + argv
+        else:
+            argv = ['--taskfile', taskfile_filepath] + argv
+
+    return argv
+
+
+def getenv(debug: bool = False, is_new_installation: bool = False):
+    basepath = pathlib.Path(os.path.expanduser('~'), '.neulabs-cli')
+    env = {
+        'NEULABS_EXECUTION_CLI_PATH': os.getcwd(),
+        'NEULABS_DEBUG': 'false',
+        'NEULABS_VERSION': __version__,
+    }
+
+    if debug:
+        basepath = pathlib.Path(pathlib.Path(__file__).parent.parent.resolve())
+        env['NEULABS_DEBUG'] = 'true'
+        sys.tracebacklimit = 1
+
+    if debug or is_new_installation:
+        env = {
+            **env,
+            'NEULABS_PATH': str(basepath),
+            'NEULABS_ENV_PATH': str(pathlib.Path(basepath, '.env')),
+            'NEULABS_MODULES_PATH': str(pathlib.Path(basepath, 'modules')),
+            'NEULABS_LIB_PATH': str(pathlib.Path(basepath, 'lib')),
+            'NEULABS_TASKFILES_PATH': str(pathlib.Path(basepath, 'taskfiles', 'cli')),
+            'NEULABS_TASKFILE_CLI_PATH': str(pathlib.Path(basepath, 'Taskfile.yml')),
+            'NEULABS_TASKFILE_LOCAL_CLI_PATH': str(pathlib.Path(basepath, 'Taskfile.local.yml')),
+        }
+    else:
+        env_filepath = f'{os.path.expanduser("~")}/.neulabs-cli/.env'
+        if not os.path.isfile(env_filepath):
+            raise FileExistsError('File .env not found in ~/.neulabs-cli/\nRun: neucli --installer')
+
+        with open(env_filepath, 'r') as f:
+            for line in f.readlines():
+                if line.startswith('export'):
+                    key, value = line.replace('export ', '').split('=')
+                    env[key] = value.replace('\n', '')
+
+    return env
+
+
+def head(cmd: list, env: dict):
+    print('# Neulabs CLI' + (' (debug mode)' if env['NEULABS_DEBUG'] else ''))
+    print('  Command:', ' '.join(cmd))
+    print('  Path: ', env['NEULABS_EXECUTION_CLI_PATH'])
+    print('  Version: ', env['NEULABS_VERSION'])
+
+
+def main(argv: list):
+    args = args_parsing()
+
+    env = {**os.environ.copy(), **getenv(args.debug, args.installer)}
+
+    taskfile_args = args_taskfile_parsing(args.debug, env['NEULABS_TASKFILE_CLI_PATH'], argv)
+
+    if args.installer:
+        file = '/tmp/neucli-installer.sh'
+        with open(file, 'w') as f:
+            f.write(SCRIPT_SELF_INSTALLER)
+        subprocess.check_call(args=['/bin/bash', file], shell=args.shell, env=env)
+        return 0
+
+    cmd = ['task', *taskfile_args]
+
+    try:
+        head(cmd, env)
+        subprocess.check_call(args=cmd, shell=args.shell, env=env)
+    except subprocess.CalledProcessError:
+        return 0
+
+
+if __name__ == '__main__':
+    sys.tracebacklimit = 0
+    sys.exit(main(sys.argv))
