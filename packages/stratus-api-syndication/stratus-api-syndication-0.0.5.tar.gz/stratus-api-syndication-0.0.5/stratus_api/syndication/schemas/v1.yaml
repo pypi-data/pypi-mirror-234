@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: Internal Data Syndication APIs
+  version: '1.0'
+servers:
+  - url: /syndication/v1/
+paths:
+  /data:
+    post:
+      summary: Process promise update
+      operationId: stratus_api.syndication.base.process_syndication_update_request
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subscription:
+                  type: string
+                message:
+                  type: object
+                  properties:
+                    attributes:
+                      type: object
+                    data:
+                      type: string
+                    messageId:
+                      type: string
+      responses:
+        200:
+          description: Acknowledge Message Receipt
+          content:
+            application/json:
+              schema:
+                type: object
+  /contract:
+    get:
+      operationId: stratus_api.syndication.base.get_syndication_contract_request
+      parameters:
+        - name: service_name
+          in: query
+          schema:
+            type: string
+          required: true
+        - name: object_type
+          in: query
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: syndication contract returned
+          content:
+            application/json:
+              schema:
+                type: object
