@@ -1,0 +1,103 @@
+[tool.poetry]
+name = "dojo-compass"
+version = "2.0.2"
+description = "Realistic DeFi simulations"
+authors = ["Compass Labs"]
+documentation = "https://dojo.compasslabs.ai"
+readme = "README_pypi.md"
+keywords = ["defi", "uniswap", "AMM", "simulation", "crypto", "realistic", "on-chain"]
+include = [
+    "dojo/vis/assets/*",
+    "dojo/vis/*.py",
+    "dojo/*.so",
+    "dojo/agents/*.so",
+    "dojo/actions/*.so",
+    "dojo/common/*.so",
+    "dojo/config/*.so",
+    "dojo/config/data/*",
+    "dojo/config/data/*/*",
+    "dojo/config/data/*/*/*",
+    "dojo/dataloaders/*.so",
+    "dojo/environments/*.so",
+    "dojo/market_models/*.so",
+    "dojo/money/*.so",
+    "dojo/network/*.so",
+    "dojo/observations/*.so",
+    "dojo/policies/*.so",
+    "dojo/runners/*.so"
+]
+exclude=[
+    "dojo/*.py",
+    "dojo/*/*.py",
+    "dojo/*.c",
+    "dojo/*/*.c",
+    "dojo/vis/*.so",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8, <4.0"
+numpy = "^1.21.1"
+matplotlib = "^3.5.2"
+Cython = ">=3.0.0"
+pathlib = "^1.0.1"
+py-machineid = "^0.3.0"
+boto3 = "^1.26.140"
+dash = "^2.10.2"
+dash-bootstrap-components = "^1.4.1"
+pytz = "^2023.3"
+waitress = "^2.1.2"
+jsons = "^1.6.3"
+python-dotenv = "^1.0.0"
+tqdm = "^4.65.0"
+web3 = "^6.8.0"
+ujson = "^5.8.0"
+frozendict = "^2.3.8"
+blosc = "^1.11.1"
+py-solc-x = "^1.1.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+flake8 = "^3.9.2"
+black = "^22.3.0"
+isort = "^5.9.2"
+pre-commit = "^2.13.0"
+pytest-cov = "2.12.1"
+coverage = {extras = ["toml"], version = "^5.5"}
+sphinx = "^6.0.0"
+sphinx-rtd-theme = "^1.0.0"
+pydocstyle = "^6.1.1"
+docformatter = "^1.4.4"
+darglint = "^1.8.0"
+jupyter = "^1.0.0"
+
+[tool.pytest.ini_options]
+addopts = """
+    --verbose
+    --junitxml build/reports/unittest.xml
+    -p no:warnings
+    -m 'not integration'
+    --tb=short -rEf
+    --cov=dojo
+    --cov=demo
+    --cov-config=.coveragerc
+    --cov-report xml:build/reports/coverage.xml
+    --cov-report term
+    --color=yes
+    -p no:pytest-brownie
+"""
+
+[tool.poetry.scripts]
+demo = "demo.run:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pydocstyle]
+convention = "google"  # Or use "numpy" for NumPy-style docstrings
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88
