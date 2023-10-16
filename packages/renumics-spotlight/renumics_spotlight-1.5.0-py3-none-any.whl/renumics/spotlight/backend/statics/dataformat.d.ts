@@ -1,0 +1,20 @@
+import numbro from 'numbro';
+import { DataKind, DataType } from './datatypes';
+import { ColumnData, DataColumn, IndexArray } from './types';
+export declare function formatKind(kind: DataKind, plural?: boolean): string;
+export declare function formatType(type: DataType, plural?: boolean): string;
+export declare function canFormat(type: DataType): boolean;
+export declare function format(value: any, type: DataType, full?: boolean): string;
+export declare function parse(text: string, type: DataType): number | string | boolean | null | undefined;
+export declare function formatNumber(value: number, options?: numbro.Format): string;
+declare const dataformat: {
+    format: typeof format;
+    formatNumber: typeof formatNumber;
+    parse: typeof parse;
+    canFormat: typeof canFormat;
+    formatType: typeof formatType;
+    formatKind: typeof formatKind;
+};
+type TransferFunction = (val?: number) => number;
+export declare const createSizeTransferFunction: (sizeBy: DataColumn | undefined, data: ColumnData, rowIndices: IndexArray) => TransferFunction;
+export default dataformat;
