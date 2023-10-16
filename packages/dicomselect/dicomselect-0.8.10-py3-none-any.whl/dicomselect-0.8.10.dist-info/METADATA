@@ -1,0 +1,172 @@
+Metadata-Version: 2.1
+Name: dicomselect
+Version: 0.8.10
+Home-page: https://github.com/DIAGNijmegen/dicomselect
+Author-email: Stan.Noordman@radboudumc.nl
+License: MIT License
+Project-URL: Bug Tracker, https://github.com/DIAGNijmegen/dicomselect
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pydicom ~=2.3.1
+Requires-Dist: SimpleITK ~=2.2.1
+Requires-Dist: tqdm ~=4.65.0
+Requires-Dist: pandas ~=2.0.0
+Requires-Dist: pylibjpeg ~=1.4.0
+Requires-Dist: pylibjpeg-libjpeg ~=1.3.4
+Requires-Dist: rapidfuzz ~=3.0.0
+Requires-Dist: python-Levenshtein ~=0.21.0
+Requires-Dist: treelib ~=1.6.4
+Provides-Extra: dev
+Requires-Dist: pytest ; extra == 'dev'
+Requires-Dist: flake8 ; extra == 'dev'
+
+# dicomselect: DICOM database and conversion software
+
+**dicomselect** is a Python tool that simplifies the process of creating [SQLite](https://www.sqlite.org/) databases from directories containing `.dcm` files or from `.zip` archives containing `.dcm` files at the root of the zip file. Once the database is created, you can easily perform SQL-like queries on the data directly within Python. Additionally, **dicomselect** allows you to convert query results into various file formats supported by [SimpleITK](https://simpleitk.org/), providing flexibility in working with your DICOM data.
+
+## Installation
+
+**Python 3.10 or higher.** You can install this project using `pip`. If you haven't already, it's recommended to create a virtual environment to isolate project dependencies.
+
+```bash
+pip install dicomselect
+```
+
+## Example
+
+Clone this repo, install **dicomselect**, then run this example in the repo.
+
+```python
+from dicomselect import Database
+from pathlib import Path
+
+db_path = Path('tests/output/example.db')
+db_path.parent.mkdir(exist_ok=True)
+
+# initialize the Database object with a path to the to-be-created SQLite database file
+db = Database(db_path)
+
+# create the .db file, using test data as the input directory.
+db.create('tests/input/ProstateX', max_workers=4)
+
+with (db as query):
+    # we only want to convert images with patient_id "ProstateX-0000" and image_direction "transverse"
+    query_0000 = query.where('patient_id', '=', 'ProstateX-0000'
+                             ).where('image_direction', '=', 'transverse')
+
+    # print out a detailed extraction of our query
+    print(query_0000.info())
+
+# initialize the Plan object, with a template of DICOM headers for our conversion
+# (note: dcm to dcm conversion is possible, if you only need restructuring of your data)
+plan = db.plan('{patient_id}/prostateX_{series_description}_{instance_creation_time}', query_0000)
+
+# ensure these properties are set
+plan.target_dir = 'tests/output/example'
+plan.extension = '.mha'
+plan.max_workers = 4
+
+# print out a detailed structure of our intended conversion
+print(plan.to_string())
+
+plan.execute()
+```
+
+Check out the results in `tests/output/example`
+
+
+===========================================================================
+
+# Create a new database
+```python
+from pathlib import Path
+from dicomselect.database import Database
+
+db_path = Path("/path/to/dicomselect_archive.db")
+archive_path = Path("/path/to/archive")
+db_path.parent.mkdir(parents=True, exist_ok=True)
+db = Database(db_path)
+db.create(archive_path, max_workers=4)
+```
+
+# Select scans
+1. Simple matching of values
+```python
+from dicomselect.database import Database
+
+mapping = {
+    "t2w": {
+        "SeriesDescription": [
+            "t2_tse_tra_snel_bij bewogen t2 tra",
+            "t2_tse_tra",        
+            "t2_tse_tra_prostate",
+            "t2_tse_tra_snel",
+            "t2_tse_tra_Grappa3"
+        ]
+    },
+}
+
+db_path = Path("/path/to/dicomselect_archive.db")
+db = Database(db_path)
+cursor = db.open()
+query = cursor.where("series_description", "in", mapping["t2w"]["SeriesDescription"])
+print(query)
+db.close()
+```
+
+2. Pattern matching and combining queries
+```python
+from dicomselect.database import Database
+
+mapping = {
+    "hbv": {
+        "SeriesDescription": [
+            "ep2d_diff_tra%CALC_BVAL",
+            "diffusie-3Scan-4bval_fsCALC_BVAL"
+        ],
+        "ImageType": [
+            r"DERIVED\PRIMARY\DIFFUSION\CALC_BVALUE\TRACEW\DIS2D\DFC",
+            r"DERIVED\PRIMARY\DIFFUSION\CALC_BVALUE\TRACEW\DIS2D",
+            r"DERIVED\PRIMARY\DIFFUSION\CALC_BVALUE\TRACEW\ND\DFC",
+            r"DERIVED\PRIMARY\DIFFUSION\CALC_BVALUE\TRACEW\NORM\DIS2D",
+        ]
+    }
+}
+
+db_path = Path("/path/to/dicomselect_archive.db")
+db = Database(db_path)
+cursor = db.open()
+query1 = cursor.where("series_description", "LIKE", mapping["hbv"]["SeriesDescription"])
+query2 = cursor.where("image_type", "LIKE", mapping["hbv"]["ImageType"])
+query = query1.union(query2)
+print(query)
+db.close()
+```
+
+# Show info
+```python
+# print a default overview of the query result
+print(query)
+
+# for more fine-grained control of the reporting, use the Info object
+# print a summary of series_description given the query
+print(query.info().include("series_description"))
+
+# print a summary of everything but series_description given the query
+# note: some recommended columns are excluded, such as columns referring to some UID.
+print(query.info().exclude("series_description", recommended=True))
+```
+
+# Convert
+
+```python
+from dicomselect.database import Database
+
+db_path = Path("/path/to/dicomselect_archive.db")
+db = Database(db_path)
+plan = db.plan("{patient_id}/{series_description}_{patients_age}", query)
+plan.target_dir = "/path/to/target_dir"
+plan.extension = ".mha"
+print(plan)
+plan.execute(max_workers=4)
+```
