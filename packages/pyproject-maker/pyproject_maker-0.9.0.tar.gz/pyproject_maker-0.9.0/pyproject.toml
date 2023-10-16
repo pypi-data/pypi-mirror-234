@@ -1,0 +1,202 @@
+[tool.poetry]
+name = "pyproject-maker"
+version = "0.9.0"
+description = "A command line app to create a Python project skeleton."
+authors = ["Grant Ramsay <seapagan@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+
+repository = "https://github.com/seapagan/py-maker"
+homepage = "https://py-maker.seapagan.net"
+documentation = "https://py-maker.seapagan.net"
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Code Generators",
+  "Topic :: Utilities",
+]
+
+packages = [{ include = "py_maker" }]
+
+[tool.poetry.urls]
+"Pull Requests" = "https://github.com/seapagan/py-maker/pulls"
+"Bug Tracker" = "https://github.com/seapagan/py-maker/issues"
+"Changelog" = "https://github.com/seapagan/py-maker/blob/main/CHANGELOG.md"
+
+[tool.poetry.scripts]
+pymaker = "py_maker.main:app"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+typer = { extras = ["all"], version = "^0.9.0" }
+jinja2 = "^3.1.2"
+gitpython = "^3.1.32"
+pydantic = "^2.1"
+rich = "^13.4.2"
+rtoml = "^0.9.0"
+requests = "^2.31.0"
+pygithub = "^2.1.1"
+simple-toml-settings = "^0.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Configure dev dependencies
+[tool.poetry.group.dev.dependencies]
+# linting, type-checking and security checks
+bandit = { extras = ["toml"], version = "^1.7.5" }
+black = "^23.7.0"
+flake8 = "^6.0.0"
+flake8-pydocstyle = "^0.2.2"
+flake8-pyproject = "^1.2.3"
+flake8-pytest-style = "^1.7.2"
+flake8-type-checking = "^2.4.1"
+flake8-use-pathlib = "^0.3.0"
+isort = "^5.12.0"
+pylint = ">=2.17.2,<4.0.0"
+pylint-pydantic = ">=0.2.4,<0.4.0"
+pylint-pytest = "^1.1.2"
+pep8-naming = "^0.13.3"
+pre-commit = "^3.3.3"
+pydocstyle = "^6.3.0"
+pymarkdownlnt = "^0.9.12"
+mypy = "^1.4.1"
+tryceratops = "^2.3.2"
+
+# task runner - leave this at 0.22.1 until we can get the new version to work
+# after they changed the glob exapnsion.
+poethepoet = "^0.24.0"
+
+# testing
+pytest = "^7.4.0"
+pytest-cov = "^4.0.0"
+pytest-xdist = "^3.2.1"
+pytest-sugar = "^0.9.7"
+pytest-randomly = "^3.13.0"
+pytest-reverse = "^1.7.0"
+pytest-asyncio = "^0.21.1"
+pytest-mock = "^3.11.1"
+mock = "^5.1.0"
+faker = "^19.2.0"
+
+# documentation
+mkdocs = "^1.4.3"
+mkdocs-autorefs = "^0.5.0"
+mkdocs-material = "^9.1.19"
+mkdocs-git-revision-date-localized-plugin = "^1.2.0"
+mkdocs-latest-git-tag-plugin = "^0.1.2"
+mkdocs-minify-plugin = "^0.7.0"
+mkdocstrings = ">=0.22,<0.24"
+pymdown-extensions = "^10.1"
+pygments = "^2.15.1"
+
+# typing stubs
+types-requests = "^2.31.0.2"
+
+# setup 'PoeThePoet' tasks
+[tool.poe.tasks]
+pre.cmd = "pre-commit run --all-files"
+pre.help = "Run pre-commit checks"
+pylint.cmd = "pylint py_maker/**/*.py"
+pylint.help = "Run pylint checks"
+mypy.cmd = "mypy **/*.py"
+mypy.help = "Run mypy checks"
+mypy.cwd = "py_maker"
+flake8.cmd = "flake8 py_maker/**/*.py"
+flake8.help = "Run flake8 checks"
+black.cmd = "black py_maker/**/*.py"
+black.help = "Check and format code with black"
+try.cmd = "tryceratops py_maker/**/*.py"
+try.help = "Run tryceratops checks"
+markdown.cmd = "pymarkdown scan py_maker/**/[!CHANGELOG]*.md"
+markdown.help = "Run markdown checks"
+lint.sequence = ["black", "flake8", "mypy", "try", "pylint"]
+lint.help = "Run all linting checks"
+
+# special MyPy task to check for missing type annotations
+# we don't want to enforce full typing yet on the 'mypy' task, but still do want
+# to check for missing annotations at intervals.
+"mypy:strict".cmd = "mypy --strict  **/*.py"
+"mypy:strict".help = "Run mypy checks with strict type checking"
+
+# tasks to deal with documentation
+"docs:publish".cmd = "mkdocs gh-deploy"
+"docs:publish".help = "Publish documentation to GitHub Pages"
+"docs:build".cmd = "mkdocs build"
+"docs:build".help = "Build documentation locally to './site' folder"
+"docs:serve".cmd = "mkdocs serve -w TODO.md -w CHANGELOG.md -w CONTRIBUTING.md"
+"docs:serve".help = "Serve documentation locally"
+"docs:serve:all".cmd = "mkdocs serve -w TODO.md -w CHANGELOG.md -w CONTRIBUTING.md -a 0.0.0.0:9000"
+"docs:serve:all".help = "Serve documentation locally on all interfaces"
+
+# Generate a CHANGELOG.md - this needs the Ruby utility below installed.
+changelog.cmd = "github_changelog_generator -u seapagan -p py-maker"
+changelog.help = "Generate a CHANGELOG.md file"
+
+# configure assorted tools and linters
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 80
+exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | venv
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''
+
+[tool.flake8]
+max-line-length = 80
+exclude = ["__init__.py", ".git"]
+extend-ignore = ["E203", "W503"]
+extend-select = ["TC", "TC1", "TRY"]
+docstring-convention = "google"
+type-checking-pydantic-enabled = true
+classmethod-decorators = ["classmethod", "validator"]
+
+[tool.bandit]
+exclude_dirs = []
+
+[tool.bandit.assert_used]
+skips = ['*_test.py', '*/test_*.py']
+
+[tool.pylint.MAIN]
+load-plugins = ["pylint_pytest", "pylint_pydantic"]
+extension-pkg-whitelist = "pydantic"
+
+[tool.pylint.DESIGN]
+exclude-too-few-public-methods = "pydantic"
+max-attributes = 10
+
+[tool.pydocstyle]
+add-ignore = ["D104"]
+
+[tool.pytest.ini_options]
+addopts = ["--cov", "--cov-report", "term-missing", "--cov-report", "html"]
+filterwarnings = []
+mock_use_standalone_module = true
+
+[tool.coverage.run]
+# source = []
+omit = ["*/tests/*"]
+
+[tool.pymarkdown]
+plugins.md014.enabled = false
+plugins.md046.enabled = false
