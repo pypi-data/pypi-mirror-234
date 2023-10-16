@@ -1,0 +1,198 @@
+openapi: 3.0.1
+info:
+  title: LitenAI Plugin
+  description: This plugin lets you call different types of data queries and LLM prompt calls
+  version: 'v1'
+servers:
+  - url: http://localhost:8301
+paths:
+  /litenai/codegen:
+    get:
+      operationId: codegen
+      summary: Generate a code from a given description
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/codegenResponse'
+  /litenai/analyze:
+    get:
+      operationId: analyze
+      summary: Analyze the data object name by using the provided prompt
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/analyzeResponse'
+  /litenai/plot:
+    get:
+      operationId: plot
+      summary: Plot a given the data object name
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/plotResponse'
+  /litenai/focus:
+    get:
+      operationId: focus
+      summary: Fpcus on being an expert on the provided description to solve or clarify user issues.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/focusResponse'
+  /litenai/execute:
+    get:
+      operationId: execute
+      summary: execute the given code. Uses liten inbuilt kernel for execution. code is normally withing ``` triple quotes in the prompt.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/executeResponse'
+  /litenai/history:
+    get:
+      operationId: history
+      summary: modify the chat history and display. Can be used to clear, load or save history.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/historyResponse'
+  /litenai/memdata:
+    get:
+      operationId: memdata
+      summary: adds or prints the information from the name of local in-memory data
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/memdataResponse'                
+  /litenai/ask:
+    get:
+      operationId: ask
+      summary: Ask a general question. Usethis if prompt does not match with other paths API calls.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/askResponse'
+
+components:
+  schemas:
+    codegenResponse:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: description of the behavior of code to be generated in text
+        language:
+          type: string
+          description: language to be used for code. Only SQL or Python are supported, pick one of these. If  no language is specified pick python. If you find that a language other than SQL or python are requested, you can provide that language here as well.
+        table_name:
+          type: string
+          nullable: true
+          description: name of the primary table that is used in the description. If no name can be inferred, it should be set to null.
+        memdata_name:
+          type: string
+          nullable: true
+          description: name of the data object or data frame which should store the result of the SQL query operation. If no name can be inferred, it should be set to null.
+    analyzeResponse:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: description of the analysis being requested
+        memdata_name:
+          type: string
+          nullable: true
+          description: name of the data object or data frame on which analysis is to be done. If no object is provided you can pass null
+        table_name:
+          type: string
+          nullable: true
+          description: name of the primary table that is used in the description. If no name can be inferred, it should be set to null.          
+    plotResponse:
+      type: object
+      properties:
+        memdata_name:
+          type: string
+          nullable: true
+          description: name of the data object or data frame which needs to be plotted. If no object is provided you can pass null.
+    focusResponse:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: description of the focus work being requested
+        memdata_name:
+          type: string
+          nullable: true
+          description: name of the data object or data frame on which analysis is to be done. If no object is provided you can pass null
+        table_name:
+          type: string
+          nullable: true
+          description: name of the primary table that is used in the description. If no name can be inferred, it should be set to null.
+    executeResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: code to be executed. this should only contain the code to be executed. This is normally within ``` provided by the user.
+        language:
+          type: string
+          description: language to be used for code. Only SQL or Python are supported, so try to pick on of these. If  no language is specified pick python. If you find that a language other than SQL or python are requested, you can provide that language here as well.
+        memdata_name:
+          type: string
+          nullable: true
+          description: name of the data object or data frame which should store the result of the SQL query operation. If no name can be inferred, it should be set to null.
+    historyResponse:
+      type: object
+      properties:
+        clear:
+          type: boolean
+          description: set it to true if history is to be cleared, else set it to false.
+        save_file:
+          type: string
+          nullable: true
+          description: save history to the value of save. If nothing to be saved use null
+        load_file:
+          type: string
+          nullable: true
+          description: load history file to chat. The name of the file is the value of this argument. set it to null if nothing is to be loaded.
+    memdataResponse:
+      type: object
+      properties:
+        memdata_name:
+          type: string
+          nullable: true
+          description: name of the data object or data frame which needs to be added or removed. If no object is provided you can pass null.
+        object_name:
+          type: string
+          nullable: true
+          description: name of the object to be references as memdata name. This is typically a name of python object like spark dataframe or pandas dataframe. If no name is provided pass null. 
+        print_object:
+          type: boolean
+          description: set it to true if object to be printed. By default it should be set to false.
+    askResponse:
+      type: object
+      properties:
+        prompt:
+          type: string
+          description: description of the genric ask request. This is passed as a prompt to generative AI model for response.
