@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% macro build_question_body(hi) %} {{hi}} {% endmacro %}
+{% block head %}{% endblock %}
+{% block content %}
+<div class="tab-content container-fluid" id="main_page_tabs">
+<script>
+var terminals = {};
+ </script>
+{% set count=0 %}
+{% for qkey, qbody in questions.items() %}
+   {% set outer_loop = loop %}
+   {% for ikey, ibody in qbody.tests.items() %}
+     <script>terminals["{{ikey}}"] = null; </script>
+<div class="tab-pane fade {{ 'show active' if outer_loop.index == 1 and loop.index == 1 else ''}}" id="{{ikey}}-pane" role="tabpanel" aria-labelledby="{{ikey}}-pane-tab">
+<!-- begin tab card -->
+<h3>{{qbody.title}}</h3>
+<h5>
+    <span class="{{ikey}}-status">
+        <span id="{{ikey}}-status"><i id="{{ikey}}-icon" class="bi bi-emoji-neutral"></i> <span class="text-left">{{ibody.title}}</span></span>
+    </span>
+    {% if ibody.runable %}<a onclick="re_run_test('{{ikey}}');" type="button" class="btn btn-primary btn-sm">Rerun</a>{% endif %}
+</h5>
+
+<div class="card shadow mb-3 bg-white rounded">
+  <div class="card-header">
+        Terminal Output
+  </div>
+  <div class="card-body">
+      <div style="padding-left: 5px; padding-top: 5px; background-color: black;">
+     <div style="width: 100%; height: 20%;" id="{{ikey}}"></div>
+      </div>
+      <!-- <p class="card-text"></p> -->
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-sm-8">
+    <div class="card shadow mb-5 bg-white rounded">
+        <div class="card-header">Test outcome</div>
+        <div class="card-body">
+            <div id="{{ikey}}-stacktrace">{{ibody.wz if ibody.wz else 'Your results will be shown here'}}</div>
+        </div>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card shadow mb-5 bg-white rounded">
+      <div class="card-header"> Hints </div>
+              <div class="card-body">
+          {% if ibody.coverage_files != None and ibody.coverage_files|length > 0 %}
+This test depends (directly or indirectly) on the following files which contains code you need to write:
+<ul>
+  {% for cov in ibody.coverage_files %}
+    <li> <pre>{{cov}}</pre></li>
+<ul>
+{% for m in ibody.coverage_files[cov] %}
+    <li><code> {{m + " (...)" }}</code> </li>
+{% endfor %}
+</ul>
+{% endfor %}
+</ul>
+{% endif %}
+  {% if ibody.hints|length > 0 %}
+<dl>
+        {% for h in ibody.hints %}
+            <dt>{% if not h[1] %} Overall hints: {% else %} From the file <emph>{{ h[1] }}</emph> {% endif %}</dt>
+            <dd>
+                <ul>
+                {% for hitem in h[0] %}
+                <li>{{hitem}}</li>
+                {% endfor %}
+                    </ul>
+            </dd>
+        {% endfor %}
+</dl>
+{% endif %}
+{% if ibody.hints|length == 0 and ibody.coverage_files|length == 0 %}
+This test does not appear to depend on any files that students have to edit.
+{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+      {% endfor %}
+      {% endfor %}
+<div class="tab-pane fade" id="token-pane" role="tabpanel" aria-labelledby="token-pane-tab">
+
+<div class="row">
+    <div class="col-sm-2"> </div>
+  <div class="col-sm-8">
+    <div class="card shadow mb-5 bg-white rounded">
+        <div class="card-header">Your submission</div>
+        <div class="card-body">
+            <span id="#token-blurb">The following results are based on: <code><span class="current_token_file">no file here. </span></code> </span>
+
+             <table  class="table table-hover" style="td-height: 10px;">
+                 <!--
+                    <thead>
+                     <tr>
+                     <td style="border: none;"></td>
+                        <td style="border: none;">Unittests result</td>
+                        <td style="border: none;"><code>.token</code>-file result</td>
+                     </tr>
+                    </thead>
+                -->
+            {% for qkey, qbody in questions.items() %}
+                 <!--
+            <h6> {{qbody.title}}</h6>
+               -->
+                    <tr>
+                        {% if loop.index == 1 %}
+                            <td><strong>{{qbody.title}}</strong></td>
+                            <td>Unittests result</td>
+                            <td><code>.token</code>-file result</td>
+                        {% else %}
+                            <td colspan="3"><strong>{{qbody.title}}</strong></td>
+                        {% endif %}
+                    </tr>
+                   {% for ikey, ibody in qbody.tests.items() %}
+                    {% if ibody.runable %}
+                    <tr style="line-height: 10px;  height: 10px;">
+                        <td id="tbl-{{ikey}}-title">{{ibody.title}}</td>
+                        <td id="tbl-{{ikey}}-unit"><span class="test-state">Test has not been run</span></td>
+                        <td id="tbl-{{ikey}}-token"><span class="test-state">Test has not been run</span></td>
+                    </tr>
+                     {% endif %}
+                {% endfor %}
+            {% endfor %}
+             </table>
+            </div></div>
+    <div class="card shadow mb-5 bg-white rounded">
+        <div class="card-header">Hand-in instructions:</div>
+        <div class="card-body">
+<p>
+To hand in your results, you should run the file <code>{{grade_script}}</code>. You can either do this from your IDE, or by running the command:</p>
+<p style="text-indent: 25px">
+<code>{{run_cmd_grade}}</code>
+</p>
+<p>
+from the directory:</p>
+<p style="text-indent: 25px">
+<code>{{root_dir}}</code>
+</p>
+<p>
+This will generate a <code>.token</code> file which contains your answers and which you should upload to DTU learn. The outcome of your current token file can be seen above.
+</p>
+        </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+<!---------------------------------- NAVIGATION SECTION -------------------->
+
+{% block navigation %}
+
+   <ul class="list-unstyled ps-0">
+         {% for qkey, qbody in questions.items() %}
+         {% set outer_loop = loop %}
+      <li class="mb-1  text-truncate">
+        <button class="btn btn-toggle align-items-center rounded collapsed btn-sm" data-bs-toggle="collapse" data-bs-target="#{{qkey}}-collapse" aria-expanded="true" >
+          {{qbody.title}} </button>
+        <div class="collapse show" id="{{qkey}}-collapse">
+          <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small" id="myTab">
+              {% for ikey, ibody in qbody.tests.items() %}
+            <li>
+
+        <div class="container" style="">
+            <div class="row" style="background-color: white;">
+                <div class="col col-lg-11 text-truncate" style="background-color: white;">
+                    <button class="btn rounded collapsed nav-link {{  'active' if outer_loop.index == 1 and loop.index == 1 else ''}} text-left" style="width: 100%;" id="{{ikey}}-pane-tab" data-bs-toggle="pill" data-bs-target="#{{ikey}}-pane" type="button" role="tab" aria-controls="{{ikey}}-pane" aria-selected="false" data-toggle="tab">
+                        <span class="{{ikey}}-status">
+                            <span id="{{ikey}}-status"><i style="height: 16px; width: 16px;" id="{{ikey}}-icon" class="bi bi-emoji-neutral"></i> <span class="text-left">{{ibody.title}}</span></span>
+                        </span>
+                    </button>
+                </div>
+
+                 {% if ibody.runable %}
+                <div class="col col-lg-auto" style="padding: 0px; backgrund-color: white;">
+                    <a onclick="re_run_test('{{ikey}}');" type="button" class="btn btn-primary btn-sm" style="padding: 0px; margin: 0px;"><i class="bi bi-arrow-clockwise"></i></a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+            </li>
+              {% endfor %}
+          </ul>
+        </div>
+      </li>
+       {% endfor %}
+    </ul>
+
+{% endblock %}
+{% block navigation_footer %}
+<div class="btn-group-vertical" style="width: 100%">
+<a onclick="re_run_all_tests();" class="btn btn-primary btn-sm" style="width: 100%;"  type="button">Rerun all tests</a>
+<button class="btn  btn-success btn-sm" style="width: 100%;" id="token-pane-tab" data-bs-toggle="pill" data-bs-target="#token-pane" type="button" role="tab" aria-controls="token-pane" aria-selected="false" data-toggle="tab">Submit results</button>
+</div>
+{% endblock %}
