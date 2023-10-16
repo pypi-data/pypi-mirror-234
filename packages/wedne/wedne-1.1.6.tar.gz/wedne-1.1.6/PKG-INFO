@@ -1,0 +1,217 @@
+Metadata-Version: 2.1
+Name: wedne
+Version: 1.1.6
+Summary: Координируем строительство башни
+Home-page: https://github.com/igoose1/wedne
+License: BSD-3-Clause
+Author: Oskar Sharipov
+Requires-Python: >=3.10,<4.0
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: aiorun (>=2023.7.2,<2024.0.0)
+Requires-Dist: fire (>=0.5.0,<0.6.0)
+Requires-Dist: httpx (>=0.24.1,<0.25.0)
+Requires-Dist: pydantic-settings (>=2.0.2,<3.0.0)
+Requires-Dist: pydantic[dotenv] (>=2.1.0,<3.0.0)
+Requires-Dist: pytz (>=2023.3,<2024.0)
+Requires-Dist: telethon (>=1.28.5,<2.0.0)
+Project-URL: Repository, https://github.com/igoose1/wedne
+Description-Content-Type: text/markdown
+
+# wedne: координируем строительство башни
+
+![PyPI](https://img.shields.io/pypi/v/wedne)
+![PyPI - License](https://img.shields.io/pypi/l/wedne)
+
+_This project was built for a Russian-speaking community. An English version of this
+README is [available as well][README-EN]._
+
+В чатах "Вастрик Клуба" любят строить башни. Башни — это однобуквенные сообщения от
+участников, из которых может составиться слово. Самый важный башенный день — среда. В
+среду принято строить "ITSWEDNESDAYMYDUDES" и отправлять лягушек. Это непросто: постоянно
+кто-то хочет отправить сообщение между буквами. Клубчанин не может быть посередине,
+приходится выбирать между созиданием и разрушением.
+
+wedne состоит из двух частей: `wedne.server` и `wedne.client`. Клиенты регистрируются в
+общем сервере и получают команды: отправить такую-то букву в такое-то время.
+
+## Инструкции
+
+### Как строить башни?
+
+Не обязательно быть программистом. Прочтите эту секцию и узнайте, как поучаствовать в
+строительстве.
+
+1. Скачайте на компьютер [установщик Python][py],
+2. Пройдите установку (если спросят, отметьте "Add python.exe to PATH"),
+3. Откройте приложение "Терминал" или "Командную строку",
+4. Введите туда `python -m pip install wedne` — теперь вы установили wedne,
+5. Наконец введите `python -m wedne` и залогиньтесь как в телеграме.
+
+Теперь у вас работает клиент. Он подключится к серверу и начнет ждать команду. Когда
+придет время, в чат от вашего имени отправится буква.
+
+Можете закрывать инструкцию.
+
+### Я продвинутый, могу ли я запустить через Docker?
+
+```sh
+docker run qwskr/wedne:latest
+```
+
+### Я продвинутый, могу ли я запустить сервер?
+
+Проще всего склонировать и запустить с помощью Docker Compose:
+
+```sh
+docker compose up
+```
+
+Без докера надо запустить API и обработчик задач:
+
+```sh
+python -m wedne.server run_api
+
+python -m wedne.server consume_tasks
+```
+
+## FAQ
+
+### Почему я должен входить в телеграм? Это безопасно?
+
+wedne должен отправить букву в чат от какого-то аккаунта. При входе как раз подключается
+такой аккаунт. Исходный код открыт, можно проверить самому, как используются данные
+телеграма.
+
+### Без телеграма можно?
+
+Нельзя.
+
+### До сих пор тревожно, как я могу запустить код из исходников?
+
+1. Склонируйте репозиторий (`git clone https://github.com/igoose1/wedne`),
+2. Установите poetry (`pip install poetry`),
+3. Перейдите в исходники и установите зависимости (`cd wedne; poetry install`),
+4. Запустите wedne (`python -m wedne`).
+
+### Какие команды могут прийти с сервера?
+
+Только команда из трех переменных: какую букву отправлять, когда отправлять и после кого
+отправлять. Сервер не может скомандовать отправить слово или предложение — клиент такое не
+примет. Сервер не может направить клиентов на другой чат — ID чата хранится на клиентах
+локально. Схема команды: `wedne/commands.py`
+
+### Не могу запустить, помогите?
+
+Спросите помощи в [чате "Бар"][chat].
+
+### Ничего не понимаю, что за башни и что за клуб?
+
+Кажется, вы не знаете про ["Вастрик Клуб"][club]. Этот проект написан для него. Если вы не
+участник, вам wedne будет бесполезен.
+
+[README-EN]: https://github.com/igoose1/wedne/blob/main/README-EN.md
+[py]: https://www.python.org/downloads/
+[chat]: https://vas3k.club/room/bar/chat/
+[club]: https://vas3k.club/
+
+# wedne: coordinate the construction of the tower
+
+![PyPI](https://img.shields.io/pypi/v/wedne)
+![PyPI - License](https://img.shields.io/pypi/l/wedne)
+
+_Этот проект был сделан для русскоязычного сообщества. README на русском [можно найти
+здесь][README-RU]._
+
+In Vas3k Club chats, people like to build towers. Towers are one-letter messages from
+participants that can be combined to form a word. The main day for building towers is
+Wednesday. On Wednesday it is a tradition to build "ITSWEDNESDAYMYDUDES" and send pictures
+of frogs. It's not easy: someone always wants to send a message between the letters. A
+club member cannot be in the middle. He or she has to choose between creating and
+destroying.
+
+wedne has two parts: `wedne.server` and `wedne.client`. The client connects to the public
+server and receives instructions for the sending of a letter at a specific time.
+
+## Instructions
+
+### How to build towers?
+
+You don't have to be a programmer. Read this section and find out how to get involved in
+construction.
+
+1. Download [the Python installer][py] to your computer,
+2. Go through the installation (if asked, check "Add python.exe to PATH"),
+3. Open the "Terminal" or "cmd.exe" application,
+4. Type `python -m pip install wedne` to install wedne,
+5. Finally type `python -m wedne` and log in as in Telegram.
+
+Your client is currently up and running. It will connect to the server and wait for a
+command. When the time is right, a message will be sent to your chat from your account.
+
+You can close the instruction.
+
+### I'm advanced, can I run through Docker?
+
+```sh
+docker run qwskr/wedne:latest
+```
+
+### I'm advanced, can I run a server?
+
+It's easiest to clone and run using Docker Compose:
+
+```sh
+docker compose up
+```
+
+Without docker, you need to run the API and task handler:
+
+```sh
+python -m wedne.server run_api
+
+python -m wedne.server consume_tasks
+```
+
+## FAQ
+
+### Why do I have to log into Telegram? Is it safe?
+
+wedne has to send a letter to chat from some account. When you log in, such an account is
+connected. The source code is open, you can check for yourself how the Telegram data is
+used.
+
+### Can I do it without the Telegram?
+
+You can't.
+
+### Still anxious, how can I run the code from source?
+
+1. Clone the repository (`git clone https://github.com/igoose1/wedne`),
+2. Install poetry (`pip install poetry`),
+3. Go to the source and install dependencies (`cd wedne; poetry install`),
+4. Run wedne (`python -m wedne`).
+
+### What commands can be sent from the server?
+
+Only a command with three variables: what letter to send, when to send it and after whom
+to send it. The server cannot send a command to send a word or a phrase. The client will
+not accept such a command. The server can't redirect clients to another chat. Chat ID is
+stored locally on clients. Command scheme: `wedne/commands.py`
+
+### Can't get it to run, help?
+
+Ask for a help in [the "Бар" chat][chat].
+
+### I don't understand anything, what are the towers and what is the club?
+
+You don't seem to know about the [Vas3k Club][club]. This project is written for it. If
+you are not a member, wedne will be of no use to you.
+
+[README-RU]: https://github.com/igoose1/wedne/blob/main/README.md
+[py]: https://www.python.org/downloads/
+[chat]: https://vas3k.club/room/bar/chat/
+[club]: https://vas3k.club/
+
