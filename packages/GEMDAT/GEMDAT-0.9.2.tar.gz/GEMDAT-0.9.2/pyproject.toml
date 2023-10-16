@@ -1,0 +1,108 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata/
+[project]
+name = "GEMDAT"
+version = "0.9.2"
+description = "Generalized Molecular Dynamics Analysis Tool"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+	{name = "Victor Azizi", email = "v.azizi@esciencecenter.nl"},
+	{name = "Stef Smeets", email = "s.smeets@esciencecenter.nl"},
+]
+keywords = [
+    "analysis",
+    "molecular dynamics",
+    "plastic crystals",
+    "batteries",
+]
+license = {text = "Apache 2.0 License"}
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  'matplotlib >= 3.6.0',
+  'MDAnalysis',
+  'numpy',
+  'pymatgen >= 2023.8.10',
+  'rich',
+  'scikit-image',
+  'scipy',
+]
+
+[project.urls]
+homepage = "https://github.com/GEMDAT-repos/GEMDAT"
+issues = "https://github.com/GEMDAT-repos/GEMDAT/issues"
+documentation = "https://gemdat.readthedocs.io"
+changelog = "https://github.com/GEMDAT-repos/GEMDAT/releases"
+
+[project.optional-dependencies]
+develop = [
+    "pre-commit",
+    "mypy",
+    "pytest",
+    "coverage[toml]",
+]
+
+docs = [
+    "markdown-include",
+    "mkdocs",
+    "mkdocs-jupyter",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+]
+
+publishing = [
+    "twine",
+    "wheel",
+    "build",
+]
+
+gemdash = [
+    'uncertainties',
+  'streamlit',
+]
+
+[project.scripts]
+gemdash= "gemdat.dashboard:gemdash"
+
+[tool.setuptools]
+package-dir = {"gemdat" = "src/gemdat" }
+include-package-data = true
+
+[tool.coverage.run]
+branch = true
+source = ["gemdat"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+# Enable Pyflakes `E` and `F` codes by default.
+select = [
+	"F",  # Pyflakes
+	"E",  # pycodestyle (error)
+	"W",  # pycodestyle (warning)
+  "I",  # isort
+]
+
+line-length = 110
+
+[tool.ruff.isort]
+known-third-party = ["pymatgen"]
+
+[tool.mypy]
+files = ["src", "tests"]
+allow_redefinition = true
+ignore_missing_imports = true
