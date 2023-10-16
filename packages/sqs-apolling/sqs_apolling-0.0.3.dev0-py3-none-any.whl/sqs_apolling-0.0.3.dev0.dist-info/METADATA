@@ -1,0 +1,128 @@
+Metadata-Version: 2.1
+Name: sqs-apolling
+Version: 0.0.3.dev0
+Summary: Poll AWS SQS using asyncio and execute callback.
+Home-page: https://github.com/nonchan7720/sqs-polling
+Author: Nozomi nishinohara
+Author-email: nozomi_nishinohara@n-creativesystem.com
+License: MIT License
+        
+        Copyright (c) 2023 nonchan
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Code, https://github.com/nonchan7720/sqs-polling
+Project-URL: Tracker, https://github.com/nonchan7720/sqs-polling/issues
+Classifier: Development Status :: 1 - Planning
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: System :: Distributed Computing
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: boto3
+Requires-Dist: asyncio
+
+# sqs-polling
+python sqs polling library
+
+## Example
+
+`worker/polling/task.py`
+
+```python
+import traceback
+from pathlib import Path
+from pprint import pprint
+
+from sqs_polling import heartbeat, polling, ready
+from sqs_polling.signal import shutdown
+
+
+@polling(
+    queue_name="queue_name",
+    aws_profile={
+        "endpoint_url": "http://localstack:4566"
+    },
+    max_workers=5,
+    max_number_of_messages=10,
+)
+def task(*args, **kwargs):
+    # The contents of the body of sqs are output.
+    pprint({"kwargs": kwargs})
+
+
+tmp_dir = get_env_value("TMPDIR")
+HEARTBEAT_FILE = Path(f"{tmp_dir}/heartbeat")
+READINESS_FILE = Path(f"{tmp_dir}/ready")
+
+
+@heartbeat.connect
+def heartbeat_sent_receiver(**_) -> None:
+    update = False
+    file_exists = HEARTBEAT_FILE.exists()
+    try:
+        # Process health checks of DBs, etc.
+        if healthCheck():
+            HEARTBEAT_FILE.touch()
+            if file_exists:
+                logger.info(f"{HEARTBEAT_FILE} updated")
+            else:
+                logger.info(f"{HEARTBEAT_FILE} created")
+            update = True
+    except Exception as e:
+        logger.error("Health check failure")
+        raise e
+    finally:
+        if not update:
+            logger.error("health check failure")
+
+
+@ready.connect
+def worker_ready_receiver(**_) -> None:
+    READINESS_FILE.touch()
+
+
+@shutdown.connect
+def worker_shutdown_receiver(**_) -> None:
+    for file in (HEARTBEAT_FILE, READINESS_FILE):
+        if file.is_file():
+            file.unlink()
+```
+
+`management/commands/handler.py`
+
+```python
+from pathlib import Path
+from typing import Any
+
+from django.core.management.base import BaseCommand
+from sqs_polling import main
+
+
+class Command(BaseCommand):
+    _command_name = Path(__file__).stem
+
+    def handle(self, *args: Any, **options: Any) -> None:
+        main("worker.polling.task.task")
+```
