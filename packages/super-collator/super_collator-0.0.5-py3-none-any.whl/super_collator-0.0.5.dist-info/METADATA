@@ -1,0 +1,69 @@
+Metadata-Version: 2.1
+Name: super-collator
+Version: 0.0.5
+Summary: Collate textual sources with relaxed spelling.
+Project-URL: Homepage, https://github.com/cceh/super-collator
+Project-URL: Bug Tracker, https://github.com/cceh/super-collator/issues
+Author-email: Marcello Perathoner <marcello@perathoner.de>
+License-File: LICENSE
+Keywords: collation,collator,needleman-wunsch,needleman-wunsch-gotoh,python
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Classifier: Topic :: Text Processing :: Linguistic
+Requires-Python: >=3.9
+Description-Content-Type: text/x-rst
+
+==============
+Super Collator
+==============
+
+.. |py39| image:: docs/_images/badge-py39.svg
+
+.. |py310| image:: docs/_images/badge-py310.svg
+
+.. |py311| image:: docs/_images/badge-py311.svg
+
+.. |py312| image:: docs/_images/badge-py312.svg
+
+.. |pypy39| image:: docs/_images/badge-pypy39.svg
+
+.. |coverage| image:: docs/_images/badge-coverage.svg
+
+|py39| |py310| |py311| |py312| |pypy39| |coverage|
+
+Collates textual sources with relaxed spelling.  Uses Gotoh's variant of the
+Needleman-Wunsch sequence alignment algorithm.
+
+.. code-block:: shell
+
+   $ pip install super-collator
+
+.. code-block:: python
+
+   >>> from super_collator.aligner import Aligner
+   >>> from super_collator.ngrams import NGrams
+   >>> from super_collator.super_collator import to_table
+
+   >>> aligner = Aligner(-0.5, -0.5, -0.5)
+   >>> a = "Lorem ipsum dollar amat adipiscing elit"
+   >>> b = "qui dolorem ipsum quia dolor sit amet consectetur adipisci velit"
+   >>>
+   >>> a = [NGrams(s).load(s, 3) for s in a.split()]
+   >>> b = [NGrams(s).load(s, 3) for s in b.split()]
+   >>>
+   >>> a, b, score = aligner.align(a, b, NGrams.similarity, lambda: NGrams("-"))
+   >>> print(to_table(list(map(str, a)), list(map(str, b))))  # doctest: +NORMALIZE_WHITESPACE
+   -   Lorem   ipsum -    dollar -   amat -           adipiscing elit
+   qui dolorem ipsum quia dolor  sit amet consectetur adipisci   velit
+
+Documentation: https://cceh.github.io/super-collator/
+
+PyPi: https://pypi.org/project/super-collator/
