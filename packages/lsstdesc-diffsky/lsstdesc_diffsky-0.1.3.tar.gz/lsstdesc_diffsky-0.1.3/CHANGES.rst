@@ -1,0 +1,18 @@
+0.1.3 (2023-10-07)
+-------------------
+- Add convenience functions for computing photometry and loading healpixels of data
+
+
+0.1.2 (2023-10-06)
+-------------------
+- Add convenience functions for computing SEDs
+
+
+0.1.1 (2023-10-03)
+-------------------
+- Update calls to dsps v0.3.4
+
+
+0.1.0 (2023-10-03)
+-------------------
+- First release. Compatible with diffsky v0.1.0.
