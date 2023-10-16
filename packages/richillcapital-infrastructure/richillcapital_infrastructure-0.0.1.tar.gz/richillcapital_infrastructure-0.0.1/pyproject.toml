@@ -1,0 +1,52 @@
+[project]
+name = "richillcapital-infrastructure"
+version = "0.0.1"
+description = ""
+authors = [
+    { name = "Mengsyue Amao Tsai", email = "mengsyue.tsai@outlook.com" },
+]
+dependencies = [
+    "pyodbc>=4.0.39",
+    "sqlalchemy>=2.0.21",
+    "richillcapital-core>=0.0.1",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+
+[project.license]
+text = "MIT"
+
+[build-system]
+requires = [
+    "pdm-backend",
+]
+build-backend = "pdm.backend"
+
+[tool.black]
+line-length = 120
+
+[tool.pdm.scripts]
+_isort = "isort . --profile=black"
+test = "pytest"
+
+[tool.pdm.scripts.lint]
+composite = [
+    "mypy .",
+    "pylint .",
+]
+
+[tool.pdm.scripts.format]
+composite = [
+    "_isort",
+    "black .",
+]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "flake8>=6.1.0",
+    "isort>=5.12.0",
+    "mypy>=1.5.1",
+    "pylint>=3.0.1",
+    "black>=23.9.1",
+    "pytest>=7.4.2",
+]
