@@ -1,0 +1,6 @@
+class InjectionError(Exception):
+    ...
+
+
+class NoInjectable(InjectionError):
+    ...
