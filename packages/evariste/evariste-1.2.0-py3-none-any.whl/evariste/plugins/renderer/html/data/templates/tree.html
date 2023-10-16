@@ -1,0 +1,36 @@
+{% macro render_tree(tree) -%}
+    <ul>
+      {%- for item in tree.values()|sort -%}
+      <li>
+      {% if item.is_dir() -%}
+        <div class="tree-directory">
+            <i>
+                {%- if item.is_root and local.setup['title'] -%}
+                    {{ local.setup['title'] }}
+                {%- else -%}
+                    {{ item.relativename }}
+                {%- endif -%}
+            </i>
+            {{- render_readme(item) -}}
+            {{- render_tree(item) -}}
+        </div>
+      {%- else -%}
+        <div class="tree-file">
+          {% for target in item.report.targets|sort -%}
+            {{- render_file(target) -}}
+          {%- endfor %}
+          {% if item.report.targets %}({% endif -%}
+            {{- render_file(sourcepath(item)) -}}
+          {%- if item.report.targets %}){% endif %}
+          {% if not item.report.success -%}
+              <span class="error">[Error : {{ item.report.log }}]</span>
+          {%- endif %}
+          {{- render_readme(item) -}}
+        </div>
+      {% endif -%}
+      </li>
+    {% endfor -%}
+    </ul>
+{%- endmacro %}
+
+{{ render_tree(tree) }}
