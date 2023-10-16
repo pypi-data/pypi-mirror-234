@@ -1,0 +1,41 @@
+import concurrent.futures
+import threading
+import multiprocessing
+from tqdm import tqdm
+
+type_thread = concurrent.futures.ThreadPoolExecutor
+type_process = concurrent.futures.ProcessPoolExecutor
+
+
+def init(tl, pl):
+    global t_lock
+    global p_lock
+    t_lock = tl
+    p_lock = pl
+
+
+class MultiTasks:
+    def __init__(self, threads=10, pool=type_thread):
+        self.pool = pool
+        self.threads = threads
+        self.task_list = {}
+        self.features = {}
+        self.results = {}
+        self.thread_mutex = threading.Lock
+        self.process_mutex = multiprocessing.Lock
+
+    def add_task(self, k, function, args):
+        self.task_list[k] = (function, args)
+
+    def execute_task(self, print_percent=True):
+        with self.pool(max_workers=self.threads, initializer=init,
+                       initargs=(self.thread_mutex, self.process_mutex)) as executor:
+            for k, f_and_a in self.task_list.items():
+                self.features[k] = executor.submit(f_and_a[0], *f_and_a[1])
+            if print_percent:
+                progress_bar = tqdm(total=len(self.features), desc="Multi Progress")
+            for k, feature in self.features.items():
+                self.results[k] = feature.result()
+                if print_percent:
+                    progress_bar.update(1)
+        return self.results
