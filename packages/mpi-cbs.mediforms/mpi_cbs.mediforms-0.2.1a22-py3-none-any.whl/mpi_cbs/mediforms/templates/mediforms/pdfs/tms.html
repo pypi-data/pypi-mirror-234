@@ -1,0 +1,110 @@
+{% extends "mediforms/pdfs/pdf.html" %}
+
+{% load i18n %}
+
+
+{% block body %}
+<div class="ui centered grid">
+  <div class="sixteen wide column">
+    <h1>
+      {% blocktranslate %}Informationen zum Untersuchungsablauf und Einwilligungserklärungen zu Studien mit Einsatz von magnetischen und elektrischen Stimulationsmethoden:{% endblocktranslate %}<br>
+      {% blocktranslate %}Transkranielle Magnetstimulation (TMS){% endblocktranslate %}<br>
+      {% blocktranslate %}Transkranielle Gleichstromstimulation (tDCS){% endblocktranslate %}<br>
+      {% blocktranslate %}Transkutane spinale Gleichstromstimulation (tsDCS){% endblocktranslate %}
+    </h1>
+  </div>
+
+  {% include "mediforms/includes/information_text_tms.html" %}
+</div>
+
+
+<div class="ui centered grid" style="page-break-before: always;">
+  <div class="fourteen wide column">
+    <p style="text-align: center; border: 2px solid black; padding: 5px;">
+      <b>{% blocktranslate %}Fragebogen zur Person und zu Kontraindikationen im Rahmen der Studie{% endblocktranslate %}</b><br>
+      <span>{% blocktranslate %}TMS/tDCS/tsDCS-Untersuchung{% endblocktranslate %}</span>
+    </p>
+
+    <table>
+      <tr>
+        <th>{{ form.last_name.label_tag }}</th>
+        <td>{{ form.instance.last_name }}</td>
+        <th>{{ form.first_name.label_tag }}</th>
+        <td>{{ form.instance.first_name }}</td>
+        <th>{{ form.height.label_tag }}</th>
+        <td>{{ form.instance.height|default_if_none:"" }}</td>
+      </tr>
+      <tr>
+        <th>{{ form.date_of_birth.label_tag }}</th>
+        <td>{{ form.instance.date_of_birth }}</td>
+        <th>{{ form.birthplace.label_tag }}</th>
+        <td>{{ form.instance.birthplace|default_if_none:"" }}</td>
+        <th>{{ form.weight.label_tag }}</th>
+        <td>{{ form.instance.weight|default_if_none:"" }}</td>
+      </tr>
+      <tr>
+        <th>{{ form.gender.label_tag }}</th>
+        <td>{{ form.instance.get_gender_display|default_if_none:"" }}</td>
+        <td colspan="4"></td>
+      </tr>
+      <tr>
+        <th>{{ form.street.label_tag }}</th>
+        <td>{{ form.instance.street|default_if_none:"" }}</td>
+        <th>{{ form.zip_code.label_tag }}</th>
+        <td>{{ form.instance.zip_code|default_if_none:"" }}</td>
+        <th>{{ form.city.label_tag }}</th>
+        <td>{{ form.instance.city|default_if_none:"" }}</td>
+      </tr>
+      <tr>
+        <th>{{ form.phone_number.label_tag }}</th>
+        <td>{{ form.instance.phone_number|default_if_none:"" }}</td>
+        <th>{{ form.mobile_number.label_tag }}</th>
+        <td>{{ form.instance.mobile_number|default_if_none:"" }}</td>
+        <td colspan="2"></td>
+      </tr>
+      <tr>
+        <th>{{ form.email.label_tag }}</th>
+        <td>{{ form.instance.email }}</td>
+        <td colspan="4"></td>
+      </tr>
+    </table>
+
+    <table style="width: 75%">
+      {% for field in questions_form %}
+      <tr>
+        <td>{{ forloop.counter }}. {{ field.label_tag }}</td>
+        <td>
+          {% if field.field.widget.input_type == "radio" %}
+          {% trans field.value %}
+          {% else %}
+          {{ field.value }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+
+      <tr>
+        <td colspan="2"><i style="font-size: 15px;">{% blocktranslate %}NUR FÜR VERSUCHSTEILNEHMERINNEN:{% endblocktranslate %}</i></td>
+      </tr>
+
+      {% for field in questions_form_women %}
+      <tr>
+        <td>{{ field.label_tag }}</td>
+        <td>{% if field.value %}{% trans field.value %}{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+
+
+<div class="fifteen wide column">
+  <p>{% blocktranslate %}Wenn Sie etwas nicht verstanden haben oder zusätzliche Informationen benötigen, geben wir Ihnen gerne nähere Auskünfte im Gespräch. Bitte fragen Sie uns nach allem, was Ihnen wichtig erscheint.{% endblocktranslate %}</p>
+</div>
+
+
+<div class="ui centered grid" style="page-break-before: always;">
+  {% include "mediforms/includes/exploration_consent_tms.html" %}
+</div>
+
+{% endblock body %}

@@ -1,0 +1,51 @@
+{% extends "mediforms/pages/form_mrt.html" %}
+
+{% load i18n %}
+
+
+{% block introduction %}
+<h1>{% blocktranslate %}Magnetresonanz-Untersuchung für Begleitpersonen am Max-Planck-Institut für Kognitions- und Neurowissenschaften (MPI CBS){% endblocktranslate %}</h1>
+<p>
+{% blocktranslate %}Sehr geehrte Studienteilnehmerin, sehr geehrter Studienteilnehmer,{% endblocktranslate %}<br>
+{% blocktranslate %}wir bedanken uns für Ihr Interesse, an unseren wissenschaftlichen Studien unter Ausnutzung der Magnetresonanztomographie (MRT) teilzunehmen.{% endblocktranslate %}
+</p>
+<p>{% blocktranslate %}Wir möchten Sie herzlich dazu einladen, mehr über MRT zu erfahren und Ihnen im Anschluss einige Fragen stellen.{% endblocktranslate %}</p>
+<p>{% blocktranslate %}Die gesamte Online-Befragung dauert etwa <b>30 Minuten</b> und besteht aus 5 Teilen{% endblocktranslate %}:</p>
+<ol div="ui list">
+  <li>{% blocktranslate %}<b>Video</b> mit wichtigen Informationen zur MRT (Dauer: 9 Minuten).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>Informationstext</b> zur MRT (Dauer: 4 Minuten).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>FRAGEBOGEN</b> zur MRT mit kurzen Fragen (Dauer: 15 Minuten).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>Einwilligung zur Speicherung meiner Daten</b> (Dauer: 1 Minute).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>Einwilligungserklärung zur Magnetresonanz-Untersuchung für Begleitpersonen</b> und <b>Erklärung zur Speicherung und Nutzung von Daten</b> (Dauer: 4 Minuten).{% endblocktranslate %}</li>
+</ol>
+<p>{% blocktranslate %}Die in diesem Fragebogen erhobenen Daten werden von uns in digitaler Form gespeichert und dienen der Klärung einer möglichen Teilnahme an einer Magnetresonanztomographie-Studie. Dabei werden Ihre Angaben streng vertraulich behandelt und es ist kein unrechtmäßiger Zugang durch Dritte möglich.{% endblocktranslate %}</p>
+
+<h3>{% blocktranslate %}MRT-Aufklärungsgespräch mit unserer Studienärztin/unserem Studienarzt{% endblocktranslate %}</h3>
+<p>
+{% blocktranslate %}
+Zu einem späteren Zeitpunkt erfolgt ein Gespräch zur MRT-Aufklärung. Dieser Termin wird durch unsere StudienärztInnen durchgeführt. Dafür werden die von Ihnen in diesem Fragebogen gemachten Angaben den MRT-Aufklärungsunterlagen beigefügt.<br>
+Notieren Sie sich daher gerne aufkommende Fragen. Bei dem ärztlichen Gespräch werden Sie ausführlich über den Ablauf der MRT-Untersuchung aufgeklärt, Ihre Fragen beantwortet und die Gesundheitsfragen einzeln besprochen.<br>
+Nach diesem Gespräch bestätigen Sie Ihre Angaben und die "Einwilligungserklärung zur Magnetresonanz-Untersuchung für Begleitpersonen" sowie "Die Erklärung zur Speicherung und Nutzung von Daten" mit Ihrer Unterschrift. Danach sind Sie für die Teilnahme an MRT-Studien berechtigt.
+{% endblocktranslate %}
+</p>
+
+<h3>{% blocktranslate %}Vielen Dank!{% endblocktranslate %}</h3>
+<p>{% blocktranslate %}Bevor es mit dem Fragebogen losgeht, möchten wir Sie über die Magnetresonanztomographie informieren.{% endblocktranslate %}</p>
+<p>{% blocktranslate %}Auf der Webseite <a href="https://www.cbs.mpg.de/mrt-info">https://www.cbs.mpg.de/mrt-info</a> haben unsere ÄrztInnen ein <b>Video</b> für Sie bereitgestellt mit wichtigen Informationen zur MRT. Nach dem Aufrufen der Webseite tragen sie bitte Benutzer: <b>mrt</b> und Passwort: <b>mrt</b> ein.{% endblocktranslate %}</p>
+{% url 'information-text' method.key as information_text_url %}
+<p>{% blocktranslate with url=information_text_url %}Bitte lesen Sie sich den <b>Informationstext</b> <a href="{{ url }}">MRT - Hintergrund, Ablauf, Risiken und Zufallsfunde</a> aufmerksam durch.{% endblocktranslate %}</p>
+<p>{% blocktranslate %}Der nachfolgende Fragebogen besteht aus kurzen Fragen und dauert ca. 15 Minuten. Beantworten Sie bitte alle Fragen gewissenhaft.{% endblocktranslate %}</p>
+{% endblock introduction %}
+
+
+{% block headline_questionaire %}
+<h1 style="color:black;">{% blocktranslate %}Fragebogen zur Person und zu Kontraindikationen im Rahmen der Studie{% endblocktranslate %}</h1>
+<h1>{% blocktranslate %}Magnetresonanz-Untersuchung für Begleitpersonen{% endblocktranslate %}</h1>
+{% endblock headline_questionaire %}
+
+
+{% block agreement_consents_text %}
+{% url 'exploration-consent' method.key as exploration_consent_url %}
+{% url 'data-protection-declaration-mrtbegleitung' as data_protection_declaration_url %}
+{% blocktranslate with exploration_consent_url=exploration_consent_url data_protection_declaration_url=data_protection_declaration_url %}Ich habe die <a href="{{ exploration_consent_url }}">Einwilligungserklärung zur Magnetresonanz-Untersuchung für Begleitpersonen</a> und die <a href="{{ data_protection_declaration_url }}">Erklärung zur Speicherung und Nutzung von Daten</a> gelesen.{% endblocktranslate %}
+{% endblock agreement_consents_text %}

@@ -1,0 +1,58 @@
+{% extends "mediforms/pages/form.html" %}
+
+{% load i18n %}
+
+
+{% block introduction %}
+<h1>
+  {% blocktranslate %}Informationen zum Untersuchungsablauf und Einwilligungserklärungen zu Studien mit Einsatz von magnetischen und elektrischen Stimulationsmethoden:{% endblocktranslate %}<br>
+  {% blocktranslate %}Transkranielle Magnetstimulation (TMS){% endblocktranslate %}<br>
+  {% blocktranslate %}Transkranielle Gleichstromstimulation (tDCS){% endblocktranslate %}<br>
+  {% blocktranslate %}Transkutane spinale Gleichstromstimulation (tsDCS){% endblocktranslate %}<br>
+  {% blocktranslate %}am Max-Planck-Institut für Kognitions- und Neurowissenschaften (MPI CBS){% endblocktranslate %}
+</h1>
+
+<p>
+{% blocktranslate %}Sehr geehrte Studienteilnehmerin, sehr geehrter Studienteilnehmer,{% endblocktranslate %}<br>
+{% blocktranslate %}wir bedanken uns für Ihr Interesse, an unseren wissenschaftlichen Studien zur Erforschung des Gehirns unter Ausnutzung von magnetischen und/oder elektrischen Stimulationsmethoden teilzunehmen.{% endblocktranslate %}
+</p>
+<p>{% blocktranslate %}Wir möchten Sie herzlich dazu einladen, mehr über diese Stimulationsmethoden zu erfahren und Ihnen im Anschluss einige Fragen stellen.{% endblocktranslate %}</p>
+<p>{% blocktranslate %}Die gesamte Online-Befragung dauert etwa <b>25 Minuten</b> und besteht aus 5 Teilen:{% endblocktranslate %}</p>
+<ol div="ui list">
+  <li>{% blocktranslate %}<b>Video</b> mit wichtigen Informationen zu TMS (Dauer: 2 Minuten).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>Informationstext</b> zu TMS/tDCS/tsDCS (Dauer: 4 Minuten).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>FRAGEBOGEN</b> zur TMS/tDCS/tsDCS mit kurzen Fragen (Dauer: 15 Minuten).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>Einwilligung zur Speicherung meiner Daten</b> (Dauer: 1 Minute).{% endblocktranslate %}</li>
+  <li>{% blocktranslate %}<b>Einwilligungserklärung zu TMS/tDCS/tsDCS</b> (Dauer: 1 Minuten).{% endblocktranslate %}</li>
+</ol>
+<p>{% blocktranslate %}Die in diesem Fragebogen erhobenen Daten werden von uns in digitaler Form gespeichert und dienen der Klärung einer möglichen Teilnahme an einer Studie mit magnetischen und/oder elektrischen Stimulationsmethoden. Dabei werden Ihre Angaben streng vertraulich behandelt und es ist kein unrechtmäßiger Zugang durch Dritte möglich.{% endblocktranslate %}</p>
+
+<h3>{% blocktranslate %}TMS/tDCS-Aufklärungsgespräch mit unserer Studienärztin/unserem Studienarzt{% endblocktranslate %}</h3>
+<p>
+{% blocktranslate %}
+Zu einem späteren Zeitpunkt erfolgt ein Gespräch zur TMS/tDCS-Aufklärung. Dieser Termin wird durch unsere StudienärztInnen durchgeführt. Dafür werden die von Ihnen in diesem Fragebogen gemachten Angaben den TMS/tDCS/tsDCS-Aufklärungsunterlagen beigefügt.<br>
+Notieren Sie sich daher gerne aufkommende Fragen. Bei dem ärztlichen Gespräch werden Sie ausführlich über den Ablauf der TMS/tDCS/tsDCS-Untersuchung aufgeklärt, Ihre Fragen beantwortet und die Gesundheitsfragen einzeln besprochen.<br>
+Nach diesem Gespräch bestätigen Sie Ihre Angaben und die "Einwilligungserklärung zu TMS/tDCS/tsDCS" mit Ihrer Unterschrift. Danach sind Sie für die Teilnahme an TMS/tDCS/tsDCS-Studien berechtigt.
+{% endblocktranslate %}
+</p>
+
+<h3>{% blocktranslate %}Vielen Dank!{% endblocktranslate %}</h3>
+<p>{% blocktranslate %}Bevor es mit dem Fragebogen losgeht, möchten wir Sie über TMS/tDCS/tsDCS informieren.{% endblocktranslate %}</p>
+<p>{% blocktranslate %}Auf der Webseite <a href="https://youtu.be/6YAHrV4Mh_g">https://youtu.be/6YAHrV4Mh_g</a> haben wir ein Video für Sie bereitgestellt mit wichtigen Informationen zu TMS und unserem TMS Labor.{% endblocktranslate %}</p>
+{% url 'information-text' method.key as information_text_url %}
+<p>{% blocktranslate with information_text_url=information_text_url %}Bitte lesen Sie sich den <b>Informationstext</b> <a href="{{ information_text_url }}">TMS/tDCS/tsDCS - Hintergrund, Ablauf und Risiken</a> aufmerksam durch.{% endblocktranslate %}</p>
+<p>{% blocktranslate %}Der nachfolgende Fragebogen besteht aus kurzen Fragen und dauert ca. 15 Minuten. Beantworten Sie bitte alle Fragen gewissenhaft.{% endblocktranslate %}</p>
+{% endblock introduction %}
+
+
+{% block headline_questionaire %}
+<h1 style="color:black;">{% blocktranslate %}Fragebogen zur Person und zu Kontraindikationen im Rahmen einer Studie zu{% endblocktranslate %}</h1>
+<h1>{% blocktranslate %}TMS/tDCS/tsDCS{% endblocktranslate %}</h1>
+{% endblock headline_questionaire %}
+
+
+{% block agreement_consents_text %}
+{% url 'exploration-consent' method.key as exploration_consent_url %}
+
+{% blocktranslate with exploration_consent_url=exploration_consent_url %}Ich habe die <a href="{{ exploration_consent_url }}">Einwilligungserklärung zur TMS/tDCS/tsDCS-Untersuchung</a> gelesen.{% endblocktranslate %}
+{% endblock agreement_consents_text %}
