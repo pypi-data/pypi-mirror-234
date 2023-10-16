@@ -1,0 +1,2 @@
+from .arguments_trainer import get_train_args
+from .arguments_seq2seq_trainer import get_train_args_seq
