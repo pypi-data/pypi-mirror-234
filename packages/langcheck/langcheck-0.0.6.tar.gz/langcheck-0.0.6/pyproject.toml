@@ -1,0 +1,60 @@
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langcheck"
+version = "0.0.6"
+description = "Simple, Pythonic building blocks to evaluate LLM-based applications"
+readme = "README.md"
+authors = [{ name = "Citadel AI", email = "info@citadel.co.jp" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["llm", "ai", "nlp", "evaluation", "validation", "testing"]
+dependencies = [
+    'dash >= 2.11',  # Dash 2.11 introduces a breaking change with Jupyter notebook support
+    'detoxify >= 0.5',
+    'fugashi', # For tokenizer of eval.ja.toxicity()
+    'janome >= 0.3.1',
+    'nltk >= 3',
+    'openai >= 0.11.6',
+    'pandas >= 1',
+    'plotly >= 5',
+    'rouge_score >= 0.1.2',
+    'sentence_transformers >= 2',
+    'sentencepiece>=0.1.95',
+    'tomli; python_version < "3.11"',
+    'torch >= 2',
+    'transformers >= 4.6',
+    "unidic-lite >= 1.0.1"  # For tokenizer of eval.ja.toxicity()
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["yapf==0.40.1", "flake8", "isort", "pytest", "sphinx", "sphinx-book-theme", "myst-parser", "ipykernel"]
+optional = ["mecab-python3 >= 1.0.4"]
+
+[project.urls]
+repository    = "https://github.com/citadel-ai/langcheck"
+
+[tool.yapf]
+based_on_style = "google"
+column_limit = 80
+
+[tool.yapfignore]
+ignore_patterns = [
+  "venv/*",
+]
+
+[tool.isort]
+multi_line_output = 0
+line_length = 80
+include_trailing_comma = false
+
+[tool.pytest.ini_options]
+markers = [
+  "optional: marks tests as optional",
+]
