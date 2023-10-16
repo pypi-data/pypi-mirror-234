@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Cicero - Serving presentation slides written in Markdown{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <div class="row top-buffer">
+    <div class="col">
+      <h1>Cicero - Serving presentation slides written in Markdown</h1>
+    </div>
+  </div>
+
+  <div class="row top-buffer">
+
+    <div class="col">
+
+      <div id="app" v-cloak>
+        <h3>Find your talk</h3>
+        <div class="form-area">
+          <form role="form">
+            <div class="form-group">
+              <small>
+              For <a href="https://gitlab.com">GitLab</a> please use the
+              <a target="_blank" href="https://cicero.readthedocs.io/en/latest/api.html">API reference</a>.
+              </small>
+              <input v-model="user"
+                     type="text"
+                     placeholder="Select GitHub user or organization"
+                     class="form-control" />
+            </div>
+
+            <div class="form-group" v-if="repos.length > 0">
+              <h4>Select repository:</h4>
+              <select v-model="repo" class="form-control">
+                <option disabled value="">Please select one</option>
+                <option v-for="item in repos" v-bind:value="item.name">
+                  [[ item.name ]]
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group" v-if="branches.length > 0">
+              <h4>Select branch:</h4>
+              <select v-model="branch" class="form-control">
+                <option disabled value="">Please select one</option>
+                <option v-for="item in branches" v-bind:value="item.name">
+                  [[ item.name ]]
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group" v-if="files.length > 0">
+              <h4>Select Markdown file to render:</h4>
+              <select v-model="file" class="form-control">
+                <option disabled value="">Please select one</option>
+                <option v-for="item in files" v-bind:value="item.path">
+                  [[ item.path ]]
+                </option>
+              </select>
+            </div>
+          </form>
+        </div>
+
+        <div v-if="link != ''">
+          <h4>Select rendering engine:</h4>
+          <input type="radio" id="remark" value="remark/0.14.0" v-model="engine">
+          <label for="remark">remark</label>
+          <input type="radio" id="reveal.js" value="reveal.js/3.7.0" v-model="engine">
+          <label for="reveal.js">reveal.js</label>
+
+          <h3><b>Share this link with your friends</b></h3>
+          <b><a target="_blank" v-bind:href="link">{{ url_base }}[[ link ]]</a></b>
+          <br>
+          Source code: <a target="_blank" v-bind:href="source_link">[[ source_link ]]</a>
+        </div>
+
+        <div v-if="files_loaded && files.length == 0">
+          <div class="row">
+            <div class="panel panel-danger">
+              <div class="panel-heading">
+                <h3 class="panel-title">No Markdown files found in this repository</h3>
+              </div>
+              <div class="panel-body">
+                Try another repository
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> <!-- app -->
+
+      <div class="top-buffer">
+        <h3>This is how it works</h3>
+        <p>
+          You write your talk in Markdown, host it on
+          <a href="https://github.com">GitHub</a>
+          or
+          <a href="https://gitlab.com">GitLab</a>.
+          We render it using
+          <a href="https://remarkjs.com">remark</a>
+          of
+          <a href="https://revealjs.com">reveal.js</a>
+          and serve it for you
+          before you can say blueberry pie.
+          You can style your slides to your heart's content.
+        </p>
+
+        <h3>First time here? Try this one-minute demo:</h3>
+        <p>
+          Under "Find your talk", type "bast", then select repo "cicero", and one of the Markdown
+          files under "demo/".
+          Then follow the generated link.
+        </p>
+      </div>
+
+    </div> <!-- col -->
+
+    <div class="col">
+      <h3>Why Cicero</h3>
+      <ul class="list-unstyled">
+        <li>- No more "Can you please email me the slides after the workshop?".</li>
+        <li>- All you need is a browser and everybody has a browser in their pocket.</li>
+        <li>- It is easier to share a link to slides than it is to serve them.</li>
+        <li>- It is easier to reuse a Markdown talk than it is to modify PDF slides.</li>
+        <li>- Talks become lightweight, reusable, versionable, branchable, and forkable.</li>
+        <li>- Hackable URLs.</li>
+        <li>- Presentation URL lives as long as the corresponding Markdown file lives.</li>
+        <li>- Free as in beer.</li>
+      </ul>
+
+      Documentation: <a href="https://cicero.readthedocs.io" target="_blank">https://cicero.readthedocs.io</a>
+      <br>
+      Source code: <a href="https://github.com/bast/cicero" target="_blank">https://github.com/bast/cicero</a>
+    </div> <!-- col -->
+  </div> <!-- row -->
+
+  <footer>
+    <div class="row">
+      <div class="col">
+        <br>
+        <p>
+          Cicero <font color="#909090">v{{ version }}</font> (c)
+          <a href="https://bast.fr" target="_blank">Radovan Bast</a>,
+          <a href="https://github.com/olemb" target="_blank">Ole Martin Bj&oslash;rndalen</a>, and
+          <a href="http://totaltrash.xyz" target="_blank">Roberto Di Remigio</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</div> <!-- container -->
+{% endblock %}
