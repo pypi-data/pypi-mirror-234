@@ -1,0 +1,90 @@
+{% load json %}
+{% load i18n %}
+
+<div class="collection paper-dropzone collection--{{ widget.value|yesno:"ready,empty" }}"
+     data-xclass="paper-upload-collection"
+     data-create-collection-url="{{ create_collection_url }}"
+     data-delete-collection-url="{{ delete_collection_url }}"
+     data-upload-item-url="{{ upload_item_url }}"
+     data-change-item-url="{{ change_item_url }}"
+     data-delete-item-url="{{ delete_item_url }}"
+     data-sort-items-url="{{ sort_items_url }}"
+     data-paper-owner-app-label="{{ owner_app_label }}"
+     data-paper-owner-model-name="{{ owner_model_name }}"
+     data-paper-owner-field-name="{{ owner_fieldname }}"
+     data-paper-collection-content-type="{{ content_type.pk }}"
+     data-configuration='{{ configuration|safe }}'>
+
+  <input type="hidden" class="collection__input"
+         name="{{ widget.name }}"
+         value="{{ widget.value|default:"" }}"
+         {% include "django/forms/widgets/attrs.html" %}/>
+
+  <div class="collection__items"
+       style="--preview-width: {{ preview_width }}px;
+              --preview-height: {{ preview_height }}px;
+              --preview-aspect: {{ preview_aspect }}">
+    {% for _ in item_range %}
+      <div class="collection__skeleton">
+        <div class="collection-item__preview"></div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="collection__buttons">
+    {% block buttons %}
+      <button type="button" class="collection__create-collection-button btn btn-success"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _("Create collection") }}">
+        <i class="bi-plus-lg"></i>
+        {{ _("Create collection") }}
+      </button>
+
+      <button type="button" class="collection__upload-item-button btn btn-success"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _("Select files") }}">
+        <i class="bi-folder2-open"></i>
+        {{ _("Select files") }}
+      </button>
+
+      <button type="button" class="collection__delete-collection-button btn btn-danger"
+              data-toggle="tooltip" data-placement="top" data-trigger="hover"
+              data-html="true" title="{{ _("Delete collection") }}">
+        <i class="bi-trash"></i>
+        {{ _("Delete collection") }}
+      </button>
+    {% endblock buttons %}
+  </div>
+
+  {% if limitations %}
+    <div class="image-uploader__limitations small text-muted mt-2">
+      <span>{{ _("Please consider the following limitations") }}:</span>
+      <ul class="pl-3 mb-0">
+        {% for label, limits in limitations %}
+          <li>{{ label }}: <em>{{ limits }}</em></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <div class="paper-dropzone__overlay">
+    <div class="paper-dropzone__hint">
+      <i class="bi-upload"></i>
+      {{ _("Drop files here to send") }}
+    </div>
+  </div>
+
+  <template class="collection__preloader-item-template">
+    {% include "paper_uploads/items/preloader.html" %}
+  </template>
+
+  {% for name, field in collection_cls.item_types.items %}
+    <template class="collection__{{ name }}-item-template">
+      {% include field.model.template_name %}
+    </template>
+  {% endfor %}
+
+  <script class="collection--data" type="application/json">
+    [{% if widget.value %}{% for item in instance %}{{ item.as_dict|json }}{% if not forloop.last %},{% endif %}{% endfor %}{% endif %}]
+  </script>
+</div>
