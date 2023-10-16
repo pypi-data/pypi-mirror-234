@@ -1,0 +1,206 @@
+{% extends 'yangsuite/base-cui.html' %}
+{% load static %}
+{% block javascript %}
+<script src="{% static 'ysfilemanager/js/yangsets.js' %}"></script>
+<script src="{% static 'yscoverage/js/chosen/chosen.jquery.js' %}"></script>
+<script src="{% static 'ysyangtree/js/yangtree.js' %}"></script>
+<script src="{% static 'yscoverage/js/dataset.js' %}"></script>
+{% endblock javascript %}
+{% block cui-css %}
+<link rel="stylesheet" href="{% static 'yangsuite/css/cui-standard-1.3.3.min.css' %}"/>
+{% endblock %}
+{% block css %}
+<link rel="stylesheet" href="{% static 'ysyangtree/css/chosen/chosen.css' %}"/>
+<style type="text/css">
+  #ys-dataset-table tr td {
+    white-space: normal;
+  }
+
+  #ys-dataset-table tr th.xpath {
+    min-width: 40%;
+  }
+
+  #ys_columns_chosen {
+    width:100% !important;
+  }
+</style>
+{% endblock css %}
+{% block breadcrumbs %}<li>YANG datasets and diffs</li>{% endblock %}
+{% block page-title %}YANG datasets and diffs{% endblock %}
+{% block help_url %}{% url 'help' section='yscoverage' document='datasets'  %}{% endblock %}
+{% block body %}
+{% csrf_token %}
+<div class="container-fluid">
+  <br>
+  <div class="row">
+    <div class="col">
+      <div class="form-group label--inline">
+        <div class="form-group__text select">
+          <label for="ys-primary-yangset">Base YANG Set</label>
+          <select id="ys-primary-yangset" class="ys-yangset"></select>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <form id="ys-module-select" class="ys-yangset-required">
+        <div class="form-group label--inline">
+          <div class="form-group__text select">
+            <label for="ys-module">Module(s)</label>
+            <select id="ys-module" multiple=true
+                    data-placeholder="Type here to filter available modules">
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="col">
+      <div class="form-group">
+        <div class="form-group label--inline">
+          <div class="form-group__text select">
+            <label for="ys-secondary-yangset">Compare YANG Set</label>
+            <select id="ys-secondary-yangset" class="ys-yangset"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<br>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col">
+      <div class="form-group">
+        <div class="form-group label--inline">
+          <div class="form-group__text select">
+            <label for="ys-columns">Include columns</label>
+            <select id="ys-columns" multiple
+              data-placeholder="Default: all columns"></select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="form-group">
+        <div class="form-group label--inline">
+          <div class="form-group__text select">
+            <label for="ys-columns-excluded">Exclude columns</label>
+            <select id="ys-columns-excluded" multiple
+              data-placeholder='Exclude "revision" for diffs'></select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="form-group">
+        <div class="form-group label--inline">
+          <div class="form-group__text select">
+            <label for="ys-category">Module catagory</label>
+            <select id="ys-category">
+              <option value="modules" selected>No category</option>
+              <option value="IOS">Native modules</option>
+              <option value="openconfig">OpenConfig modules</option>
+              <option value="ietf">IETF modules</option>
+              <option value="MIB">MIB modules</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="form-group">
+        <div class="form-group label--inline">
+          <div class="form-group__text select">
+            <label id="ys-dataset-label" for="ys-dataset-action">Actions</label>
+            <select id="ys-dataset-action">
+              <option value="dataset">Display dataset</option>
+              <option value="dataset-csv">Download dataset</option>
+              <option value="diff">Display datasets differences</option>
+              <option value="diff-csv">Download dataset differences</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-1">
+      <button id="ys-dataset-btn" class="btn btn--small">
+        Submit
+      </button>
+    </div>
+  </div>
+<div class="row">
+  <div class="col">
+    <div class="responsive-table"">
+      <table id="ys-dataset-table" class="table"></table>
+    </div>
+  </div>
+</div>
+<div id="modalDiv"></div>
+ 
+
+{% endblock body %}
+{% block script %}
+<script>
+$(function() {
+    yangsets.config.yangsetsSelect = 'select.ys-yangset';
+    yangsets.getYangSets();
+    $("#ys-module").chosen({width: "calc(100% - 8rem)"});
+
+    $("#ys-primary-yangset").change(function(e) {
+        let yangset = $("#ys-primary-yangset").val();
+        if (!yangset) {
+            return;
+        }
+        yangtree.getModels(yangset, $("#ys-module")).done(function() {
+          $("#ys-module").trigger("chosen:updated");
+          return;
+        });
+    });
+
+    $(dataset.getColumnList()).each(function (idx, opt) {
+        $("#ys-columns").append(
+            '<option value="'+ opt + '">' + opt + '</option>'
+        );
+    });
+    $("#ys-columns").chosen({width: "calc(100% - 8rem)"});
+    $(dataset.getColumnList()).each(function (idx, opt) {
+        $("#ys-columns-excluded").append(
+            '<option value="'+ opt + '">' + opt + '</option>'
+        );
+    });
+    $("#ys-columns-excluded").chosen({width: "calc(100% - 8rem)"});
+
+    $("#ys-dataset-btn").click(function() {
+        let action = $("#ys-dataset-action").val();
+        let models = $(dataset.config.yangModules).val();
+        let category = $("#ys-category").val()
+
+        switch (action) {
+          case "dataset":
+            dataset.getDataset(models);
+            break;
+          case "dataset-csv":
+            dataset.downloadDataset(models, category);
+            break;
+          case "diff":
+            dataset.getDatasetDiff(models);
+            break;
+          case "diff-csv":
+            dataset.downloadDatasetDiff(models, category);
+            break;
+        }
+    });
+
+    $("#ys-category").change(function () {
+        if ($("#ys-category").val() == "modules") {
+          $("#ys-dataset-action option[value=dataset]").attr("selected", true);
+          $("#ys-dataset-action option[value=dataset]").show();
+          $("#ys-dataset-action option[value=diff]").show();
+        } else {
+          $("#ys-dataset-action option[value=dataset-csv]").attr("selected", true);
+          $("#ys-dataset-action option[value=dataset]").hide();
+          $("#ys-dataset-action option[value=diff]").hide();
+        }
+    });
+});
+</script>
+{% endblock script %}

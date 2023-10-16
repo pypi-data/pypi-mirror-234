@@ -1,0 +1,420 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mapping SNMP OIDs to YANG XPaths &mdash; yangsuite-coverage 3.0.13 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="YANG Diffs" href="diffs.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> yangsuite-coverage
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                3.0.13
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diffs.html">YANG Diffs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mapping SNMP OIDs to YANG XPaths</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#before-using-the-plugin">Before Using the Plugin</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#selecting-device-and-specifying-access">Selecting Device and Specifying Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#match-oids-to-xpaths">Match OIDs to XPaths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-oid">Run OID</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#import-mappings">Import Mappings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#show-mappings">Show Mappings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#export-mappings">Export Mappings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">yangsuite-coverage</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Mapping SNMP OIDs to YANG XPaths</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/snmp.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <section id="mapping-snmp-oids-to-yang-xpaths">
+<h1>Mapping SNMP OIDs to YANG XPaths<a class="headerlink" href="#mapping-snmp-oids-to-yang-xpaths" title="Permalink to this heading">¶</a></h1>
+<p>Network telemetry is traditionally accessed by management tooling that
+consumes SNMP MIBs.  YANG models are definitions of network management
+APIs that can also be consumed by tooling to achieve the same telemetry
+goals.  Many network management systems based off of SNMP MIBS are
+currently in place.  In order to smoothly transition from a MIB based
+management system to a YANG model-based system requires knowledge of
+where the two intersect.  This has proven to be a tedious endeavor
+which involves manually mapping individual MIB OIDs to its YANG model
+equivalency.  This YANG Suite plugin will provide a layer between the
+MIB and YANG data that presents mapping to the user.</p>
+<section id="before-using-the-plugin">
+<h2>Before Using the Plugin<a class="headerlink" href="#before-using-the-plugin" title="Permalink to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Set up device to accept SNMP requests from the yangsuite-coverage plugin
+(please refer to your device configuration manual for details). Two ways to allow
+yangsuite to communicate with device/snmp-server:</p></li>
+</ol>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>Add a community string with “ro” option (read-only mode, most secure):</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>yangsuite-coverage does not need write access.</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Add a new user with password:</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Create a new SNMP user group with security level “v3”.</p></li>
+<li><p>Create a new user:</p>
+<ol class="arabic simple">
+<li><p>Username must be the same as the device’s ssh username.</p></li>
+<li><p>Make sure SNMP’s user authentication method is “MD5”.</p></li>
+</ol>
+</li>
+<li><p>Add user to the newly created SNMP user group with security level “v3”.</p></li>
+</ul>
+</div></blockquote>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Set up device to accept incoming NETCONF requests from yangsuite-coverage plugin.</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Note: please use default ports for NETCONF communication.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="selecting-device-and-specifying-access">
+<h2>Selecting Device and Specifying Access<a class="headerlink" href="#selecting-device-and-specifying-access" title="Permalink to this heading">¶</a></h2>
+<p>Before using other functionalities in the plugin, device and device access mode must be selected. Please follow these steps:</p>
+<ol class="arabic simple">
+<li><p>Select device you have set up before using the plugin</p></li>
+<li><p>Select device access mode from two options:</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Community:</p>
+<ul>
+<li><p>Choose this option if you set up community string with “ro” mode in the device.</p></li>
+<li><p>Fill in the text input box</p></li>
+</ul>
+</li>
+<li><p>SNMPv3 Password:</p>
+<ul>
+<li><p>Choose this option if you set up a user with a “md5” password in the device.</p></li>
+<li><p>Fill in the text input box</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<img alt="Select a device." src="_images/selectdevice.png" />
+</section>
+<section id="match-oids-to-xpaths">
+<h2>Match OIDs to XPaths<a class="headerlink" href="#match-oids-to-xpaths" title="Permalink to this heading">¶</a></h2>
+<p>This functionality will acquire all the existing OIDs on the device, attempt to match OIDs to one XPath
+that exists in the selected YANG module. If an OID cannot be matched to an XPath, the YANG path field under
+the OID field will be blank. Match OIDs to XPaths is designed to save user time from manually doing the mapping
+work. To use the functionality, click on “Match OIDs to XPaths” and follow these steps:</p>
+<ol class="arabic simple">
+<li><p>Select the “Match OIDs to XPaths” tab.</p></li>
+<li><p>Please provide inputs for all the required fields (labeled by red boxes):</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Choose a YANG set from “Select a YANG set” dropdown.</p></li>
+<li><p>Choose a YANG module from the selected YANG set using the “Select YANG module” dropdown.</p></li>
+<li><p>Choose OID to start matching from</p>
+<ul>
+<li><p>Please find a subsection of the MIB tree that you would like to focus your workflow on.</p></li>
+<li><p>By choosing a starting OID in the MIB tree, the plugin will allow you to match and map all the starting OID’s children. Note: you can specify multiple starting OIDs using a comma as a separator in the text input.</p></li>
+<li><p>You can find a starting OID using MIB browsers available online or use MIB Browser (<a class="reference external" href="https://www.ireasoning.com/mibbrowser.shtml">https://www.ireasoning.com/mibbrowser.shtml</a>).</p></li>
+<li><p>Choosing a starting OID closer to the indexes will allow you to match OIDs to XPaths faster.</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>Review and fill in these non-required fields if needed (labeled by blue boxes):</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Choose a file from “Select a mapping file” dropdown if you wish to append new OIDs to XPath matches
+to that selected mapping file. Plugin stores OIDs to XPath matches in a new CSV file by default.</p></li>
+<li><p>Click on “Force SNMP Walk” if you wish to get a fresh list of OIDs from the device for matching.
+Plugin uses a cached list of OIDs from the last “Match OIDs to XPaths” run(s) by default.</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>Click on “Match” button, and wait for the list of OIDs and XPaths to populate below
+the form.</p></li>
+</ol>
+<img alt="Match OIDs to XPaths." src="_images/matchoidstoxpaths.png" />
+</section>
+<section id="run-oid">
+<h2>Run OID<a class="headerlink" href="#run-oid" title="Permalink to this heading">¶</a></h2>
+<p>This functionality is to query the device for the resource using the specified OI- If the OID has children,
+the children of the OID will be queried for values and all the values will be displayed in a dialog box.
+Steps outlined below will be needed to run OID and get results from device:</p>
+<ul class="simple">
+<li><p>Select the “Run OID” tab.</p></li>
+<li><p>Enter an OID in the “Enter OID” field.</p>
+<ul>
+<li><p>Important: please make sure OID is entered in correctly or value(s) will not be displayed.</p></li>
+</ul>
+</li>
+<li><p>Click Run OID and wait for dialog box with results to come up.</p></li>
+</ul>
+<img alt="Run OID" src="_images/runoid.png" />
+</section>
+<section id="import-mappings">
+<h2>Import Mappings<a class="headerlink" href="#import-mappings" title="Permalink to this heading">¶</a></h2>
+<p>This feature can be used to import existing mappings in a .csv file to help you quickly bring up
+mappings and start working again. To import mappings, follow the steps below:</p>
+<ul class="simple">
+<li><p>Select the “Import/Export Mappings” tab.</p></li>
+<li><p>Choose “Import Mappings” button.</p></li>
+<li><p>Select the desired .csv file, click “Load” and wait for the mappings to populate.</p></li>
+<li><p>Go to “Show Mappings” tab.</p></li>
+<li><p>Select a mapping file and click on “Show Mappings” to load the mappings in the CSV file.</p></li>
+</ul>
+<img alt="Import Mappings" src="_images/importmappings.png" />
+</section>
+<section id="show-mappings">
+<h2>Show Mappings<a class="headerlink" href="#show-mappings" title="Permalink to this heading">¶</a></h2>
+<p>This functionality will quickly bring up mappings saved in a .csv file. To show mappings, follow
+the steps below:</p>
+<ul class="simple">
+<li><p>Select the “Show Mappings” tab.</p></li>
+<li><p>Select a file from “Select mapping file” dropdown.</p></li>
+<li><p>Select the desired file, click “Show Mappings” and wait for the mappings to populate.</p></li>
+</ul>
+<img alt="Show Mappings" src="_images/showmappings.png" />
+</section>
+<section id="export-mappings">
+<h2>Export Mappings<a class="headerlink" href="#export-mappings" title="Permalink to this heading">¶</a></h2>
+<p>This functionality will allow you to get a copy of the mapped file saved in the
+YANG Suite data directory. Please follow the steps below:</p>
+<ul class="simple">
+<li><p>Select the “Import/Export Mappings” tab.</p></li>
+<li><p>Select a file from “Select a mapping file” dropdown.</p></li>
+<li><p>Choose “Export Mappings” button.</p></li>
+<li><p>A copy of the mapped .csv file following the format will be exported to your
+browser’s configured downloads directory.</p></li>
+</ul>
+<img alt="Export Mappings" src="_images/exportmappings.png" />
+</section>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Permalink to this heading">¶</a></h2>
+<p>When the mapping process is done, the mappings (Readable OID and XPaths) will populate on the page. The populated
+mappings are based on the live device as well as the mappings from the plugin’s local repository of mapppings. The
+OIDs that do not have a YANG XPath matched to them are not “mapped” by the results gathered from the device or from
+previous manual mapping work, therefore the OIDs need manual mapping.</p>
+<p>Note: mapped files are saved in &lt;YANG Suite data directory&gt;/users/&lt;username&gt;/mibyang_mappings.</p>
+</section>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="diffs.html" class="btn btn-neutral" title="YANG Diffs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017-2018, Cisco Systems, Inc.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'3.0.13',
+            LANGUAGE:'en',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/documentation_options.js"></script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="_static/sphinx_highlight.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

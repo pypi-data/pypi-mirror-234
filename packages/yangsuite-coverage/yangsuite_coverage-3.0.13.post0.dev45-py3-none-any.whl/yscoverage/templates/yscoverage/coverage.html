@@ -1,0 +1,140 @@
+{% extends 'yangsuite/base-cui.html' %}
+{% load static %}
+{% block javascript %}
+<script src="{% static 'yscoverage/js/coverage.js' %}"></script>
+{% endblock javascript %}
+{% block breadcrumbs %}<li>YANG coverage</li>{% endblock %}
+{% block page-title %}Check model coverage{% endblock %}
+{% block body %}
+{% csrf_token %}
+<div class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <div class="form-group__text select">
+                <label for="ycov-devices">Get running config from device</label>
+                <select id="ycov-devices">
+                  <option value="" disabled selected>(none selected)</option>
+                  {% for device in devices %}
+                  <option value="{{ device.key }}" title="{{ device.description }}">{{ device.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="col-auto">
+            <button id="ycov-clear-cfg" class="btn btn--small btn--negative">
+              Clear config</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <textarea id="ycov-cli" class="textarea" wrap="soft" rows="25"
+                      placeholder="Enter or paste configuration here or get config from device..."></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <textarea id="ycov-xml" class="textarea" wrap="soft" rows="25" readonly
+                      placeholder="XML equivalent..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="row">
+          <div class="col">
+            <div class="form-group">
+              <div class="form-group__text select">
+                <label for="ycov-oses">Select OS</label>
+                <select id="ycov-oses">
+                  <option value="" disabled selected>(none)</option>
+                  <option value="xe">IOS-XE</option>
+                  <option value="xr">IOS-XR</option>
+                  <option value="nx">NXOS</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-group">
+              <div class="form-group__text select">
+                <label for="ycov-releases">Select release</label>
+                <select id="ycov-releases"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <button id="ycov-coverage" class="btn btn--small btn--primary">
+              Get model coverage</button>
+            <button id="ycov-coverage-download" class="btn btn--small">
+              Download results</button>
+            <button id="ycov-clear-result" class="btn btn--small btn--negative">
+              Clear results</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div id="ycov-models"></div>
+            <div id="ycov-results"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock body %}
+{% block script %}
+<script>
+$(function() {
+
+    $("#ycov-coverage-download").hide();
+    $("#ycov-clear-result").hide();
+    $("#ycov-clear-cfg").hide();
+
+    $("#ycov-devices").change(function(e) {
+        if ($("#ycov-devices").val() != "none") {
+            coverage.getConfig($("#ycov-devices").val());
+        }
+    });
+
+    $("#ycov-oses").change(function(e) {
+        $("#ycov-releases").empty();
+        if ($("#ycov-oses").val() != "none") {
+            coverage.getReleases($("#ycov-oses").val());
+        }
+    });
+
+    $("#ycov-coverage").click(function(e) {
+        if (!$("#ycov-releases").val() || !$("#ycov-cli").val()) {
+            return;
+        }
+        coverage.getCoverage($("#ycov-releases").val());
+    });
+
+    $("#ycov-coverage-download").click(function() {
+        coverage.downloadResult();
+    });
+
+    $("#ycov-clear-result").click(function(e) {
+        $("#ycov-coverage-download").hide();
+        $("#ycov-clear-result").hide();
+        $("#ycov-models").empty();
+        $("#ycov-results").empty();
+        $("#ycov-xml").val("");
+        $("#ycov-xml").attr("rows", 25);
+    });
+
+    $("#ycov-clear-cfg").click(function(e) {
+        $("#ycov-devices").val("");
+        $("#ycov-cli").val("");
+        $("#ycov-clear-cfg").hide();
+    });
+
+});
+</script>
+{% endblock script %}

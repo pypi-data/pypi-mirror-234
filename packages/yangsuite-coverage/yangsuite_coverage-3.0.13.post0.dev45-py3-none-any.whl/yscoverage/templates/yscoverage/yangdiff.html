@@ -1,0 +1,96 @@
+{% extends 'yangsuite/base-cui.html' %}
+{% load static %}
+{% block javascript %}
+<script src="{% static 'ysfilemanager/js/yangsets.js' %}"></script>
+<script src="{% static 'yscoverage/js/coverage.js' %}"></script>
+{% endblock javascript %}
+{% block breadcrumbs %}<li>YANG coverage</li>{% endblock %}
+{% block page-title %}Check model coverage{% endblock %}
+{% block body %}
+{% csrf_token %}
+<div class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col">
+        <div class="container-fluid">
+          <div class="row">
+            <label><strong>Running config from device</strong></label>
+            <select id="ycov-devices">
+                <option value="none">Device</option>
+                {% for device in devices %}
+                <option value="{{ device }}">{{ device }}</option>
+                {% endfor %}
+            </select>
+            <button id="ycov-clear-cfg">Clear config</button>
+          </div>
+          <div class="row">
+            <textarea id="ycov-cli" wrap="soft" rows="25" cols="70%" placeholder="Enter or paste configuration here or get config from device..."></textarea>
+          </div>
+          <div class="row">
+            <textarea id="ycov-xml" wrap="soft" rows="25" cols="70%" placeholder="XML equivalent..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="container-fluid">
+          <div class="row">
+            <select id="ycov-oses">
+              <option selected="true" value="none">Choose OS</option>
+              <option value="xe">IOS-XE</option>
+              <option value="xr">IOS-XR</option>
+              <option value="nx">NXOS</option>
+            </select>
+            <select id="ycov-releases"></select>
+          </div>
+          <div class="row">
+            <button id="ycov-coverage">Model Coverage</button>
+            <button id="ycov-clear-result">Clear results</button>
+          </div>
+          <div class="row">
+            <div id="ycov-models"></div>
+          </div>
+          <div class="row">
+            <div id="ycov-results"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock body %}
+{% block script %}
+<script>
+$(function() {
+
+    $("#ycov-devices").change(function(e) {
+        if ($("#ycov-devices").val() != "none") {
+            coverage.getConfig($("#ycov-devices").val());
+        }
+    });
+
+    $("#ycov-oses").change(function(e) {
+        $("#ycov-releases").empty();
+        if ($("#ycov-oses").val() != "none") {
+            coverage.getReleases($("#ycov-oses").val());
+        }
+    });
+
+    $("#ycov-coverage").click(function(e) {
+        coverage.getCoverage($("#ycov-releases").val());
+    });
+
+    $("#ycov-clear-result").click(function(e) {
+        $("#ycov-models").empty();
+        $("#ycov-results").empty();
+        $("#ycov-xml").val("");
+        $("#ycov-xml").attr("rows", 25);
+    });
+
+    $("#ycov-clear-cfg").click(function(e) {
+        $("#ycov-devices").val("none");
+        $("#ycov-cli").val("");
+    });
+
+});
+</script>
+{% endblock script %}
