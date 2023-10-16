@@ -1,0 +1,74 @@
+Metadata-Version: 2.1
+Name: atomic-lines
+Version: 0.1.1rc4
+Summary: Helpers for asynchronous line processing. Some asynchronous readline implementations consume data if a readline() call times out. This is a wrapper for those implementations, guranteeing that either full lines are returned or nothing.
+Keywords: readline async
+Author-Email: Malte Vesper <malte.vesper@gmx.net>
+License: MIT
+Classifier: Development Status :: 4 - Beta
+Classifier: Framework :: AsyncIO
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Typing :: Typed
+Project-URL: Documentation, https://maltevesper.github.io/atomiclines/
+Project-URL: Repository, https://github.com/maltevesper/atomiclines
+Project-URL: Changelog, https://github.com/maltevesper/atomiclines/blob/main/CHANGELOG.md
+Requires-Python: >=3.11
+Requires-Dist: pyyaml>=6.0.1
+Requires-Dist: more-itertools>=10.1.0
+Description-Content-Type: text/markdown
+
+# Atomic-Lines
+
+# Intro
+A toy project, wrapping asynchronous one byte readers into a sane(?) readline semantic.
+If no end of line is found the request is considered timedout, and the data is kept in the buffer,
+otherwise lines are returned (without the EOL character) for further processing.
+
+The main goal is to help wrap i.e. serial access or other apis which consume data if readline times out.
+
+For more userfriendly documentation see https://maltevesper.github.io/atomiclines/.
+
+# Logging configuration
+
+Logging can be configured by pointing the environment variable `ATOMICLINES_LOG_CONFIG` to a yaml file.
+
+```
+ATOMICLINES_LOG_CONFIG=logging_configuration.yaml pytest
+```
+
+The yaml file, should contain a logging dict. Example file:
+
+```
+version: 1
+disable_existing_loggers: true
+
+formatters:
+    standard:
+        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    error:
+        format: "%(levelname)s <PID %(process)d:%(processName)s> %(name)s.%(funcName)s(): %(message)s"
+
+handlers:
+    console:
+        class: logging.StreamHandler
+        level: DEBUG
+        formatter: standard
+        stream: ext://sys.stdout
+
+loggers:
+    atomiclines:
+        level: INFO
+        handlers: [console]
+        propogate: no
+```
+
+## For Developers
+
+### Bash Completion for pytest
+```
+pip install argcomplete # is a dev dependency too
+activate-global-python-argcomplete
+```
