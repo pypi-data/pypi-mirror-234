@@ -1,0 +1,35 @@
+Metadata-Version: 2.1
+Name: excelbdd
+Version: 1.0.0
+Summary: conduct BDD by excel feature files
+Home-page: https://dev.azure.com/simplopen/ExcelBDD
+Author: Zhang Keqiang Mike
+Author-email: zhangkq2000@hotmail.com
+Keywords: BDD,Excel,SBE
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Requires-Dist: openpyxl
+
+Use Excel file as BDD feature file, get example data from excel files, support automation tests
+
+```
+#pip install excelbdd
+import pytest
+from excelbdd.behavior import get_example_list
+import FizzBuzz
+
+excelBDDFile = "path of excel file" 
+@pytest.mark.parametrize("HeaderName, Number1, Output1, Number2, Output2, Number3, Output3, Number4, Output4",
+                        get_example_list(excelBDDFile,"FizzBuzz"))
+def test_FizzBuzz(HeaderName, Number1, Output1, Number2, Output2, Number3, Output3, Number4, Output4):
+    assert FizzBuzz.handle(Number1) == Output1
+    assert FizzBuzz.handle(Number2) == Output2
+    assert FizzBuzz.handle(Number3) == Output3
+    assert FizzBuzz.handle(Number4) == Output4
+```    
+
+more information at [ExcelBDD Guideline by Python](https://dev.azure.com/simplopen/ExcelBDD/_wiki/wikis/ExcelBDD.wiki/80/ExcelBDD-Guideline-by-Python)
