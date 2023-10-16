@@ -1,0 +1,123 @@
+# -*- coding: utf-8 -*-
+from setuptools import setup
+
+packages = \
+['metaphor',
+ 'metaphor.airflow_plugin',
+ 'metaphor.airflow_plugin.lineage',
+ 'metaphor.azure_data_factory',
+ 'metaphor.bigquery',
+ 'metaphor.bigquery.lineage',
+ 'metaphor.bigquery.profile',
+ 'metaphor.common',
+ 'metaphor.custom',
+ 'metaphor.custom.data_quality',
+ 'metaphor.custom.governance',
+ 'metaphor.custom.lineage',
+ 'metaphor.custom.metadata',
+ 'metaphor.dbt',
+ 'metaphor.dbt.cloud',
+ 'metaphor.dbt.generated',
+ 'metaphor.fivetran',
+ 'metaphor.glue',
+ 'metaphor.looker',
+ 'metaphor.metabase',
+ 'metaphor.monte_carlo',
+ 'metaphor.mssql',
+ 'metaphor.mysql',
+ 'metaphor.postgresql',
+ 'metaphor.postgresql.profile',
+ 'metaphor.postgresql.usage',
+ 'metaphor.power_bi',
+ 'metaphor.redshift',
+ 'metaphor.redshift.lineage',
+ 'metaphor.redshift.profile',
+ 'metaphor.snowflake',
+ 'metaphor.snowflake.lineage',
+ 'metaphor.snowflake.profile',
+ 'metaphor.synapse',
+ 'metaphor.tableau',
+ 'metaphor.thought_spot',
+ 'metaphor.unity_catalog']
+
+package_data = \
+{'': ['*'], 'metaphor.common': ['docs/*']}
+
+install_requires = \
+['PyYAML>=6.0,<7.0',
+ 'aws-assume-role-lib>=2.10.0,<3.0.0',
+ 'boto3>=1.28.57,<2.0.0',
+ 'botocore>=1.31.57,<2.0.0',
+ 'canonicaljson>=2.0.0,<3.0.0',
+ 'jsonschema>=4.18.6,<5.0.0',
+ 'metaphor-models==0.27.0',
+ 'pydantic>=1.10.0,<2.0.0',
+ 'python-dateutil>=2.8.1,<3.0.0',
+ 'requests>=2.28.1,<3.0.0',
+ 'smart-open>=6.3.0,<7.0.0']
+
+extras_require = \
+{':extra == "all" or extra == "looker"': ['GitPython>=3.1.35,<4.0.0'],
+ 'all': ['asyncpg>=0.27.0,<0.28.0',
+         'azure-identity>=1.14.0,<2.0.0',
+         'azure-mgmt-datafactory>=3.1.0,<4.0.0',
+         'databricks-cli>=0.17.3,<0.18.0',
+         'google-cloud-bigquery>=3.1.0,<4.0.0',
+         'google-cloud-logging>=3.5.0,<4.0.0',
+         'lkml>=1.3.1,<2.0.0',
+         'looker-sdk>=23.6.0,<24.0.0',
+         'msal>=1.20.0,<2.0.0',
+         'pycarlo>=0.8.1,<0.9.0',
+         'pymssql==2.2.7',
+         'pymysql>=1.0.2,<2.0.0',
+         'snowflake-connector-python>=3.0.3,<3.1.0',
+         'SQLAlchemy>=1.4.46,<2.0.0',
+         'sql-metadata>=2.8.0,<3.0.0',
+         'sqllineage>=1.3.8,<1.4.0',
+         'tableauserverclient>=0.25,<0.26',
+         'thoughtspot_rest_api_v1==1.5.3'],
+ 'bigquery': ['google-cloud-bigquery>=3.1.0,<4.0.0',
+              'google-cloud-logging>=3.5.0,<4.0.0',
+              'sql-metadata>=2.8.0,<3.0.0'],
+ 'datafactory': ['azure-identity>=1.14.0,<2.0.0',
+                 'azure-mgmt-datafactory>=3.1.0,<4.0.0'],
+ 'looker': ['lkml>=1.3.1,<2.0.0',
+            'looker-sdk>=23.6.0,<24.0.0',
+            'sql-metadata>=2.8.0,<3.0.0'],
+ 'metabase': ['sql-metadata>=2.8.0,<3.0.0'],
+ 'monte-carlo': ['pycarlo>=0.8.1,<0.9.0'],
+ 'mssql': ['pymssql==2.2.7'],
+ 'mysql': ['pymysql>=1.0.2,<2.0.0', 'SQLAlchemy>=1.4.46,<2.0.0'],
+ 'postgresql': ['asyncpg>=0.27.0,<0.28.0'],
+ 'power-bi': ['msal>=1.20.0,<2.0.0', 'sql-metadata>=2.8.0,<3.0.0'],
+ 'redshift': ['asyncpg>=0.27.0,<0.28.0', 'sqllineage>=1.3.8,<1.4.0'],
+ 'snowflake': ['snowflake-connector-python>=3.0.3,<3.1.0',
+               'sql-metadata>=2.8.0,<3.0.0'],
+ 'synapse': ['pymssql==2.2.7'],
+ 'tableau': ['sqllineage>=1.3.8,<1.4.0', 'tableauserverclient>=0.25,<0.26'],
+ 'throughtspot': ['thoughtspot_rest_api_v1==1.5.3'],
+ 'unity-catalog': ['databricks-cli>=0.17.3,<0.18.0']}
+
+entry_points = \
+{'console_scripts': ['metaphor = metaphor.__main__:main']}
+
+setup_kwargs = {
+    'name': 'metaphor-connectors',
+    'version': '0.12.62',
+    'description': "A collection of Python-based 'connectors' that extract metadata from various sources to ingest into the Metaphor app.",
+    'long_description': '<a href="https://metaphor.io"><img src="https://github.com/MetaphorData/connectors/raw/main/logo.png" width="300" /></a>\n\n# Metaphor Connectors\n\n[![Codecov](https://img.shields.io/codecov/c/github/MetaphorData/connectors)](https://app.codecov.io/gh/MetaphorData/connectors/tree/main)\n[![CodeQL](https://github.com/MetaphorData/connectors/workflows/CodeQL/badge.svg)](https://github.com/MetaphorData/connectors/actions/workflows/codeql-analysis.yml)\n[![PyPI Version](https://img.shields.io/pypi/v/metaphor-connectors)](https://pypi.org/project/metaphor-connectors/)\n![Python version 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)\n![PyPI Downloads](https://img.shields.io/pypi/dm/metaphor-connectors)\n[![Docker Pulls](https://img.shields.io/docker/pulls/metaphordata/connectors)](https://hub.docker.com/r/metaphordata/connectors)\n[![License](https://img.shields.io/github/license/MetaphorData/connectors)](https://github.com/MetaphorData/connectors/blob/master/LICENSE)\n\nThis repository contains a collection of Python-based "connectors" that extract metadata from various sources to ingest into the [Metaphor](https://metaphor.io) platform.\n\n## Installation\n\nThis package requires Python 3.8+ installed. You can verify the version on your system by running the following command,\n\n```shell\npython -V  # or python3 on some systems\n```\n\nOnce verified, you can install the package using [pip](https://docs.python.org/3/installing/index.html),\n\n```shell\npip install "metaphor-connectors[all]"  # or pip3 on some systems\n```\n\nThis will install all the connectors and required dependencies. You can also choose to install only a subset of the dependencies by installing the specific [extra](https://packaging.python.org/tutorials/installing-packages/#installing-setuptools-extras), e.g.\n\n```shell\npip install "metaphor-connectors[snowflake]"\n```\n\nSimilarly, you can also install the package using `requirements.txt` or `pyproject.toml`.\n\n## Docker\n\nWe automatically push a [docker image](https://hub.docker.com/r/metaphordata/connectors) to Docker Hub as par of the CI/CD. See [this page](./docs/docker.md) for more details.\n\n## Connectors\n\nEach connector is placed under its own directory under [metaphor](./metaphor) and extends the `metaphor.common.BaseExtractor` class.\n\n| Connector Name                                                | Metadata                                 |\n|---------------------------------------------------------------|------------------------------------------|  \n| [airflow_plugin](metaphor/airflow_plugin/README.md)           | Lineage                                  |\n| [azure_data_factory](metaphor/azure_data_factory/README.md)   | Lineage, Pipeline                        |\n| [bigquery](metaphor/bigquery/README.md)                       | Schema, description, statistics, queries |\n| [bigquery.lineage](metaphor/bigquery/lineage/README.md)       | Lineage                                  |\n| [bigquery.profile](metaphor/bigquery/profile/README.md)       | Data profile                             |\n| [dbt](metaphor/dbt/README.md)                                 | dbt model, test, lineage                 |\n| [dbt.cloud](metaphor/dbt/cloud/README.md)                     | dbt model, test, lineage                 |\n| [fivetran](metaphor/fivetran/README.md)                       | Lineage, Pipeline                        |\n| [glue](metaphor/glue/README.md)                               | Schema, description                      |\n| [looker](metaphor/looker/README.md)                           | Looker view, explore, dashboard, lineage |\n| [custom.data_quality](metaphor/custom/data_quality/README.md) | Data quality                             |\n| [custom.governance](metaphor/custom/governance/README.md)     | Ownership, tags, description             |\n| [custom.lineage](metaphor/custom/lineage/README.md)           | Lineage                                  |\n| [custom.metadata](metaphor/custom/metadata/README.md)         | Custom metadata                          |\n| [metabase](metaphor/metabase/README.md)                       | Dashboard, lineage                       |\n| [monte_carlo](metaphor/monte_carlo/README.md)                 | Data monitor                             |\n| [mssql](metaphor/mssql/README.md)                             | Schema                                   |\n| [mysql](metaphor/mysql/README.md)                             | Schema, description                      |\n| [postgresql](metaphor/postgresql/README.md)                   | Schema, description, statistics          |\n| [postgresql.profile](metaphor/postgresql/profile/README.md)   | Data profile                             |\n| [postgresql.usage](metaphor/postgresql/usage/README.md)       | Usage                                    |\n| [power_bi](metaphor/power_bi/README.md)                       | Dashboard, lineage                       |\n| [redshift](metaphor/redshift/README.md)                       | Schema, description, statistics, queries |\n| [redshift.lineage](metaphor/redshift/lineage/README.md)       | Lineage                                  |\n| [redshift.profile](metaphor/redshift/profile/README.md)       | Data profile                             |\n| [snowflake](metaphor/snowflake/README.md)                     | Schema, description, statistics, queries |\n| [snowflake.lineage](metaphor/snowflake/lineage/README.md)     | Lineage                                  |\n| [snowflake.profile](metaphor/snowflake/profile/README.md)     | Data profile                             |\n| [synapse](metaphor/synapse//README.md)                        | Schema, queries                          |\n| [tableau](metaphor/tableau/README.md)                         | Dashboard, lineage                       |\n| [thought_spot](metaphor/thought_spot/README.md)               | Dashboard, lineage                       |\n| [unity_catalog](metaphor/unity_catalog/README.md)             | Schema, description                      |\n\n## Development\n\nSee [Development Environment](docs/develop.md) for more instructions on how to setup your local development environment.\n\n## Custom Connectors\n\nSee [Adding a Custom Connector](docs/custom.md) for instructions and a full example on how to create your custom connectors.\n',
+    'author': 'Metaphor',
+    'author_email': 'dev@metaphor.io',
+    'maintainer': 'None',
+    'maintainer_email': 'None',
+    'url': 'https://metaphor.io',
+    'packages': packages,
+    'package_data': package_data,
+    'install_requires': install_requires,
+    'extras_require': extras_require,
+    'entry_points': entry_points,
+    'python_requires': '>=3.8.1,<4.0',
+}
+
+
+setup(**setup_kwargs)
