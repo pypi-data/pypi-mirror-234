@@ -1,0 +1,132 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dls-dodal"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+description = "Ophyd devices and other utils that could be used across DLS beamlines"
+dependencies = [
+    "ophyd",
+    "ophyd-async",
+    "bluesky",
+    "pyepics",
+    "dataclasses-json",
+    "pillow",
+    "requests",
+    "graypy",
+    "pydantic<2.0",
+    "opencv-python-headless", # For pin-tip detection.
+    "aioca",                  # Required for CA support with ophyd-async.
+    "p4p",                    # Required for PVA support with ophyd-async.
+]
+dynamic = ["version"]
+license.file = "LICENSE"
+readme = "README.rst"
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "mypy",
+    "mockito",
+    "pipdeptree",
+    "pre-commit",
+    "pydata-sphinx-theme>=0.12",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-random-order",
+    "ruff",
+    "sphinx-autobuild",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "tox-direct",
+    "types-requests",
+    "types-mock",
+]
+
+[project.urls]
+GitHub = "https://github.com/DiamondLightSource/dodal"
+
+[[project.authors]] # Further authors may be added by duplicating this section
+email = "dominic.oram@diamond.ac.uk"
+name = "Dominic Oram"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dodal = ["*.txt"]
+
+[tool.setuptools_scm]
+write_to = "src/dodal/_version.py"
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true # Ignore missing stubs in imported modules
+
+[tool.pytest.ini_options]
+# Run pytest with all our checkers, and don't spam us with massive tracebacks on error
+markers = [
+    "s03: marks tests as requiring the s03 simulator running (deselect with '-m \"not s03\"')",
+]
+addopts = """
+    --tb=native -vv --doctest-modules --doctest-glob="*.rst"
+    --cov=dodal --cov-report term --cov-report xml:cov.xml
+    """
+# Doctest python code in docs, python code in src docstrings, test functions in tests
+testpaths = "docs src tests"
+
+[tool.coverage.run]
+data_file = "/tmp/dodal.coverage"
+
+[tool.coverage.paths]
+# Tests are run from installed location, map back to the src directory
+source = ["src", "**/site-packages/"]
+
+# tox must currently be configured via an embedded ini string
+# See: https://github.com/tox-dev/tox/issues/999
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+skipsdist=True
+
+[testenv:{pre-commit,mypy,pytest,docs}]
+# Don't create a virtualenv for the command, requires tox-direct plugin
+direct = True
+passenv = *
+allowlist_externals =
+    pytest
+    pre-commit
+    mypy
+    sphinx-build
+    sphinx-autobuild
+commands =
+    pytest: pytest -m 'not s03' {posargs}
+    mypy: mypy src tests --ignore-missing-imports --no-strict-optional {posargs}
+    pre-commit: pre-commit run --all-files {posargs}
+    docs: sphinx-{posargs:build -EW --keep-going} -T docs build/html
+"""
+
+
+[tool.ruff]
+src = ["src", "tests"]
+line-length = 88
+extend-ignore = [
+    "E501",  # Line too long
+    "F811", # support typing.overload decorator
+]
+select = [
+    "C4",   # flake8-comprehensions - https://beta.ruff.rs/docs/rules/#flake8-comprehensions-c4
+    "E",    # pycodestyle errors - https://beta.ruff.rs/docs/rules/#error-e
+    "F",    # pyflakes rules - https://beta.ruff.rs/docs/rules/#pyflakes-f
+    "W",    # pycodestyle warnings - https://beta.ruff.rs/docs/rules/#warning-w
+    "I001", # isort
+]
