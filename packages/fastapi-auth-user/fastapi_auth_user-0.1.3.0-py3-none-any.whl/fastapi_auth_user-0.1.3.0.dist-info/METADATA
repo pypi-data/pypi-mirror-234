@@ -1,0 +1,109 @@
+Metadata-Version: 2.1
+Name: fastapi-auth-user
+Version: 0.1.3.0
+Summary: auth user
+Author: Vittalius
+Author-email: Vittalius@users.noreply.github.com
+Requires-Python: >=3.11,<4.0
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: alembic (>=1.12.0,<2.0.0)
+Requires-Dist: bcrypt (>=4.0.1,<5.0.0)
+Requires-Dist: fastapi (>=0.95.0,<0.96.0)
+Requires-Dist: jinja2 (>=3.1.2,<4.0.0)
+Requires-Dist: passlib (>=1.7.4,<2.0.0)
+Requires-Dist: psycopg2 (>=2.9.7,<3.0.0)
+Requires-Dist: psycopg2-binary (>=2.9.7,<3.0.0)
+Requires-Dist: pyjwt (>=2.6.0,<3.0.0)
+Requires-Dist: python-decouple (>=3.8,<4.0)
+Requires-Dist: python-dotenv (>=1.0.0,<2.0.0)
+Requires-Dist: python-jose (>=3.3.0,<4.0.0)
+Requires-Dist: python-multipart (>=0.0.6,<0.0.7)
+Requires-Dist: sqlalchemy (>=2.0.8,<3.0.0)
+Requires-Dist: uvicorn (>=0.21.1,<0.22.0)
+Description-Content-Type: text/markdown
+
+<p align="center">
+ <img width="100px" src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="FastAPI">
+</p>
+<p align="center">
+    <em>Default auth service based on FastApi framework</em>
+</p>
+
+## Installation
+
+<div class="termy">
+
+```console
+$ pip install fastapi-auth-user
+
+or
+
+for poetry:
+
+$ poetry init
+$ poetry add fastapi-auth-user
+```
+</div>
+
+## Example
+
+### Create it
+
+* Create a file `main.py` with:
+
+```Python
+import uvicorn
+from fastapi_auth_user import auth_app
+
+
+if __name__ == "__main__":
+    uvicorn.run(auth_app, host="localhost", port=3000)
+```
+### Run it
+
+Run the server with:
+
+<div class="termy">
+
+```console
+$ poetry run main.py or $ python3 main.py
+
+INFO:  Started server process [12484]
+INFO:  Waiting for application startup.
+INFO:  Application startup complete.
+INFO:  Uvicorn running on http://localhost:3000 (Press CTRL+C to quit)
+```
+
+</div>
+
+### Check it
+
+Open your browser at <a href="http://localhost:3000/docs" class="external-link" target="_blank">http://localhost:3000/docs.
+
+You will see:
+![img.png](images/img.png)
+
+You already created an API that:
+
+* All method __CRUD__ for __USER__ model`.
+* All method __CRUD__ for __Role__ model`.
+* Login user with oauth2
+* Profile this user
+
+## Env file
+<div class="termy">
+
+```console
+DB_USER=<YOU USER NAME DB>                      #'postgres'
+DB_PASSWORD=<YOU DATABASE PASSWORD>             #'root'
+DB_HOST=<YOU DATABASE HOST>                     #'localhost'
+DB_NAME=<YOU DATABASE NAME>                     #'auth_db'
+DATABASE_URL=<YOU DATABASE URL>                 #'postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}'
+
+ACCESS_TOKEN_EXPIRE_MINUTES=<TIME FOR TOKEN>    #30
+SECRET_KEY=<SECRET KEY>                         #'secret_key'
+ALGORITHM=<HASH ALGORITHM>                      #'HS256'
+```
+
+</div>
