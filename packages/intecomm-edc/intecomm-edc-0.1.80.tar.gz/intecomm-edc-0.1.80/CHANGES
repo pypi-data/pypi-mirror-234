@@ -1,0 +1,280 @@
+Changes
+=======
+
+0.1.79
+------
+- bump edc 0.5.33
+- migrations to change from edc-next-appointment to edc-appointment
+
+0.1.78
+------
+- bump edc 0.5.32
+
+0.1.77
+------
+- bump edc 0.5.31
+
+0.1.76
+------
+- bump edc 0.5.30
+- close appointment window gap for facility arm visits 1000->1010
+- no longer require next_appointment CRF for community arm
+- update tests for changes in edc, especially for changes to
+  edc-appointment and appointment skipping.
+- notes for migrations:
+  - drop edc-visit-tracking tables and reset migrations before migrate:
+        drop table edc_visit_tracking_historicalsubjectvisitmissed;
+        drop table edc_visit_tracking_subjectvisitmissed;
+        drop table edc_visit_tracking_historicalsubjectvisit;
+        drop table edc_visit_tracking_subjectvisitmissed_missed_reasons;
+        drop table edc_visit_tracking_subjectvisitmissedreasons;
+        drop table edc_visit_tracking_subjectvisitmissed;
+        drop table edc_visit_tracking_subjectvisit;
+        drop table edc_visit_tracking_visitreasons;
+        delete from django_migrations where app="edc_visit_tracking";
+  - manage.py migrate
+  - manage.py update_metadata --delete_metadata --delete_references
+  - manage.py update_skipped_appointments
+
+
+0.1.75
+------
+- refactor handling of missed appointments in facility arm using
+  new appt_status SKIPPED_APPT from edc-appointment
+- refactor code abrevviations inte/comm to facility/community
+- bump edc=0.5.29 (before migrating drop edc-visit-tracking tables)
+- after migrate, run management commands update_skipped and
+  update_metadata
+
+0.1.69
+------
+- major refactor of approach to hiding legal names for Uganda
+
+0.1.68
+------
+- minor update to clinical note
+
+0.1.67
+------
+- bump intecomm-form-validators==0.1.43
+- accept 0 for amount paid value (clinical review)
+- add DONT KNOW option to family history choices
+- add clinical note to PRN forms
+
+0.1.64
+------
+- bump edc to 0.5.24
+- ICECAP-A translation to sw
+- other minor translations for sw
+
+0.1.63
+------
+- bump edc to 0.5.23
+- addresses issue with names (PII) fields not showing despite
+  having correct perms
+
+
+0.1.62
+------
+- simplify death report model and aeinitial model
+- Update death/aeinitial form/admin classes and PDF report classes
+- update action items for simplified death/aeinitial model
+- add hospitalization form
+- use get_adverse_event_app_label func instead of directly accessing
+  settings attr.
+
+0.1.60
+------
+- manipulate changeform data to remove legal and familiar name
+  if required
+- set initial data on modeladmin class instead of via querystring
+- add prn and unscheduled forms to baseline schedule
+- bump edc 0.5.20
+
+0.1.59
+------
+- add country to template listboard context. Show default
+  patientlog.__str__ in subject column for uganda.
+
+0.1.57
+------
+- fix baseline visit definition by adding missing unscheduled
+  crfs/requisitions
+
+0.1.53 - 0.1.56
+---------------
+- bump edc-he 0.1.21 (included in edc)
+- bump edc 0.5.18
+
+0.1.52
+------
+- minor fix where HE patient not showing as required when expected
+- fix where model form were only looking for completed HE forms
+  within the same visit.
+- move more logic out to edc-he and re-import as base classes
+- add EDC_HE_xxxx settings attributes
+- bump edc-he to 0.1.16
+
+0.1.50
+------
+- change HE householdhead/patient choices to FKs: ethnicity,
+  employment, religion; filter list_data for these FKs by country
+  in admin; migrate data.
+
+0.1.49
+------
+- refactor next appointment
+    - move some logic to edc-next-appointment and require
+      edc-next-appointment
+    - move HealthFacility and HealthFacilityType to edc-facility
+    - use data migrations to change FKs to healthfacility on models
+      NextAppointment, HealthTalkLog, IdentifierFormat
+- improve patient_followup_call changelist
+- health economics WIP
+- edc == 0.5.14
+
+0.1.48
+------
+- add migrations for subject locator Meta verbose name
+
+0.1.47
+------
+- bump edc to 0.5.10
+
+0.1.46
+------
+- use ModelAdmin mixin to remove PII/encrypted data if user
+  does not have perms
+- set EDC_LOCATOR_LOCATOR_MODEL to local proxy model of
+  SubjectLocator
+- create local SubjectLocatorAction class so site_prns and locator
+  links point to the changelist of the local proxy model of
+  SubjectLocator
+- link subject locator changelist to patient followup call
+- improve patient followup call changelist
+- add familiar_name to Patient Log Report
+- bump edc to 0.5.9
+
+
+0.1.45
+------
+- add management command to print patient log reference PDF
+- shorten long field names
+- bump intecomm-form-validators to 0.1.34
+- bump edc to 0.5.8
+
+0.1.42
+------
+- bump edc to 0.5.6
+
+0.1.41
+------
+- use rx_init factory on model HivReview to match those used on
+  HivInitialReview
+- remove redundant BP measures from HtnReview, see Vitals
+- set missing changelist template on PatientCallAdmin
+- bump edc to 0.5.5
+
+0.1.40
+------
+- remove unique constraint on legal_name, replace with
+  legal_name + initials
+- AeFollowup inspect arm when getting next action
+- use SiteModelMixin, SiteModelAdminMixin consistently
+- use BaseUuidModel.Meta consistently
+- inspect arm on redirects to listboards
+- offschedule next action set to EndOfStudy action
+- remove DataManager special perms mixin
+- refactor navigation between changelists and forms
+- update visit schedule to include gap days
+- add hiv_test, dm_test, htn_test to reference config
+- bump edc 0.5.4
+
+0.1.39
+------
+- default model manager changed from `on_site` to `objects`
+- fix modelform not raising ValidationError for IntegrityErrors
+  for unique field across sites.
+- fix forms not redirecting to PatientLog changelist on cancel / delete
+- add validation to prevent adding patient_log to a second group
+- fix where FKs not limiting for current site on modelform
+- fix inconsistent ModelAdmin class declarations
+- add missing form class to some ModelAdmin classes
+
+0.1.38
+------
+- add unique constraint on identifier fields in subject screening
+- pass screening identifier to consent refusal form instead of
+  subject screening id
+- pass patient log identifier to subject screening instead of patient
+  log id
+- fix performance issue with PatientLog changelist
+- configure all forms referenced on the PatientLog changelist to
+  redirect back to the changelist for save, delete, cancel
+- hide modelform DELETE button on subject screening when subject
+  consent or consent refused exists
+- use template tag for PatientLog changelist top bar
+- move subject screening validation to modelform from form_validators
+  when referencing patient log model instance
+- bump to edc 0.5.1
+
+0.1.37
+------
+- fix "'+' char is removed from group names when clicking patient logs list" (#631)
+- Patient Logs list:
+    - add 'Unwilling to screen' message for patients reported as unwilling to screen
+    - add refusal link to participants who have screened but not consented/refused (#572, #610)
+    - add change refusal link to participants who have refused to consent
+    - fix Consented = NO list filter
+- Subject Screening model:
+    - raise on save if reported as unwilling to screen in Patient Log
+- Subject Consent and Consent Refusal models:
+    - raise on save if not already consented, not already refused, not screened despite unwilling to screen
+- Subject Consent and Consent Refusal forms:
+    - validate eligible, not already consented, not already refused, not screened despite unwilling to screen
+- Extent intecomm_test_case_mixin to support creation of Patient Logs and Consent Refusals
+- bump to intecomm-form-validators 0.1.25, includes:
+    - fix Hypertension Initial Review form incorrectly flagging medicine start date
+      as required when not managed by drugs (i.e. managed by diet, lifestyle or other) (#624)
+    - Subject Screening form:
+        - add validation to prevent those reported unwilling to screen in Patient Log, from screening
+        - use Patient Log link in errors referring to Patient Log
+- bump to edc 0.4.99
+
+0.1.25
+------
+- reorder Medications admin fields to be consistent with clinical review (hiv, dm, htn)
+- bump to intecomm-form-validators 0.1.18
+- bump to edc 0.4.88
+
+0.1.20
+------
+- bump edc to 0.4.83
+- use glucose model factories and fieldset tuple
+- add field welfare_other to HE
+
+0.1.19
+------
+- bump edc to 0.4.82
+
+0.1.18
+------
+- add next appointment model for facility arm
+- bump to edc 0.4.81
+
+0.1.17
+------
+- update initial review models/forms
+- add missing migrations
+- bump to edc 0.4.79
+
+0.1.16
+------
+- add subject's friendly name to INTE subject listboard
+- fix DataError if saving to 'smoker_current_duration_estimated_date' in
+  Other Baseline Data form
+- bump to edc 0.4.69
+
+0.1.5
+-----
+- edc 0.4.59
