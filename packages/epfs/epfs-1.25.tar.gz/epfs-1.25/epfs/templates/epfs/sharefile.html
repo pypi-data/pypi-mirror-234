@@ -1,0 +1,54 @@
+{% load static %}
+<!doctype html>
+<html>
+<link rel="manifest" href="{% static 'manifest.json' %}">
+<head>
+<title>epfs share file</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" >
+
+</head>
+<body>
+<div class="container">
+	<div class="text-center mx-4">
+		<div class="title my-4">
+			<h1>Select file to upload</h1>
+		</div>
+		<form id="fileupload" name="fileupload"  method="POST" enctype="multipart/form-data" action="/epfs/sharefile/" >
+		{% csrf_token %}
+		<input type="file" name="Name" required multiple id="id_Name"  class="form-control form-control-lg my-4"  />
+        <button id="btnFetch" type="submit" class='btn btn-primary my-4'>Upload File</button>
+        </form>
+
+	</div>
+</div>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" ></script>
+
+<script>
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register("{% static 'service-worker.js' %}")
+      .then(function(reg){
+        console.log("Service worker registered.");
+     }).catch(function(err) {
+        console.log("Service worker not registered. This happened:", err)
+    });
+ }
+/*
+ $(document).ready(function() {
+    $("#btnFetch").click(function() {
+      // disable button
+      $(this).prop("disabled", true);
+      // add spinner to button
+      $(this).html(
+        `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...`
+      );
+    });
+});
+*/
+</script>
+
+
+</body>
+</html>
