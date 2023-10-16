@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="risk_analysis_view_search" model="ir.ui.view">
+    <field name="name">risk_analysis - search</field>
+    <field name="model">risk_analysis</field>
+    <field
+            name="inherit_id"
+            ref="ssi_transaction_mixin.mixin_transaction_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+        </data>
+    </field>
+</record>
+
+<record id="risk_analysis_view_tree" model="ir.ui.view">
+    <field name="name">risk_analysis - tree</field>
+    <field name="model">risk_analysis</field>
+    <field name="mode">primary</field>
+    <field name="inherit_id" ref="ssi_transaction_mixin.mixin_transaction_view_tree" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="partner_id" />
+                <field name="type_id" />
+                <field name="date" />
+                <field name="result_computation_method" optional="hide" />
+                <field name="manual_result_id" optional="hide" />
+                <field name="automatic_result_id" optional="hide" />
+                <field name="result_id" string="Result" />
+                <field name="conclusion_id" />
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="reviewer_id" widget="many2one_avatar" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="risk_analysis_view_form" model="ir.ui.view">
+    <field name="name">risk_analysis - form</field>
+    <field name="model">risk_analysis</field>
+    <field name="mode">primary</field>
+    <field name="inherit_id" ref="ssi_transaction_mixin.mixin_transaction_view_form" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="reviewer_id" widget="many2one_avatar" />
+                <field name="work_hour" widget="float_time" />
+                <field name="reviewer_work_hour" widget="float_time" />
+            </xpath>
+            <xpath expr="//group[@name='header_right']" position="inside">
+                <field name="partner_id" />
+                <field name="date" />
+                <field name="type_id" />
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page name="item" string="Risk Items">
+                    <button
+                            name="action_reload_risk_item"
+                            string="Risk Items"
+                            type="object"
+                            class="oe_highlight"
+                            icon="fa-refresh"
+                            attrs="{'invisible':[('state','!=','draft')]}"
+                        />
+                    <field name="item_ids">
+                        <tree create="0" delete="0">
+                            <field name="sequence" invisible="1" />
+                            <field name="item_id" />
+                            <field name="worksheet_id" />
+                            <field name="result_id" />
+                            <field name="quantitative_value" optional="hide" />
+                            <button
+                                    name="action_get_worksheet"
+                                    type="object"
+                                    icon="fa-refresh"
+                                    attrs="{'invisible':[('worksheet_id','!=',False)]}"
+                                />
+                        </tree>
+                        <form>
+                            <group name="item_1" colspan="4" col="2">
+                                <field name="item_id" readonly="1" />
+                                <field name="worksheet_id" />
+                                <field
+                                        name="allowed_result_ids"
+                                        widget="many2many_tags"
+                                        invisible="1"
+                                    />
+                                <field name="result_id" />
+                                <field
+                                        name="quantitative_value"
+                                        readonly="1"
+                                        force_save="1"
+                                    />
+                            </group>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+            <xpath expr="//group[@name='footer_left']" position="inside">
+                <separator string="Result" />
+                <field name="result_computation_method" string="Method" />
+                <field
+                        name="allowed_result_ids"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                <field
+                        name="manual_result_id"
+                        domain="[('id','in',allowed_result_ids)]"
+                        string="Manual"
+                        attrs="{'required': [('result_computation_method','=','manual'),('state','=','open')]}"
+                    />
+                <field name="automatic_result_id" string="Automatic" />
+                <field name="result_id" string="Final" />
+                <field name="need_dissenting_reason" invisible="1" />
+                <field
+                        name="dissenting_reason"
+                        attrs="{'required': [('need_dissenting_reason','=',True),('state','=','open')],'invisible': [('need_dissenting_reason','=',False)]}"
+                    />
+            </xpath>
+            <xpath expr="//group[@name='footer_right']" position="inside">
+                <separator string="Conclusion" />
+                <field
+                        name="allowed_conclusion_ids"
+                        widget="many2many_tags"
+                        invisible="1"
+                    />
+                <field
+                        name="conclusion_id"
+                        domain="[('id','in',allowed_conclusion_ids)]"
+                    />
+                <field name="conclusion" string="Reasoning" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="risk_analysis_action" model="ir.actions.act_window">
+    <field name="name">Risk Analysis</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">risk_analysis</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="risk_analysis_menu"
+        name="Risk Analysis"
+        parent="ssi_risk_management.menu_root_risk_management"
+        action="risk_analysis_action"
+        groups="risk_analysis_viewer_group"
+        sequence="110"
+    />
+
+</odoo>

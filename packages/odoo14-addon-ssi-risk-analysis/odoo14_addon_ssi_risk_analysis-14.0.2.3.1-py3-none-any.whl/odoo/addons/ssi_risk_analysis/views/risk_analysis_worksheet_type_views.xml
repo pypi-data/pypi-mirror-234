@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="risk_analysis_worksheet_type_view_search" model="ir.ui.view">
+    <field name="name">risk_analysis_worksheet_type - search</field>
+    <field name="model">risk_analysis_worksheet_type</field>
+    <field
+            name="inherit_id"
+            ref="ssi_master_data_mixin.mixin_master_data_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data />
+    </field>
+</record>
+
+<record id="risk_analysis_worksheet_type_view_tree" model="ir.ui.view">
+    <field name="name">risk_analysis_worksheet_type - tree</field>
+    <field name="model">risk_analysis_worksheet_type</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_tree" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="item_id" />
+                <field name="ttype" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="risk_analysis_worksheet_type_view_form" model="ir.ui.view">
+    <field name="name">risk_analysis_worksheet_type - form</field>
+    <field name="model">risk_analysis_worksheet_type</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_form" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="item_id" />
+                <field name="ttype" />
+                <field
+                        name="template_id"
+                        domain="[('model','=','risk_analysis_standard_worksheet')]"
+                        attrs="{'invisible':[('ttype','!=','standard')],'required':[('ttype','=','standard')]}"
+                    />
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page
+                        name="custom"
+                        string="Custom Worksheet"
+                        attrs="{'invisible': [('ttype','!=','custom')],'required':[('ttype','=','custom')]}"
+                    >
+                    <group name="custom_1" colspan="4" col="2">
+                        <field name="model_id" />
+                        <field name="model" />
+                    </group>
+                </page>
+                <page name="result" string="Results">
+                    <group
+                            name="result_1"
+                            colspan="2"
+                            col="2"
+                            string="Python Code for Result Computation"
+                        >
+                        <field
+                                name="result_python_code"
+                                widget="ace"
+                                colspan="2"
+                                nolabel="1"
+                            />
+                    </group>
+                </page>
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="risk_analysis_worksheet_type_action" model="ir.actions.act_window">
+    <field name="name">Risk Analysis Worksheet Type</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">risk_analysis_worksheet_type</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="risk_analysis_worksheet_type_menu"
+        name="Type"
+        parent="menu_risk_analysis_worksheet_configuration"
+        action="risk_analysis_worksheet_type_action"
+        groups="risk_analysis_worksheet_type_group"
+        sequence="110"
+    />
+
+</odoo>

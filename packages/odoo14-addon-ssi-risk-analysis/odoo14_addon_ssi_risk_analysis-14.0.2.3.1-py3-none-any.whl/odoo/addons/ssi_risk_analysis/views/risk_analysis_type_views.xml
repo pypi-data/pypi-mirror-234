@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="risk_analysis_type_view_search" model="ir.ui.view">
+    <field name="name">risk_analysis_type - search</field>
+    <field name="model">risk_analysis_type</field>
+    <field
+            name="inherit_id"
+            ref="ssi_master_data_mixin.mixin_master_data_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data />
+    </field>
+</record>
+
+<record id="risk_analysis_type_view_tree" model="ir.ui.view">
+    <field name="name">risk_analysis_type - tree</field>
+    <field name="model">risk_analysis_type</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_tree" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data />
+    </field>
+</record>
+
+<record id="risk_analysis_type_view_form" model="ir.ui.view">
+    <field name="name">risk_analysis_type - form</field>
+    <field name="model">risk_analysis_type</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_form" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//page[1]" position="before">
+                <page name="item" string="Risk Items">
+                    <field name="item_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="item_id" />
+                        </tree>
+                    </field>
+                </page>
+                <page name="result" string="Results">
+                    <group name="result_1" colspan="4" col="2">
+                        <field name="allowed_result_ids" widget="many2many_tags" />
+                    </group>
+                    <field name="result_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="result_id" />
+                            <field name="quantitative_value" />
+                        </tree>
+                    </field>
+                    <group
+                            name="result_2"
+                            colspan="2"
+                            col="2"
+                            string="Python Code for Result Computation"
+                        >
+                        <field
+                                name="result_python_code"
+                                widget="ace"
+                                colspan="2"
+                                nolabel="1"
+                            />
+                    </group>
+                </page>
+                <page name="conclusion" string="Conclusion">
+                    <field name="conclusion_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="conclusion_id" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="risk_analysis_type_action" model="ir.actions.act_window">
+    <field name="name">Risk Analysis Types</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">risk_analysis_type</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="risk_analysis_type_menu"
+        name="Types"
+        parent="menu_risk_analysis_configuration"
+        action="risk_analysis_type_action"
+        groups="risk_analysis_type_group"
+        sequence="120"
+    />
+
+</odoo>

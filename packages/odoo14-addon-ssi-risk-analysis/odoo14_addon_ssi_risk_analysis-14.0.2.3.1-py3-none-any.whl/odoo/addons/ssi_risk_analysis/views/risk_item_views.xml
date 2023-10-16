@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="risk_item_view_search" model="ir.ui.view">
+    <field name="name">risk_item - search</field>
+    <field name="model">risk_item</field>
+    <field
+            name="inherit_id"
+            ref="ssi_master_data_mixin.mixin_master_data_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data />
+    </field>
+</record>
+
+<record id="risk_item_view_tree" model="ir.ui.view">
+    <field name="name">risk_item - tree</field>
+    <field name="model">risk_item</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_tree" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+        </data>
+    </field>
+</record>
+
+<record id="risk_item_view_form" model="ir.ui.view">
+    <field name="name">risk_item - form</field>
+    <field name="model">risk_item</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_form" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='active']" position="after">
+
+                <field name="method" />
+                <field
+                        name="worksheet_type_id"
+                        attrs="{'required':[('method','=','worksheet')],'invisible':[('method','!=','worksheet')]}"
+                    />
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page name="result" string="Results">
+                    <field name="result_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="result_id" />
+                            <field name="quantitative_value" />
+                        </tree>
+                    </field>
+                </page>
+                <page name="conclusion" string="Conclusions">
+                    <field name="conclusion_ids">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle" />
+                            <field name="conclusion_id" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="risk_item_action" model="ir.actions.act_window">
+    <field name="name">Risk Items</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">risk_item</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="risk_item_menu"
+        name="Risk Items"
+        parent="ssi_risk_management.menu_risk_management_configuration"
+        action="risk_item_action"
+        groups="risk_item_group"
+        sequence="110"
+    />
+
+</odoo>

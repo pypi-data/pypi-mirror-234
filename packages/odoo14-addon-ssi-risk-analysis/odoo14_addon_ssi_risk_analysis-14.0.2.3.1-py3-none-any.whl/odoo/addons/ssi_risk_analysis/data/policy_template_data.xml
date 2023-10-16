@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl-3.0-standalone.html). -->
+<odoo>
+<data noupdate="1">
+<record id="policy_template_risk_analysis" model="policy.template">
+    <field name="name">Standard</field>
+    <field name="model_id" ref="model_risk_analysis" />
+    <field
+                name="state_field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','state')]"
+            />
+    <field name="sequence" eval="100" />
+    <field name="python_code">result=True</field>
+</record>
+
+<!-- Ready -->
+<record id="policy_template_risk_analysis_ready" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','ready_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_user_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Open -->
+<record id="policy_template_risk_analysis_open" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','open_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','ready')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_user_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+
+
+<!-- Confirm -->
+<record id="policy_template_risk_analysis_confirm" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','confirm_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','open')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_user_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart Approval -->
+<record
+            id="policy_template_risk_analysis_restart_approval"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','restart_approval_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Approve -->
+<record id="policy_template_risk_analysis_approve" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','approve_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+<!-- Reject -->
+<record id="policy_template_risk_analysis_reject" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','reject_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+
+
+<!-- Cancel -->
+<record id="policy_template_risk_analysis_cancel" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','cancel_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','in',['draft','confirm','ready','open','done','terminate'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart -->
+<record id="policy_template_risk_analysis_restart" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','restart_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','in',['cancel','reject'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Terminate -->
+<record id="policy_template_risk_analysis_terminate" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','terminate_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','open')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_user_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Manual Number -->
+<record id="policy_template_risk_analysis_manual_number" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_risk_analysis" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis'),('name','=','manual_number_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('risk_analysis_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<record id="policy_template_risk_analysis_worksheet" model="policy.template">
+    <field name="name">Standard</field>
+    <field name="model_id" ref="model_risk_analysis_worksheet" />
+    <field
+                name="state_field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','state')]"
+            />
+    <field name="sequence" eval="100" />
+    <field name="python_code">result=True</field>
+</record>
+
+<!-- Ready -->
+<record
+            id="policy_template_risk_analysis_worksheet_ready"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','ready_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_user_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Open -->
+<record
+            id="policy_template_risk_analysis_worksheet_open"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','open_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','ready')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_user_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+
+
+<!-- Confirm -->
+<record
+            id="policy_template_risk_analysis_worksheet_confirm"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','confirm_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','open')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_user_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart Approval -->
+<record
+            id="policy_template_risk_analysis_worksheet_restart_approval"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','restart_approval_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Approve -->
+<record
+            id="policy_template_risk_analysis_worksheet_approve"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','approve_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+<!-- Reject -->
+<record
+            id="policy_template_risk_analysis_worksheet_reject"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','reject_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+
+
+<!-- Cancel -->
+<record
+            id="policy_template_risk_analysis_worksheet_cancel"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','cancel_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','in',['draft','confirm','ready','open','done','terminate'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart -->
+<record
+            id="policy_template_risk_analysis_worksheet_restart"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','restart_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','in',['cancel','reject'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Terminate -->
+<record
+            id="policy_template_risk_analysis_worksheet_terminate"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','terminate_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','open')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_user_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Manual Number -->
+<record
+            id="policy_template_risk_analysis_worksheet_manual_number"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_risk_analysis_worksheet" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','risk_analysis_worksheet'),('name','=','manual_number_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','risk_analysis_worksheet'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('risk_analysis_worksheet_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+</data>
+</odoo>
