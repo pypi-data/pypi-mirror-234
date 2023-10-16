@@ -1,0 +1,135 @@
+Metadata-Version: 2.1
+Name: biom3d
+Version: 0.0.30
+Summary: Biom3d. Framework for easy-to-use biomedical image segmentation.
+Author-email: Guillaume Mougeot <guillaume.mougeot@laposte.net>
+Project-URL: Homepage, https://github.com/GuillaumeMougeot/biom3d
+Project-URL: Bug Tracker, https://github.com/GuillaumeMougeot/biom3d/issues
+Keywords: deep learning,image segmentation,medical image analysis,medical image segmentation,biological image segmentation,bio-imaging
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch >1.10.0
+Requires-Dist: tqdm >=4.62.3
+Requires-Dist: scikit-image >=0.14
+Requires-Dist: scipy >=1.9.1
+Requires-Dist: numpy >=1.21.2
+Requires-Dist: SimpleITK >=2.1.1
+Requires-Dist: pandas >=1.4.0
+Requires-Dist: matplotlib >=3.5.3
+Requires-Dist: tensorboard >=2.8.0
+Requires-Dist: PyYAML >=5.4
+Requires-Dist: torchio >=0.18.84
+Requires-Dist: protobuf >=3.19.3
+Requires-Dist: appdirs >=1.4.4
+Requires-Dist: numba >=0.56.4
+Provides-Extra: docs
+Requires-Dist: sphinx >=4.1.2 ; extra == 'docs'
+Requires-Dist: sphinxcontrib-apidoc ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme >=0.3.1 ; extra == 'docs'
+Requires-Dist: myst-nb ; extra == 'docs'
+Requires-Dist: furo >=2022.06.21 ; extra == 'docs'
+Requires-Dist: docutils >=0.17.1 ; extra == 'docs'
+Provides-Extra: gui
+Requires-Dist: paramiko ; extra == 'gui'
+Requires-Dist: omero-py ; extra == 'gui'
+Requires-Dist: ezomero ; extra == 'gui'
+Requires-Dist: netcat ; extra == 'gui'
+
+<div align="center">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/logo_biom3d_crop.png" width="200" title="biom3d" alt="biom3d" vspace = "0">
+
+  [📘Documentation](https://biom3d.readthedocs.io/) | 
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/GuillaumeMougeot/biom3d/blob/master/docs/biom3d_colab.ipynb)
+</div>
+<img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/nucleus_segmentation.png" width="200" title="nucleus" alt="nucleus" align="right" vspace = "0">
+
+<!-- [**Documentation**](https://biom3d.readthedocs.io/) -->
+
+<!-- **Try it online!** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/GuillaumeMougeot/biom3d/blob/master/docs/biom3d_colab.ipynb) -->
+
+## Highlights
+
+Biom3d automatically configures the training of a 3D U-Net for 3D semantic segmentation.
+
+The default configuration matches the performance of [nnUNet](https://github.com/MIC-DKFZ/nnUNet) but is much easier to use both for community users and developers. Biom3d is flexible for developers: easy to understand and easy to edit. 
+
+Code architecture of Biom3d versus code architecture of nnU-Net:
+
+Biom3d modules             |  nnUNet modules
+:-------------------------:|:-------------------------:
+![](https://github.com/GuillaumeMougeot/biom3d/blob/main/images/biom3d_train.png)  |  ![](https://github.com/GuillaumeMougeot/biom3d/blob/main/images/nnunet_run_run_training.png)
+
+*Illustrations generated with `pydeps` module*
+
+> **Disclaimer**: Biom3d does not include the possibility to use 2D U-Net or 3D-Cascade U-Net or Pytorch distributed parallel computing (only Pytorch Data Parallel) yet. However, these options could easily be adapted if needed.
+
+We target two main types of users:
+
+* Community users, who are interested in using the basic functionalities of Biom3d: GUI or CLI, predictions with ready-to-use models or default training.
+* Deep-learning developers, who are interested in more advanced features: changing default configuration, writing of new Biom3d modules, Biom3d core editing etc.
+
+## 🔨 Installation
+
+**For the installation details, please check our documentation here:** [**Installation**](https://biom3d.readthedocs.io/en/latest/installation.html)
+
+TL;DR: here is a single line of code to install biom3d:
+
+```
+pip install torch biom3d
+```
+
+## ✋ Usage
+
+**For Graphical User Interface users, please check our documentation here:** [**GUI**](https://biom3d.readthedocs.io/en/latest/quick_run_gui.html)
+
+**For Command Line Interface users, please check our documentation here:** [**CLI**](https://biom3d.readthedocs.io/en/latest/tuto_cli.html)
+
+**For Deep Learning developers, the tutorials are currently being cooked stayed tuned! You can check the partial API documentation already:** [**API**](https://biom3d.readthedocs.io/en/latest/builder.html)
+
+TL;DR: here is a single line of code to run biom3d on the [BTCV challenge](https://www.synapse.org/#!Synapse:syn3193805/wiki/217785) and reach the same performance as nnU-Net (no cross-validation yet): 
+
+```
+python -m biom3d.preprocess_train\
+ --img_dir data/btcv/Training/img\
+ --msk_dir data/btcv/Training/label\
+ --num_classes 13\
+ --ct_norm
+```
+
+## ⚠ Disclaimer
+
+> **Warning**: This repository is still a work in progress and comes with no guarantees.
+
+## 📑 Citation
+
+If you find Biom3d useful in your research, please cite:
+
+```
+@misc{biom3d,
+  title={{Biom3d} Easy-to-use Tool for 3D Semantic Segmentation of Volumetric Images using Deep Learning},
+  author={Guillaume Mougeot},
+  howpublished = {\url{https://github.com/GuillaumeMougeot/biom3d}},
+  year={2023}
+  }
+```
+
+## 💰 Fundings and Acknowledgements 
+
+This project has been inspired by the following publication: "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation", Fabian Isensee et al, Nature Method, 2021.
+
+This project has been supported by Oxford Brookes University and the European Regional Development Fund (FEDER). It was carried out between the laboratories of iGReD (France), Institut Pascal (France) and Plant Nuclear Envelop (UK).
+
+<p align="middle">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/Flag_of_Europe.svg.png" alt="Europe" width="100">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/brookes_logo_black.bmp" alt="Brookes" width="100">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/GReD_color_EN.png" alt="iGReD" width="100">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/logo_ip.png" alt="IP" width="100">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/logo_aura.PNG" alt="AURA" width="100">
+  <img src="https://github.com/GuillaumeMougeot/biom3d/blob/main/images/logo_UCA.jpg" alt="UCA" width="100">
+</p>
+
+
+
