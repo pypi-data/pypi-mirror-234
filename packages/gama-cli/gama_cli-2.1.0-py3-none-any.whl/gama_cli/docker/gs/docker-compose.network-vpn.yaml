@@ -1,0 +1,29 @@
+# See /docs/architecture/networking.md
+version: "3.8"
+
+services:
+  gama_gs:
+    network_mode: service:gama_tailscale
+
+  gama_tailscale:
+    image: mvisonneau/tailscale
+    container_name: gama_tailscale
+    restart: always
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun
+    environment:
+      - TZ=Australia/Sydney
+      - TAILSCALE_HOSTNAME=groundstation-docker
+      - TAILSCALE_AUTH_KEY
+      - TAILSCALE_LOGIN_SERVER=https://vpn.greenroomrobotics.com
+    volumes:
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket
+    networks:
+      - gs
+
+networks:
+  gs:

@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  gama_vessel:
+    image: ghcr.io/greenroom-robotics/gama_vessel_oracle_22:${GAMA_VERSION:-latest}
+    build:
+      dockerfile: projects/gama_vessel/Dockerfile
+      args:
+        - PACKAGE_NAME=oracle_22_bringup
+    environment:
+      - LOG_STALE_MINUTES=43800 # in minutes
+    command: ./scripts/launch.sh oracle_22_bringup vessel.launch.py
+
+  gama_docs:
+    environment:
+      GAMA_VARIANT: oracle_22

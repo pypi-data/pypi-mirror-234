@@ -1,0 +1,73 @@
+version: "3.8"
+name: gama
+
+services:
+  gama_ui:
+    container_name: gama_ui
+    image: ghcr.io/greenroom-robotics/gama_ui:${GAMA_VERSION:-latest}
+    ports:
+      - "3000:3000"
+      - "3100:3100"
+    environment:
+      GAMA_VARIANT: $GAMA_VARIANT
+      GAMA_NAMESPACE_VESSEL: $GAMA_NAMESPACE_VESSEL
+      GAMA_NAMESPACE_GROUNDSTATION: $GAMA_NAMESPACE_GROUNDSTATION
+    networks:
+      - vessel
+
+  gama_chart_tiler:
+    container_name: gama_chart_tiler
+    image: ghcr.io/greenroom-robotics/gr_chart_tiler:1.1.0
+    ports:
+      - 3001:8080
+    networks:
+      - vessel
+    volumes:
+      - ./data/charts/styles:/app/data/styles
+      - ./data/charts/tiles:/app/data/tiles
+      - ./data/charts/config.json:/app/data/config.json
+
+  gama_chart_api:
+    container_name: gama_chart_api
+    image: ghcr.io/greenroom-robotics/gr_chart_api:1.1.0
+    volumes:
+      - ./data/charts:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 3002:3000
+    networks:
+      - vessel
+
+  gama_vessel:
+    container_name: gama_vessel
+    environment:
+      - DISPLAY
+      - ROS_DOMAIN_ID
+    ipc: host
+    volumes:
+      - /dev/shm:/dev/shm
+      - ./log:/home/ros/.ros/log
+      - ~/.config/greenroom:/home/ros/.config/greenroom
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /dev:/dev
+    privileged: true
+
+  gama_greenstream:
+    container_name: gama_greenstream
+    image: ghcr.io/greenroom-robotics/gama_greenstream:${GAMA_VERSION:-latest}
+    ipc: host
+    volumes:
+      - /dev/shm:/dev/shm
+      - ~/.config/greenroom:/root/.config/greenroom
+    privileged: true
+    environment:
+      - ROS_DOMAIN_ID
+
+  gama_docs:
+    container_name: gama_docs
+    image: ghcr.io/greenroom-robotics/gama_docs:${GAMA_VERSION:-latest}
+    ports:
+      - "3003:3000"
+
+networks:
+  vessel:

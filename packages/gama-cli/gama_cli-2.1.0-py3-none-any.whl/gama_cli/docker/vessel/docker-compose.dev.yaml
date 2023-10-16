@@ -1,0 +1,70 @@
+version: "3.8"
+name: gama
+
+services:
+  gama_ui:
+    build:
+      context: ./projects/gama_ui
+      secrets:
+        - API_TOKEN_GITHUB
+    volumes:
+      - ./projects/gama_ui/.eslintrc.js:/app/.eslintrc.js
+      - ./projects/gama_ui/.nvmrc:/app/.nvmrc
+      - ./projects/gama_ui/.prettierrc:/app/.prettierrc
+      - ./projects/gama_ui/.yarnrc:/app/.yarnrc
+      - ./projects/gama_ui/cypress:/app/cypress
+      - ./projects/gama_ui/cypress.json:/app/cypress.json
+      - ./projects/gama_ui/index.html:/app/index.html
+      - ./projects/gama_ui/jest.config.ts:/app/jest.config.ts
+      - ./projects/gama_ui/package.json:/app/package.json
+      - ./projects/gama_ui/public:/app/public
+      - ./projects/gama_ui/src:/app/src
+      - ./projects/gama_ui/tsconfig.json:/app/tsconfig.json
+      - ./projects/gama_ui/typings:/app/typings
+      - ./projects/gama_ui/vite.config.ts:/app/vite.config.ts
+      - ./projects/gama_ui/yarn.lock:/app/yarn.lock
+    command: yarn dev
+
+  gama_vessel:
+    entrypoint: ./scripts/watch.sh ./scripts/build.sh
+    build:
+      dockerfile: projects/gama_vessel/Dockerfile
+      secrets:
+        - apt_conf
+        - API_TOKEN_GITHUB
+    volumes:
+      - ./projects/gama_ui/src/generated/ros:/home/ros/gama_vessel/generated/ros
+      - ./projects/gama_vessel/src:/home/ros/gama_vessel/src
+      - ./projects/gama_vessel/scripts:/home/ros/gama_vessel/scripts
+      - ./projects/gama_vessel/ros-ts-generator-config.json:/home/ros/gama_vessel/ros-ts-generator-config.json
+      - ./data/frame_saver:/data/frame_saver
+      - ./log:/home/ros/log
+
+  gama_docs:
+    build:
+      context: ./
+      dockerfile: projects/gama_docs/Dockerfile
+    volumes:
+      - ./projects/gama_docs/src:/app/src
+      - ./projects/gama_docs/static:/app/static
+      - ./projects/gama_docs/package.json:/app/package.json
+      - ./projects/gama_docs/yarn.lock:/app/yarn.lock
+      - ./projects/gama_docs/sidebars.js:/app/sidebars.js
+      - ./projects/gama_docs/docusaurus.config.js:/app/docusaurus.config.js
+      - ./projects/gama_docs/tsconfig.json:/app/tsconfig.json
+      - ./docs:/app/docs
+    command: yarn start
+
+  gama_greenstream:
+    build:
+      context: .
+      dockerfile: projects/gama_greenstream/Dockerfile
+
+networks:
+  vessel:
+
+secrets:
+  API_TOKEN_GITHUB:
+    file: ./.secrets/API_TOKEN_GITHUB
+  apt_conf:
+    file: ./.secrets/apt.conf
