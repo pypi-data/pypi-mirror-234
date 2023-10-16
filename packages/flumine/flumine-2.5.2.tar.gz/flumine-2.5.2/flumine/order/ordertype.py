@@ -1,0 +1,121 @@
+from enum import Enum
+from betfairlightweight.resources.bettingresources import LineRangeInfo
+
+from ..clients.clients import ExchangeType
+
+
+class OrderTypes(Enum):
+    LIMIT = "Limit"
+    LIMIT_ON_CLOSE = "Limit on close"
+    MARKET_ON_CLOSE = "Market on close"
+
+
+class BaseOrderType:
+    EXCHANGE = None
+    ORDER_TYPE = None
+
+    def place_instruction(self) -> dict:
+        raise NotImplementedError
+
+    @property
+    def info(self):
+        raise NotImplementedError
+
+
+class LimitOrder(BaseOrderType):
+    EXCHANGE = ExchangeType.BETFAIR
+    ORDER_TYPE = OrderTypes.LIMIT
+
+    def __init__(
+        self,
+        price: float,
+        size: float = None,
+        persistence_type: str = "LAPSE",
+        time_in_force: str = None,
+        min_fill_size: float = None,
+        bet_target_type: str = None,
+        bet_target_size: float = None,
+        price_ladder_definition: str = "CLASSIC",
+        line_range_info: LineRangeInfo = None,
+    ):
+        self.price = price
+        self.size = size
+        self.persistence_type = persistence_type
+        self.time_in_force = time_in_force
+        self.min_fill_size = min_fill_size
+        self.bet_target_type = bet_target_type
+        self.bet_target_size = bet_target_size
+        self.price_ladder_definition = price_ladder_definition
+        self.line_range_info = line_range_info
+
+    def place_instruction(self) -> dict:
+        return {
+            "size": self.size,
+            "price": self.price,
+            "persistenceType": self.persistence_type,
+            "timeInForce": self.time_in_force,
+            "minFillSize": self.min_fill_size,
+            "betTargetType": self.bet_target_type,
+            "betTargetSize": self.bet_target_size,
+        }
+
+    @property
+    def info(self):
+        return {
+            "order_type": self.ORDER_TYPE.value,
+            "price": self.price,
+            "size": self.size,
+            "persistence_type": self.persistence_type,
+            "time_in_force": self.time_in_force,
+            "min_fill_size": self.min_fill_size,
+            "bet_target_type": self.bet_target_type,
+            "bet_target_size": self.bet_target_size,
+            "price_ladder_definition": self.price_ladder_definition,
+        }
+
+
+class LimitOnCloseOrder(BaseOrderType):
+    EXCHANGE = ExchangeType.BETFAIR
+    ORDER_TYPE = OrderTypes.LIMIT_ON_CLOSE
+
+    def __init__(
+        self, liability: float, price: float, price_ladder_definition: str = "CLASSIC"
+    ):
+        self.liability = liability
+        self.price = price
+        self.price_ladder_definition = price_ladder_definition
+
+    def place_instruction(self) -> dict:
+        return {
+            "liability": self.liability,
+            "price": self.price,
+        }
+
+    @property
+    def info(self):
+        return {
+            "order_type": self.ORDER_TYPE.value,
+            "liability": self.liability,
+            "price": self.price,
+            "price_ladder_definition": self.price_ladder_definition,
+        }
+
+
+class MarketOnCloseOrder(BaseOrderType):
+    EXCHANGE = ExchangeType.BETFAIR
+    ORDER_TYPE = OrderTypes.MARKET_ON_CLOSE
+
+    def __init__(self, liability: float):
+        self.liability = liability
+
+    def place_instruction(self) -> dict:
+        return {
+            "liability": self.liability,
+        }
+
+    @property
+    def info(self):
+        return {
+            "order_type": self.ORDER_TYPE.value,
+            "liability": self.liability,
+        }
