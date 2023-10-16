@@ -1,0 +1,81 @@
+[tool.poetry]
+name = "tdxpy"
+version = "0.2.4"
+description = ""
+authors = ["bopo <ibopo@126.com>"]
+readme = "README.md"
+packages = [{ include = "tdxpy" }]
+include = ["CHANGELOG.md"]
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "^1.3.5"
+cryptography = "^38.0.3"
+
+
+[tool.poetry.group.test.dependencies]
+pytest-datadir = "^1.4.1"
+pytest-cov = "^4.0.0"
+pytest = "^7.2.0"
+
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.4.3"
+
+[[tool.poetry.source]]
+name = "mirrors"
+url = "https://mirrors.ustc.edu.cn/pypi/web/simple"
+priority = "default"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "explicit"
+
+[tool.pytest.ini_option]
+testpaths = "tests"
+addopts = "-p no:warnings"
+log_cli_level = "DEBUG"
+log_cli = 1
+
+
+[tool.commitizen]
+tag_format = "v$version"
+annotated_tag = true
+changelog_file = "docs/history.md"
+changelog_incremental = true
+update_changelog_on_bump = true
+version_provider = "poetry"
+version_files = [
+    "tdxpy/__init__.py:__version__",
+]
+
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.coverage]
+skip_covered = true
+sort = "-cover"
+
+[tool.coverage.run]
+source = ["tdxpy"]
+branch = true
+omit = [
+    "tdxpy/parser/ext/*.py",
+    "tdxpy/exhq.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  # ignore abstract methods
+  "raise NotImplementedError",
+  "def __repr__"
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
