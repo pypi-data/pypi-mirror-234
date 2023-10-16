@@ -1,0 +1,83 @@
+[tool.poetry]
+name = "zxbasic"
+version = "1.17.1"
+description = "Boriel's ZX BASIC Compiler"
+authors = ["Jose Rodriguez <boriel@gmail.com>"]
+license = "GPL-3.0-or-later"
+documentation = "https://zxbasic.readthedocs.io"
+repository = "https://github.com/boriel/zxbasic"
+homepage = "http://zxbasic.net"
+readme = "README.md"
+
+classifiers = [
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Build Tools',
+        'License :: OSI Approved :: GNU Affero General Public License v3',
+        'Programming Language :: Python :: 3.8',
+        ]
+
+keywords = ['compiler', 'zxspectrum', 'BASIC', 'z80']  # arbitrary keywords
+
+packages = [
+    { include = "src/**/*" }
+]
+
+[tool.poetry.scripts]
+zxb = 'src.libzxbc.zxb:main'
+zxbc = 'src.libzxbc.zxb:main'
+zxbasm = 'src.libzxbasm.zxbasm:main'
+zxbpp = 'src.libzxbpp.zxbpp:entry_point'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.8.2"
+pytest = "^6.2.5"
+pytest-timeout = "^1.3.4"
+bump2version = "^1.0.0"
+pre-commit = "^2.15.0"
+black = "^22.1.0"
+mkdocs = "^1.2.2"
+poethepoet = "^0.15.0"
+pytest-cov = "^3.0.0"
+isort = "^5.10.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+[tool.poe.tasks]
+[[tool.poe.tasks.lint]]
+help = "Check code style and typing..."
+shell = """
+    flake8 src tests &&
+    isort --check stc tests &&
+    black --check src tests
+    """
+
+[[tool.poe.tasks.test]]
+help = "Run tests"
+shell = "pytest tests --color=yes"
+
+[[tool.poe.tasks.format]]
+help = "Formats code"
+shell = """
+    isort src tests
+    black src tests
+    """
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+norecursedirs = ["test_*tmp", "runtime"]
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+enable_recursive_aliases = true
