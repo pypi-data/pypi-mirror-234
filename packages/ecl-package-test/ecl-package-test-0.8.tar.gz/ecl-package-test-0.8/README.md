@@ -1,0 +1,156 @@
+# 🚀 Create ECL app
+
+---
+
+Create ECL App is an officially supported way to create deep learning applications. It offers a modern build setup with user friendly configuration.
+
+## Quick Start
+
+```bash
+$ pip install ecl-package
+$ make start
+```
+
+![screencast](https://user-images.githubusercontent.com/41921073/222943635-cd81b30d-e59e-4fd9-a0bf-8970c7ebb0ff.svg)
+
+You **don’t** need to install or configure tools like PyTorch or Wandb. They are preconfigured and hidden so that you can focus on the code.
+
+Create a project, and you’re good to go.
+
+## Creating an App
+
+**You’ll need to have Python >= 3.XX on your local development machine.**
+
+### pip
+
+```bash
+$ pip install ecl-package
+```
+
+*(pip comes with pip x.x+ and higher)*
+
+### conda
+
+```bash
+$ conda install ecl-package
+```
+
+*(conda comes with conda x.x+ and higher)*
+
+### Selecting a template
+
+You can now start a new app from a template by choosing **user friendly CLI UI**.
+
+If you don't select a template, we'll create your project with our base template.
+
+```bash
+$ make start
+
+🚀 Choose your task?
+-------------------------
+	 Token Classification
+ > 	 Translation
+	 Summarizaion
+	 Questionanswering
+-------------------------
+🚀 Choose your MLOps tool?
+	 Wandb
+ > 	 Mlflow
+	 None
+...
+--------------------------
+Success! Created config.yml at User/xx/yy/zz
+Inside that directory, you can run several command:
+
+**make start**
+	Starts the deep learning project
+
+**make style**
+	Formats the code
+
+**make test**
+	Starts the test runner.
+
+We suggest that you begin by typing:
+	
+	cd xx
+	make yy
+
+**ECL rocket is ready! 🚀🚀🚀**
+```
+
+## Output
+
+Running any of these commands will create a directory called `ecl-package`  inside the current folder. Inside that directory, it will generate the initial project structure and install the transitive dependencies:
+
+```bash
+ecl-package
+├── main.py
+├── README.md
+├── Makefile
+├── .gitignore
+├── .github
+│   ├── ISSUE_TEMPLATE
+│   ├── workflows
+│   ├── .stale.yml
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── release-drafter.yml
+└── src
+│    ├── __init__.py
+│    ├── train.py
+│    ├── inference.py
+│    ├── utils
+│    └── config
+│	└── config.yml
+├── dashboard
+├── tests
+ 
+```
+
+## Scripts
+
+Inside the newly created project, you can run some built-in commands:
+
+### make start
+
+### make test
+
+### make style
+
+### make visual
+
+## User Guide
+
+You can find detailed instructions on using Create React App and many tips in [its documentation](https://facebook.github.io/create-react-app/).
+
+## How to Update New Versions?
+
+Please refer to the [User Guide](https://facebook.github.io/create-react-app/docs/updating-to-new-releases) for this and other information.
+
+## Philosophy
+
+- **One Dependency:** There is only one build dependency. It uses webpack, Babel, ESLint, and other amazing projects, but provides a cohesive curated experience on top of them.
+- **No Configuration Required:** You don't need to configure anything. A reasonably good configuration of both development and production builds is handled for you so you can focus on writing code.
+    
+    Create React App is a great fit for:
+    
+- **No Lock-In:** You can “eject” to a custom setup at any time. Run a single command, and all the configuration and build dependencies will be moved directly into your project, so you can pick up right where you left off.
+
+## Popular Alternatives
+
+- **Learning React** in a comfortable and feature-rich development environment.
+- **Starting new single-page React applications.**
+- **Creating examples** with React for your libraries and components.
+
+Here are a few common cases where you might want to try something else:
+
+- If you want to **try React** without hundreds of transitive build tool dependencies, consider [using a single HTML file or an online sandbox instead](https://reactjs.org/docs/getting-started.html#try-react).
+- If you need to **integrate React code with a server-side template framework** like Rails, Django or Symfony, or if you’re **not building a single-page app**, consider using [nwb](https://github.com/insin/nwb), or [Neutrino](https://neutrino.js.org/) which are more flexible. For Rails specifically, you can use [Rails Webpacker](https://github.com/rails/webpacker). For Symfony, try [Symfony's webpack Encore](https://symfony.com/doc/current/frontend/encore/reactjs.html).
+
+## Contributing
+
+We'd love to have your helping hand on `ecl-package`! See [CONTRIBUTING.md](https://github.com/facebook/create-react-app/blob/main/CONTRIBUTING.md) for more information on what we're looking for and how to get started.
+
+## Credicts
+
+## License
