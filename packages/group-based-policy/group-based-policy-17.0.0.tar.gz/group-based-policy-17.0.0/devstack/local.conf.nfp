@@ -1,0 +1,56 @@
+[[local|localrc]]
+DEST=/opt/stack
+
+# Logging
+LOGFILE=$DEST/logs/stack.sh.log
+VERBOSE=True
+LOG_COLOR=False
+
+# Credentials
+ADMIN_PASSWORD=mysecret
+MYSQL_PASSWORD=mysqlsecret
+RABBIT_PASSWORD=myrabbitsecret
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=admin
+
+# NFP Service
+ENABLE_NFP=True
+GBPSERVICE_REPO=https://opendev.org/x/group-based-policy.git
+GBPSERVICE_BRANCH=master
+# Edit NFP_DEVSTACK_MODE with either 'base' or 'advanced'
+if [[ $ENABLE_NFP = True ]]; then
+    NFP_DEVSTACK_MODE=base
+
+    if [[ $NFP_DEVSTACK_MODE = advanced ]]; then
+        # External Network
+        # If configured, install step creates external network, external policy and network service policy
+        # If not configured, user has to create external network, external policy and network service policy
+        EXT_NET_GATEWAY=
+        EXT_NET_ALLOCATION_POOL_START=
+        EXT_NET_ALLOCATION_POOL_END=
+        EXT_NET_CIDR=
+
+        # Configurator image path option, its optional
+        # If configured, install step uploads the specified image
+        # If not configured, install step will build a new one and upload it
+        ConfiguratorQcow2Image=
+        # Service VM image path options, they are optional
+        # If configured, install step uploads the specified images
+        # If not configured, install step ignores uploading these service images
+        VyosQcow2Image=
+        HaproxyQcow2Image=
+
+        # Make sure that your public interface is not attached to any bridge.
+        PUBLIC_INTERFACE=
+
+        enable_plugin neutron-fwaas http://opendev.org/openstack/neutron-fwaas.git stable/zed
+        enable_plugin neutron-lbaas https://opendev.org/openstack/neutron-lbaas.git stable/zed
+        enable_plugin neutron https://opendev.org/openstack/neutron.git stable/zed
+        enable_plugin neutron-vpnaas https://opendev.org/openstack/neutron-vpnaas.git stable/zed
+        enable_plugin octavia https://opendev.org/openstack/octavia.git stable/zed
+
+    fi
+fi
+
+enable_plugin group-based-policy $GBPSERVICE_REPO $GBPSERVICE_BRANCH
+
