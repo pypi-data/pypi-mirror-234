@@ -1,0 +1,46 @@
+from labkey.query import QueryFilter
+from labkey.api_wrapper import APIWrapper
+
+
+def get_webdav_url(server_context, container_path=None):
+    parts = [server_context._scheme + server_context._domain]
+
+    if server_context._context_path is not None:
+        parts.append(server_context._context_path)
+
+    parts.append("_webdav")
+
+    if container_path is not None:
+        parts.append(container_path)
+    elif server_context._container_path is not None:
+        parts.append(server_context._container_path)
+
+    parts.append("@files")
+    parts.append("")
+
+    return "/".join(parts)
+
+
+def main():
+    # Create your API wrapper, the variables here will depend on your server configuration
+    domain = "localhost:8080"
+    container = "NIAD Python"
+    api = APIWrapper(domain, container, use_ssl=False, verify_ssl=False)
+    url = get_webdav_url(api.server_context)
+    file_name = "api_wrapper.py"
+    file_path = "./labkey/api_wrapper.py"
+    
+    # Open the file you want to upload, and upload it via the webdav API
+    with open(file_path, 'r') as file:
+        resp = api.server_context.make_request(url, payload={"createIntermediates": 'true'}, file_payload={"file": file}, non_json_response=True)
+    
+    # Find the RowId of the file we just uploaded, by using select_rows and filtering by the file name.
+    resp = api.query.select_rows('exp', 'files', filter_array=[QueryFilter('name', file_name)])
+    row_id = resp["rows"][0]["RowId"]
+    # Update the file metadata, the "RowId" field here is required, the rest of the fields will depend on the custom fields you have defined 
+    resp = api.query.update_rows('exp', 'files', [{ "RowId": row_id, "Site": "My Test Site", "Visit": "A Visit", "Form": "Some Form" }])
+    print(resp)
+
+
+if __name__ == "__main__":
+    main()

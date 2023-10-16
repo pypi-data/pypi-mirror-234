@@ -1,0 +1,20 @@
+Run     User Time       System Time     Total CPU Time     Wall Time   Total Rows      Rows Retrieved
+1       .42             .14             .56                1:36.6      118,000         118,000
+2       .38             .12             .50                5:42.9      25,000,000      26,000
+
+Hypothesis:
+The server is taking a long time to respond to the request, which is causing the long response time. Both scripts spend
+very little time running, which means they're probably spending more time waiting for data from the server. I suspect
+that the R script may be faster because they're possibly running on the same machine as the server, so the network
+request stays local to the server, whereas the Python script is being run externally from the server, so the network is
+necessarily slower.
+
+Steps to reproduce:
+1. Create some tables to emulate the query provided by the customer
+2. Populate these tables with a similar size of data (25M total rows, that can be filtered to 26k rows)
+3. Run the script locally with profiler.
+
+
+API time: 38.3407 seconds
+Pandas time: 1.5355 seconds
+Total time: 39.8762 seconds

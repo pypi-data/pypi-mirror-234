@@ -1,0 +1,69 @@
+from labkey.api_wrapper import APIWrapper
+
+
+def get_base_url(api: APIWrapper) -> str:
+    ctx = api.server_context
+
+    # The URL returned from LabKey Server's select rows API isn't a full URL, so we need to add The scheme
+    # (e.g. https://), the domain, and the context path. We don't need to add the container path, because that is
+    # already on the URL returned from the server.
+    base_url = ctx._scheme + ctx._domain
+
+    if ctx._context_path is not None:
+        base_url += "/" + ctx._context_path
+
+    return base_url
+
+
+def get_file(api: APIWrapper, file_url: str):
+    """
+    Downloads a file given a file_url from a select_rows response. File is stored in memory and returned (as bytes).
+    Response from this function could be passed to something like pandas. This is useful when you know the file is small
+    enough to fit into memory, but will cause problems if you have a large file (see download_file below).
+    """
+    ctx = api.server_context
+    full_url = get_base_url(api) + file_url
+    resp = ctx._session.get(full_url)
+    return resp.content
+
+
+def download_file(api: APIWrapper, file_name: str, file_url: str, destination_path: str):
+    """
+    Downloads a file from LabKey Server to disk. This doesn't put the whole file in memory, which is good for larger
+    files. After the file is saved to disk you can open it with another tool such as pandas.
+    """
+    ctx = api.server_context
+    full_url = get_base_url(api) + file_url
+
+    # This with block is needed so we clean up the connection created by requests when we're done
+    with ctx._session.get(full_url, stream=True) as req:
+        # This with block opens and closes the file handle for us
+        with open(destination_path + "/" + file_name, "wb") as f:
+            # There is no standard correct size for chunk size here, you can play around with it and see if it has an
+            # impact on perf.
+            for chunk in req.iter_content(chunk_size=16*1024):
+                f.write(chunk)
+
+
+def main():
+    # Create your API wrapper, the variables here will depend on your server configuration
+    domain = "localhost:8080"
+    container = "api_sandbox"
+    api = APIWrapper(domain, container, use_ssl=False, verify_ssl=False)
+    # The name of the column that is a file, this will depend on the table you're querying    
+    file_column = "file"
+    
+    # Select your data, using required_version=17.1 is important here, older versions of the API return the file URLs,
+    # but not in away that are associated with the actual file column.
+    resp = api.query.select_rows("lists", "list of files", required_version=17.1)
+    
+    # Here we're just grabbing the first row of data, but you could easily iterate over all of the URLs. You could even
+    # use a thread pool to load multiple files in parallel, which would improve perf because it's I/O bound.
+    data = resp["rows"][0]["data"]
+    file_name = data[file_column]["value"]
+    file_url = data[file_column]["url"]
+    download_file(api, file_name, file_url, "./downloads")
+
+
+if __name__ == "__main__":
+    main()
