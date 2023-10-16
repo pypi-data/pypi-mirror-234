@@ -1,0 +1,103 @@
+[tool.poetry]
+name = "okareo"
+version = "0.0.9"
+description = "Python SDK for intercating with Okareo Cloud APIs"
+authors = [
+    "berni <info@okareo.com>",
+]
+license = "MIT"
+readme = "README.md"
+
+documentation = "https://okareo-ai.github.io/okareo-python-sdk"
+homepage = "https://okareo-ai.github.io/okareo-python-sdk"
+repository = "https://github.com/okareo-ai/okareo-python-sdk"
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+
+packages = [
+    { include = "okareo", from = "src" },
+    { include = "okareo_api_client", from = "src" }
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9, <4.0"
+httpx = "^0.25.0"
+pytest-httpx = "^0.26.0"
+types-python-dateutil = "^2.8.19.14"
+pydantic = "^2.4.2"
+
+[tool.poetry.dev-dependencies]
+autoflake = "*"
+black = "*"
+flake8 = "*"
+flake8-bugbear = "*"
+flake8-builtins = "*"
+flake8-comprehensions = "*"
+flake8-debugger = "*"
+flake8-eradicate = "*"
+flake8-logging-format = "*"
+isort = "*"
+mkdocstrings = {version = ">=0.18", extras = ["python"]}
+mkdocs-material = "*"
+mypy = "*"
+pep8-naming = "*"
+pre-commit = "*"
+pymdown-extensions = "*"
+pytest = "*"
+pytest-github-actions-annotate-failures = "*"
+pytest-cov = "*"
+python-kacl = "*"
+pyupgrade = "*"
+tryceratops = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "tests"]
+
+[tool.black]
+target-version = ["py37", "py38", "py39"]
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+addopts = """\
+    --cov okareo \
+    --cov tests \
+    --cov-report term-missing \
+    --no-cov-on-fail \
+"""
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    'if TYPE_CHECKING:',
+    'pragma: no cover'
+]
+[tool.coverage.run]
+omit = [
+    "src/okareo_api_client/*",
+]
+
+[tool.mypy]
+disallow_any_unimported = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+check_untyped_defs = true
+show_error_codes = true
+exclude = ['src/okareo_api_client']
