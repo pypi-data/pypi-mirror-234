@@ -1,0 +1,40 @@
+<h2>{{ name }} - Test Result</h2>
+<table>
+  <tr>
+    <th>Type</th>
+    <td>{{ type }}</td>
+  </tr>
+  <tr>
+    <th>Source</th>
+    <td>{{ source }}</td>
+  </tr>
+  <tr>
+    <th>Destination</th>
+    <td>{{ destination }}</td>
+  </tr>
+  {% if runtime_errors|length > 0 %}
+  <tr>
+    <th class="error">Runtime errors</th>
+    <td class="error">
+      <dl>
+        {% for error_title, runtime_error in runtime_errors.items() %}
+        <dt>{{ error_title|replace("_", " ")|title|escape }}</dt>
+        <dd>
+          {% if runtime_error is sequence %}
+          <ul>
+            {% for sub_error in runtime_error %}
+            <li>{{ sub_error|string|escape }}</li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          {{ runtime_error|string|escape }}
+          {% endif %}
+        </dd>
+        {% endfor %}
+      </dl>
+    </td>
+  </tr>
+  {% endif %}
+  {{ config }}
+</table>
+{{tests}}

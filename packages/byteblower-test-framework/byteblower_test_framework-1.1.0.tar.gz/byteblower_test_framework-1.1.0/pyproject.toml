@@ -1,0 +1,269 @@
+[build-system]
+# Using ``flit`` with ``setuptools_scm`` for automatic versioning support:
+# See:
+#   https://pypi.org/project/flit-scm/
+#
+# - Forcing flit version using new-style metadata with TOML >= 1.0 features
+requires = ['flit_core >=3.4', 'flit-scm >=1.7.0']
+build-backend = 'flit_scm:buildapi'
+
+[project]
+name = "byteblower-test-framework"
+
+# NOTE: Not all build tools support dynamic version and/or description fields:
+# - When using setuptools:
+# version = "1.0.0a99"
+# description = "Test Framework for the ByteBlower Traffic Generator"
+# - When using other build tool (flit, PDM, ...):
+dynamic = ['version', 'description']
+
+# Build tool / pip should detect content-type automatically:
+# readme = "README.rst"
+# TODO - For now, until we have our source code and Docker images publicly available.
+readme = "README.pypi.rst"
+authors = [
+    { name = 'ByteBlower Development Team', email = 'support.byteblower@excentis.com' },
+]
+maintainers = [
+    { name = "Tom Ghyselinck", email = "tom.ghyselinck@excentis.com" },
+]
+requires-python = ">=3.7"
+dependencies = [
+    'byteblowerll >=2.19.2a114', # ByteBlower Lower Layer API
+    'scapy >=2.2.0',             # for frame creation
+    'junit_xml >=1.8.0',         # for reporting
+    'pandas >=0.24.2',           # for tables
+    'jinja2 >=2.10.1',           # for templates
+    # 'python-highcharts >=0.4.2',       # for graphs - Does not work for Python >= 3.10
+    'highcharts-excentis >=0.4.4', # for graphs; including fix for offline mode
+]
+keywords = ["ByteBlower", "Test Framework"]
+classifiers = [
+    # See also https://pypi.org/classifiers/
+    # "Development Status :: 4 - Beta",  # For beta releases!
+    "Development Status :: 5 - Production/Stable",  # Only for release!
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    # 'Intended Audience :: System Administrators',
+    "Intended Audience :: Telecommunications Industry",
+    #
+    # ! XXX - Also keep ``project.license`` in sync!
+    #
+    'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Testing :: Traffic Generation",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    # "Topic :: System :: Networking",
+]
+
+[project.license]
+#
+# ! XXX - Also keep ``project.classifiers`` ('License :: OSI Approved :: ') in sync!
+#
+file = "LICENSE"
+
+# Shell script entry-point
+[project.scripts]
+byteblower-test-framework = "byteblower_test_framework.cli:main"
+
+[project.urls]
+Homepage = "https://www.byteblower.com"
+Documentation = "https://api.byteblower.com/test-framework#documentation"
+"Support Portal" = "https://support.excentis.com"
+# TODO: Once deployed on GitLab!
+# "Source" = "https://gitlab.com/excentis/byteblower/test-framework/"
+# "Bug Tracker" = "https://gitlab.com/excentis/byteblower/test-framework/-/issues"
+# "Changelog" = "https://gitlab.com/excentis/byteblower/test-framework/-/path/to/changelog"
+# TODO: Once examples deployed on GitLab!
+# Examples = "https://gitlab.com/excentis/byteblower/test-framework-examples"
+Examples = "https://api.byteblower.com/test-framework/index.html#examples"
+
+[project.optional-dependencies]
+dev = [
+    "yapf[pyproject]",
+    "isort",
+    "rstcheck[sphinx,toml]",
+    "doc8",
+    "Pygments",
+    "pydocstyle[toml]",
+    "toml ~=0.10.2",
+]
+test = [
+    "pylint[spelling]",
+    "pydocstyle[toml]",
+    "rstcheck[sphinx,toml]",
+    "pytest >=6.0",          # to support pyproject.toml
+    "pytest-cov",
+    "pytest-pydocstyle",
+    "toml ~=0.10.2",
+]
+docs-dev = [
+    "Sphinx >= 5.0",
+    "sphinx-jsonschema >= 1.19",
+    "sphinx-rtd-theme >=1.0",
+    "importlib-metadata>=4.8.3; python_version<'3.8'", # 3.7 compatible; introduction importlib.metadata
+]
+
+# Enable version inference:
+[tool.setuptools_scm]
+write_to = "byteblower_test_framework/_version.py"
+
+[tool.flit.module]
+# NOTE: Required when building using flit backend
+#
+# hyphens in ``project.name`` do not seem to be replaced,
+# although it should be according to https://flit.pypa.io/en/latest/pyproject_toml.html#new-style-metadata
+name = "byteblower_test_framework"
+
+[tool.yapf]
+# Insert a blank line before a module docstring.
+blank_line_before_module_docstring = true
+
+# Put closing brackets on a separate line, dedented, if the bracketed
+# expression can't fit in a single line. Applies to all kinds of brackets,
+# including function definitions and calls. For example:
+#
+#   config = {
+#       'key1': 'value1',
+#       'key2': 'value2',
+#   }        # <--- this bracket is dedented and on a separate line
+#
+#   time_series = self.remote_client.query_entity_counters(
+#       entity='dev3246.region1',
+#       key='dns.query_latency_tcp',
+#       transform=Transformation.AVERAGE(window=timedelta(seconds=60)),
+#       start_ts=now()-timedelta(days=3),
+#       end_ts=now(),
+#   )        # <--- this bracket is dedented and on a separate line
+dedent_closing_brackets = true
+
+# Split before the '.' if we need to split a longer expression:
+#
+#   foo = ('This is a really long string: {}, {}, {}, {}'.format(a, b, c, d))
+#
+# would reformat to something like:
+#
+#   foo = ('This is a really long string: {}, {}, {}, {}'
+#          .format(a, b, c, d))
+split_before_dot = true
+
+# Split after the opening paren which surrounds an expression if it doesn't
+# fit on a single line.
+split_before_expression_after_opening_paren = true
+
+# If an argument / parameter list is going to be split, then split before
+# the first argument.
+split_before_first_argument = true
+
+# Set to True to split list comprehensions and generators that have
+# non-trivial expressions and multiple clauses before each of these
+# clauses. For example:
+#
+#   result = [
+#       a_long_var + 100 for a_long_var in xrange(1000)
+#       if a_long_var % 10]
+#
+# would reformat to something like:
+#
+#   result = [
+#       a_long_var + 100
+#       for a_long_var in xrange(1000)
+#       if a_long_var % 10]
+split_complex_comprehension = true
+
+[tool.isort]
+# 'yapf' profile does not exist!
+# profile = "yapf"
+# src_paths = ["byteblower_test_framework", "tests"]
+
+# NOTE: Additional configuration flags to enhance compatibility with the
+# *yapf* code style configuration (see also ``tool.yapf`` section)
+line_length = 79
+multi_line_output = 3         # vert-hanging / VERTICAL_HANGING_INDENT
+include_trailing_comma = true
+
+# -- PYLINT CONFIG --------------------------------------------------------------------
+# https://pypi.org/project/pylint/
+[tool.pylint]
+
+[tool.pylint.format]
+# Maximum number of characters on a single line.
+max-line-length = 79
+
+# Maximum number of lines in a module.
+max-module-lines = 500
+
+[tool.pylint."messages control"]
+disable = [
+    # See https://pylint.pycqa.org/en/latest/user_guide/checkers/features.html
+    # Deactivated because incompatible with SonarQube
+    "R0205", # useless-object-inheritance
+]
+
+[tool.pylint.reports]
+# Set the output format. Available formats are text, parseable, colorized, json
+# and msvs (visual studio). You can also give a reporter class, e.g.
+# mypackage.mymodule.MyReporterClass.
+output-format = "json:test-reports/pylint.json,parseable:test-reports/pylint.txt,text:test-reports/pylint.log,colorized"
+
+# Activate the evaluation score.
+score = true
+
+# -- PYDOCSTYLE CONFIG ----------------------------------------------------------------
+# https://pypi.org/project/pydocstyle/
+[tool.pydocstyle]
+
+# -- RSTCHECK CONFIG ------------------------------------------------------------------
+# https://pypi.org/project/rstcheck/
+[tool.rstcheck]
+
+# -- PYTEST CONFIG --------------------------------------------------------------------
+# https://pypi.org/project/pytest/
+[tool.pytest.ini_options]
+minversion = "6.0" # to support pyproject.toml
+testpaths = ["tests"]
+log_file = "test-reports/pytest.log"
+log_file_level = "info"
+required_plugins = ["pytest-cov", "pytest-pydocstyle"]
+addopts = """
+    --color=yes
+    --code-highlight=yes
+    --junit-xml="test-reports/junit.xml"
+    --doctest-modules
+    --cov=byteblower_test_framework
+    --cov-report="xml:test-reports/coverage.xml"
+    --cov-branch
+    --pydocstyle
+    -ra
+    -q
+    """
+
+# -- COVERAGE CONFIG ------------------------------------------------------------------
+# https://pypi.org/project/coverage/
+[tool.coverage]
+
+[tool.coverage.run]
+# See also https://docs.sonarqube.org/latest/analysis/test-coverage/python-test-coverage/
+relative_files = true
+source = ["byteblower_test_framework/"]
+branch = true
+parallel = true
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.coverage.xml]
