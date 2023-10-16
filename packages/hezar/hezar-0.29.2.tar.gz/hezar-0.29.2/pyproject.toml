@@ -1,0 +1,79 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "hezar"
+version = "0.29.2"
+packages = [{ include = "hezar" }]
+description = "Hezar: The all-in-one AI library for Persian, supporting a wide variety of tasks and modalities!"
+license = "MIT"
+authors = ["Aryan Shekarlaban <arxyzan@gmail.com>"]
+maintainers = ["Aryan Shekarlaban <arxyzan@gmail.com>"]
+repository = "https://github.com/hezarai/hezar"
+homepage = "https://github.com/hezarai"
+readme = ["README.md", "LICENSE"]
+keywords = ["packaging", "poetry"]
+documentation = "https://hezarai.github.io/hezar/"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+exclude = [
+    "docs",
+    "examples",
+    "tests",
+    ".gitignore",
+    ".git"
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+torch = ">=1.10.*,<2.1"
+omegaconf = ">=2.3.0"
+transformers = ">=4.28.0"
+tokenizers = ">=0.13.0"
+datasets = ">=2.9.0"
+huggingface_hub = ">=0.12.0"
+tensorboard = ">=2.10.0"
+scikit-learn = ">=1.0.0"
+gensim = {version="4.3.2", optional=true}
+seqeval = {version=">=1.2.0", optional=true}
+jiwer = {version=">=3.*", optional=true}
+soundfile = {version=">=0.12.0", optional=true}
+librosa = {version=">=0.10.0", optional=true}
+pillow = {version=">=9.*,<=10.*", optional=true}
+nltk = {version=">=3.8.0", optional=true}
+
+[tool.poetry.extras]
+nlp = ["seqeval", "jiwer", "nltk"]
+audio = ["soundfile", "librosa", "jiwer"]
+vision = ["pillow"]
+embeddings = ["gensim"]
+docs = ["sphinx", "myst-parser", "furo", "sphinx-copybutton"]
+linting = ["ruff", "black"]
+all = ["gensim", "seqeval", "jiwer", "soundfile", "librosa", "pillow", "nltk"]
+
+[tool.black]
+line-length = 120
+target-version = ['py38', 'py39', 'py310']
+
+[tool.ruff]
+ignore = ["C901", "E501", "E741", "W605", "F403", "F405"]
+select = ["C", "E", "F", "I", "W"]
+line-length = 120
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["E402", "F401", "F403", "F811", "I001"]
+"*example*.py" = ["F401", "F841", "I001"]
+"*test*.py" = ["F401", "F841"]
+
+[tool.ruff.isort]
+lines-after-imports = 2
+known-first-party = ["hezar"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
