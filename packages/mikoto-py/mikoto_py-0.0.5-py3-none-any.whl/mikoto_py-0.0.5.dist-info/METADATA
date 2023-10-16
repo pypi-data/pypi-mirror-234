@@ -1,0 +1,48 @@
+Metadata-Version: 2.1
+Name: mikoto-py
+Version: 0.0.5
+Summary: The Python framework for interacting with Mikoto
+License: MIT
+Author: TheCactusBlue
+Author-email: cactus@mikoto.io
+Requires-Python: >=3.8,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: aiohttp (>=3.8.5,<4.0.0)
+Requires-Dist: httpx (>=0.25.0,<0.26.0)
+Requires-Dist: pydantic (>=2.3.0,<3.0.0)
+Requires-Dist: python-socketio (>=5.9.0,<6.0.0)
+Description-Content-Type: text/markdown
+
+# Mikoto.py
+
+> Warning: Mikoto.py is still in early development and is not ready for production use.
+
+Mikoto.py is the official Python library for interacting with the Mikoto API.
+
+## Example
+
+```py
+import mikoto
+
+MIKOTO_TOKEN = '<bot token>'
+
+bot = mikoto.MikotoClient()
+
+@bot.messages.on_create
+async def messaging(msg: mikoto.Message):
+    if msg.content == "!ping":
+        await bot.messages.send(msg.channelId, "pong!")
+
+@bot.client.ready
+async def ready():
+    # fires when the bot has fully connected to the API
+    print('Ready!')
+
+bot.login(MIKOTO_TOKEN)
+```
+
