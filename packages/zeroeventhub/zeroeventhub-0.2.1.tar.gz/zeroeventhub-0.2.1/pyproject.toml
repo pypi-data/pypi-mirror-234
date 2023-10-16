@@ -1,0 +1,66 @@
+[tool.poetry]
+name = "zeroeventhub"
+version = "0.2.1"
+description = "Broker-less event streaming over HTTP"
+authors = ["Vipps MobilePay"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/vippsas/zeroeventhub"
+keywords = ["event-streaming"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.103"
+httpx = "^0.24"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7"
+flake8 = "^6"
+pylint = "^2"
+black = "^22"
+mypy = "1.5.1"
+pytest-mock = "^3"
+poetry-types = "^0.3"
+coverage = "^7"
+respx = "^0.20"
+pytest-asyncio = "^0.21"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+SRC = ["zeroeventhub", "tests"]
+
+[tool.mypy]
+files = "zeroeventhub,tests"
+python_version = "3.9"
+strict = true
+warn_unreachable = true
+warn_unused_configs = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+# `disallow_untyped_defs` has to be explicitly disabled because it is enabled by
+# `strict`, and just setting `check_untyped_defs` does not disable it, even
+# though it is from the same option group as `check_untyped_defs`. With it
+# enabled Mypy complains about test functions without type annotations.
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[tool.pylint.parameter_documentation]
+accept-no-param-doc = true
+accept-no-raise-doc = false
+accept-no-return-doc = true
+accept-no-yields-doc = true
+default-docstring-type = "default"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+omit = ["tests/*"]
+source = ["zeroeventhub/"]
