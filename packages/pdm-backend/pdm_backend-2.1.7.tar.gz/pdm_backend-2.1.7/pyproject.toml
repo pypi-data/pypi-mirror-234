@@ -1,0 +1,108 @@
+[project]
+name = "pdm-backend"
+description = "The build backend used by PDM that supports latest packaging standards"
+authors = [
+    { name = "Frost Ming", email = "me@frostming.com" },
+]
+requires-python = ">=3.7"
+readme = "README.md"
+keywords = [
+    "packaging",
+    "PEP 517",
+    "build",
+]
+dynamic = []
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "importlib-metadata>=3.6; python_version < \"3.10\"",
+]
+version = "2.1.7"
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/pdm-project/pdm-backend"
+Repository = "https://github.com/pdm-project/pdm-backend"
+Documentation = "https://pdm-backend.fming.dev"
+
+[tool.pdm.version]
+source = "scm"
+
+[tool.pdm.build]
+includes = [
+    "src",
+]
+package-dir = "src"
+source-includes = [
+    "tests",
+]
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "setuptools",
+]
+dev = [
+    "editables",
+    "vendoring; python_version ~= '3.8'",
+]
+docs = [
+    "mkdocs>=1.4.2",
+    "mkdocstrings[python]>=0.19.0",
+    "mkdocs-material>=8.5.10",
+]
+
+[tool.pdm.scripts]
+build = "python scripts/build.py"
+docs = "mkdocs serve"
+
+[tool.black]
+line-length = 88
+exclude = "/(\n    \\.eggs\n  | \\.git\n  | \\.mypy_cache\n  | build\n  | dist\n  | __pypackages__\n  | pdm/backend/_vendor\n)/\n"
+
+[tool.vendoring]
+destination = "src/pdm/backend/_vendor/"
+requirements = "src/pdm/backend/_vendor/vendor.txt"
+namespace = "pdm.backend._vendor"
+patches-dir = "scripts/patches"
+protected-files = [
+    "__init__.py",
+    "README.md",
+    "vendor.txt",
+]
+
+[tool.vendoring.transformations]
+substitute = []
+drop = [
+    "bin/",
+    "*.so",
+    "typing.*",
+    "*/tests/",
+    "**/test_*.py",
+    "**/*_test.py",
+]
+
+[tool.vendoring.typing-stubs]
+
+[tool.vendoring.license.directories]
+
+[tool.vendoring.license.fallback-urls]
+
+[build-system]
+requires = []
+build-backend = "pdm.backend.intree"
+backend-path = [
+    "src",
+]
