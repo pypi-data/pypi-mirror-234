@@ -1,0 +1,362 @@
+Metadata-Version: 2.1
+Name: line-item-manager
+Version: 0.2.12
+Summary: Create and manage line items.
+Home-page: https://github.com/prebid/line-item-manager
+Author: the prebid contributors
+Author-email: info@prebid.org
+License: Apache Software License 2.0
+Keywords: line-item-manager
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.7
+License-File: LICENSE
+License-File: AUTHORS.rst
+Requires-Dist: Click ==7.1.2
+Requires-Dist: googleads ==39.0.0
+Requires-Dist: jinja2 ==3.0.3
+Requires-Dist: jsonschema ==4.4.0
+Requires-Dist: PyYAML ==6.0.1
+Requires-Dist: retrying ==1.3.3
+Requires-Dist: tqdm ==4.56.0
+Provides-Extra: release
+Requires-Dist: bump2version >=1 ; extra == 'release'
+Requires-Dist: twine >=4 ; extra == 'release'
+Provides-Extra: test
+Requires-Dist: flake8 ==3.8.4 ; extra == 'test'
+Requires-Dist: mock ==4.0.2 ; extra == 'test'
+Requires-Dist: pytest ==7.0.0 ; extra == 'test'
+Requires-Dist: pytest-cov ==3.0.0 ; extra == 'test'
+Requires-Dist: pytest-runner ==5.3.1 ; extra == 'test'
+
+=================
+line-item-manager
+=================
+
+
+.. image:: https://img.shields.io/pypi/v/line_item_manager.svg
+        :target: https://pypi.python.org/pypi/line_item_manager
+
+
+
+
+Create and manage line items.
+
+
+* Free software: Apache Software License 2.0
+* Documentation: https://docs.prebid.org/tools/line-item-manager.html
+
+
+Example Workflow
+----------------
+
+1. Save and edit a copy of the package config
+::
+
+   $ line_item_manager show config > my_config.yml
+
+2. List bidder codes and names for reference
+::
+
+   $ line_item_manager show bidders
+
+3. Do a dry run to see if everything looks right
+::
+
+   $ line_item_manager create my_config.yml \
+   --dry-run \
+   --private-key-file my_gam_creds.json \
+   --network-code 12345678 \
+   --network-name Publisher_GAM_Name \
+   --bidder-code rubicon \
+   --bidder-code ix
+
+4. Do a test run creating a limited number of line items for visual inspection
+::
+
+   $ line_item_manager create my_config.yml \
+   --test-run \
+   --private-key-file my_gam_creds.json \
+   --network-code 12345678 \
+   --network-name Publisher_GAM_Name \
+   --bidder-code rubicon \
+   --bidder-code ix
+
+5. Create line items
+::
+
+   $ line_item_manager create my_config.yml \
+   --private-key-file my_gam_creds.json \
+   --network-code 12345678 \
+   --network-name Publisher_GAM_Name \
+   --bidder-code rubicon \
+   --bidder-code ix
+
+Advanced Features
+-----------------
+
+1. Use a custom line item template
+::
+
+   # 1. save and edit a copy of the default line item template
+   $ line_item_manager show template > my_template.yml
+
+   # 2. edit my_template.yml; e.g. add geoTargeting to exclude locations
+
+   # 3. create line items referencing your custom template
+   $ line_item_manager create my_config.yml \
+   --single-order \
+   --template my_template.yml
+
+2. Use a custom settings file
+::
+
+   # 1. save and edit a copy of the default settings
+   $ line_item_manager show settings > my_settings.yml
+
+   # 2. edit my_settings.yml; e.g. use a custom bidder code
+
+   # 3. create line items referencing your custom settings
+   $ line_item_manager create my_config.yml \
+   --single-order \
+   --settings my_settings.yml
+
+3. Use a custom schema file
+::
+
+   # 1. save and edit a copy of the default schema
+   $ line_item_manager show schema > my_schema.yml
+
+   # 2. edit my_schema.yml; e.g. use a custom currency list
+
+   # 3. create line items referencing your custom schema
+   $ line_item_manager create my_config.yml \
+   --single-order \
+   --schema my_schema.yml
+
+Local Development
+-----------------
+
+Installing and running line_item_manager locally using docker
+::
+
+   $ git clone git://github.com/prebid/line-item-manager
+   $ cd line-item-manager
+   $ command='line_item_manager' extra_args='--help' make docker-run
+
+Configuration
+-------------
+
+See this default config_ that you can edit for your own purposes.
+
+Configure access to Google Ad Manager
+-------------------------------------
+
+In order to use line-item-manager, you need to provide JSON private key file and configure access to your Google Ad manager account:
+
+1. In Google API Console generate private key file for service account
+2. In Google Ad Manager enable API access and create new services user with Administrator role.
+
+See `detailed instructions <https://developers.google.com/ad-manager/api/authentication#oauth>`_ in documentation of GAM authentication.
+
+Credits
+-------
+
+This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+
+.. _`config`: https://github.com/prebid/line-item-manager/blob/master/line_item_manager/conf.d/line_item_manager.yml
+.. _Cookiecutter: https://github.com/audreyr/cookiecutter
+.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+
+
+=======
+History
+=======
+
+0.2.12 (2023-10-09)
+-------------------
+* Example script: Activate targeting values by network code, key Id and names (#149)
+
+0.2.11 (2023-09-29)
+-------------------
+* Expanded currency list to include GAM currencies
+* CLI support for custom settings and schema files for advanced users (#138)
+* Upgraded PyYAML and googleads packages (#144)
+* Python 3.11 support (#140)
+
+0.2.10 (2023-08-30)
+-------------------
+* BUG FIX: Error for unsupported GAM API version is not handled properly (#116)
+* BUG FIX: bidder-data.csv has spaces, causing line-item-manager to not find line items (#128)
+* Update Google Ad Manager to v202308 (#129)
+
+0.2.9 (2022-08-23)
+-------------------
+* Update Google Ad Manager to v202208 (#96)
+* BUG FIX: tests expect 'oneVideo' to be a Prebid listed bidder (#109)
+* Support size override for video (#111)
+
+0.2.8 (2022-05-24)
+-------------------
+* BUG FIX: Specify CA certificates file when reading bidders data file (#104)
+* Update Google Ad Manager to v202108 (#95)
+
+0.2.7 (2022-05-17)
+-------------------
+* default creative duration to match max duration (that is currently 30000 milliseconds)
+* support config duration in creative block
+
+0.2.6 (2022-02-08)
+-------------------
+* Require Python >=3.7 (3.6 EOL DEC 23 2021)
+
+0.2.5 (2022-02-08)
+-------------------
+* Update Google Ad Manager to v202105 (#93)
+* Remove Python 3.6 and add 3.10 support (#91)
+* Support for more line item types (sponsorship line item creation) (#86)
+* BUG FIX: Certain currency values are invalid (#73)
+
+0.2.4 (2021-12-01)
+-------------------
+* Update Google Ad Manager to v202102 (#63)
+* Support Team ID (#77)
+* Support LineItem.videoMaxDuration required in v202102 (#80)
+
+0.2.3 (2021-05-26)
+-------------------
+
+* BUG FIX: datetime.timezone objects did not include zone name (#68)
+* Support use of a custom line-item template (#65)
+* Update bumpversion (depracated) and pytest-runner (out-of-date) (#62)
+
+0.2.2 (2021-04-23)
+-------------------
+
+* Support reportableType settings for CustomTargetingKey (#55)
+* Support for advertisers of different types (#48)
+* BUG FIX: Custom targeting hb_bidder contains all key-values (#43)
+* Upgrade jinja2 to 2.11.3 due to security vulnerabilities (#51)
+* Upgrade PyYAML due to security vulnerabilities (#56)
+* Remove requirements_dev.txt; not needed and introducing CVEs (#58)
+
+0.2.1 (2021-02-23)
+-------------------
+
+* README includes steps to configure access to Google Ad Manager (#39)
+* README includes link to prebid documentation (#40)
+
+0.2.0 (2021-02-16)
+-------------------
+
+* Beta release
+
+0.1.16 (2021-02-11)
+-------------------
+
+* BUG FIX: VAST URL should reference the 'uuid' targeting key in default template config (#32)
+* Video creative duration set to 1 second to be consistent with Prebid documentation (#31)
+* Custom targeting support for using 'IS_NOT' operator (#35)
+
+0.1.15 (2021-02-09)
+-------------------
+
+* BUG FIX: Error during line item creative associaiton (#25)
+* BIG FIX: Bidder Targeting Key status is 'INACTIVE' (#23)
+* Added directory of helpful bin scripts (examples/bin) (#22)
+* Added bin script (examples/bin/archive_order.py) for archiving orders (#21)
+
+0.1.14 (2021-01-25)
+-------------------
+
+* CLI Help: noted that tests are not auto-archived
+
+0.1.13 (2021-01-22)
+-------------------
+
+* First release to production PyPI
+* Github action for publishing
+
+0.1.12 (2021-01-12)
+-------------------
+
+* Support for Python 3.9
+* Prebid and PrebidBidder classes added
+* Type hints added
+* Docstrings added
+* Removed unused travis and tox support
+
+0.1.11 (2020-12-17)
+-------------------
+
+* CLI option to display package version (#4)
+* Schema invalidation of unrecognized config properties (#5)
+* Support all bidder keys in config override map (#9)
+
+0.1.10 (2020-12-15)
+-------------------
+
+* FEATURE: prebid recommended size override for banner creatives (#1)
+
+0.1.9 (2020-12-11)
+------------------
+
+* BUG FIX: multi-line template assignments not parsed correctly (#2)
+
+0.1.8 (2020-12-7)
+------------------
+
+* Support for including a custom line item priority.
+
+0.1.7 (2020-12-4)
+------------------
+
+* Testing: Additional coverage.
+* Conditional schema definitions.
+
+0.1.6 (2020-12-3)
+------------------
+
+* Added 'Run of network' default inventory targeting
+* Added predefined Prebid granularity types
+* Dockerfile python change to slim from alpine
+
+0.1.5 (2020-12-1)
+------------------
+
+* Fixed missing History.
+
+0.1.4 (2020-12-1)
+------------------
+
+* Code cleanup. Deletion of unused code.
+* Testing: Additional coverage.
+
+0.1.3 (2020-11-30)
+------------------
+
+* Testing: Additional coverage.
+
+0.1.2 (2020-11-29)
+------------------
+
+* Bug Fix: microAmount not properly assigned in line item
+* Testing: Mock Ad Client and initial tests  
+
+0.1.1 (2020-11-24)
+------------------
+
+* Auto-archive Orders on failure or interruption.
+
+0.1.0 (2020-11-23)
+------------------
+
+* First release on Test PyPI.
