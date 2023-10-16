@@ -1,0 +1,75 @@
+Metadata-Version: 2.1
+Name: hirmeos-google-books
+Version: 0.0.4
+Summary: Functions required by the hirmeos-google-books-driver
+Author-email: Cristian Garcia <cristian.garcia@ubiquitypress.com>, Rowan Hatherley <rowan.hatherley@ubiquitypress.com>
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.10
+Description-Content-Type: text/x-rst
+License-File: LICENSE
+Requires-Dist: selenium >=4.8
+Requires-Dist: webdriver-manager >=4.0
+
+===================
+Google Books Driver
+===================
+
+Load csv reports from google books. There are two options:
+
+- Option 1: Input the google credentials and download the report csv 
+  requested within a date range, it will return a string holding the csv report
+  content.
+
+- Option 2: Process a csv uploaded by the user with the option of checking
+  the expected headers.
+
+
+Note: If the option 1 is required it's recommended to use the option 2
+afterwards to convert the result (string representation of the csv report) to
+a list of dict.
+
+
+Troubleshooting
+===============
+
+First of all if the scraping with Selenium is needed, 
+we have to create a google account only for the purpose of this driver. 
+Such account has to have a recovery email account to allow the Selenium
+download the report freely.
+
+It is very important to check the output the first time the driver is run as it 
+is very likely that Google will block the 'suspicious' login attempt. If it
+does, you will need to login with the same credentials you have provided the
+driver with and review the security settings, Google will ask if you
+were prevented from logging in and you must confirm so. Afterwards 
+re-run the driver and it should work just fine.
+
+The alternative to the scraping is uploading the report manually to bypass 
+the scraping functionality as it could be unreliable because of the frontend
+and/or backend changes from google.
+
+
+Release Notes:
+==============
+
+[0.0.4] - 2023-10-09
+---------------------
+Added
+.....
+    - Allowed support for chrome and chromium browsers
+    - Allow a user to specify browser and user agent
+
+Changed
+.......
+    - Added driver options to improve report fetching reliability
+
+
+[0.1.1] - 2023-09-22
+---------------------
+Added
+.......
+    - Logic to initialise the webdriver
+    - Log in to Google
+    - Fetch a Google Play Books report
