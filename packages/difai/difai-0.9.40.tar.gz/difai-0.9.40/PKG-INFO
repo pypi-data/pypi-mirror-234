@@ -1,0 +1,63 @@
+Metadata-Version: 2.1
+Name: difai
+Version: 0.9.40
+Summary: 'Did I forget any imports' generates requirement files for you
+Home-page: https://gitlab.com/marvin.vanaalst/difai
+License: WTFPL
+Keywords: packaging
+Author: Marvin van Aalst
+Author-email: marvin.vanaalst@gmail.com
+Maintainer: Marvin van Aalst
+Maintainer-email: marvin.vanaalst@gmail.com
+Requires-Python: >=3.8,<4.0
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: nbconvert (>=7.0.0,<8.0.0)
+Requires-Dist: nbformat (>=5.6.0,<6.0.0)
+Requires-Dist: pip-tools (>=6.8.0,<7.0.0)
+Requires-Dist: typer (>=0.6.1,<0.7.0)
+Project-URL: Documentation, https://gitlab.com/marvin.vanaalst/difai
+Project-URL: Repository, https://gitlab.com/marvin.vanaalst/difai
+Description-Content-Type: text/markdown
+
+# Did I forget any imports?
+
+[![pipeline status](https://gitlab.com/marvin.vanaalst/difai/badges/main/pipeline.svg)](https://gitlab.com/marvin.vanaalst/difai/-/commits/main)
+[![coverage report](https://gitlab.com/marvin.vanaalst/difai/badges/main/coverage.svg)](https://gitlab.com/marvin.vanaalst/difai/-/commits/main)
+[![PyPi](https://img.shields.io/pypi/v/difai)](https://pypi.org/project/difai/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)
+[![Downloads](https://pepy.tech/badge/difai)](https://pepy.tech/project/difai)
+
+DIFAI searches for import statements for all the python and jupyter notebook files in the current directory. It then uses `pip freeze` to get your installed versions and `pip-compile` to generate a `requirements.txt` file containing all of your dependencies and their depdendencies including hashes for a reproducible build.
+
+## Run
+
+Simply call `difai` in the current folder.
+You can change the input (where the `.py` and `.ipynb` files are read) and output (where the `requirement.in` and `requirements.txt` files are written) folders using
+`--in-path` and `--out-path` respectively.
+In order to exclude certain packages from the search, you can use the `--exclude` option.
+
+## Pipeline
+
+<div class="center">
+
+```mermaid
+graph TB
+    A[glob] --> B
+    A --> C
+    B[.py] --> D
+    C[.ipynb] -->|nbconvert| B
+    D[AST]  --> E
+    X[pip freeze] --> E
+    E[requirements.in] -->|pip tools| F
+    F[requirements.txt]
+```
+
+</div>
+
