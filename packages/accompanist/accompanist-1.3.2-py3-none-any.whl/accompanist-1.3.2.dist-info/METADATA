@@ -1,0 +1,273 @@
+Metadata-Version: 2.1
+Name: accompanist
+Version: 1.3.2
+Summary: Analysis AWS WAF logs and generate a report
+Author: itsuki
+License: MIT
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: click (>=8.1.3)
+Requires-Dist: boto3 (>=1.26.126)
+Requires-Dist: datetime (>=5.1)
+Requires-Dist: pandas (>=2.0.1)
+Requires-Dist: matplotlib (>=3.7.1)
+Requires-Dist: PdfPages (>=0.1.0)
+
+![logo](https://user-images.githubusercontent.com/49217613/258486106-1b202567-c277-40f6-9619-ccbd6f2a6aa5.png)
+
+[![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10-green?style=for-the-badge&logo=appveyor)](https://pypi.org/project/accompanist/)
+[![Downloads](https://static.pepy.tech/badge/accompanist)](https://pepy.tech/project/accompanist)
+
+# 🎻 Introduction
+
+---
+
+## What is Accomapnist?
+Accompanist is an AWS WAF log analysis tool and an "accompanist" of WAF operation.  
+It enables you to analyze AWS WAF logs and automatically generate instant analysis reports in just three simple steps.  
+If you're operating AWS WAF, this tool can be helpful for instant log analysis and help you understand the trends of blocked or counted accesses.  
+
+- Reporting Items
+    - Histgram of requests
+        - Total number
+        - Number by each WAF rule provider
+    - Top 5 for the following categories:
+        - Rule group
+        - Rule
+        - Paths name
+        - User agent
+        - IP addressws
+        - Country codes
+    - Hit count on specific paths
+    - Comment
+        - An optional field where you can write additional notes
+
+## Prerequisite
+
+- Requirement
+    - WAF: AWS WAFv2 and/or Third Party WAF (using WebACL)
+    - Logging Destination: CloudWatch Logs or S3
+    - Support Action: BLOCK, COUNT or EXCLUDED_AS_COUNT
+
+- IAM Role/User policy
+    - Example policies are noted in Appnedix, the last section of this page.
+
+# 🚀 Get Started
+---
+
+## Install
+
+```bash
+$ pip install accompanist
+```
+
+## Usage
+
+1. First, configure the settings using the following command; this will generate a `config.json` file. 
+
+```bash
+$ accompanist init
+```
+
+- You must set the log group name using this command, or you can choose to edit the `config.json` file directly.
+
+2. Second, retrieve the query results with the following commnad. 
+
+- For example, to retrieve the `BLOCK` log for the past three days
+
+```bash
+$ accompanist listen -a BLOCK -d 3
+```
+
+- If the log destination is S3, you can use "hear" instead of the "listen".
+
+3. Finally, generate a report in PDF format.
+
+```bash
+$ accompanist play
+```
+
+## Uninstall
+
+```bash
+$ pip uninstall accompanist
+```
+
+# 🌱 How to use
+
+## Convenient usage
+
+- The "listen" or "hear" with `--json_log`  or `-j`  option can be help to investigate the detail of WAF logs.
+    - [Important] Please handle it carefully as it may include sensitive or confidential information.
+    - If you want to confirm a specific access of log, you should re-run "play" with the option and open a json file generated in the current directory.
+- The report color is customizable for when you run "play" with the option, `--color` or `-d` .
+
+## Precaution
+
+- This tool works with AWS WAFv2 and does not support WAFv1.
+- For AWS Managed Rules, you need to append "AWS" to the prefix, or the histogram works wrong.
+- In COUNT action, as it is a well-known general mode of AWS WAF, COUNT or EXCLUDED_AS_COUNT is used.
+- Using the "COUNT" action, the results are double counted by each rule.
+- The logs may not be correctly calculated if you use the "Label" features in WAF.
+- If the log destination is S3, it will take some time to acquire the log (several minutes)
+- The analysis target period (days) can be set up to 40 days at most.
+
+# 🔨 Subcommnads
+---
+
+## init
+
+- Configure a CWL log group setting and more.
+
+### Usage:
+
+```bash
+accompanist init  # interactive inputting process
+```
+
+### Options:
+
+```bash
+  -l, --log-group TEXT  Set a CloudWatch Logs Log group name.  [required]
+  -p, --path TEXT       Set a URI path for counts that is blocked/counted.[required]
+  -c, --comment TEXT    Set a comment for report.  [required]
+  -h, --help            Show this message and exit.
+```
+## listen
+
+- Get a WAF log file in CSV format.
+
+### Usage:
+```bash
+accompanist listen [OPTIONS]
+```
+
+### Options:
+
+```bash
+  -a, --action [BLOCK|COUNT]  Chose an action type of AWS WAF. The default is
+                              "BLOCK".  [required]
+  -d, --days INTEGER          Set a number of the past days until today for
+                              analysis target period.
+  -s, --start_time INTEGER    Set a UNIX time of the oldest time for analysis
+                              target period (instead of "--days").
+  -e, --end_time INTEGER      Set a UNIX time of the latest time for analysis
+                              target period (instead of "--days").
+  -j, --json-log              Output a JSON log file. Please handle it with care.
+                              for debugging.
+  -h, --help                  Show this message and exit.
+```
+
+## hear
+
+**Note: This is experimental feature.**
+
+- Get a WAF log file in CSV format from S3.
+
+### Usage:
+```bash
+accompanist hear [OPTIONS]
+```
+### Options:
+
+```bash
+  -a, --action [BLOCK|COUNT]  Chose an action type of AWS WAF. The default is
+                              "BLOCK".  [required]
+  -d, --days INTEGER          Set a number of the past days until today for
+                              analysis target period.
+  -s, --start_time INTEGER    Set a UNIX time of the oldest time for analysis
+                              target period (instead of "--days").
+  -e, --end_time INTEGER      Set a UNIX time of the latest time for analysis
+                              target period (instead of "--days").
+  -h, --help                  Show this message and exit.
+```
+
+## play
+
+- Analysis WAF logs and generate a report.
+
+### Usage:
+```bash
+accompanist play [OPTIONS]
+```
+
+### Options:
+```bash
+  -c, --colorful                  Set a random color of report theme (instead
+                                  of color).
+  -d, --color TEXT                Customize a color of report theme with color
+                                  code,  (e.g.) #cccccc.
+  -m, --mask-ip                   Mask IP addresses on pie chart.
+  -u, --utc-offset INTEGER        Set a number of UTC offest. The defaut
+                                  offset is UTC+9 (Asia/Tokyo).
+  -y, --y-limit [50|100|500|1000]
+                                  Adjust a Y-axis max limitation for
+                                  histograms due to many requests.
+  -h, --help                      Show this message and exit.
+```
+
+# 📚 Appendix
+---
+
+## IAM Policy for CWL
+
+Here is an example of IAM policy with restricted permissions.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:StartQuery",
+            "Resource": [
+                "arn:aws:logs:<region>:<aws-acount>:log-group:<log-group-name>:*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "logs:GetQueryResults",
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+Note: The `<region>`, `<aws-acount>` and `<log-group-name>` in this sample policy should be replaced.
+
+## IAM Policy for S3
+
+Here is an example of IAM policy with restricted permissions.
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::<waf-log-bucket>"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::<waf-log-bucket>/*"
+        }
+    ]
+}
+```
+
+Note: The `<waf-log-bucket>`in this sample policy should be replaced.
+
+## License
+
+### The MIT License
+
+Copyright 2023 Itsuki Yutaka
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
