@@ -1,0 +1,89 @@
+[tool.poetry]
+name = "llm-monitor"
+version = "0.12.0"
+description = "📈 Monitor your LLM integration with Galileo's LLM Monitor!"
+authors = ["Galileo Technologies Inc. <team@rungalileo.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9,<3.12"
+requests = "^2.31.0"
+pydantic = "^2.4.1"
+tqdm = "^4.65.0"
+langchain = "^0.0.299"
+pytz = "^2023.3"
+pyjwt = "^2.8.0"
+cryptography = "^41.0.3"
+backoff = "^2.2.1"
+types-pytz = "^2023.3.1.1"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+coverage = "^7.2.3"
+pytest-cov = "^4.0.0"
+pytest-xdist = "^3.3.1"
+requests-mock = "^1.11.0"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.4.1"
+pre-commit = "^3.3.3"
+types-requests = "^2.31.0.1"
+types-tqdm = "^4.65.0.1"
+pytest-socket = "^0.6.0"
+openai = "^0.27.8"
+
+
+[tool.poetry.group.docs.dependencies]
+furo = "^2023.8.19"
+sphinx-autodoc-typehints = "^1.24.0"
+myst-parser = "^2.0.0"
+sphinx-markdown-builder = "^0.6.5"
+sphinx-autobuild = "^2021.3.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Test.
+[tool.pytest.ini_options]
+pythonpath = ["./llm_monitor/"]
+addopts = [
+    # Run tests in parallel.
+    "-n", "auto",
+    # Show local variables in tracebacks.
+    "--showlocals",
+    # Show extra test summary info as specified by chars.
+    "-o", "console_output_style=progress",
+    # Disable warnings.
+    "--disable-warnings",
+    # Show slowest 10 test durations.
+    "--durations=10",
+    # Disable internet access.
+    "--disable-socket",
+]
+
+# Formatters.
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+
+# Linters.
+[tool.ruff]
+line-length = 88
+ignore = ["D10", "D415"]
+fix = true
+ignore-init-module-imports = true
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+mypy_path = ["llm_monitor"]
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
