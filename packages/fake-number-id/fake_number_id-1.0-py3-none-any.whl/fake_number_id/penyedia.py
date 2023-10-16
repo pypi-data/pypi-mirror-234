@@ -1,0 +1,53 @@
+from enum import Enum
+
+
+class indosat(Enum):
+	EMPAT_BELAS = '814'
+	LIMA_BELAS = '815'
+	ENAM_BELAS = '816'
+	LIMA_LIMA = '855'
+	LIMA_ENAM = '856'
+	LIMA_TUJUH = '857'
+	LIMA_DELAPAN = '858'
+
+class xl(Enum):
+	TUJUH_BELAS = '817'
+	DELAPAN_BELAS = '818'
+	SEMBILAN_BELAS = '819'
+	LIMA_SEMBILAN = '859'
+	TUJUH_DELAPAN = '878'
+	TUJUH_TUJUH = '877'
+
+class axis(Enum):
+	TIGA_DELAPAN = '838'	
+	TIGA_TUJUH = '837'
+	TIGA_SATU = '831'
+	TIGA_DUA = '832'
+
+class telkomsel(Enum):
+	DUA_BELAS = '812'
+	TIGA_BELAS = '813'
+	LIMA_DUA = '852'
+	LIMA_TIGA = '853'
+	DUA_SATU = '821'
+	DUA_TIGA = '823'
+	DUA_DUA = '822'
+	LIMA_SATU = '851'
+
+class smartfren(Enum):
+	DELAPAN_SATU = '881'
+	DELAPAN_DUA = '882'
+	DELAPAN_TIGA = '883'
+	DELAPAN_EMPAT = '884'
+	DELAPAN_LIMA = '885'
+	DELAPAN_ENAM = '886'
+	DELAPAN_TUJUH = '887'
+	DELAPAN_DELAPAN = '888'
+
+class three(Enum):
+	SEMBILAN_ENAM = '896'
+	SEMBILAN_TUJUH = '897'
+	SEMBILAN_DELAPAN = '898'
+	SEMBILAN_SEMBILAN = '899'
+	SEMBILAN_LIMA = '895'
+	
