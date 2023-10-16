@@ -1,0 +1,21 @@
+from pyspark.sql import SparkSession
+from datazone import transform, Input
+
+
+def get_pyspark_session():
+    return SparkSession.builder.appName("MyApp").master("local[*]").getOrCreate()
+
+
+@transform(materialized=False)
+def get_data():
+    data = [("Alice", 9), ("Bob", 6), ("Charlie", 3), ("Maria", 7)]
+    columns = ["Name", "Score"]
+
+    spark = get_pyspark_session()
+    return spark.createDataFrame(data, columns)
+
+
+@transform(input_mapping={"score_data": Input(get_data)})
+def get_top_scorers(score_data):
+    low_id = score_data.filter(score_data["score"] > 5)
+    return low_id
