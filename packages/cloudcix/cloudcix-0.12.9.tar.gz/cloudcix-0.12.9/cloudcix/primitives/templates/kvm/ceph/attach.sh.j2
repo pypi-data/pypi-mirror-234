@@ -1,0 +1,45 @@
+{# Stop execution if a command throws an error #}
+set -e
+
+{# Check if the drive is already attached #}
+virsh domblklist --domain {{ vm_name }} | grep {{ ceph_name }} \
+  && echo '{{ ceph_name }} already attached to {{ vm_name }}' \
+  && echo -n {{ success_id }} \
+  && exit 0
+
+
+{# Generate a new target name for the drive #}
+EXISTING_TARGETS=$(virsh domblklist --domain {{ vm_name }} | awk '/^ hd[a-z]/ { print $1 }')
+TARGET_PREFIX=hd
+NEW_LETTER=""
+for LETTER in {a..z}; do
+    if ! [[ " ${EXISTING_TARGETS[@] " =~ " ${TARGET_PREFIX}${LETTER} " ]];
+        NEW_LETTER="$LETTER"
+        break
+    fi
+done
+if [ -z $NEW_LETTER ]; then
+    echo 'No new drive targets available'
+    exit 1
+fi
+
+{# Get the Ceph secret id #}
+SECRET_UUID=$(virsh secret-list | awk '/ceph CIX_VOL_MANAGER/ { print $1 }')
+
+cat << EOF
+<disk type="network" device="disk">
+  <driver name="qemu" type="raw"/>
+  <auth username="cix_vol_mgr">
+    <secret type="ceph" uuid="$SECRET_UUID"/>
+  </auth>
+  <source protocol="rbd" name="{{ pool_name }}/{{ ceph_name }}">
+    {% for host in hosts %}
+    <host name="{{ host }}" port="6789"/>
+    {% endfor %}
+  </source>
+  <target dev="${TARGET_PREFIX}${NEW_LETTER}" bus="virtio"/>
+</disk>
+EOF >> ceph_{{ ceph_name }}.xml
+
+virsh attach-device --domain {{ vm_name }} --file ceph_{{ ceph_name }}.xml --config && echo -n {{ success_id }}
+

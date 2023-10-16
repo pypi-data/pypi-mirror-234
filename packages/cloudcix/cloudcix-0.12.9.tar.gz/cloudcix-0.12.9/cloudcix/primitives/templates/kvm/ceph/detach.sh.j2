@@ -1,0 +1,19 @@
+{# Stop execution if something fails #}
+set -e
+
+DRIVE_NAMES=$(virsh domblklist --domain {{ vm_name }} )
+if [ -z "${DRIVE_NAMES}" ]; then
+    echo "Failed to read data for VM {{ vm_name }} on remote host"
+    exit 1
+fi
+
+{# Find out what the drive's name is in the VMs domain XML #}
+TARGET=$(echo $DRIVE_NAMES | awk '/{{ ceph_name }}/ { print $1 }')
+if [ -z "${TARGET}" ]; then
+    echo 'Could not find drive {{ ceph_name }} connected to {{ vm_name }}'
+    exit 1
+fi
+
+virsh detach-disk --domain {{ vm_name }} --target $TARGET --config \
+  && echo -n {{ success_id }}
+
