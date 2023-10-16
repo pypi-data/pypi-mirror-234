@@ -1,0 +1,170 @@
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project]
+name = "jupyverse"
+description = "A set of FPS plugins implementing a Jupyter server"
+keywords = ["jupyter", "server", "fastapi", "plugins"]
+dynamic = ["version"]
+requires-python = ">=3.8"
+dependencies = [
+    "fps-contents >=0.1.2,<1",
+    "fps-kernels >=0.1.2,<1",
+    "fps-terminals >=0.1.2,<1",
+    "fps-nbconvert >=0.1.2,<1",
+    "fps-yjs >=0.1.2,<1",
+    "fps-lab >=0.1.2,<1",
+    "fps-frontend >=0.1.2,<1",
+    "jupyverse_api >=0.1.2,<1",
+]
+
+[[project.authors]]
+name = "Jupyter Development Team"
+email = "jupyter@googlegroups.com"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+text = "BSD 3-Clause License"
+
+[project.urls]
+Homepage = "https://jupyter.org"
+
+[project.optional-dependencies]
+jupyterlab = ["fps-jupyterlab >=0.1.2,<1"]
+retrolab = ["fps-retrolab >=0.1.2,<1"]
+auth = ["fps-auth >=0.1.2,<1", "fps-login >=0.1.2,<1"]
+auth-fief = ["fps-auth-fief >=0.1.2,<1"]
+auth-jupyterhub = ["fps-auth-jupyterhub >=0.1.2,<1"]
+noauth = ["fps-noauth >=0.1.2,<1"]
+test = [
+    "mypy",
+    "types-setuptools",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-rerunfailures",
+    "pytest-timeout",
+    "pytest-env",
+    "httpx",
+    "httpx-ws >=0.4.1",
+    "requests",
+    "websockets",
+    "ipykernel",
+]
+docs = [ "mkdocs", "mkdocs-material" ]
+
+[tool.hatch.envs.dev]
+# TODO: if/when hatch gets support for defining editable dependencies, the
+# pre-install commands here and post-install commands in the matrix can be moved
+# to the dependencies section
+pre-install-commands = [
+  "pip install -e ./jupyverse_api",
+  "pip install -e ./plugins/contents",
+  "pip install -e ./plugins/frontend",
+  "pip install -e ./plugins/kernels",
+  "pip install -e ./plugins/lab",
+  "pip install -e ./plugins/nbconvert",
+  "pip install -e ./plugins/terminals",
+  "pip install -e ./plugins/yjs",
+  "pip install -e ./plugins/resource_usage",
+  "pip install -e ./plugins/webdav[test]",
+]
+features = ["test"]
+
+[tool.hatch.envs.dev.overrides]
+matrix.frontend.post-install-commands = [
+  { value = "pip install -e ./plugins/jupyterlab", if = ["jupyterlab"]},
+  { value = "pip install -e ./plugins/retrolab", if = ["retrolab"]},
+]
+matrix.auth.post-install-commands = [
+  { value = "pip install -e ./plugins/noauth", if = ["noauth"] },
+  { value = "pip install -e ./plugins/auth -e ./plugins/login", if = ["auth"] },
+  { value = "pip install -e ./plugins/auth_fief", if = ["auth_fief"] },
+  { value = "pip install -e ./plugins/auth_jupyterhub", if = ["auth_jupyterhub"] },
+]
+
+matrix.frontend.scripts = [
+  { key = "typecheck1", value = "typecheck0 ./plugins/jupyterlab", if = ["jupyterlab"] },
+  { key = "typecheck1", value = "typecheck0 ./plugins/retrolab", if = ["retrolab"] },
+]
+
+matrix.auth.scripts = [
+  { key = "typecheck", value = "typecheck1 ./plugins/noauth", if = ["noauth"] },
+  { key = "typecheck", value = "typecheck1 ./plugins/auth ./plugins/login", if = ["auth"] },
+  { key = "typecheck", value = "typecheck1 ./plugins/auth_fief", if = ["auth_fief"] },
+  { key = "typecheck", value = "typecheck1 ./plugins/auth_jupyterhub", if = ["auth_jupyterhub"] },
+]
+
+[[tool.hatch.envs.dev.matrix]]
+frontend = ["jupyterlab", "retrolab"]
+auth = ["noauth", "auth", "auth_fief", "auth_jupyterhub"]
+
+[tool.hatch.envs.dev.scripts]
+test = "pytest ./tests plugins/webdav/tests -v --reruns 5 --timeout=60"
+lint = [
+  "black --line-length 100 jupyverse ./plugins",
+  "isort --profile=black jupyverse ./plugins",
+]
+typecheck0 = """mypy --no-incremental \
+./jupyverse_api \
+./plugins/contents \
+./plugins/frontend \
+./plugins/kernels \
+./plugins/lab \
+./plugins/nbconvert \
+./plugins/terminals \
+./plugins/yjs \
+./plugins/resource_usage \
+./plugins/webdav \
+"""
+
+[tool.hatch.envs.docs]
+features = ["docs"]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict"
+serve = "mkdocs serve --dev-addr localhost:8000"
+
+[tool.check-manifest]
+ignore = [ ".*",]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+exclude = ["binder"]
+
+[tool.jupyter-releaser]
+skip = [ "check-links", "check-manifest",]
+
+[tool.jupyter-releaser.options]
+python_packages = [
+    "jupyverse_api:jupyverse_api",
+    "plugins/noauth:fps-noauth",
+    "plugins/auth:fps-auth",
+    "plugins/auth_fief:fps-auth-fief",
+    "plugins/auth_jupyterhub:fps-auth-jupyterhub",
+    "plugins/contents:fps-contents",
+    "plugins/frontend:fps-frontend",
+    "plugins/jupyterlab:fps-jupyterlab",
+    "plugins/kernels:fps-kernels",
+    "plugins/lab:fps-lab",
+    "plugins/nbconvert:fps-nbconvert",
+    "plugins/retrolab:fps-retrolab",
+    "plugins/terminals:fps-terminals",
+    "plugins/yjs:fps-yjs",
+    "plugins/resource_usage:fps-resource-usage",
+    "plugins/login:fps-login",
+    "plugins/webdav:fps-webdav",
+    ".:jupyverse:jupyverse_api,fps-noauth,fps-auth,fps-auth-fief,fps-auth-jupyterhub,fps-contents,fps-jupyterlab,fps-kernels,fps-lab,fps-frontend,fps-nbconvert,fps-retrolab,fps-terminals,fps-yjs,fps-resource-usage,fps-webdav"
+]
+
+[tool.hatch.version]
+path = "jupyverse/__init__.py"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
