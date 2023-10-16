@@ -1,0 +1,51 @@
+[build-system]
+requires = [ "setuptools>=41", "wheel", "setuptools-git-versioning<2", ]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[project]
+name = "nomad-tools"
+readme = "README.md"
+authors = [{name = "Kamil Cukrowski"}]
+license = {text = "GPL-3.0-or-later"}
+dependencies = [
+	"click",
+	"requests",
+	"setuptools",
+	"pyyaml",
+]
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://gitlab.com/Kamcuk/nomad-tools"
+repository = "https://gitlab.com/Kamcuk/nomad-tools"
+documentation = "https://gitlab.com/Kamcuk/nomad-tools"
+
+[project.scripts]
+nomad-watch = "nomad_tools:nomad_watch.cli"
+nomad-cp = "nomad_tools:nomad_cp.cli"
+nomad-vardir = "nomad_tools:nomad_vardir.cli"
+nomad-gitlab-runner = "nomad_tools:nomad_gitlab_runner.main"
+
+[project.optional-dependencies]
+test = [
+	"tomli",
+	"pytest",
+	"pytest-xdist",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--tb=short"
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s %(levelname)s %(filename)s:%(lineno)s %(message)s"
+log_cli_date_format = "%H:%M:%S"
+testpaths = [
+	"tests/unit",
+]
+
+[tool.pyright]
+reportUnnecessaryComparison = "error"
