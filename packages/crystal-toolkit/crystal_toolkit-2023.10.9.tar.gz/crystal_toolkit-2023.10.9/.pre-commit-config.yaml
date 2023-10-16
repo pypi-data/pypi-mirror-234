@@ -1,0 +1,49 @@
+ci:
+  autoupdate_schedule: quarterly
+
+default_stages: [commit]
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+# ignore generated docs and dependency lock files, the directory
+# jupyterlab-extension/ and all SVG, JS and CSS files
+exclude: ^(docs/.+|.*lock.*|jupyterlab-extension/.+|.*\.(svg|js|css))|_version.py$
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.277
+    hooks:
+      - id: ruff
+        args: [--fix, --ignore, D]
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black-jupyter
+
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.3.0
+  #   hooks:
+  #     - id: mypy
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.5
+    hooks:
+      - id: codespell
+        stages: [commit, commit-msg]
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.6.1
+    hooks:
+      - id: nbstripout
+        args: [--drop-empty-cells, --keep-output]
