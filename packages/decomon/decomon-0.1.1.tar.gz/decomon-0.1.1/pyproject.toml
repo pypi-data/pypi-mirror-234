@@ -1,0 +1,79 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decomon"
+description = "Linear Relaxation for Certified Robustness Bound for Tensorflow Neural Networks"
+readme = "README.md"
+authors = [
+    {email ="ai.decomon@gmail.com"},
+]
+requires-python = ">=3.8"
+dependencies =[
+    "tensorflow >=2.6.0",
+    "matplotlib",
+    "numpy >=1.21",
+]
+dynamic = ["version"]
+
+[project.urls]
+documentation = "https://airbus.github.io/decomon"
+repository = "https://github.com/airbus/decomon"
+
+[project.optional-dependencies]
+dev = ["pytest>=6.2.2", "black", "tox>=3.20.1"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--import-mode=importlib",
+    "--ignore=tests/lirpa_comparison",
+    "--ignore=tests/test_deel_lip.py",
+]
+
+[tool.black]
+line-length = 120
+target-version = ['py37']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | tests/.*/setup.py
+  )/
+  | foo.py           # also separately exclude a file named foo.py in
+                     # the root of the project
+)
+'''
+
+[tool.mypy]
+files = "src"
+strict_optional = true
+implicit_optional = false
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tensorflow.*",
+    "keras.*",
+    "deel.lip.*"
+]
+ignore_missing_imports = true
