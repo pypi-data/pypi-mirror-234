@@ -1,0 +1,110 @@
+.. _RefNatlinkEngine:
+
+Natlink and DNS engine back-end
+============================================================================
+
+The Dragonfly library may be used with Nuance's Dragon NaturallySpeaking
+(DNS) speech recognition software for Microsoft Windows.   Dragonfly
+interacts with DNS through another piece of software called Natlink.
+
+This is the engine of choice on Microsoft Windows.
+
+
+Requirements and Installation
+----------------------------------------------------------------------------
+
+There are three requirements for using Dragonfly's Natlink/DNS engine
+back-end: Dragon NaturallySpeaking for Windows, Natlink and a 32-bit Python
+installation.
+
+Dragon NaturallySpeaking, or simply Dragon, is available for purchase from
+Nuance Communications, Inc.  For the latest version, see
+`www.nuance.com/dragon.html <https://www.nuance.com/dragon.html>`__.
+Natlink and Dragonfly support Dragon versions up to 16, the latest.  The
+*Individual* editions of *Dragon* are recommended, although other editions
+such as *Home* will also work.  Editions of Dragon for macOS are not
+compatible with Natlink or Dragonfly.
+
+Natlink is available for download from GitHub and SourceForge.  The required
+version depends on which version of Python is installed.  If you are using
+Python 2, please download and install one of the older versions of Natlink,
+available from the project's `SourceForge page
+<https://sourceforge.net/projects/natlink/files/natlink/natlink4.2/>`__.
+If you are using Python 3, please download and install one of the newer
+versions of Natlink, available from the project's `GitHub releases page
+<https://github.com/dictation-toolbox/natlink/releases>`__.
+
+Please see the `Natlink install instructions
+<https://qh.antenna.nl/unimacro/installation/index.html>`__ on
+*qh.antenna.nl* for how to install Natlink on your machine and configure
+it.
+
+A 32-bit Python installation is required to use this engine back-end.  This
+is because Natlink does not work with 64-bit Python.  This limitation is
+unlikely to be overcome.
+
+
+Post-install Use
+----------------------------------------------------------------------------
+
+Once Natlink is up and running, Dragonfly command-modules can be
+treated as any other Natlink macro files.  Natlink automatically
+loads macro files from a predefined directory **or** from the
+optional user directory.  Common locations are:
+
+ * ``C:\NatLink\NatLink\MacroSystem``
+ * ``C:\Program Files\NatLink\MacroSystem``
+ * ``My Documents\Natlink``
+
+At least one of these, or the custom user directory, should be present
+after installing and configuring Natlink.  That is the place where you
+should put Dragonfly command-modules so that Natlink will load them.
+Command-modules should be Python source files starting with an underscore,
+e.g. *_notepad_example.py*.
+
+Don't forget to turn the microphone off and on again after placing new
+command-modules in the Natlink directory, because otherwise Natlink does
+not immediately see the new file.
+
+The Natlink/DNS engine may also be used via the :ref:`command-line interface
+<RefCLI>`.
+
+
+Engine Configuration
+----------------------------------------------------------------------------
+
+This engine can be configured by passing (optional) keyword arguments to
+the ``get_engine()`` function, which passes them to the engine constructor
+(documented below). For example:
+
+.. code:: Python
+
+   engine = get_engine("natlink",
+     retain_dir="natlink_recordings",
+   )
+
+The engine can also be configured via the :ref:`command-line interface
+<RefCLI>`:
+
+.. code:: shell
+
+   # Initialize the Natlink engine back-end with custom arguments, then load
+   # command modules and recognize speech.
+   python -m dragonfly load _*.py --engine natlink --engine-options \
+       retain_dir="natlink_recordings"
+
+
+Engine API
+----------------------------------------------------------------------------
+
+.. autoclass:: dragonfly.engines.backend_natlink.engine.NatlinkEngine
+   :members:
+
+.. automodule:: dragonfly.engines.backend_natlink.dictation
+   :members:
+
+.. automodule:: dragonfly.engines.backend_natlink.dictation_format
+   :members:
+
+.. automodule:: dragonfly.engines.backend_natlink.timer
+   :members:
