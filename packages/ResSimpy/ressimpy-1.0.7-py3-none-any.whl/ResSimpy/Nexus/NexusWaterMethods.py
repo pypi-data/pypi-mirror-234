@@ -1,0 +1,71 @@
+"""Class for collection of Nexus water property methods."""
+from __future__ import annotations
+from dataclasses import dataclass
+import os
+from typing import Optional, MutableMapping
+from ResSimpy.Nexus.DataModels.NexusFile import NexusFile
+from ResSimpy.Nexus.DataModels.NexusWaterMethod import NexusWaterMethod
+from ResSimpy.Water import Water
+
+
+@dataclass(kw_only=True)
+class NexusWaterMethods(Water):
+    """Class for collection of Nexus water property methods.
+
+    Attributes:
+        inputs (dict[int, NexusWaterMethod]): Collection of Nexus water property methods, as a dictionary
+        files (dict[int, NexusFile]): Dictionary collection of water property files, as defined in Nexus fcs file.
+    """
+
+    __inputs: MutableMapping[int, NexusWaterMethod]
+    __files: dict[int, NexusFile]
+    __properties_loaded: bool = False  # Used in lazy loading
+
+    def __init__(self, inputs: Optional[MutableMapping[int, NexusWaterMethod]] = None,
+                 files: Optional[dict[int, NexusFile]] = None) -> None:
+        if inputs:
+            self.__inputs = inputs
+        else:
+            self.__inputs: MutableMapping[int, NexusWaterMethod] = {}
+        if files:
+            self.__files = files
+        else:
+            self.__files = {}
+        super().__init__()
+
+    def __repr__(self) -> str:
+        """Pretty printing water methods."""
+        if not self.__properties_loaded:
+            self.load_water_methods()
+        printable_str = ''
+        for table_num in self.__inputs.keys():
+            printable_str += '\n--------------------------------\n'
+            printable_str += f'WATER method {table_num}\n'
+            printable_str += '--------------------------------\n'
+            printable_str += self.__inputs[table_num].__repr__()
+            printable_str += '\n'
+
+        return printable_str
+
+    @property
+    def inputs(self) -> MutableMapping[int, NexusWaterMethod]:
+        if not self.__properties_loaded:
+            self.load_water_methods()
+        return self.__inputs
+
+    @property
+    def files(self) -> dict[int, NexusFile]:
+        return self.__files
+
+    def load_water_methods(self):
+        # Read in water properties from Nexus water method files
+        if self.__files is not None and len(self.__files) > 0:  # Check if water files exist
+            for table_num in self.__files.keys():  # For each water property method
+                water_file = self.__files[table_num]
+                if water_file.location is None:
+                    raise ValueError(f'Unable to find water file: {water_file}')
+                if os.path.isfile(water_file.location):
+                    # Create NexusWaterMethod object
+                    self.__inputs[table_num] = NexusWaterMethod(file=water_file, input_number=table_num)
+                    self.__inputs[table_num].read_properties()  # Populate object with water properties in file
+        self.__properties_loaded = True
