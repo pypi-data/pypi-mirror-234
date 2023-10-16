@@ -1,0 +1,124 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "teapots-teal"
+version = "0.5.2"
+description = "Teacups Listener for ping, push and callback events"
+readme = "README.rst"
+homepage = "https://teal.teapots.fr/"
+repository = "https://gitea.teapots.fr/teapots/teal"
+documentation = "https://teal.teapots.fr/"
+packages = [
+    { include = "teal" },
+]
+authors = ["Thomas Touhey <thomas@touhey.fr>"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: CEA CNRS Inria Logiciel Libre License, version 2.1 (CeCILL-2.1)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Communications",
+    "Typing :: Typed",
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+aio-pika = "^9.0.5"
+fastapi = "^0.94.1"
+jinja2 = "^3.1.2"
+pydantic = "^1.10.6"
+python-json-logger = "^2.0.7"
+redis = "^4.5.1"
+websockets = "^11.0.3"
+
+[tool.poetry.group.dev.dependencies]
+httpx = "^0.24.1"  # Needed for FastAPI's test client.
+mypy = "^1.1.1"
+pre-commit = "^3.3.3"
+pytest = "*"
+pytest-asyncio = "^0.20.3"
+pytest-cov = "^4.0.0"
+pytest-mock = "*"
+pytest-rabbitmq = "^3.0.1"
+pytest-redis = "^3.0.2"
+pytest-timeout = "^2.1.0"
+responses = "*"
+
+[tool.poetry.group.deployment.dependencies]
+gunicorn = ">=20.1.0,<21.0.0"
+uvicorn = ">=0.21.1,<0.22.0"
+
+[tool.poetry.group.docs.dependencies]
+furo = "^2023.3.27"
+poetry = "^1.4.2"
+sphinx = "^7.2.5"
+sphinx-autobuild = "^2021.3.14"
+sphinxcontrib-mermaid = "^0.9.2"
+
+[tool.flake8]
+application-import-names = "teal"
+ignore = [
+    "ANN002", # No type annotations for *args
+    "ANN003", # No type annotations for **kwargs
+    "ANN101", # No type annotations for self in method
+    "ANN102", # No type annotations for cls in classmethod
+    "ANN204", # No return type for special method
+    "ANN401", # We allow typing.Any in certain annoying cases
+    "D105",   # No need for docstrings in magic __methods__
+    "D107",   # No need for docstrings in __init__
+    "FI58",   # We use future annotations.
+    "S410",   # We use lxml for parsing HTML, so we're fine.
+    "S413",   # We use pycryptodome, not pycrypto
+    "W503",   # Line breaks are before binary operators, not after
+]
+exclude = ["try*.py"]
+per-file-ignores = [
+    # ANN001: We use fixtures for most callables in tests.
+    # ANN201: No type annotations for return values for test functions.
+    # S101: Yes, we use assert in tests run by pytest, and it's by design.
+    "tests/*:ANN001,ANN201,S101,S105,S106",
+]
+rst-roles = [
+  "py:class",
+  "py:attr",
+  "py:data",
+  "py:meth",
+  "py:exc",
+  "py:mod",
+]
+rst-directives = [
+  "py:data",
+  "doctest",
+]
+
+[tool.isort]
+line_length = 79
+known_first_party = ["teal"]
+multi_line_output = 5  # Hanging Grid Grouped
+add_imports = ["from __future__ import annotations"]
+force_adds = true
+combine_as_imports = true
+include_trailing_comma = true
+group_by_package = true
+
+[tool.pytest.ini_options]
+addopts = """
+--cov=teal --cov-report html --cov-report term --doctest-modules
+--ignore=docs
+"""
+
+[tool.mypy]
+ignore_missing_imports = true
+mypy_path = "."
+warn_unused_ignores = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "@abstractmethod",
+    "@_abstractmethod",
+    "pragma: no cover"
+]
