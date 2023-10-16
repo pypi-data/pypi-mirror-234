@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dj_notebook"
+version = "0.5.0"
+description = "A Jupyter notebook with access to objects from the Django ORM is a powerful tool to introspect data and run ad-hoc queries."
+readme = "README.md"
+authors = [
+  {name = "Daniel Roy Greenfeld", email = "daniel@feldroy.com"},
+  {name = "Anna Zhydko", email = "anna.zhydko@krakentechnologies.ltd"}
+]
+maintainers = [
+  {name = "Daniel Roy Greenfeld", email = "daniel@feldroy.com"},
+  {name = "Anna Zhydko", email = "anna.zhydko@krakentechnologies.ltd"}
+]
+classifiers = [
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11"
+]
+license = {text = "GNU General Public License v3"}
+dependencies = [
+  "django",
+  "django-extensions",
+  "django-pandas",
+  "django-schema-graph",
+  "ipython",
+  "jupyter",
+  "pandas",
+  "rich"
+]
+
+[project.optional-dependencies]
+test = [
+    "django",
+    "django-extensions",
+    "ipython",  
+    "black",  # code auto-formatting
+    "black[jupyter]",
+    "coverage",  # testing
+    "isort",  # code auto-formatting
+    "mypy",  # linting
+    "pytest",  # testing
+    "ruff"  # linting
+]
+docs = [
+  "mkdocs-material",
+  "mkdocs-jupyter"
+]
+
+[project.urls]
+
+bugs = "https://github.com/pydanny/dj-notebook/issues"
+changelog = "https://github.com/pydanny/dj-notebook/blob/master/CHANGELOG.md"
+homepage = "https://github.com/pydanny/dj-notebook"
+documentation = "https://dj-notebook.readthedocs.io/"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+# Isort
+# -----
+
+[tool.isort]
+line_length = 99
+profile = "black"
+default_section = "THIRDPARTY"
+lines_after_imports = 2
+
+
+# Mypy
+# ----
+
+[tool.mypy]
+files = "."
+
+# Use strict defaults
+strict = true
+warn_unreachable = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+# Don't require test functions to include types
+module = "tests.*"
+allow_untyped_defs = true
+disable_error_code = "attr-defined"
