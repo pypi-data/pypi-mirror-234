@@ -1,0 +1,126 @@
+version: '3.7'
+
+services:
+  frb-master:
+    image: chimefrb/frb-master:latest
+    container_name: frb_master
+    environment:
+      - FRB_MASTER_HOST=0.0.0.0
+      - FRB_MASTER_PORT=8001
+      - FRB_MASTER_WORKERS=1
+      - RDB_HOST=rethinkdb
+      - RDB_PORT=28015
+      - RDB_NAME=frb_master
+      - RDB_USER=admin
+      - RDB_PASS=
+      - RDB_TIMEOUT=20
+      - RDB_POOL_SIZE=30
+      - RDB_POOL_TTL=60
+      - MDB_HOST=mongo
+      - MDB_PORT=27017
+      - DOCKER_BASE_URL=tcp://cluster-node:3333
+      - SLACK_API_TOKEN_FILE=/run/secrets/SLACK_API_TOKEN
+      - TNS_API_KEY_FILE=/run/secrets/TNS_API_KEY
+      - DISABLE_AUTHORIZATION=True
+      - DEBUG=1
+      - FRB_MASTER_USERNAME=debug
+      - FRB_MASTER_PASSWORD=debug
+    ports:
+      - "8001:8001"
+    links:
+      - mongodb
+    networks:
+      - frb_master_network
+
+  frb-distributor:
+    image: chimefrb/frb-master:latest
+    container_name: frb_distributor
+    environment:
+      - DISTRIBUTOR_HOST=0.0.0.0
+      - DISTRIBUTOR_PORT=8002
+      - DISTRIBUTOR_WORKERS=1
+      - DEBUG=1
+    command: poetry run python distributor.py
+    ports:
+      - "8002:8002"
+    networks:
+      - frb_master_network
+
+  mongodb:
+    image: mongo
+    container_name: mongo
+    command: mongod --bind_ip_all
+    ports:
+      - "27017:27017"
+      - "27018:27018"
+      - "27019:27019"
+    networks:
+      - frb_master_network
+
+  cluster:
+    image: docker:dind
+    command: dockerd -H=0.0.0.0:3333 --tls=false
+    ports:
+      - "3333:3333"
+    container_name: cluster-node
+    privileged: true
+    networks:
+      - frb_master_network
+
+  buckets:
+    image: chimefrb/maestro-buckets:latest
+    container_name: buckets
+    command: maestro start -m testing -f
+    ports:
+      - "4357:4357"
+    networks:
+      - frb_master_network
+    links:
+      - mongodb
+
+  buckets-v2:
+    image: chimefrb/buckets:latest
+    container_name: buckets-v2
+    command: ["/bin/bash", "-c", "python -m buckets.server"]
+    deploy:
+      mode: replicated
+      replicas: 1
+    ports:
+      - "8000:8000"
+    environment:
+      - SANIC_HOSTNAME=0.0.0.0
+      - SANIC_PORT=8000
+      - SANIC_ACCESS_LOG=true
+      - SANIC_AUTO_RELOAD=true
+      - SANIC_DEBUG=true
+      - SANIC_MONGODB_HOSTNAME=mongo
+      - SANIC_MONGODB_PORT=27017
+    networks:
+      - frb_master_network
+    links:
+      - mongodb
+
+  results:
+    image: chimefrb/results:latest
+    container_name: results
+    command: ["/bin/bash", "-c", "python -m results.server"]
+    deploy:
+      mode: replicated
+      replicas: 1
+    ports:
+      - "8005:8005"
+    environment:
+      - SANIC_HOSTNAME=0.0.0.0
+      - SANIC_PORT=8005
+      - SANIC_ACCESS_LOG=true
+      - SANIC_AUTO_RELOAD=true
+      - SANIC_DEBUG=true
+      - SANIC_MONGODB_HOSTNAME=mongo
+      - SANIC_MONGODB_PORT=27017
+    networks:
+      - frb_master_network
+    links:
+      - mongodb
+
+networks:
+  frb_master_network:
