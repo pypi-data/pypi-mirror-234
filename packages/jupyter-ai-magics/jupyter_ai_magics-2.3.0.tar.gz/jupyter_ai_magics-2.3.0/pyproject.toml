@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling>=1.4.0", "hatch-nodejs-version"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jupyter_ai_magics"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+    "Framework :: Jupyter",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dynamic = ["version", "description", "authors", "urls", "keywords"]
+
+dependencies = [
+    "ipython",
+    "pydantic~=1.0",
+    "importlib_metadata>=5.2.0",
+    "langchain==0.0.308",
+    "typing_extensions>=4.5.0",
+    "click~=8.0",
+    "jsonpath-ng>=1.5.3,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=3.3.3,<4"
+]
+
+test = [
+    "coverage",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov"
+]
+
+all = [
+    "ai21",
+    "anthropic~=0.3.0",
+    "cohere",
+    "gpt4all",
+    "huggingface_hub",
+    "ipywidgets",
+    "pillow",
+    "openai",
+    "boto3"
+]
+
+[project.entry-points."jupyter_ai.model_providers"]
+ai21 = "jupyter_ai_magics:AI21Provider"
+anthropic = "jupyter_ai_magics:AnthropicProvider"
+cohere = "jupyter_ai_magics:CohereProvider"
+gpt4all = "jupyter_ai_magics:GPT4AllProvider"
+huggingface_hub = "jupyter_ai_magics:HfHubProvider"
+openai = "jupyter_ai_magics:OpenAIProvider"
+openai-chat = "jupyter_ai_magics:ChatOpenAIProvider"
+openai-chat-new = "jupyter_ai_magics:ChatOpenAINewProvider"
+azure-chat-openai = "jupyter_ai_magics:AzureChatOpenAIProvider"
+sagemaker-endpoint = "jupyter_ai_magics:SmEndpointProvider"
+amazon-bedrock = "jupyter_ai_magics:BedrockProvider"
+anthropic-chat = "jupyter_ai_magics:ChatAnthropicProvider"
+amazon-bedrock-chat = "jupyter_ai_magics:BedrockChatProvider"
+
+[project.entry-points."jupyter_ai.embeddings_model_providers"]
+bedrock = "jupyter_ai_magics:BedrockEmbeddingsProvider"
+cohere = "jupyter_ai_magics:CohereEmbeddingsProvider"
+huggingface_hub = "jupyter_ai_magics:HfHubEmbeddingsProvider"
+openai = "jupyter_ai_magics:OpenAIEmbeddingsProvider"
+
+[tool.hatch.version]
+source = "nodejs"
+
+[tool.hatch.metadata.hooks.nodejs]
+fields = ["description", "authors", "urls"]
+
+[tool.hatch.build.hooks.version]
+path = "jupyter_ai_magics/_version.py"
