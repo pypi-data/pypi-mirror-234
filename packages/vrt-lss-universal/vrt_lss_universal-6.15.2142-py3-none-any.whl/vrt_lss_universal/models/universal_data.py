@@ -1,0 +1,177 @@
+# coding: utf-8
+
+"""
+    VRt.Universal [UV]
+
+    # Description  Software interface for universal trip planning.  ## Features  * Ability to pick up cargo from any location * Possibility of unloading in any location * Pair orders of several types: `PICKUP` (loading), `DROP` (unloading) * Single requests of several types: `DROP_FROM_BOX` (unloading cargo that is already in the body), `PICKUP_TO_BOX` (cargo pickup into the body without subsequent unloading), `WORK` (working at the location without moving the cargo) * A complex order can consist of any number of orders of any type * Transport and executors are divided into different entities, when planning, the optimal assignment of the executor to the transport occurs * The transport has several compartments - each of which can accommodate cargo and has its own characteristics * Accounting for the compatibility of cargo with transport in terms of cargo dimensions (length, width, height, additional capacity parameters) * Taking into account the compatibility of the cargo-compartment of transport (the ability to take into account the features of the compartment: refrigerator, thermal bag, fasteners, etc.) * Substitute applications, i.e. the ability to execute one of the substitute applications, the choice of which is based on its geographic location and time window  ## Restrictions support  **Performer** restrictions:  * Start/finish location * Accounting for the performer's way to the transport location * Performer's availability schedule is a list of time windows when the performer can move and work on locations * The maximum duration of the performer's work during the specified time period  **Transport** restrictions:  * Start/finish location * Transport availability schedule is a list of time windows when the transport is available * The maximum route distance * Several compartments in the transport, each with its own parameters * Capacity upper limit (weight, volume, number of orders, number of demands)  **Order** restrictions:  * Strict time windows * Ability to specify different valid time windows for a location and time windows to fulfil the desired demand * Accounting for the requests fulfillment order within the route * A list of desired time windows with different associated costs  ## Compatibilities  Entities are compatible if the capabilities list of one entity corresponds to the list of restrictions of another entity (example: fleet parameters corresponds to cargo parameters to be delivered).  Supported compatibilities:  | Name                    | Restrictions                     | Features                     | |-------------------------|----------------------------------|------------------------------| | Order - Performer       | order.performer_restrictions     | performer.performer_features | | Order - Not a performer | order.performer_blacklist        | performer.performer_features | | Cargo - Compartment     | order.cargo.box_restrictions     | transport.box.box_features   | | Location - Transport    | location.transport_restrictions  | transport.transport_features | | Transport - Performer   | transport.performer_restrictions | performer.performer_features | | Performer - Transport   | performer.transport_restrictions | transport.transport_features | | Order - Order           | order.order_restrictions         | order.order_features         |  Business rule examples:  | Name                    | Business rule example                                                                               | |-------------------------|-----------------------------------------------------------------------------------------------------| | Order - Performer       | The driver must have a special license to fulfil the order                                          | | Order - Not a performer | The driver is in the blacklist                                                                      | | Cargo - Box             | For transportation of frozen products, a compartment with a special temperature profile is required | | Location - Transport    | Restrictions on the transport height                                                                | | Transport - Performer   | The truck driver must have the class C driving license                                              | | Performer - Transport   | The driver is allowed to work on a specific transport                                               | | Order - Order           | It is not allowed to transport fish and fruits in the same compartment                              |  ## Cargo placement  List of possibilities of a object rotations (90 degree step):  * `ALL` - can rotate by any axis * `YAW` - can yaw * `PITCH` - can pitch * `ROLL` - can roll    ![rotation](../images/universal_cargo_yaw_pitch_roll.svg)  ## Trip model  The trip is described by the list of states of the executor, while the executor can be in several states at the same time (for example, to be inside the working time window of a location and fulfill an order at the same location).  Possible values ​​of the flags responsible for the geographical location:  * `AROUND_LOCATION` - the performer is located near the location - in the process of parking or leaving it. * `INSIDE_LOCATION` - the performer is at the location.  Possible values ​​of the flags responsible for being in time windows:  * `INSIDE_WORKING_WINDOW` - the executor is inside the working time window. * `INSIDE_LOCATION_WINDOW` - the executor is inside the location's working time. * `INSIDE_EVENT_HARD_WINDOW` - the executor is inside a hard time window. * `INSIDE_EVENT_SOFT_WINDOW` - the executor is inside the soft time window.  Possible values ​​of flags responsible for actions:  * `ON_DEMAND` - the executor is working on the request. * `WAITING` - the performer is in standby mode. * `RELOCATING` - the executor is moving to the next stop. * `BREAK` - the performer is on a break.  ### An example of a route with multiple states at each point in time  | time  | set of active flags                                                                                                                                                          | location / order / application / event | comment                                                                                        | |:------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|:-----------------------------------------------------------------------------------------------| | 10:00 | INSIDE_LOCATION <br/> AROUND_LOCATION                                                                                                                                        | 2 / - / - / -                          | starting location                                                                              | | 10:10 | RELOCATING                                                                                                                                                                   | - / - / - / -                          | we go to the first order                                                                       | | 10:20 | AROUND_LOCATION                                                                                                                                                              | 2 / - / - / -                          | arrived at the first order                                                                     | | 10:40 | AROUND_LOCATION <br/> INSIDE_LOCATION <br/> WAITING                                                                                                                          | 2 / - / - / -                          | parked                                                                                         | | 11:00 | AROUND_LOCATION <br/> INSIDE_LOCATION <br/> INSIDE_LOCATION_WINDOW <br/> WAITING <br/> INSIDE_EVENT_HARD_WINDOW                                                              | 2 / - / - / -                          | waited for the start of the location window and at the same time the availability of the order | | 11:25 | AROUND_LOCATION <br/> INSIDE_LOCATION <br/> INSIDE_LOCATION_WINDOW <br/> ON_DEMAND <br/> INSIDE_WORKING_WINDOW <br/> INSIDE_EVENT_HARD_WINDOW                                | 2 / 1 / 2 / 3                          | waited for the change of artist                                                                | | 11:30 | AROUND_LOCATION <br/> INSIDE_LOCATION <br/> INSIDE_LOCATION_WINDOW <br/> ON_DEMAND <br/> INSIDE_WORKING_WINDOW <br/> INSIDE_EVENT_HARD_WINDOW <br/> INSIDE_EVENT_SOFT_WINDOW | 2 / 1 / 2 / 3                          | while working - a soft window happened                                                         | | 11:40 | AROUND_LOCATION <br/> INSIDE_LOCATION <br/> INSIDE_LOCATION_WINDOW <br/> INSIDE_WORKING_WINDOW                                                                               | 2 / - / - / -                          | finished working                                                                               | | 11:45 | AROUND_LOCATION <br/> INSIDE_WORKING_WINDOW                                                                                                                                  | 2 / - / - / -                          | drove out of the parking lot                                                                   | | 11:45 | RELOCATING <br/> INSIDE_WORKING_WINDOW                                                                                                                                       | - / - / - / -                          | we go to the next order                                                                        |  ## Planning configuration  For each planning, it is possible to specify a planning configuration that defines the objective function, the desired quality of the routes, and the calculation speed.  The name of the scheduling configuration is passed in the `trips_settings.configuration` field.  Main configurations:  | Title                           | Task                                                                                                                                                   | |---------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------| | **optimize_distance**           | Arrange as many orders as possible, then optimize the total mileage (the number of vehicles is selected based on the mileage), used by default         | | **optimize_transports**         | Place as many orders as possible, while using as little transport as possible, ceteris paribus, optimize the work time of performers                   | | **optimize_locality_grouping**  | Place as many orders as possible, while striving to optimize the visual grouping of routes, but not their number                                       | | **optimize_cars_then_distance** | Arrange as many orders as possible, then optimize the number of vehicles, then the mileage                                                             | | **optimize_time**               | Place as many orders as possible, then optimize the total work time of performers                                                                      | | **optimize_cars_then_time**     | Arrange as many orders as possible, then optimize the number of transport, then the total time of the performers                                       | | **optimize_money**              | Optimize the value of \"profit - costs\", consists of rewards for applications and costs for performers and transports (optimized value is non-negative) |  Additional configurations:  | Title                                                     | Task                                                                                                                                                                                            | |-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| | **visual_grouping**                                       | Arrange as many orders as possible while using as little transport as possible and routes should be visually grouped                                                                            | | **optimize_visual_grouping**                              | Arrange as many orders as possible, then evenly distribute orders taking into account transport accessibility zones (similar to visual_grouping, but visual grouping is calculated differently) | | **optimize_cars_then_locality_grouping**                  | Arrange as many orders as possible, then optimize the number of vehicles, then visually group the routes                                                                                        | | **optimize_cars_then_single_location_grouping_sequenced** | Place as many orders as possible, then optimize the number of machines, then reliability                                                                                                        |  In addition to the existing planning options, it is possible to create an objective function directly for the client's business processes ([request configuration](mailto:servicedesk@veeroute.com)).  For development, it is recommended to use **optimize_cars_then_distance**, since this configuration does not require detailed selection of rates and order values.  ## Data validation  Input data validation consists of several steps, which are described below.  Validation of planning results (including the search for possible reasons why orders were not planned) is located in the `analytics` method.  ### 1. Schema check  If the request does not follow the schema, then scheduling is not fully started and such an error is returned along with a 400 code in `schema_errors`.  We recommend validating the request against the schema (or yaml file) before sending it to the server.  ### 2. Check for logical errors that prevent planning from continuing  Schema-correct data passes the second stage of checking for the possibility of starting planning.  An example of errors at this stage are keys leading to empty entities, or if all orders are incompatible with all performers, i.e. something that makes the planning task pointless.  These errors are returned along with a 400 code in `logical_errors`.  ### 3. Check for logical errors that prevent planning from continuing  At the third stage, each entity is checked separately.  All entities that have not passed validation are cut out from the original task and are not sent for planning.  Depending on the setting of `treat_warnings_as_errors`, the results of this type of validation are returned to `warnings` either with a 400 code or with the scheduling result.  ### 4. Checks in the planning process  Part of the checks can only be carried out in the planning process.  For example - that according to the specified tariffs and according to the current traffic forecast, it is physically impossible to reach a certain point.  The results of these checks are returned in `warnings` or together with the scheduling result.  ## Entity relationship diagram  ![erd](../uml/universal.svg)  # Xlsx  <!-- AUTO-GENERATED-CONTENT:START (FILE:src=xlsx.md) --> <!-- The below content is automatically added from xlsx.md --> Description of VRt.Universal XLSX format for import / data export.  This format is a complete display of data JSON models and is used for:  * initial data * process settings * calculation results * statistics on the calculation result  Below is a description of each sheet separately.  ## Locations  The name of the sheet `locations`.  List of locations that are used in orders and shifts.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/location\" />  ## Performers  The name of the sheet is `performers`.  List of available performers.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/performer\" />  ## Transports  The name of the sheet `transports`.  List of available transport.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/transport\" />  ## Boxes  The name of the sheet is `transports.boxes`.  List of transport boxes that can accommodate the load. The table is mandatory if there are orders with applications of types of `PICKUP` and `DROP`. In the description of the compartments, those fields that describe cargo are required.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/box\" />  ## Orders  The name of the sheet is `orders`.  List of orders.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/order\" />  ## Cargos  The name of the sheet is `orders.cargos`.  List of goods. It may contain one load for `DROP`, a list for `PICKUP`, empty for `WORK`. The table is not obligatory if all applications have the type `WORK`.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/cargo\" />  ## Hardlinks  The name of the sheet is `hardlinks`.  List of hardlinks.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/hardlink\" />  ## Trips  The name of the sheet `trips`.  List of trips.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/trip\" />  ## Facts  The name of the sheet is `facts`.  List of facts.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/facts\" />  ## Plan settings  The name of the sheet `plan_settings`.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/plan_settings\" />  ## Actualize settings  The name of the sheet is `actualize_settings`.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/actualize_settings\" />  ## Replan settings  The name of the sheet is `replan_settings`.  The described object: <SchemaDefinition schemaRef=\"#/components/schemas/replan_settings\" /> <!-- AUTO-GENERATED-CONTENT:END -->
+
+    The version of the OpenAPI document: 6.15.2142
+    Contact: servicedesk@veeroute.com
+    Generated by OpenAPI Generator (https://openapi-generator.tech)
+
+    Do not edit the class manually.
+"""  # noqa: E501
+
+
+from __future__ import annotations
+import pprint
+import re  # noqa: F401
+import json
+
+
+from typing import List, Optional
+from pydantic import BaseModel, Field, conlist, constr
+from vrt_lss_universal.models.actualize_settings import ActualizeSettings
+from vrt_lss_universal.models.facts import Facts
+from vrt_lss_universal.models.hardlink import Hardlink
+from vrt_lss_universal.models.location import Location
+from vrt_lss_universal.models.order import Order
+from vrt_lss_universal.models.performer import Performer
+from vrt_lss_universal.models.plan_settings import PlanSettings
+from vrt_lss_universal.models.plan_statistics import PlanStatistics
+from vrt_lss_universal.models.replan_settings import ReplanSettings
+from vrt_lss_universal.models.routing_transport_matrix import RoutingTransportMatrix
+from vrt_lss_universal.models.transport import Transport
+from vrt_lss_universal.models.trip import Trip
+
+class UniversalData(BaseModel):
+    """
+    VRt.Universal JSON format. A general list of data and settings that combines all data for planning, replaning and actualization.   # noqa: E501
+    """
+    locations: Optional[conlist(Location, max_items=15001, min_items=0, unique_items=True)] = Field(None, description="List of locations used for orders and shifts.")
+    orders: Optional[conlist(Order, max_items=15001, min_items=0, unique_items=True)] = Field(None, description="Orders list.")
+    performers: Optional[conlist(Performer, max_items=15001, min_items=0, unique_items=True)] = Field(None, description="Available performers list.")
+    transports: Optional[conlist(Transport, max_items=15001, min_items=0, unique_items=True)] = Field(None, description="Available transports list.")
+    hardlinks: Optional[conlist(Hardlink, max_items=15001, min_items=0, unique_items=True)] = Field(None, description="Assignments list.")
+    trips: Optional[conlist(Trip, max_items=15001, min_items=0, unique_items=True)] = Field(None, description="Existing routes.")
+    facts: Optional[Facts] = None
+    statistics: Optional[PlanStatistics] = None
+    external_routing: Optional[conlist(RoutingTransportMatrix, max_items=12, min_items=0, unique_items=True)] = Field(None, description="Time and distance matrices list for each transport type from dataset. By specifying an external routing matrix `external_routing`, parameters `geo_settings` are not used. ")
+    plan_settings: Optional[PlanSettings] = None
+    replan_settings: Optional[ReplanSettings] = None
+    actualize_settings: Optional[ActualizeSettings] = None
+    dataset_name: Optional[constr(strict=True, max_length=1000, min_length=0)] = Field('', description="The name of the dataset. A technical field that does not affect planning. ")
+    __properties = ["locations", "orders", "performers", "transports", "hardlinks", "trips", "facts", "statistics", "external_routing", "plan_settings", "replan_settings", "actualize_settings", "dataset_name"]
+
+    class Config:
+        """Pydantic configuration"""
+        allow_population_by_field_name = True
+        validate_assignment = True
+
+    def to_str(self) -> str:
+        """Returns the string representation of the model using alias"""
+        return pprint.pformat(self.dict(by_alias=True))
+
+    def to_json(self) -> str:
+        """Returns the JSON representation of the model using alias"""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_json(cls, json_str: str) -> UniversalData:
+        """Create an instance of UniversalData from a JSON string"""
+        return cls.from_dict(json.loads(json_str))
+
+    def to_dict(self):
+        """Returns the dictionary representation of the model using alias"""
+        _dict = self.dict(by_alias=True,
+                          exclude={
+                          },
+                          exclude_none=True)
+        # override the default output from pydantic by calling `to_dict()` of each item in locations (list)
+        _items = []
+        if self.locations:
+            for _item in self.locations:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['locations'] = _items
+        # override the default output from pydantic by calling `to_dict()` of each item in orders (list)
+        _items = []
+        if self.orders:
+            for _item in self.orders:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['orders'] = _items
+        # override the default output from pydantic by calling `to_dict()` of each item in performers (list)
+        _items = []
+        if self.performers:
+            for _item in self.performers:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['performers'] = _items
+        # override the default output from pydantic by calling `to_dict()` of each item in transports (list)
+        _items = []
+        if self.transports:
+            for _item in self.transports:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['transports'] = _items
+        # override the default output from pydantic by calling `to_dict()` of each item in hardlinks (list)
+        _items = []
+        if self.hardlinks:
+            for _item in self.hardlinks:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['hardlinks'] = _items
+        # override the default output from pydantic by calling `to_dict()` of each item in trips (list)
+        _items = []
+        if self.trips:
+            for _item in self.trips:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['trips'] = _items
+        # override the default output from pydantic by calling `to_dict()` of facts
+        if self.facts:
+            _dict['facts'] = self.facts.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of statistics
+        if self.statistics:
+            _dict['statistics'] = self.statistics.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of each item in external_routing (list)
+        _items = []
+        if self.external_routing:
+            for _item in self.external_routing:
+                if _item:
+                    _items.append(_item.to_dict())
+            _dict['external_routing'] = _items
+        # override the default output from pydantic by calling `to_dict()` of plan_settings
+        if self.plan_settings:
+            _dict['plan_settings'] = self.plan_settings.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of replan_settings
+        if self.replan_settings:
+            _dict['replan_settings'] = self.replan_settings.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of actualize_settings
+        if self.actualize_settings:
+            _dict['actualize_settings'] = self.actualize_settings.to_dict()
+        # set to None if statistics (nullable) is None
+        # and __fields_set__ contains the field
+        if self.statistics is None and "statistics" in self.__fields_set__:
+            _dict['statistics'] = None
+
+        return _dict
+
+    @classmethod
+    def from_dict(cls, obj: dict) -> UniversalData:
+        """Create an instance of UniversalData from a dict"""
+        if obj is None:
+            return None
+
+        if not isinstance(obj, dict):
+            return UniversalData.parse_obj(obj)
+
+        _obj = UniversalData.parse_obj({
+            "locations": [Location.from_dict(_item) for _item in obj.get("locations")] if obj.get("locations") is not None else None,
+            "orders": [Order.from_dict(_item) for _item in obj.get("orders")] if obj.get("orders") is not None else None,
+            "performers": [Performer.from_dict(_item) for _item in obj.get("performers")] if obj.get("performers") is not None else None,
+            "transports": [Transport.from_dict(_item) for _item in obj.get("transports")] if obj.get("transports") is not None else None,
+            "hardlinks": [Hardlink.from_dict(_item) for _item in obj.get("hardlinks")] if obj.get("hardlinks") is not None else None,
+            "trips": [Trip.from_dict(_item) for _item in obj.get("trips")] if obj.get("trips") is not None else None,
+            "facts": Facts.from_dict(obj.get("facts")) if obj.get("facts") is not None else None,
+            "statistics": PlanStatistics.from_dict(obj.get("statistics")) if obj.get("statistics") is not None else None,
+            "external_routing": [RoutingTransportMatrix.from_dict(_item) for _item in obj.get("external_routing")] if obj.get("external_routing") is not None else None,
+            "plan_settings": PlanSettings.from_dict(obj.get("plan_settings")) if obj.get("plan_settings") is not None else None,
+            "replan_settings": ReplanSettings.from_dict(obj.get("replan_settings")) if obj.get("replan_settings") is not None else None,
+            "actualize_settings": ActualizeSettings.from_dict(obj.get("actualize_settings")) if obj.get("actualize_settings") is not None else None,
+            "dataset_name": obj.get("dataset_name") if obj.get("dataset_name") is not None else ''
+        })
+        return _obj
+
+
