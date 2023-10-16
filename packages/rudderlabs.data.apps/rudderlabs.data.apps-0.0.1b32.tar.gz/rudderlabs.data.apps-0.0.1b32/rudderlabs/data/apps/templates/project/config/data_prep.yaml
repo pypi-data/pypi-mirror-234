@@ -1,0 +1,78 @@
+query_train_data: ""
+categorical_columns: &categorical_columns [
+  'Lead Origin',
+  'Lead Source',
+  'Do Not Email',
+  'Do Not Call',
+  'Last Activity',
+  'Country',
+  'Specialization',
+  'How did you hear about X Education',
+  'What is your current occupation',
+  'What matters most to you in choosing a course',
+  'Search',
+  'Magazine',
+  'Newspaper Article',
+  'X Education Forums',
+  'Newspaper',
+  'Digital Advertisement',
+  'Through Recommendations',
+  'Receive More Updates About Our Courses',
+  'Tags',
+  'Lead Quality',
+  'Update me on Supply Chain Content',
+  'Get updates on DM Content',
+  'Lead Profile',
+  'City',
+  'Asymmetrique Activity Index',
+  'Asymmetrique Profile Index',
+  'I agree to pay the amount through cheque',
+  'A free copy of Mastering The Interview',
+  'Last Notable Activity'
+  ]
+preprocessing:
+  numeric_pipeline:
+    columns: all
+    pipeline:
+      - name: SimpleImputer
+        # strategy can be any acceptable value of sklearn simpleimputer strategy
+        strategy: median
+      - name: PowerTransformer
+  categorical_pipeline:
+    columns: *categorical_columns
+    pipeline:
+      - name: SimpleImputer
+        strategy: constant
+        # if strategy is constant, it expects a fill_value. If that is not returned, it defaults to `unknown`
+        fill_value: unknown
+      - name: OneHotEncoder
+        handle_unknown: ignore
+        sparse: False
+  boolean_pipeline:
+    pipeline:
+      - name: FunctionTransformer
+  feature_selectors:
+    # Feature selectors that get applied after normalizing is done. Has to be from `VarianceThreshold`, `GenericUnivariateSelect`, `chi2`, `f_classif`
+    # ToDo: This section is not implemented in the notebook.
+    - name: VarianceThreshold
+      threshold: 0
+
+# Data preparation
+data:
+  # Label column name
+  label_column: Converted
+  entity_column: Lead Number
+
+  ignore_features:
+    # Following columns are ignored if they are present in the final feature table
+    - 'Prospect ID'
+    - 'Lead Number'
+
+  # Train, test, val split ratios. They must be each between 0 and 1, and sum to 1
+  train_size: 0.6
+  val_size: 0.2
+  test_size: 0.2
+
+output_files:
+  data_pipeline_file: data_pipeline.pkl
+  final_column_names_file: output_column_names.pkl
