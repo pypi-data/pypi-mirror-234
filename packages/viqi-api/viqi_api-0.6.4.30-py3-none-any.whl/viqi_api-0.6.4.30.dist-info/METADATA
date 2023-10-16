@@ -1,0 +1,70 @@
+Metadata-Version: 2.1
+Name: viqi-api
+Version: 0.6.4.30
+Summary: ViQi Bisque Module API
+Author: ViQi Inc
+Author-email: info@viqi.org
+Project-URL: homepage, https://www.viqi.org
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: configparser
+Requires-Dist: bisque-metadoc
+Requires-Dist: tifffile
+Requires-Dist: simplejson
+Requires-Dist: shortuuid >=1.0.8
+Requires-Dist: tenacity
+Requires-Dist: requests-cache
+Requires-Dist: requests-toolbelt
+Requires-Dist: boto3
+Requires-Dist: importlib-metadata ; python_version < "3.10"
+Provides-Extra: image_service
+Requires-Dist: tifffile ; extra == 'image_service'
+Requires-Dist: tables ; extra == 'image_service'
+Provides-Extra: table_service
+Requires-Dist: numpy ; extra == 'table_service'
+Requires-Dist: pandas ; extra == 'table_service'
+Requires-Dist: tables ; extra == 'table_service'
+
+# ViQi API
+
+Low level interface to ViQi services
+
+
+## Install
+
+
+`pip install viqi-api `
+
+## Configuration
+
+For command line tools create `~/.config/viqi/profiles` with the following
+
+```
+[default]
+host=https://science.viqiai.cloud
+user=myuser
+password=mysecret
+
+[science-user2]
+host=https://science.viqiai.cloud
+user=myuser2
+password=mysecret2
+```
+
+## Usage
+
+Example ipython session:
+
+```
+ipython
+from vqapi import bisque_session
+session = bisque_session(args=["--profile=science-user2"])
+
+meta = session.service("meta")
+user = meta.fetch("user")
+print(user)
+
+```
