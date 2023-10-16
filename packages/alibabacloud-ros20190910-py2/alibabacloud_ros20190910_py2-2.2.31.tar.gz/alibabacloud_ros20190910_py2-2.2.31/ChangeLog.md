@@ -1,0 +1,165 @@
+2023-08-17 Version: 2.2.30
+- Generated python2 2019-09-10 for ROS.
+
+2023-08-12 Version: 2.2.29
+- Generated python2 2019-09-10 for ROS.
+
+2023-07-31 Version: 2.2.28
+- UpdateStack supports parameter analysis for replacement update.
+- UpdateStack supports DryRunOptions.
+- ValidateTemplate supports UpdateInfoOptions.
+
+2023-07-14 Version: 2.2.27
+- GetStack returns StackOperationProgress and StackActionProgress in ResourceProgress if ShowResourceProgress is set to PercentageOnly.
+
+2023-06-25 Version: 2.2.26
+- GenerateTemplateByScratch adds a new input parameter TemplateType.
+
+2023-05-18 Version: 2.2.25
+- GetTemplateEstimateCost adds a new input parameter StackId, which is used for inquiry of updating scenarios.
+- Added OrderIds output to GetStack interface.
+
+2023-05-10 Version: 2.2.24
+- Support resource type registration and module.
+
+2023-04-13 Version: 2.2.23
+- Added StartTime and EndTime to ListStacks to filter Stacks based on time range.
+- CreateStack adds CreateOptions for specifying multiple creation options.
+
+2023-03-30 Version: 2.2.22
+- GetFeatureDetails supports ResourceImport and DriftDetection.
+- DeleteStack supports DeleteOptions.
+
+2023-03-28 Version: 2.2.21
+- Move the TemplateBody parameter of ValidateTemplate to the request body to support larger template size.
+
+2023-03-15 Version: 2.2.20
+- Add GetTemplateRecommendParameters  interface to SDK.
+
+2023-02-09 Version: 2.2.19
+- A new PhysicsResourceId field is added to the Resources returned by the PreviewStack interface.
+- Added StackId parameter to the GetTemplateParameterConstraints API.
+
+2023-02-02 Version: 2.2.18
+- UpdateStack supports DryRun and returns DryRunResult.
+- ValidateTemplate returns UpdateInfo.
+- GetFeatureDetails supports parameter constraint query function.
+- Add API GetTemplateRecommendParameters.
+
+2023-01-11 Version: 2.2.17
+- Add API CancelStackOperation.
+
+2022-12-08 Version: 2.2.16
+- GenerateTemplatePolicy adds parameter OperationTypes.
+
+2022-11-30 Version: 2.2.15
+- ContinueCreateStack returns DryRunResult when DryRun is set to true.
+
+2022-11-23 Version: 2.2.14
+- The reponse of ValidateTemplate supports Outputs Label.
+- Added ParametersOrder parameter to the GetTemplateParameterConstraints API.
+
+2022-11-22 Version: 2.2.13
+- The Tags parameter is supported in the ListStackGroups, ListTemplateScratches and CreateTemplateScratch API.
+
+2022-10-28 Version: 2.2.12
+- Add ApiForCreation in the return value ServiceProvisions-RoleProvision-Roles of GetServiceProvisions API.
+- The Tags parameter is supported in the CreateTemplate and CreateStackGroup API.
+- ListStackOperationRisks API support permission risk check when creating Stack.
+- ContinueCreateStack support parameter RecreatingOptions.
+
+2022-09-29 Version: 2.2.11
+- Add IllegalValueByRules and IllegalValueByParameterConstraints to GetTemplateParameterConstraints output.
+- Add Resources to ValidateTemplate output.
+
+2022-09-08 Version: 2.2.10
+- OperationInfo is added to the return value of GetStack and ListStacks.
+
+2022-09-05 Version: 2.2.9
+- Ros supports pre config.
+
+2022-07-21 Version: 2.2.8
+- GetTemplateSummary support Parameters and ClientToken.
+
+2022-07-13 Version: 2.2.7
+- PreviewStack adds StackId and returns Action to support preview stack update.
+
+2022-06-30 Version: 2.2.6
+- ValidateTemplate returns ResourceTypes.
+- GetStackResource supports ResourceAttributes.
+- GetStack supports LogOption and returns ResourceLogs.
+
+2022-06-09 Version: 2.2.5
+- The parameter of GetStack, ListTemplates adds IncludeTags.
+- The response of GetStack, ListTemplates adds Tags.
+
+2022-05-19 Version: 2.2.4
+- GetFeatureDetails supports ResourceCleaner.
+
+2022-05-07 Version: 2.2.3
+- Added diagnostic feature interface.
+
+2022-04-25 Version: 2.2.2
+- The Feature parameter of GetFeatureDetails is supported to be specified as TemplateScratch, which indicates the supported resource types for the template scratch.
+
+2022-02-28 Version: 2.2.1
+- The response of GetServiceProvisions adds DependentServiceNames.
+
+2022-02-22 Version: 2.2.0
+- The parameter of GetStack, GetTemplate, ListTemplates, ListTemplateVersions adds AcceptLanguage.
+- The response of GetStack, GetTemplate adds Interface.
+- The parameter of CreateStack, CreateChangeSet adds ServiceManaged.
+- The response of GetStack adds ServiceManaged, ServiceName.
+- The response of ListStacks adds ServiceManaged, ServiceName in Stacks.
+
+2022-01-18 Version: 2.1.0
+- Added EntityType to ListResourceTypes parameters.
+- Added EntityType to GetResourceType return value.
+
+2022-01-12 Version: 2.0.6
+- GetFeatureDetails return value adds UpdateAllowedTransforms.
+
+2022-01-05 Version: 2.0.5
+- GetTemplate return value adds TemplateId, TemplateVersion, TemplateScratchId and TemplateURL.
+
+2021-12-20 Version: 2.0.4
+- CreateStack, PreviewStack and GetTemplateEstimateCost parameters supports specifing TemplateScratchRegionId.
+- GetTemplateScratch return value adds StackProvision and UsageType in Stacks.
+- GetTemplate return value adds ShareSource in Permissions.
+
+2021-12-14 Version: 2.0.3
+- Fix the issue that some parameters cannot be passed.
+
+2021-12-07 Version: 2.0.2
+- API GetStack supports Log for Terraform Stack.
+- API GetChangeSet supports Log for Terraform Stack.
+- API PreviewStack supports Log for Terraform Stack.
+
+2021-11-30 Version: 2.0.1
+- API GetStack supports Log for Terraform Stack.
+- API GetChangeSet supports Log for Terraform Stack.
+- API PreviewStack supports Log for Terraform Stack.
+
+2021-11-22 Version: 2.0.0
+- Add API GetServiceProvisions.
+- Add API GetTemplateParameterConstraints.
+- Add API GetFeatureDetails.
+- CreateChangeSet supports Parallelism.
+
+2021-09-27 Version: 1.1.2
+- Terraform stack supports custom of parallelism.
+
+2021-09-03 Version: 1.1.1
+- Fix type error of StackGroup and StackInstance parameters.
+
+2021-09-03 Version: 1.1.0
+- StackGroup supports specify resource folder to deploy StackInstances.
+- StackGroup supports SERVICE_MANAGED and SELF_MANAGED permission models.
+
+2021-08-27 Version: 1.0.1
+- Support ClientToken for ValidateTemplate.
+
+2021-07-20 Version: 1.0.0
+- GetStack supports resource progress.
+- ValidateTemplate supports Outputs.
+
