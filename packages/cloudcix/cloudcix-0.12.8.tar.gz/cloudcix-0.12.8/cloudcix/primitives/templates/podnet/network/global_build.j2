@@ -1,0 +1,11 @@
+{# Create the netplan yaml file for the interface #}
+sudo bash -c 'cat > /etc/netplan/00-global_network.yaml <<EOF
+{% include 'podnet/network/global_config.j2' %}
+EOF'
+echo "{{ messages['msg_010'] }}"
+{# Restart the netplan service #}
+if sudo netplan apply ; then
+    echo "{{ messages['msg_000'] }}"
+else
+    echo "{{ messages['msg_032'] }}"
+fi

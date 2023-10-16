@@ -1,0 +1,14 @@
+{# Stop execution if something fails #}
+set -e
+
+{# Check if the drive already exists #}
+rbd --pool {{ pool_name }} list | grep --quiet --regexp={{ device_name }} \
+  && echo "Drive '{{ device_name }}' already exists" \
+  && echo -n {{ success_id }} \
+  && exit 0
+
+
+{# Create the drive #}
+rbd create --size {{ device_size }} {{ pool_name }}/{{ device_name }} \
+  && echo -n {{ success_id }}
+

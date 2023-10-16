@@ -1,0 +1,131 @@
+#!/usr/sbin/nft -f
+
+define management = "{{ podnet_management_interface }}"
+define public = "{{ podnet_public_interface }}"
+define private = "!= " + $management
+
+# Flush the rule set
+flush ruleset
+
+# Global Services
+{% for service in global_services %}
+include "/etc/cloudcix/{{ service }}/*.nft"
+{% endfor %}
+
+table inet firewall_host {
+
+{# ------------------------------------------------------------------------------------------------------------- #}
+    # All Static Config: Chains, Rules
+{# ------------------------------------------------------------------------------------------------------------- #}
+    # Non Base chain (chain without properties like filter, hook and default accept or drop)
+    # this chain is applied only when used in main chains
+
+    chain established_traffic {
+        # to accept traffic that is already qualified thus to avoid packet loss during updates
+        ct state established,related accept
+    }
+
+    chain invalid_traffic {
+        ct state invalid drop
+    }
+
+    chain dns {
+        # dns
+        meta l4proto {tcp, udp} th dport 53 accept
+    }
+
+    chain icmp4 {
+        # appropriate properties of ping to be allowed for better debug and response
+        icmp type { destination-unreachable, echo-reply, echo-request, time-exceeded } accept
+    }
+
+    chain icmp6 {
+        # appropriate properties of ping to be allowed for better debug and response
+        icmpv6 type {echo-request,nd-neighbor-solicit,nd-neighbor-advert,nd-router-solicit, nd-router-advert,mld-listener-query} accept
+    }
+
+    chain vpn {
+        # IKE 500, 4500 ports and udp protocol
+        meta l4proto udp th dport { 500, 4500 } accept
+        # Allow IPSec esp protocol
+        ip protocol esp accept
+    }
+
+    # Access to Podnet box
+    chain inbound {
+        # base chain rule properties
+        type filter hook input priority filter; policy drop;
+        # Allow valid traffic already established
+        jump established_traffic
+
+{# Rules: For loop starts #}
+{% for rule in firewall_rules|sort(attribute='order') %}
+{# Inbound Rules: If starts #}
+{% if 'in' in rule['interface'] and not 'out' in rule['interface'] %}
+        # {{ rule['description'] }}
+        {% set version = '' if rule['version'] == 4 else '6' %}
+        iifname ${{ rule['interface']['in'] }} \
+        ip{{ version }} saddr { {% if 'any' in rule['source'] %}any{% else %}{{ rule['source']|join(', ') }}{% endif %} } \
+        ip{{ version }} daddr { {% if 'any' in rule['destination'] %}any{% else %}{{ rule['destination']|join(', ') }}{% endif %} } \
+        {% if rule['protocol'] in ['tcp', 'udp'] %}{{ rule['protocol'] }} dport { {{ rule['port']|join(', ') }} } {{ rule['action'] }} \
+        {% elif rule['protocol'] in ['dns', 'icmp4', 'icmp6', 'vpn'] %}jump {{ rule['protocol'] }} \
+        {% else %}{{ rule['action'] }}{% endif %}
+{# Inbound Rules: If ends #}
+{% endif %}
+{# Rules for loop ends #}
+{% endfor %}
+
+    }
+
+    # Forwarding Main Chain:
+    chain forward {
+        # base chain rule properties
+        type filter hook forward priority filter; policy drop;
+        # Allow valid traffic already established
+        jump established_traffic
+
+{# Rules: For loop starts #}
+{% for rule in firewall_rules|sort(attribute='order') %}
+{# Forward Rules: If starts #}
+{% if 'in' in rule['interface'] and not 'out' in rule['interface'] %}
+        # {{ rule['description'] }}
+        {% set version = '' if rule['version'] == 4 else '6' %}
+        iifname ${{ rule['interface']['in'] }} oifname ${{ rule['interface']['out'] }} \
+        ip{{ version }} saddr { {% if 'any' in rule['source'] %}any{% else %}{{ rule['source']|join(', ') }}{% endif %} } \
+        ip{{ version }} daddr { {% if 'any' in rule['destination'] %}any{% else %}{{ rule['destination']|join(', ') }}{% endif %} } \
+        {% if rule['protocol'] in ['tcp', 'udp'] %}{{ rule['protocol'] }} dport { {{ rule['port']|join(', ') }} } {{ rule['action'] }} \
+        {% elif rule['protocol'] in ['dns', 'icmp4', 'icmp6', 'vpn'] %}jump {{ rule['protocol'] }} \
+        {% else %}{{ rule['action'] }}{% endif %}
+{# Forward Rules: If ends #}
+{% endif %}
+{# Rules for loop ends #}
+{% endfor %}
+
+    }
+
+    # allow all packets sent by the Podnet box itself
+    chain outbound {
+        # base chain rule properties
+        type filter hook output priority filter; policy accept;
+        # drop invalid traffic
+        jump invalid_traffic
+
+{# Rules: For loop starts #}
+{% for rule in firewall_rules|sort(attribute='order') %}
+{# Outbound Rules: If starts #}
+{% if 'out' in rule['interface'] and not 'in' in rule['interface'] %}
+        # {{ rule['description'] }}
+        {% set version = '' if rule['version'] == 4 else '6' %}
+        oifname ${{ rule['interface']['out'] }} \
+        ip{{ version }} saddr { {% if 'any' in rule['source'] %}any{% else %}{{ rule['source']|join(', ') }}{% endif %} } \
+        ip{{ version }} daddr { {% if 'any' in rule['destination'] %}any{% else %}{{ rule['destination']|join(', ') }}{% endif %} } \
+        {% if rule['protocol'] in ['tcp', 'udp'] %}{{ rule['protocol'] }} dport { {{ rule['port']|join(', ') }} } {{ rule['action'] }} \
+        {% elif rule['protocol'] in ['dns', 'icmp4', 'icmp6', 'vpn'] %}jump {{ rule['protocol'] }} \
+        {% else %}{{ rule['action'] }}{% endif %}
+{# Outbound Rules: If ends #}
+{% endif %}
+{# Rules for loop ends #}
+{% endfor %}
+    }
+
+}

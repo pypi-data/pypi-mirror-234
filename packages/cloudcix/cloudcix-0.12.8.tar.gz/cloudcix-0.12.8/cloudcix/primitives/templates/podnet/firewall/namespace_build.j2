@@ -1,0 +1,23 @@
+{% set firewall_file = '/tmp/' + namespace_name + '.conf' %}
+
+{# Create the temp nftables.conf file and validate it #}
+echo "{% include 'podnet/firewall/namespace_config.j2' %}" > {{ firewall_file }}
+
+if [ -f {{ firewall_file }} ]; then
+{# Verify the configuration file syntax #}
+    if sudo ip netns exec {{ namespace_name }} nft --check --file {{ firewall_file }} ; then
+        echo "{{ messages['msg_010'] }}"
+{# Apply the new firewall config #}
+        sudo ip netns exec {{ namespace_name }} nft --file {{ firewall_file }}; then
+        echo "{{ messages['msg_000'] }}"
+    else
+        echo "{{ messages['msg_032'] }}"
+        exit 1
+    fi
+else
+    echo "{{ messages['msg_033'] }}"
+    exit 1
+fi
+
+{# Remove the firewall rule file from /tmp/ location #}
+sudo rm --force {{ firewall_file }}

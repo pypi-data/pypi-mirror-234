@@ -1,0 +1,17 @@
+{# Stop execution if something fails #}
+set -e
+
+{# Check the state of the VM #}
+STATE=$(virsh domstate --domain {{ vm_name }} )
+if [ $STATE == 'running' ]; then
+    echo 'VM {{ vm_name }} already running'
+    echo -n {{ success_id }}
+    exit 0
+fi
+
+virsh start {{ vm_name }}
+{# Wait for the VM to be in the running state #}
+until [[ $(virsh domstate {{ vm_name }}) = 'running' ]]; do
+    sleep 0.5
+done
+echo -n {{ success_id }}

@@ -1,0 +1,18 @@
+{# Remove vpn config file and reload/unload the VPN connection and credentials #}
+{% set vpn_filename = '/etc/swanctl/conf.d/' + namespace_name + '_vpns.conf' %}
+if [ -f {{ vpn_filename }} ]; then
+    sudo rm --force {{ vpn_filename }}
+    sudo swanctl --load-all
+{# If VPNs exists then terminate each vpn, Warnings are expected if vpn doesn't exists, it is ignored #}
+{% for vpn in vpns %}
+    sudo swanctl --terminate --ike {{ vpn['name'] }}
+{% endfor %}
+fi
+{# ------------------------------------------------------------------------------------------------------------- #}
+{# Remove VPN related Route and firewall rules #}
+{% for vpn in vpns %}
+{% for route in vpn['routes'] %}
+sudo ip netns exec {{ namespace_name }} ip route delete {{ route['remote'] }} dev xfrm{{ vpn['stif_number'] }}
+sudo ip netns exec {{ namespace_name }} nft delete rule inet filter forward ip saddr { {{ route['local'] }}, {{ route['remote'] }}  } ip daddr { {{ route['local'] }}, {{ route['remote'] }} } accept
+{% endfor %}
+{% endfor %}

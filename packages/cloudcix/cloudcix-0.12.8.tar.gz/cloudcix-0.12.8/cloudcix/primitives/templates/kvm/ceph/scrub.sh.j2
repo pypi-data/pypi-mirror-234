@@ -1,0 +1,14 @@
+{# Stop execution if something fails #}
+set -e
+
+{# Check if the drive exists #}
+rbd --pool {{ pool_name }} list | grep --quiet --regexp={{ device_name }}
+if [ $? -neq 0 ]; then
+  echo "Drive '{{ device_name }}' does not exist" \
+  && echo -n {{ success_id }} \
+  && exit 0
+
+{# Delete the drive #}
+rbd rm {{ pool_name }}/{{ device_name }} \
+  && echo -n {{ success_id }}
+

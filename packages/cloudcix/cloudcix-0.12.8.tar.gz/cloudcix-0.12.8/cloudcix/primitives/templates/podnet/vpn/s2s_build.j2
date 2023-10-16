@@ -1,0 +1,24 @@
+{# VPNs interface creation and linking to namespace #}
+{% for vpn in vpns %}
+{# xfrm interface for S2S VPN #}
+sudo ip link add xfrm{{ vpn['stif_number'] }} type xfrm dev {{ router_public_interface }} if_id {{ vpn['stif_number'] }}
+sudo sysctl --write net.ipv4.conf.xfrm{{ vpn['stif_number'] }}.disable_policy=1
+sudo ip link set xfrm{{ vpn['stif_number'] }} netns {{ namespace_name }}
+sudo ip netns exec {{ namespace_name }} ip link set dev xfrm{{ vpn['stif_number'] }} up
+{# ------------------------------------------------------------------------------------------------------------- #}
+{% for route in vpn['routes'] %}
+{# VPN Route Configuration #}
+sudo ip netns exec {{ namespace_name }} ip route add {{ route['remote'] }} dev xfrm{{ vpn['stif_number'] }}
+{# VPN Firewall related #}
+sudo ip netns exec {{ namespace_name }} nft add rule inet filter forward ip saddr { {{ route['local'] }}, {{ route['remote'] }}  } ip daddr { {{ route['local'] }}, {{ route['remote'] }} } accept
+{% endfor %}
+{# ------------------------------------------------------------------------------------------------------------- #}
+{% endfor %}
+{# Apply VPNs #}
+{# Add vpn config file and Load the all VPN connections, do not use filename it unloads all others #}
+sudo bash -c 'cat > /etc/swanctl/conf.d/{{ namespace_name }}_vpns.conf <<EOF
+{% include 'podnet/vpn/s2s_config.j2' %}
+EOF'
+sudo swanctl --load-all
+{# ------------------------------------------------------------------------------------------------------------- #}
+

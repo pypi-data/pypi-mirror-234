@@ -1,0 +1,17 @@
+{% set public_bridge_file = '/etc/netplan/' + public_bridge_name + '.yaml' %}
+{# Check if the bridge is already built #}
+if [ -f {{ public_bridge_file }} ]; then
+    echo "{{ messages['msg_001'] }}"
+else
+{# Create netplan yaml file for the bridge #}
+    sudo bash -c 'cat > {{ public_bridge_file }} <<EOF
+    {% include 'podnet/subnet_bridge/config.j2' %}
+    EOF'
+    echo "{{ messages['msg_010'] }}"
+{# Restart the netplan service #}
+    if sudo netplan apply; then
+        echo "{{ messages['msg_000'] }}"
+    else
+        echo "{{ messages['msg_032'] }}"
+    fi
+fi

@@ -1,0 +1,146 @@
+#!/usr/sbin/nft -f
+
+# Flush the rule set
+flush ruleset
+
+table inet firewall {
+{# ------------------------------------------------------------------------------------------------------------- #}
+    # All Static Config: Chains, Rules
+{# ------------------------------------------------------------------------------------------------------------- #}
+    # Non Base chain (chain without properties like filter, hook and default accept or drop)
+    # this chain is applied only when used in main chains
+
+    chain established_traffic {
+        # to accept traffic that is already qualified thus to avoid packet loss during updates
+        ct state established,related accept
+    }
+
+    chain dns {
+        # dns
+        meta l4proto {tcp, udp} th dport 53 accept
+    }
+
+    chain icmp_accept {
+        # appropriate properties of ping to be allowed for better debug and response,
+        # this chain is applied only when used in main chains
+        icmp type { destination-unreachable, echo-reply, echo-request, time-exceeded } accept
+        icmpv6 type {echo-request,nd-neighbor-solicit,nd-neighbor-advert,nd-router-solicit, nd-router-advert,mld-listener-query} accept
+    }
+
+    chain icmp_drop {
+        # appropriate properties of ping to be allowed for better debug and response,
+        # this chain is applied only when used in main chains
+        icmp type { destination-unreachable, echo-reply, echo-request, time-exceeded } drop
+        icmpv6 type {echo-request,nd-neighbor-solicit,nd-neighbor-advert,nd-router-solicit, nd-router-advert,mld-listener-query} drop
+    }
+
+    chain vpn {
+        # IKE 500, 4500 ports and udp protocol
+        meta l4proto udp th dport { 500, 4500 } accept
+        # Allow IPSec esp protocol
+        ip protocol esp accept
+    }
+{# ------------------------------------------------------------------------------------------------------------- #}
+    # Base chains( chain with properties, these are actual sections that are applied )
+{# ------------------------------------------------------------------------------------------------------------- #}
+
+    # inbound NAT 1:1
+    # Rules starts with 'iifname' interface
+    chain prerouting {
+        type nat hook prerouting priority dstnat; policy accept;
+{% for nat in nats %}
+        iifname "{{ namespace_name }}.{{ public_bridge_name }}" ip daddr {{ nat['public_address']}} dnat to {{ nat['private_address']}}
+{% endfor %}
+    }
+
+{# ------------------------------------------------------------------------------------------------------------- #}
+
+    # Access to Host's(e.g PodNet, Namespace etc.) Interface IPs
+    # Rules starts with 'iifname' interface
+    chain inbound {
+        # base chain rule properties
+        type filter hook input priority filter; policy drop;
+
+        # allow already accepted traffic
+        jump established_traffic
+
+        # allow ping
+        jump icmp_accept
+
+        # allow dns
+        jump dns
+
+        # all vpn
+        jump vpn
+    }
+{# ------------------------------------------------------------------------------------------------------------- #}
+
+    # Forwarding Chain, for the traffic destined to and generated from the Guests within the Networks and Interfaces defined on this Host.
+    chain forward {
+        # base chain rule properties
+        type filter hook forward priority filter; policy drop;
+        # allow already accepted traffic
+        jump established_traffic
+        # dns
+        jump dns
+        # vpn
+        jump vpn
+
+        # Forwarding INBOUND: Project Inbound
+{% for rule in project_inbound_rules %}
+{% if rule['allow'] %}
+        # default all inbound should be blocked but users can add their own inbound allow rules
+{% if rule['protocol'] == 'any' %}
+        iifname "{{ namespace_name }}.{{ public_bridge_name }}" ip{{ rule['version'] }} saddr {{ rule['source'] }} ip{{ rule['version'] }} daddr {{ rule['destination'] }} accept
+{% elif rule['protocol'] == 'icmp' %}
+        iifname "{{ namespace_name }}.{{ public_bridge_name }}" ip{{ rule['version'] }} saddr {{ rule['source'] }} ip{{ rule['version'] }} daddr {{ rule['destination'] }} jump icmp_allow
+{% else %}
+        iifname "{{ namespace_name }}.{{ public_bridge_name }}" ip{{ rule['version'] }} saddr {{ rule['source'] }} ip{{ rule['version'] }} daddr {{ rule['destination'] }} {{ rule['protocol'] }} dport { {{ rule['port'] }} } accept
+{% endif %}
+{% endif %}
+{% endfor %}
+
+        # Forwarding OUTBOUND: Project Outbound
+{% for rule in project_outbound_rules %}
+{% if not rule['allow'] %}
+{% if rule['protocol'] == 'any' %}
+        oifname "{{ namespace_name }}.{{ public_bridge_name }}" ip{{ rule['version'] }} saddr {{ rule['source'] }} ip{{ rule['version'] }} daddr {{ rule['destination'] }} drop
+{% elif rule['protocol'] == 'icmp' %}
+        oifname "{{ namespace_name }}.{{ public_bridge_name }}" ip{{ rule['version'] }} saddr {{ rule['source'] }} ip{{ rule['version'] }} daddr {{ rule['destination'] }} jump icmp_drop
+{% else %}
+        oifname "{{ namespace_name }}.{{ public_bridge_name }}" ip{{ rule['version'] }} saddr {{ rule['source'] }} ip{{ rule['version'] }} daddr {{ rule['destination'] }} {{ rule['protocol'] }} dport { {{ rule['port'] }} } drop
+{% endif %}
+{% endif %}
+{% endfor %}
+        # default all outbound is allowed but users can add their own outbound drop rules
+        oifname "{{ namespace_name }}.{{ public_bridge_name }}" accept
+    }
+
+{# ------------------------------------------------------------------------------------------------------------- #}
+
+    # OutBound Traffic generated from the Namespace
+    # Rules starts with oifname interface
+    # allow all out bound access from namespace
+    chain outbound {
+        type filter hook output priority filter; policy accept;
+    }
+
+    }
+{# ------------------------------------------------------------------------------------------------------------- #}
+
+    # outbound NAT of VMs and VRF_ip
+    # Rules starts with oifname interface
+    chain postrouting {
+        type nat hook postrouting priority srcnat; policy accept;
+        # VMs static NAT
+{% for nat in nats %}
+        oifname "{{ namespace_name }}.{{ public_bridge_name }}" ip saddr {{ nat['private_address'] }} snat to {{ nat['public_address'] }}
+{% endfor %}
+
+        # Rest outbound over virtual router ip
+{% for subnet in local_subnets %}
+        oifname "{{ namespace_name }}.{{ public_bridge_name }}" ip saddr {{ subnet['address_range'] }} snat to {{ virtual_router_ip }}
+{% endfor %}
+    }
+
+}

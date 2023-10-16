@@ -1,0 +1,34 @@
+{# Namespace definition #}
+sudo ip netns add {{ namespace_name }}
+sudo ip netns exec {{ namespace_name }} ip link set dev lo up
+{# ------------------------------------------------------------------------------------------------------------- #}
+{# connection between Floating Subnet bridge and Namespace #}
+sudo ip link add {{ public_bridge_name }}.{{ namespace_name }} type veth peer name {{ namespace_name }}.{{ public_bridge_name }}
+sudo ip link set {{ public_bridge_name }}.{{ namespace_name }} master br-{{ public_bridge_name }}
+sudo ip link set dev {{ public_bridge_name }}.{{ namespace_name }} up
+sudo ip link set {{ namespace_name }}.{{ public_bridge_name }} netns {{ namespace_name }}
+sudo ip netns exec {{ namespace_name }} ip addr add {{ public_bridge_network }}/{{ public_bridge_mask }} dev {{ namespace_name }}.{{ public_bridge_name }}
+sudo ip netns exec {{ namespace_name }} ip link set dev {{ namespace_name }}.{{ public_bridge_name }} up
+{# ------------------------------------------------------------------------------------------------------------- #}
+{# outbound route for IPv4 #}
+sudo ip netns exec {{ namespace_name }} ip route add default via {{ public_bridge_gateway }}
+{# ------------------------------------------------------------------------------------------------------------- #}
+{# create Namespace Network bridges #}
+{% for network in namespace_networks %}
+sudo ip link add name br-{{ network['name'] }} type bridge
+sudo ip link set br-{{ network['name'] }} up
+{# add network gateway interface on namespace and connect to network bridge #}
+sudo ip link add {{ namespace_name }}.{{ network['name'] }} type veth peer name {{ network['name'] }}.{{ namespace_name }}
+sudo ip link set {{ namespace_name }}.{{ network['name'] }} netns {{ namespace_name }}
+sudo ip link set {{ network['name'] }}.{{ namespace_name }} master br-{{ network['name'] }}
+sudo ip link set dev {{ network['name'] }}.{{ namespace_name }} up
+sudo ip netns exec {{ namespace_name }} ip addr add {{ network['address_range'] }} dev {{ namespace_name }}.{{ network['name'] }}
+sudo ip netns exec {{ namespace_name }} ip link set dev {{ namespace_name }}.{{ network['name'] }} up
+{# create vlan for podnet private interface and connect to namespace network bridge #}
+sudo ip link add link {{ podnet_private_interface }} name {{ podnet_private_interface }}.{{ network['name'] }} type vlan id {{ network['vlan'] }}
+sudo ip link set dev {{ podnet_private_interface }}.{{ network['name'] }} master {{ network['name'] }}
+sudo ip link set dev {{ podnet_private_interface }}.{{ network['name'] }} up
+{% endfor %}
+{# ------------------------------------------------------------------------------------------------------------- #}
+{# enabling route forwarding #}
+sudo ip netns exec {{ namespace_name }} sysctl --write net.ipv4.ip_forward=1

@@ -1,0 +1,9 @@
+{# Scrub the Namespace #}
+sudo ip netns delete {{ namespace_name }}
+{# ------------------------------------------------------------------------------------------------------------- #}
+{# network bridges are built on master namespace so should be deleted directly #}
+{# If network bridge exists then it will be deleted, Warnings are expected if bridge doesn't exist. #}
+{% for network in namespace_networks %}
+sudo ip link delete br-{{ network['name'] }}
+sudo ip link delete {{ podnet_private_interface }}.{{ network['vlan'] }}
+{% endfor %}

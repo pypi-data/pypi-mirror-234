@@ -1,0 +1,20 @@
+{# Stop execution if something fails #}
+set -e
+
+{# Check the state of the VM #}
+STATE=$(virsh domstate --domain {{ vm_name }} )
+if [ $STATE == 'shut off' ]; then
+    echo 'VM {{ vm_name }} already shut off'
+    echo -n {{ success_id }}
+    exit 0
+elif [ $STATE != 'running' ]; then
+    echo 'VM is not running'
+    exit 1
+fi
+
+virsh shutdown {{ vm_name }}
+until [[ $(virsh domstate {{ vm_name }}) = 'shut off' ]]; do
+    sleep 0.5
+done
+echo -n {{ success_id }}
+

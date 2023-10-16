@@ -1,0 +1,51 @@
+network:
+  version: 2
+  renderer: networkd
+  nameservers:
+    addresses: [{{ nameservers|join(', ') }}]
+  ethernets:
+    # Public Interface
+    {{ podnet_public_interface['name'] }}:
+      dhcp4: false
+      accept-ra: no
+      addresses:
+{% for ip in podnet_public_interface['ips'] %}
+       - {{ ip['network_address'] }}/{{ ip['prefixlen'] }}
+{% endfor %}
+      routes:
+{% for route in podnet_public_interface['routes'] %}
+        - to: {{ route['to'] }}
+          via: {{ route['via'] }}
+{% endfor %}
+
+    # Private Interface
+    {{ podnet_private_interface['name'] }}:
+      dhcp4: false
+      accept-ra: no
+
+    # MGMT Interface
+    {{ podnet_management_interface['name'] }}:
+      dhcp4: false
+      accept-ra: no
+      addresses:
+{% for ip in podnet_management_interface['ips'] %}
+       - {{ ip['network_address'] }}/{{ ip['prefixlen'] }}
+{% endfor %}
+      routes:
+{% for route in podnet_management_interface['routes'] %}
+        - to: {{ route['to'] }}
+          via: {{ route['via'] }}
+{% endfor %}
+
+    # OOB Interface
+    {{ podnet_oob_interface['name'] }}:
+      accept-ra: no
+      addresses:
+{% for ip in podnet_oob_interface['ips'] %}
+       - {{ ip['network_address'] }}/{{ ip['prefixlen'] }}
+{% endfor %}
+      routes:
+{% for route in podnet_oob_interface['routes'] %}
+        - to: {{ route['to'] }}
+          via: {{ route['via'] }}
+{% endfor %}

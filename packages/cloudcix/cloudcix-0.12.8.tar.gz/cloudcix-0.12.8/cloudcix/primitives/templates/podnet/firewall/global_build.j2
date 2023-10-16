@@ -1,0 +1,23 @@
+{% set temp_firewall_file = '/tmp/nftables.conf' %}
+{% set firewall_file = '/etc/nftables.conf' %}
+
+{# Create the temp nftables.conf file and validate it #}
+echo "{% include 'podnet/firewall/global_config.j2' %}" > {{ temp_firewall_file }}
+
+if [ -f {{ temp_firewall_file }} ]; then
+{# Verify the configuration file syntax #}
+    if sudo --prompt='' nft --check --file {{ temp_firewall_file }} ; then
+        echo "{{ messages['msg_010'] }}"
+{# Move the temp firewall rule file to firewall location #}
+        sudo --prompt='' mv --force {{ temp_firewall_file }} {{ firewall_file }}
+{# Apply the new firewall config #}
+        sudo --prompt='' nft --file {{ firewall_file }}
+        echo "{{ messages['msg_000'] }}"
+    else
+        echo "{{ messages['msg_032'] }}"
+        exit 1
+    fi
+else
+    echo "{{ messages['msg_033'] }}"
+    exit 1
+fi
