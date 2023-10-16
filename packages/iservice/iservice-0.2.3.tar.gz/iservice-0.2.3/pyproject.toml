@@ -1,0 +1,99 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[project]
+name = "iservice"
+version = "0.2.3"
+authors = [
+    {email = "contact.2xv8p@8shield.net", name = "Dorian Turba"},
+]
+description = "Service injector to create multiple version of a service with ease and safety."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+ALL = ["iservice[MANAGE]", "iservice[QUALITY]", "iservice[TEST]"]
+MANAGE = [
+    "bump-my-version",
+]
+QUALITY = [
+    "black",
+    "flake8",
+    "isort",
+    "mypy",
+    "pre-commit",
+]
+TEST = [
+    "coverage",
+    "pytest",
+]
+
+[project.urls]
+"Bug Tracker" = "https://lab.frogg.it/dorianturba/iservice"
+"Homepage" = "https://lab.frogg.it/dorianturba/iservice"
+
+[tool.black]
+line-length = 88
+
+[tool.bumpversion]
+allow_dirty = false
+commit = true
+commit_args = "--no-verify"
+current_version = "0.2.3"
+message = "Bump version: {current_version} → {new_version}"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+replace = "{new_version}"
+search = "{current_version}"
+serialize = [
+    "{major}.{minor}.{patch}",
+]
+sign_tags = false
+tag = true
+tag_message = "Bump version: {current_version} → {new_version}"
+tag_name = "{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+replace = "version = \"{new_version}\""
+search = "version = \"{current_version}\""
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+disallow_untyped_defs = true
+packages = "iservice"
+python_version = "3.10"
+
+[tool.pymarkdown]
+strict-config = true
+plugins.line-length.line_length = 88
+
+[tool.pytest.ini_options]
+addopts = "-rA -q --strict-markers"
+markers = [
+    "destructive: make sure unwanted behavior raise errors",
+    "property: property based testing",
+    "regression: prevent regression of functionality",
+]
+minversion = "6.0"
+testpaths = [
+    "integration",
+    "tests",
+]
+
+[tool.tomlsort.overrides."project"]
+inline_arrays = true
+inline_tables = true
+table_keys = false

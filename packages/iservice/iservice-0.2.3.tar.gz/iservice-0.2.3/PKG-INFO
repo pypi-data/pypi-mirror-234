@@ -1,0 +1,88 @@
+Metadata-Version: 2.1
+Name: iservice
+Version: 0.2.3
+Summary: Service injector to create multiple version of a service with ease and safety.
+Project-URL: Bug Tracker, https://lab.frogg.it/dorianturba/iservice
+Project-URL: Homepage, https://lab.frogg.it/dorianturba/iservice
+Author-email: Dorian Turba <contact.2xv8p@8shield.net>
+License-File: AUTHORS.rst
+License-File: LICENCE
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Typing :: Typed
+Requires-Python: >=3.10
+Provides-Extra: all
+Requires-Dist: iservice[manage]; extra == 'all'
+Requires-Dist: iservice[quality]; extra == 'all'
+Requires-Dist: iservice[test]; extra == 'all'
+Provides-Extra: manage
+Requires-Dist: bump-my-version; extra == 'manage'
+Provides-Extra: quality
+Requires-Dist: black; extra == 'quality'
+Requires-Dist: flake8; extra == 'quality'
+Requires-Dist: isort; extra == 'quality'
+Requires-Dist: mypy; extra == 'quality'
+Requires-Dist: pre-commit; extra == 'quality'
+Provides-Extra: test
+Requires-Dist: coverage; extra == 'test'
+Requires-Dist: pytest; extra == 'test'
+Description-Content-Type: text/markdown
+
+# iservice
+
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/iservice.svg)](https://pypi.org/project/iservice)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/iservice)](https://pypi.org/project/iservice)
+
+Helper class to make FastAPI dependencies with ease.
+
+## Simple use
+
+```python
+# iservice_a.py
+import typing
+
+import iservice
+
+
+class ServiceA(iservice.Service, typing.Protocol):
+    @staticmethod
+    def send(name: str) -> None: ...
+
+
+# service_a1.py
+def send(name: str) -> None:
+    print(f"Hello {name}")
+
+
+# service_a2.py
+def send(name: str) -> None:
+    print(f"Greetings {name}")
+
+
+# service_a.py
+import iservice_a
+import service_a1
+import service_a2
+
+
+def _welcome_user(service: iservice_a.ServiceA, name: str) -> None:
+    service.send(name)
+
+# inject will provide an inferred type that are matching the expected signature
+# (str) -> None
+hello = iservice.inject(_welcome_user, service_a1)
+greeting = iservice.inject(_welcome_user, service_a2)
+```
+
+In this case, in case of incorrect calls, mypy will raise errors like:
+
+```python
+hello(1)  # Argument 1 has incompatible type "int"; expected "str"
+greeting(1)  # Argument 1 has incompatible type "int"; expected "str"
+```
