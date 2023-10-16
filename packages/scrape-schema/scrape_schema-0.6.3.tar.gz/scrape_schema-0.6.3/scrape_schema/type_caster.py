@@ -1,0 +1,97 @@
+# pragma: no cover
+import sys
+from typing import Any, Type, Union
+
+from scrape_schema._logger import _logger_cast as _logger
+from scrape_schema._typing import NoneType, get_args, get_origin
+
+
+class TypeCaster:
+    """Simple type-caster variables from annotation information
+
+    This class provide next
+    """
+
+    def _typing_to_builtin(self, type_hint: Type) -> Type:
+        """convert Nested generic type (like Dict, List, Optional) to object"""
+        origin = get_origin(type_hint)
+        args = get_args(type_hint)
+
+        if origin is not None and args:
+            # Recursively convert the nested generic types
+            converted_args = tuple(self._typing_to_builtin(arg) for arg in args)
+            return origin[converted_args]
+        else:
+            return type_hint
+
+    def cast(self, type_hint: Type, value: Any) -> Any:
+        """cast value to given type
+
+        Args:
+            type_hint: typehint. If  value is Any > ignore type cast
+            value: value target
+        """
+        if sys.version_info >= (3, 9):
+            type_hint = self._typing_to_builtin(type_hint)
+
+        origin = get_origin(type_hint)
+        args = get_args(type_hint)
+
+        # Any
+        if origin is Any or Any in args:
+            return value
+
+        _logger.debug(
+            "Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
+            value,
+            type_hint,
+            origin,
+            args,
+        )
+
+        # None
+        if value is None and type_hint is not bool:
+            return value
+
+        if origin is not None and args:
+            # list
+            if origin is list:
+                _logger.debug(
+                    "List cast %s -> %s",
+                    args[0],
+                    value,
+                )
+                return [self.cast(type_hint=args[0], value=v) for v in value]
+            # dict
+            elif origin is dict:
+                key_type, value_type = args
+                _logger.debug(
+                    "Dict cast key=%s, value=%s -> %s",
+                    key_type.__name__,
+                    value_type.__name__,
+                    value,
+                )
+                return {
+                    self.cast(type_hint=key_type, value=k): self.cast(
+                        type_hint=value_type, value=v
+                    )
+                    for k, v in value.items()
+                }
+            # Optional
+            elif origin is Union:
+                if value is None and NoneType in args:
+                    _logger.debug("Optional cast %s", value)
+                    return None
+                # in python3.8 raise TypeError: issubclass() arg 1 must be a class
+                # example _cast_type(Optional[List[int]], [])
+                non_none_args = [arg for arg in args if arg is not NoneType]
+                if len(non_none_args) == 1:
+                    return self.cast(type_hint=non_none_args[0], value=value)
+        # bool cast
+        elif type_hint is bool:
+            _logger.debug("Bool cast %s", value)
+            return bool(value)
+        else:
+            # direct cast
+            _logger.debug("Direct cast %s -> %s", type_hint, value)
+            return type_hint(value)

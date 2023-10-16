@@ -1,0 +1,142 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scrape-schema"
+description = "A library for converting any text (xml, html, plain text, stdout, etc) to python datatypes"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [{name="vypivshiy", email=""}]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Internet",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Text Processing"
+]
+dependencies = [
+  'colorlog',
+  'parsel',
+  'chompjs',
+  'typing_extensions; python_version < "3.11"'
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/vypivshiy/scrape-schema#readme"
+Issues = "https://github.com/vypivshiy/scrape-schema/issues"
+Source = "https://github.com/vypivshiy/scrape-schema"
+Examples = "https://github.com/vypivshiy/scrape-schema/examples"
+
+
+[project.optional-dependencies]
+dev = ["ruff", "black", "isort", "pytest", "mypy", "pre-commit", "hatch"]
+ci = ["hatch", "ruff", "black", "isort", "pytest", "mypy", "parsel"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
+codegen = ['jinja2']
+
+[tool.hatch.version]
+path = "scrape_schema/__init__.py"
+
+[tool.hatch.envs.docs]
+dependencies = [
+  "mkdocs-material",
+  "mkdocstrings[python]"
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --clean --strict"
+serve = "mkdocs serve --dev-addr localhost:8000"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "colorlog",
+  "chompjs",
+  "typing_extensions",
+  "pytest",
+  "parsel",
+  "pytest-cov"
+]
+
+[tool.hatch.envs.default.scripts]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=scrape_schema --cov=tests {args}"
+no-cov = "cov --no-cov {args}"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["38", "39", "310", "311"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/README.md",
+  "/scrape_schema",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scrape_schema"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+  "scrape_schema/__about__.py",
+  "scrape_schema/factory/__init__.py",
+  "scrape_schema/_logger.py",
+  "scrape_schema/_typing.py",
+  "scrape_schema/_protocols.py",
+  "scrape_schema/type_caster.py",
+  "scrape_schema/codegen"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "def __repr__",
+  "if TYPE_CHECKING:",
+  "@abstractmethod",
+  "test_*"
+]
+
+[tool.mypy]
+python_version = 3.8
+pretty = true
+ignore_missing_imports = true
+exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples", "codegen/*"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+select = ["E", "F"]
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+exclude = [
+  "examples",
+  "venv",
+  "__init__.py",
+  "tests"
+]
+
+[tool.ruff.isort]
+known-first-party = ["scrape_schema"]
