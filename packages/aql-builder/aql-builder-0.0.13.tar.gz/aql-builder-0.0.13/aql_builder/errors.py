@@ -1,0 +1,2 @@
+class AqlError(Exception):
+	pass
