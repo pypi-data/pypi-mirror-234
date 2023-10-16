@@ -1,0 +1,77 @@
+Metadata-Version: 2.1
+Name: pandora-avatar
+Version: 0.0.5
+Summary: Avatar is a scalable multi-platform Bluetooth testing tool capable of running
+Author-email: Pandora <pandora-core@google.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Classifier: Programming Language :: Python :: 3.10
+Classifier: License :: OSI Approved :: Apache Software License
+Requires-Dist: bt-test-interfaces>=0.0.4
+Requires-Dist: bumble>=0.0.176
+Requires-Dist: protobuf==4.24.2
+Requires-Dist: grpcio==1.57
+Requires-Dist: mobly==1.12.2
+Requires-Dist: portpicker>=1.5.2
+Requires-Dist: rootcanal>=1.3.0 ; extra == "dev"
+Requires-Dist: grpcio-tools>=1.57 ; extra == "dev"
+Requires-Dist: pyright==1.1.298 ; extra == "dev"
+Requires-Dist: mypy==1.5.1 ; extra == "dev"
+Requires-Dist: black==23.7.0 ; extra == "dev"
+Requires-Dist: isort==5.12.0 ; extra == "dev"
+Requires-Dist: types-psutil==5.9.5.16 ; extra == "dev"
+Requires-Dist: types-setuptools==68.1.0.1 ; extra == "dev"
+Requires-Dist: types-protobuf==4.24.0.1 ; extra == "dev"
+Project-URL: Source, https://github.com/google/avatar
+Provides-Extra: dev
+
+# Avatar
+
+Avatar is a python Bluetooth testing tool orchestrating multiple devices which
+implement the [Pandora interfaces](
+https://github.com/google/bt-test-interfaces).
+
+## Install
+
+```bash
+python -m venv venv
+source venv/bin/activate.fish # or any other shell
+pip install [-e] .
+```
+
+## Usage
+
+```bash
+python cases/host_test.py -c cases/config.yml --verbose
+```
+
+## Specify a test bed
+```bash
+python cases/host_test.py -c cases/config.yml --test_bed bumble.bumbles --verbose
+```
+
+## Development
+
+1. Make sure to have a `root-canal` instance running somewhere.
+   ```bash
+   root-canal
+   ```
+
+1. Run the example using Bumble vs Bumble config file. The default `6402` HCI
+   port of `root-canal` may be changed in this config file.
+   ```
+   python cases/host_test.py -c cases/config.yml --verbose
+   ```
+
+1. Lint with `pyright` and `mypy`
+   ```
+   pyright
+   mypy
+   ```
+
+1. Format & imports style
+   ```
+   black avatar/ cases/
+   isort avatar/ cases/
+   ```
+
