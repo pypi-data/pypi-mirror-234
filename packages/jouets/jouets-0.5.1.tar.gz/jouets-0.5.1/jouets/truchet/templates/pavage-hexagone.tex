@@ -1,0 +1,22 @@
+{{ vérifie(côtés ==  6, "Le nombre de côtés doit être égal à 6.") }}
+\documentclass[tikz]{standalone}
+
+\usetikzlibrary{calc}
+
+\tikzstyle{aretes}=[{{ style.aretes }}]
+\tikzstyle{bord}=[{{ style.bord }}]
+\tikzstyle{pair}=[{{ style.pair }}]
+\tikzstyle{impair}=[{{ style.impair }}]
+
+\begin{document}
+    \begin{tikzpicture}
+        \clip (0, {-sqrt(3)/6}) rectangle ({{taille[0]-0.5}}, { {{taille[1]-1}}*sqrt(3)/2+sqrt(3)/6 });
+        {% for y in range(taille[1]) %}
+        {% for x in range(taille[0]) %}
+        \begin{scope}[shift={({{x+(y%2)*0.5}}, { {{y}}*sqrt(3)/2 })}]
+            {{ polygone(6, tuiles.next(), durete=durete, pairimpair=True) }}
+        \end{scope}
+        {% endfor %}
+        {% endfor %}
+    \end{tikzpicture}
+\end{document}

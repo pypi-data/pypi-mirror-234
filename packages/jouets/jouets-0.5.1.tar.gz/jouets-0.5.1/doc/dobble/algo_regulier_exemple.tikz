@@ -1,0 +1,76 @@
+\begin{tikzpicture}
+  [scale=0.5]
+  \foreach \step in {1, ..., 6} {
+      \begin{scope}[xshift={450*int((\step-1)/3)}, yshift={-170*mod(\step-1,3)}]
+          \draw (0,4) node{Étape \step};
+          % Cartes, et tas : 0 1 2
+          \foreach \x in {0, ..., 2} {
+              \foreach \y in {0, ..., 2} {
+                  \draw ({4*\x+\y},3) node[symbole]{\x};
+                  \draw[rounded corners=2pt] ({4*\x+\y-.4},{0-.4}) -- ++(.8, 0) -- ++(0,{3+.8}) -- ++(-.8,0) -- cycle;
+              }
+          }
+
+          % Tas : a b c
+          \ifnum\step>1 {
+              \foreach \x in {0, ..., 2} {
+                  \draw ({0+4*\x},0) node[symbole]{a};
+                  \draw ({1+4*\x},0) node[symbole]{b};
+                  \draw ({2+4*\x},0) node[symbole]{c};
+              }
+          }\fi
+
+          % Tas : u v w
+          \ifnum\step>2 {
+              \draw (0,1) node[symbole]{u};
+              \draw (1,1) node[symbole]{v};
+              \draw (2,1) node[symbole]{w};
+              \draw (4,1) node[symbole]{w};
+              \draw (5,1) node[symbole]{u};
+              \draw (6,1) node[symbole]{v};
+              \draw (8,1) node[symbole]{v};
+              \draw (9,1) node[symbole]{w};
+              \draw (10,1) node[symbole]{u};
+          }\fi
+
+          \ifnum\step>3 {
+              % Tas : r s t
+              \draw (0,2) node[symbole]{r};
+              \draw (1,2) node[symbole]{s};
+              \draw (2,2) node[symbole]{t};
+              \draw (4,2) node[symbole]{s};
+              \draw (5,2) node[symbole]{t};
+              \draw (6,2) node[symbole]{r};
+              \draw (8,2) node[symbole]{t};
+              \draw (9,2) node[symbole]{r};
+              \draw (10,2) node[symbole]{s};
+          }\fi
+
+          \ifnum\step>4 {
+              % Familles
+              \foreach \i in {0, ..., 3} {
+                  \draw[rounded corners=2pt] ({13-.4},{\i-.4}) -- ({16+.4},{\i-.4}) -- ({16+.4},{\i+.4}) -- ({13-.4},{\i+.4}) -- cycle;
+              }
+              \draw (13,3) node[symbole]{0};
+              \draw (14,3) node[symbole]{1};
+              \draw (15,3) node[symbole]{2};
+              \draw (13,0) node[symbole]{a};
+              \draw (14,0) node[symbole]{b};
+              \draw (15,0) node[symbole]{c};
+              \draw (13,1) node[symbole]{u};
+              \draw (14,1) node[symbole]{v};
+              \draw (15,1) node[symbole]{w};
+              \draw (13,2) node[symbole]{r};
+              \draw (14,2) node[symbole]{s};
+              \draw (15,2) node[symbole]{t};
+          }\fi
+
+          \ifnum\step>5 {
+              % Dernier
+              \foreach \i in {0, ..., 3} {
+                  \draw (16,\i) node[symbole]{$\alpha$};
+              }
+          }\fi
+      \end{scope}
+  }
+\end{tikzpicture}
