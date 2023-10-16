@@ -1,0 +1,41 @@
+default:
+  services:
+    - postgres:alpine
+
+stages:
+    - code_quality
+    - test
+
+include:
+    -   remote: 'https://api.r2devops.io/job/r/gitlab/dorianturba/r2devops_catalog/r2_metadata/black@latest.yaml'
+    -   remote: 'https://api.r2devops.io/job/r/gitlab/dorianturba/r2devops_catalog/r2_metadata/ruff@latest.yaml'
+    -   remote: 'https://api.r2devops.io/job/r/gitlab/dorianturba/r2devops_catalog/r2_metadata/pytest@latest.yaml'
+    -   remote: 'https://api.r2devops.io/job/r/gitlab/dorianturba/r2devops_catalog/r2_metadata/flake8@latest.yaml'
+    -   remote: 'https://api.r2devops.io/job/r/gitlab/dorianturba/r2devops_catalog/r2_metadata/mypy@latest.yaml'
+
+variables:
+    PACKAGE_NAME: "iservice"
+    POSTGRES_DB: test
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: test
+    POSTGRES_HOST_AUTH_METHOD: trust
+    IMAGE_TAG: "3.11"
+
+mypy:
+    variables:
+        PYTHON_SETUP: "pip install . mypy"
+        MYPY_RUN: "mypy"
+
+pytest:
+    variables:
+        PYTHON_SETUP: "pip install ${PROJECT_PATH}[TEST]"
+
+pytest_311:
+    extends: pytest
+    variables:
+        IMAGE_TAG: "3.10"
+
+pytest_310:
+    extends: pytest
+    variables:
+        IMAGE_TAG: "3.10"
