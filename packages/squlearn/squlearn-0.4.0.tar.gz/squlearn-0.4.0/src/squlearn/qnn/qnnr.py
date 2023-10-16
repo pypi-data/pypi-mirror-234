@@ -1,0 +1,221 @@
+"""QNNRegressor Implemenation"""
+from typing import Callable, Union
+from warnings import warn
+
+import numpy as np
+from sklearn.base import RegressorMixin
+from tqdm import tqdm
+
+from .base_qnn import BaseQNN
+from .loss import LossBase, VarianceLoss
+from .training import solve_mini_batch, regression
+
+from ..observables.observable_base import ObservableBase
+from ..encoding_circuit.encoding_circuit_base import EncodingCircuitBase
+from ..optimizers.optimizer_base import OptimizerBase, SGDMixin
+from ..util import Executor
+
+
+class QNNRegressor(BaseQNN, RegressorMixin):
+    """Quantum Neural Network for Regression.
+
+    This class implements a quantum neural network (QNN) for regression with a scikit-learn interface.
+    A parameterized quantum circuit and a possibly parameterized operator are used as a ML model.
+    They are trained according to a specified loss using the specified optimizer. Mini-batch
+    training is possible.
+
+    Args:
+        encoding_circuit (EncodingCircuitBase): The parameterized quantum circuit (PQC) part of the QNN.
+            For a list of encoding circuits, check this list of implemented :ref:`encoding_circuits`.
+        operator (Union[ObservableBase, list[ObservableBase]]): The operator that
+            is used in the expectation value of the QNN. Can be a list for multiple outputs. For a
+            list of operators, check this list of implemented :ref:`operators`.
+        executor (Executor): Executor instance.
+        loss (LossBase): The loss function to be optimized. Can also be combination of multiple
+            loss functions.
+        optimizer (OptimizerBase): The optimizer instance that is used to minimize the loss
+            function.
+        param_ini (np.ndarray, default=None): Initial values of the parameters of the PQC.
+        param_op_ini (np.ndarray, default=None): Initial values of the parameters of the operator.
+        batch_size (int, default=None): Number of data points in each batch in mini-batch training.
+            Will only be used if optimizer is of type SGDMixin.
+        epochs (int, default=None): Number of epochs of SGD to perform. Will only be used if
+            optimizer is of type SGDMixin.
+        shuffle (bool, default=None): If True, data points get shuffled before each epoch. Will
+            only be used if optimizer is of type SGDMixin.
+        opt_param_op (bool, default=True): If True, the operators parameters get optimized.
+        variance (Union[float, Callable], default=None): The variance factor to be used. If it is
+            None, the variance regularization will not be used. Else this determines the strength
+            of the variance regularization.
+        parameter_seed (Union[int, None], default=0): Seed for the random number generator for the
+            parameter initialization, if `param_ini` or `param_op_ini` is ``None``.
+        callback (Union[Callable, str, None], default=None): A callback for the optimization loop.
+            Can be either a Callable, "pbar" (which uses a :class:`tqdm.tqdm` process bar) or None.
+            If None, the optimizers (default) callback will be used.
+
+    See Also
+    --------
+        squlearn.qnn.QNNClassifier : Quantum Neural Network for Classification.
+
+    **Example**
+
+    .. code-block::
+
+        import numpy as np
+        from squlearn import Executor
+        from squlearn.encoding_circuit import ChebRx
+        from squlearn.observables import IsingHamiltonian
+        from squlearn.qnn import QNNRegressor, SquaredLoss
+        from squlearn.optimizers import SLSQP
+        from sklearn.model_selection import train_test_split
+
+        X, y = np.arange(0.1, 0.9, 0.01), np.log(np.arange(0.1, 0.9, 0.01))
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.33, random_state=42
+        )
+        reg = QNNRegressor(
+            ChebRx(4, 1, 2),
+            IsingHamiltonian(4, I="S", Z="S", ZZ="S"),
+            Executor("statevector_simulator"),
+            SquaredLoss(),
+            SLSQP(),
+            np.random.rand(16),
+            np.random.rand(5)
+        )
+        reg.fit(X_train, y_train)
+        y_pred = reg.predict(X_test[:5])
+
+    Methods:
+    --------
+
+    """
+
+    def __init__(
+        self,
+        encoding_circuit: EncodingCircuitBase,
+        operator: Union[ObservableBase, list[ObservableBase]],
+        executor: Executor,
+        loss: LossBase,
+        optimizer: OptimizerBase,
+        param_ini: np.ndarray = None,
+        param_op_ini: np.ndarray = None,
+        batch_size: int = None,
+        epochs: int = None,
+        shuffle: bool = None,
+        opt_param_op: bool = True,
+        variance: Union[float, Callable] = None,
+        parameter_seed: Union[int, None] = 0,
+        callback: Union[Callable, str, None] = "pbar",
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            encoding_circuit,
+            operator,
+            executor,
+            loss,
+            optimizer,
+            param_ini,
+            param_op_ini,
+            batch_size,
+            epochs,
+            shuffle,
+            opt_param_op,
+            variance,
+            parameter_seed=parameter_seed,
+            callback=callback,
+            **kwargs,
+        )
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """Predict using the QNN.
+
+        Args:
+            X : The input data.
+
+        Returns:
+            np.ndarray : The predicted values.
+        """
+        if not self._is_fitted:
+            warn("The model is not fitted.")
+        return self._qnn.evaluate_f(X, self._param, self._param_op)
+
+    def partial_fit(self, X: np.ndarray, y: np.ndarray, weights: np.ndarray = None) -> None:
+        """Fit a model to data.
+
+        This method will update the models parameters to fit the provided data.
+        It won't reinitialize the models parameters.
+
+        Args:
+            X: Input data
+            y: Labels
+            weights: Weights for each data point
+        """
+
+        loss = self.loss
+        if self.variance is not None:
+            loss = loss + VarianceLoss(alpha=self.variance)
+
+        if isinstance(self.optimizer, SGDMixin) and self.batch_size:
+            if self.opt_param_op:
+                self._param, self._param_op = solve_mini_batch(
+                    self._qnn,
+                    X,
+                    y,
+                    self._param,
+                    self._param_op,
+                    loss=loss,
+                    optimizer=self.optimizer,
+                    batch_size=self.batch_size,
+                    epochs=self.epochs,
+                    shuffle=self.shuffle,
+                    weights=weights,
+                    opt_param_op=True,
+                )
+            else:
+                self._param = solve_mini_batch(
+                    self._qnn,
+                    X,
+                    y,
+                    self._param,
+                    self._param_op,
+                    loss=loss,
+                    optimizer=self.optimizer,
+                    batch_size=self.batch_size,
+                    epochs=self.epochs,
+                    shuffle=self.shuffle,
+                    weights=weights,
+                    opt_param_op=False,
+                )
+
+        else:
+            if self.opt_param_op:
+                self._param, self._param_op = regression(
+                    self._qnn,
+                    X,
+                    y,
+                    self._param,
+                    self._param_op,
+                    loss,
+                    self.optimizer.minimize,
+                    weights,
+                    True,
+                )
+            else:
+                self._param = regression(
+                    self._qnn,
+                    X,
+                    y,
+                    self._param,
+                    self._param_op,
+                    loss,
+                    self.optimizer.minimize,
+                    weights,
+                    False,
+                )
+        self._is_fitted = True
+
+    def _fit(self, X: np.ndarray, y: np.ndarray, weights: np.ndarray = None) -> None:
+        """Internal fit function."""
+        if self.callback == "pbar":
+            self._pbar = tqdm(total=self.optimizer.options.get("maxiter", 100), desc="fit")
+        self.partial_fit(X, y, weights)
