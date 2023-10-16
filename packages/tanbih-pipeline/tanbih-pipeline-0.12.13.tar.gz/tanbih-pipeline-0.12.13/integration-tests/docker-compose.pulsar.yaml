@@ -1,0 +1,80 @@
+version: '3'
+services:
+  generator:
+    build:  
+      context: .
+      dockerfile: test-producer/Dockerfile
+    links:
+     - pulsar
+    environment:
+     - PIPELINE=PULSAR
+     - PULSAR=pulsar://pulsar:6650
+     - TENANT=public
+     - NAMESPACE=default
+     - OUTTOPIC=test-q-splitter
+     - COMPRESS=TRUE
+     - DEBUG=TRUE
+     - WAIT_HOSTS=pulsar:6650
+    depends_on:
+     - splitter
+  splitter:
+    build:  
+      context: .
+      dockerfile: test-splitter/Dockerfile
+    links:
+     - pulsar
+    environment:
+     - PIPELINE=PULSAR
+     - PULSAR=pulsar://pulsar:6650
+     - TENANT=public
+     - NAMESPACE=default
+     - INTOPIC=test-q-splitter
+     - OUTTOPIC=test-q-processor
+     - COMPRESS=TRUE
+     - DEBUG=TRUE
+     - WAIT_HOSTS=pulsar:6650
+    depends_on:
+     - processor1
+     - processor2
+  processor1:
+    build:  
+      context: .
+      dockerfile: test-processor/Dockerfile
+    links:
+     - pulsar
+    environment:
+     - PIPELINE=PULSAR
+     - PULSAR=pulsar://pulsar:6650
+     - TENANT=public
+     - NAMESPACE=default
+     - INTOPIC=test-q-processor-a
+     - COMPRESS=TRUE
+     - DEBUG=TRUE
+     - WAIT_HOSTS=pulsar:6650
+    depends_on:
+     - pulsar
+  processor2:
+    build:  
+      context: .
+      dockerfile: test-processor/Dockerfile
+    links:
+     - pulsar
+    environment:
+     - PIPELINE=PULSAR
+     - PULSAR=pulsar://pulsar:6650
+     - TENANT=public
+     - NAMESPACE=default
+     - INTOPIC=test-q-processor-b
+     - COMPRESS=TRUE
+     - DEBUG=TRUE
+     - WAIT_HOSTS=pulsar:6650
+    depends_on:
+     - pulsar
+  pulsar:
+    image: apachepulsar/pulsar:2.6.0
+    ports:
+      - 8080:8080
+      - 6650:6650
+    environment:
+      PULSAR_MEM: " -Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g"    
+    command: bin/pulsar standalone
