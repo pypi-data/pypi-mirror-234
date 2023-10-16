@@ -1,0 +1,390 @@
+---
+id: https://w3id.org/p2p_ld/nwb-schema-language
+name: nwb-schema-language
+title: nwb-schema-language
+description: |-
+  Translation of the nwb-schema-language to LinkML
+license: GNU GPL v3.0
+see_also:
+  - https://p2p_ld.github.io/nwb-schema-language
+
+prefixes:
+  nwb_schema_language: https://w3id.org/p2p_ld/nwb-schema-language/
+  linkml: https://w3id.org/linkml/
+  schema: http://schema.org/
+
+default_prefix: nwb_schema_language
+default_range: string
+
+imports:
+  - linkml:types
+
+settings:
+  email: "\\S+@\\S+{\\.\\w}+"
+  protected_string: "^[A-Za-z_][A-Za-z0-9_]*$"
+
+classes:
+  Namespace:
+    slots:
+      - doc
+      - name
+      - full_name
+      - version
+      - date
+      - author
+      - contact
+      - schema
+    slot_usage:
+      name:
+        required: true
+
+  Namespaces:
+    slots:
+      - namespaces
+
+  Schema:
+    slots:
+      - source
+      - namespace
+      - title
+      - neurodata_types
+    attributes:
+      doc:
+        required: false
+    rules:
+      - preconditions: {slot_conditions: { namespace: { value_presence: ABSENT }}}
+        postconditions: {slot_conditions: { source: {required: true }}}
+        description: If namespace is absent, source is required
+      - preconditions: {slot_conditions: { source: { value_presence: ABSENT }}}
+        postconditions: {slot_conditions: { namespace: {required: true }}}
+        description: If source is absent, namespace is required.
+      - preconditions: { slot_conditions: { namespace: { value_presence: PRESENT }}}
+        postconditions: { slot_conditions: { source: { value_presence: ABSENT }}}
+        description: If namespace is present, source is cannot be
+      - preconditions: { slot_conditions: { source: { value_presence: PRESENT }}}
+        postconditions: { slot_conditions: { namespace: { value_presence: ABSENT }}}
+        description: If source is present, namespace cannot be.
+
+  Group:
+    slots:
+      - neurodata_type_def
+      - neurodata_type_inc
+      - name
+      - default_name
+      - doc
+      - quantity
+      - linkable
+      - attributes
+      - datasets
+      - groups
+      - links
+
+  Groups:
+    slots:
+      - groups
+
+  Attribute:
+    mixins:
+      - DtypeMixin
+    slots:
+      - name
+      - dims
+      - shape
+      - value
+      - default_value
+      - doc
+      - required
+    slot_usage:
+      name:
+        required: true
+
+  Link:
+    slots:
+      - name
+      - doc
+      - target_type
+      - quantity
+
+  Dataset:
+    mixins:
+      - DtypeMixin
+    slots:
+      - neurodata_type_def
+      - neurodata_type_inc
+      - name
+      - default_name
+      - dims
+      - shape
+      - value
+      - default_value
+      - doc
+      - quantity
+      - linkable
+      - attributes
+
+  Datasets:
+    slots:
+      - datasets
+
+  ReferenceDtype:
+    slots:
+      - target_type
+      - reftype
+
+  CompoundDtype:
+    slots:
+      - name
+      - doc
+      - dtype
+    slot_usage:
+      name:
+        required: true
+      dtype:
+        required: true
+        any_of:
+          - range: ReferenceDtype
+          - range: FlatDtype
+        multivalued: false
+
+  DtypeMixin:
+    mixin: true
+    slots:
+      - dtype
+    rules:
+      - preconditions:
+          slot_conditions:
+            dtype:
+              range: FlatDtype
+        postconditions:
+          slot_conditions:
+            dtype:
+              multivalued: false
+
+  AnyType:
+    class_uri: linkml:Any
+
+
+slots:
+  # namespaces
+  doc:
+    required: true
+    description: Description of corresponding object.
+  name:
+    structured_pattern:
+      syntax: "{protected_string}"
+      interpolated: true
+  full_name:
+    description: Optional string with extended full name for the namespace.
+  version:
+    required: true
+    pattern: "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+  date:
+    range: datetime
+    slot_uri: schema:dateModified
+    description: Date that a namespace was last modified or released
+    examples:
+      - value: 2017-04-25 17:14:13
+  author:
+    multivalued: true
+    required: true
+    slot_uri: schema:author
+    description: List of strings with the names of the authors of the namespace.
+  contact:
+    multivalued: true
+    required: true
+    slot_uri: schema:email
+    structured_pattern:
+      syntax: "{email}"
+      interpolated: true
+    description: List of strings with the contact information for the authors. Ordering of the contacts should match the ordering of the authors.
+  schema:
+    multivalued: true
+    range: Schema
+    description: List of the schema to be included in this namespace.
+    inlined_as_list: true
+    alias: schema_
+
+  # schema
+  source:
+    description: describes the name of the YAML (or JSON) file with the schema specification. The schema files should be located in the same folder as the namespace file.
+    pattern: ".*\\.(yml|yaml|json)"
+  namespace:
+    description: describes a named reference to another namespace. In contrast to source, this is a reference by name to a known namespace (i.e., the namespace is resolved during the build and must point to an already existing namespace). This mechanism is used to allow, e.g., extension of a core namespace (here the NWB core namespace) without requiring hard paths to the files describing the core namespace. Either source or namespace must be specified, but not both.
+  namespaces:
+    multivalued: true
+    range: Namespace
+    inlined_as_list: true
+  neurodata_types:
+    multivalued: true
+    any_of:
+      - range: Dataset
+      - range: Group
+    description: an optional list of strings indicating which data types should be included from the given specification source or namespace. The default is null indicating that all data types should be included.
+  title:
+    description: a descriptive title for a file for documentation purposes.
+
+  # groups
+  neurodata_type_def:
+    description: Used alongside neurodata_type_inc to indicate inheritance, naming, and mixins
+    structured_pattern:
+      syntax: "{protected_string}"
+      interpolated: true
+  neurodata_type_inc:
+    description: Used alongside neurodata_type_def to indicate inheritance, naming, and mixins
+    structured_pattern:
+      syntax: "{protected_string}"
+      interpolated: true
+  default_name:
+    structured_pattern:
+      syntax: "{protected_string}"
+      interpolated: true
+  quantity:
+    any_of:
+      - range: integer
+        minimum_value: 1
+      - range: QuantityEnum
+    ifabsent: int(1)
+    todos:
+      - logic to check that the corresponding class can only be implemented quantity times.
+  linkable:
+    range: boolean
+
+  # Recursive properties
+  attributes:
+    range: Attribute
+    multivalued: true
+  datasets:
+    range: Dataset
+    multivalued: true
+    inlined_as_list: true
+  groups:
+    range: Group
+    multivalued: true
+    inlined_as_list: true
+  links:
+    range: Link
+    multivalued: true
+
+  # attributes
+  dtype:
+    any_of:
+      - range: FlatDtype
+      - range: CompoundDtype
+      - range: ReferenceDtype
+    multivalued: true
+  dims:
+    multivalued: true
+    any_of:
+      - range: string
+      - range: AnyType
+    todos:
+      - Can't quite figure out how to allow an array of arrays - see https://github.com/linkml/linkml/issues/895
+  shape:
+    multivalued: true
+    any_of:
+      - range: integer
+        minimum_value: 1
+      - equals_string: "null"
+        range: string
+      - range: AnyType
+    todos:
+      - Can't quite figure out how to allow an array of arrays - see https://github.com/linkml/linkml/issues/895
+  value:
+    range: AnyType
+    description: Optional constant, fixed value for the attribute.
+  default_value:
+    range: AnyType
+    description: Optional default value for variable-valued attributes.
+  required:
+    range: boolean
+    description: Optional boolean key describing whether the attribute is required. Default value is True.
+    ifabsent: "true"
+
+  # links
+  target_type:
+    description: Describes the neurodata_type of the target that the reference points
+      to
+    required: true
+#    any_of:
+#      - range: Dataset
+#      - range: Group
+  reftype:
+    description: describes the kind of reference
+    range: reftype_options
+
+
+
+enums:
+  reftype_options:
+    permissible_values:
+      ref: { description: Reference to another group or dataset of the given target_type }
+      reference: { description: Reference to another group or dataset of the given target_type }
+      object: { description: Reference to another group or dataset of the given target_type }
+      region: { description: Reference to a region (i.e. subset) of another dataset of the given target_type}
+  QuantityEnum:
+    permissible_values:
+      "*":
+        description: Zero or more instances, equivalent to zero_or_many
+      "?":
+        description: Zero or one instances, equivalent to zero_or_one
+      "+":
+        description: One or more instances, equivalent to one_or_many
+      "zero_or_many":
+        description: Zero or more instances, equivalent to *
+      "one_or_many":
+        description: One or more instances, equivalent to +
+      "zero_or_one":
+        description: Zero or one instances, equivalent to ?
+  FlatDtype:
+    permissible_values:
+      "float":
+        description: single precision floating point (32 bit)
+      "float32":
+        description: single precision floating point (32 bit)
+      "double":
+        description: double precision floating point (64 bit)
+      "float64":
+        description: double precision floating point (64 bit)
+      "long":
+        description: signed 64 bit integer
+      "int64":
+        description: signed 64 bit integer
+      "int":
+        description: signed 32 bit integer
+      "int32":
+        description: signed 32 bit integer
+      "int16":
+        description: signed 16 bit integer
+      "short":
+        description: signed 16 bit integer
+      "int8":
+        description: signed 8 bit integer
+      "uint":
+        description: unsigned 32 bit integer
+      "uint32":
+        description: unsigned 32 bit integer
+      "uint16":
+        description: unsigned 16 bit integer
+      "uint8":
+        description: unsigned 8 bit integer
+      "uint64":
+        description: unsigned 64 bit integer
+      "numeric":
+        description: any numeric type (i.e., any int, uint, float)
+      "text":
+        description: 8-bit Unicode
+      "utf":
+        description: 8-bit Unicode
+      "utf8":
+        description: 8-bit Unicode
+      "utf-8":
+        description: 8-bit Unicode
+      "ascii":
+        description: ASCII text
+      "bool":
+        description: 8 bit integer with valid values 0 or 1
+      "isodatetime":
+        description: ISO 8601 datetime string
+        examples:
+          - value: 2018-09-28T14:43:54.123+02:00
+
