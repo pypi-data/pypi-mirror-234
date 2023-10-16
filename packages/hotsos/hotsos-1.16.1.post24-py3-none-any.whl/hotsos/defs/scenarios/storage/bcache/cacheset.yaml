@@ -1,0 +1,44 @@
+checks:
+  bcache_enabled:
+    property: hotsos.core.plugins.storage.bcache.BcacheBase.bcache_enabled
+  cset_has_invalid_config:
+    config:
+      handler: hotsos.core.plugins.storage.bcache.CachesetsConfig
+      assertions:
+        not:
+          - key: congested_read_threshold_us
+            ops: [[eq, 0]]
+          - key: congested_write_threshold_us
+            ops: [[eq, 0]]
+  cset_config_lp1900438_limit:
+    config:
+      handler: hotsos.core.plugins.storage.bcache.CachesetsConfig
+      assertions:
+        # The real limit is 30 but we go just above in case bcache is flapping
+        # just above and below the limit.
+        key: cache_available_percent
+        ops: [[le, 33]]
+conclusions:
+  cset-has-invalid-config:
+    decision:
+      - bcache_enabled
+      - cset_has_invalid_config
+    raises:
+      type: BcacheWarning
+      message: >-
+        One or more of the following bcache cacheset config assertions failed:
+        {assertions}
+      format-dict:
+        assertions: '@checks.cset_has_invalid_config.requires.assertion_results'
+  bcache-bug-lp1900438:
+    decision:
+      - bcache_enabled
+      - cset_config_lp1900438_limit
+    raises:
+      type: LaunchpadBug
+      bug-id: 1900438
+      message: >-
+        bcache cache_available_percent is {actual} (i.e. approx. 30%) which
+        implies this node could be suffering from bug LP 1900438 - please check.
+      format-dict:
+        actual: '@checks.cset_config_lp1900438_limit.requires.value_actual'
