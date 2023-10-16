@@ -1,0 +1,94 @@
+Metadata-Version: 2.1
+Name: strimdb
+Version: 1.0.6
+Summary: A TUI to search IMDb, and more.
+Home-page: https://git.sr.ht/~matf/strimdb
+Author: matf
+Author-email: matf@disr.it
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+```
+            888            d8b                    888 888
+            888            Y8P                    888 888
+            888                                   888 888
+   .d8888b  888888 888d888 888 88888b.d88b.   .d88888 88888b.
+   88K      888    888P"   888 888 "888 "88b d88" 888 888 "88b
+   "Y8888b. 888    888     888 888  888  888 888  888 888  888
+        X88 Y88b.  888     888 888  888  888 Y88b 888 888 d88P
+    88888P'  "Y888 888     888 A TUI to search IMDb, and more. 
+                                ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ 
+```
+
+`strimdb` is a TUI (badly) written in Python to read information about movies/shows using IMDb and the OMDb API, with built-in support for playing trailers, streams from direct links or torrents if any (see disclaimer), and management of an accountless bookmark list.
+
+### Screenshots
+
+![Search view](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230928-125811.png)
+
+![Details view](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230928-125830.png)
+
+![Reviews view](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230928-125913.png)
+
+![Streaming](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230928-125945.png)
+
+![Streaming choice](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230929-032018.png)
+
+![Torrenter2](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230929-032021.png)
+
+![Torrenter3](https://git.sr.ht/~matf/strimdb/blob/master/demo/ss20230929-032034.png)
+
+### Installation
+`strimdb` can be installed from PyPi using `pip install --break-system-packages strimdb`, which will automatically resolve mandatory dependencies. Optional dependencies are also recommended:
+- `mpv` and `yt-dlp` to improve playback experience, to be installed using your distribution's package manager.
+- [`torrenter`](https://github.com/Based-Programmer/torrenter) to enable torrent streaming support. 
+
+Alternatively, `strimdb` is just a script and therefore can be run without installation:
+- Download the raw `strimdb` file either from the tree here, or by cloning the whole repository.
+- Make the script executable with `chmod +x strimdb`.
+- Run it with `./strimdb` or `python3 strimdb` if you skipped the previous step, or alternatively move it to your `$PATH` (or create a symbolic link: `ln -s /path/to/strimdb/strimdb ~/.local/bin/strimdb`).
+- Install any mandatory Python dependency it may complain about when first run with `pip install [dep]` or with your package manager if it provides Python packages (recommended); you should only need `requests` and `bs4`.
+- (Optional) Install recommended dependencies listed above.
+
+### Usage
+
+```
+$ ./strimdb -h
+usage: strimdb [-r] [-s SEARCH] [-n NUMBER] [-f] [-t TYPE] [-g GENRE] [-l] [-i CSV] [-v]
+
+options:
+  -r, --rating          include ratings in search results (slower)
+  -s SEARCH, --search SEARCH
+                        search a term directly (use quotes if multiple words)
+  -n NUMBER, --number NUMBER
+                        maximum number of results to show (a multiple of 10)
+  -f, --favourites      restrict the search to favourites (partially functional)
+  -t TYPE, --type TYPE  restrict the search to type "movie" or "series"
+  -g GENRE, --genre GENRE
+                        restrict the search to a genre (not functional yet)
+  -l, --list-genres     list possible genres
+  -i CSV, --import CSV  import favourites from an IMDb list exported as csv
+  -v, --version         show version and exit
+```
+
+The script will ask for an [OMDb API](https://www.omdbapi.com/apikey.aspx) (free for < 1000 requests/day). A key is provided for demonstration, but will likely reach its daily limit or be revoked, therefore it is strongly advised to create your own for free.
+
+## To do
+`strimdb` is still very experimental, and multiple limitations and even bugs are known:
+
+- searching through favourites (using `-f`) is still broken in several ways: 
+  - results are not split into pages of `-n` results,
+  - displayed index numbers correspond to row numbers in the local `favourites.csv` file instead row numbers from the list of matching results only, yet the latter are those that are required to enter the detailed view of a result,
+  - initiating a search after the first one somehow does not work, the first search term appears to persist,
+- genre filtering is not functional yet, and when it is, it will likely be limited to favourites to avoid very long scraping times,
+- stream subtitles are not fetched yet for direct links, and quality may often be limited to 720p for the current provider identified,
+- overall, Python standards are probably not followed as they should, PRs are welcome to improve functions and how they interact.
+
+## Disclaimer
+**This project.** Any content extracted by this project is hosted by external non-affiliated sources, and everything served through `strimdb` is publicly accessible. While a web browser makes hundreds of requests to get everything made available by a site, this project goes on to make more targeted requests associated with only getting the content relevant to its purpose. If this project extracts content provided by your website, the code is public and may help you taking the necessary measures to counter the means used to extract it in the first place.
+
+**DMCA and Copyright Infrigements.** This project is to be used at the user's own risk, based on their government and laws. Streaming copyrighted content without owning a legal copy and from an unendorsed source is illegal. No video files or direct links to video files are stored in this repository, as the script merely checks if sources exist. This is not its primary purpose, and the project has no control over the content it finds: this feature is for demonstration only and may only be tested by those who own a legal copy of the content, at their own risk. A browser is a tool, and the maliciousness of the tool depends on the user. This project uses client-side content access mechanisms. Hence, the copyright infrigements or DMCA in this project's regards are to be forwarded to the associated site by the associated notifier of any such claims. Finding a link using this script does not infringe copyright because no copy of the content is made by the script, just like when using a web search engine, and thus is not a valid reason to send a DMCA notice to sourcehut. If any source found by the script infringes on your rights as a copyright holder, they may be removed by contacting the web host service that published them online and is actually hosting them (not sourcehut, nor the maintainers of this repository). `strimdb` polls sources that have been made available independently from the script and externally, and as such has no control over them whatsoever.
