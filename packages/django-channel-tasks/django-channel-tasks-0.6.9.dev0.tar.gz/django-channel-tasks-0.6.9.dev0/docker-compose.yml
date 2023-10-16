@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: .
+      args:
+        DJANGO_SECRET_KEY: $DJANGO_SECRET_KEY
+        CHANNEL_TASKS_PACKAGE: $CHANNEL_TASKS_PACKAGE
+        CHANNEL_TASKS_DB_PASSWORD: $CHANNEL_TASKS_DB_PASSWORD
+    volumes:
+      - $CHANNEL_TASKS_DOCKER_HOME:/www
+    ports:
+      - $CHANNEL_TASKS_PORT:8001
+    depends_on:
+      - db
+    environment:
+      - TASK_ADMIN_USER
+      - TASK_ADMIN_EMAIL
+      - LC_ALL=C.UTF-8
+      - LANG=C.UTF-8
+      - LANGUAGE=C:en
+    command: sh -c "./setup-channel-tasks-docker.sh && exec /usr/local/bin/docker-entrypoint.sh unitd --no-daemon"
+  db:
+    image: postgres:latest
+    environment:
+      - PGPORT=5433
+      - POSTGRES_PASSWORD=postgres
+  redis:
+    image: redis:latest
