@@ -1,0 +1,88 @@
+Metadata-Version: 2.1
+Name: verinfast
+Version: 0.5.7
+Summary: This tool safely and securely analyzes applications for benchmarking.
+Project-URL: Homepage, https://github.com/StartupOS/verinfast
+Project-URL: Bug Tracker, https://github.com/StartupOS/verinfast/issues
+Project-URL: Source, https://github.com/StartupOS/verinfast
+Author-email: Jason Nichols <github@startupos.dev>, Sean Conrad <github@startupos.dev>
+License-File: LICENSE
+Classifier: License :: Free for non-commercial use
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.10
+Requires-Dist: azure-identity~=1.14.1
+Requires-Dist: azure-mgmt-compute~=30.3.0
+Requires-Dist: azure-mgmt-monitor~=6.0.2
+Requires-Dist: azure-mgmt-network~=25.1.0
+Requires-Dist: azure-mgmt-resource~=23.0.1
+Requires-Dist: azure-mgmt-storage~=21.1.0
+Requires-Dist: azure-monitor-query~=1.2.0
+Requires-Dist: boto3~=1.28.62
+Requires-Dist: coverage~=7.3.2
+Requires-Dist: defusedxml~=0.7.1
+Requires-Dist: flake8-pytest-style~=1.7.2
+Requires-Dist: flake8~=6.1.0
+Requires-Dist: google-cloud-compute>=1.14.0
+Requires-Dist: google-cloud-monitoring>=2.15.1
+Requires-Dist: google-cloud-storage>=2.10.0
+Requires-Dist: httpx[http2]~=0.25.0
+Requires-Dist: johnnydep~=1.20.3
+Requires-Dist: modernmetric>=1.0.2
+Requires-Dist: protobuf~=4.24.4
+Requires-Dist: pygments-tsx>=1.0.1
+Requires-Dist: pytest-cov~=4.1.0
+Requires-Dist: pytest-xdist~=3.3.1
+Requires-Dist: pytest~=7.4.2
+Requires-Dist: pyyaml~=6.0.1
+Requires-Dist: semgrep~=1.43.0
+Requires-Dist: windows-curses~=2.3.1; sys_platform == 'win32'
+Description-Content-Type: text/markdown
+
+[![Python Release](https://github.com/StartupOS/verinfast/actions/workflows/release.yml/badge.svg?event=release)](https://github.com/StartupOS/verinfast/actions/workflows/release.yml)
+[![codecov](https://codecov.io/gh/StartupOS/verinfast/graph/badge.svg?token=IECR8RD60P)](https://codecov.io/gh/StartupOS/verinfast)
+# VerinFast™
+
+ Welcome to the Scanning Agent.
+
+ This tool safely and securely analyzes applications for benchmarking.
+
+## Requirements:
+ - Python3 - Test with `python3 --version`
+ - pip - Test with `pip -V`
+ - SSH access to code repositories - Test with `git status`
+ - Command line tool access to cloud hosting providers
+ - Admin privileges on the computer used to run the agent
+ - Outbound internet access (for posting results and fetching dependency metadata)
+ - Your dependency mangement tools (e.g. `npm` or `yarn` or `maven`)
+
+## To run the Agent:
+ - Install this package with `pip install verinfast`
+ - In a directory with a `config.yaml` file run
+   `verinfast`
+   - Alternatively you can point to a config with `verinfast --config=/path/to/config`
+
+## Config Options
+ - If you want to check the output for yourself you can set `should_upload: false`, and use the flag `--output=/path/to/dir`. This will give you the chance to inspect what we collect before uploading. For large repositories, it is a lot of information, but we never upload your code or any credentials, just the summary data we collect.
+
+## Troubleshooting:
+### Python
+ - Run `python3 -m pip install --upgrade pip setuptools wheel`
+### git
+ - Run `which git`, `git --version`
+ - Run ` ssh -vT git@github.com` to test access to GitHub
+###  AWS
+ - Run `which aws`, `aws --version`
+### Azure
+ - Run `az git`, `az --version`
+ - Run `az account subscription list` to check subscription Id
+### Semgrep
+ - Run `which semgrep`, `semgrep --version`
+### pip
+ - Run `which pip`
+ - If no `pip`, run:
+    `curl -o get-pip.py https://bootstrap.pypa.io/get-pip.py`
+    `python get-pip.py`  OR `python3 get-pip.py`
+ Run `sudo apt update`
+
+ Copyright 2023 Startos Inc.
