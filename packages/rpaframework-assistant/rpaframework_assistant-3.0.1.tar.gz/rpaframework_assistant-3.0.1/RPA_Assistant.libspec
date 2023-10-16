@@ -1,0 +1,2314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<keywordspec name="RPA.Assistant" type="LIBRARY" format="REST" scope="GLOBAL" generated="2023-10-10T16:50:07+00:00" specversion="5" source="./RPA/Assistant/library.py" lineno="58">
+<version/>
+<doc>The `Assistant` library provides a way to display information to a user
+and request input while a robot is running. It allows building processes
+that require human interaction. Also it offers capabilities of running
+other robots inside the current one and determine what to display to the
+user based on his previous responses.
+
+It is not included in the `rpaframework` package, so in order to use it
+you have to add `rpaframework-assistant` with the desired version in your
+*conda.yaml* file
+
+Some examples of use-cases could be the following:
+
+- Displaying generated files after an execution is finished
+- Displaying dynamic and user-friendly error messages
+- Requesting passwords or other personal information
+- Running Keywords based on user's actions
+- Displaying dynamic content based on user's actions
+- Automating based on files created by the user
+
+**Workflow**
+
+The library is used to create dialogs, i.e. windows, that can be composed
+on-the-fly based on the current state of the execution.
+
+The content of the dialog is defined by calling relevant keywords
+such as ``Add text`` or ``Add file input``. When the dialog is opened
+the content is generated based on the previous keywords.
+
+Depending on the way the dialog is started, the execution will either
+block or continue while the dialog is open. During this time the user
+can freely edit any possible input fields or handle other tasks.
+
+After the user has successfully submitted the dialog, any possible
+entered input will be returned as a result. The user also has the option
+to abort by closing the dialog window forcefully.
+
+**Results**
+
+Each input field has a required ``name`` argument that controls what
+the value will be called in the result object. Each input name should be
+unique, and must not be called ``submit`` as that is reserved for the submit
+button value.
+
+A result object is a Robot Framework DotDict, where each key
+is the name of the input field and the value is what the user entered.
+The data type of each field depends on the input. For instance,
+a text input will have a string, a checkbox will have a boolean, and
+a file input will have a list of paths.
+
+If the user closed the window before submitting or there was an internal
+error, the results object returned by Run Dialog or Ask User won't have a "submit"
+key.
+
+**Layouting**
+
+By default elements are added to the assistant dialog from top to bottom, with a bit
+of margin around each element to add spaciousness. This margin is added as a
+``Container`` you can manually use ``Open Container`` to override the default
+container. You can use it to set smaller margins.
+
+You can combine layouting elements with each other. Layouting elements need to be
+closed with the corresponding ``Close`` keyword. (So ``Open Row`` and then
+``Close Row``.)
+
+``Open Row`` can be used to layout elements in the same row.
+
+``Open Column`` can be used to layout elements in columns.
+
+``Open Stack`` and multiple ``Open Container``'s inside it can be used to set
+positions like Center, Topleft, BottomRight, or coordinate tuples likes (0, 0),
+(100, 100) and such.
+
+``Open Container`` can bse used for absolute positioning inside a Stack, or anywhere
+for setting background color or margins and paddings.
+
+``Open Navbar`` can be used to make a navigation bar that will stay at the top of
+the dialog. Its contents won't be cleared when.
+
+
+**Examples**
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Success dialog
+        Add icon      Success
+        Add heading   Your orders have been processed
+        Add files     *.txt
+        Run dialog    title=Success
+
+    Failure dialog
+        Add icon      Failure
+        Add heading   There was an error
+        Add text      The assistant failed to login to the Enterprise portal
+        Add link      https://robocorp.com/docs    label=Troubleshooting guide
+        Run dialog    title=Failure
+
+    Large dialog
+        Add heading    A real chonker   size=large
+        Add image      fat-cat.jpeg
+        Run dialog     title=Large    height=1024    width=1024
+
+    Confirmation dialog
+        Add icon      Warning
+        Add heading   Delete user ${username}?
+        Add submit buttons    buttons=No,Yes    default=Yes
+        ${result}=    Run dialog
+        IF   $result.submit == "Yes"
+            Delete user    ${username}
+        END
+
+    Input form dialog
+        Add heading       Send feedback
+        Add text input    email    label=E-mail address
+        Add text input    message
+        ...    label=Feedback
+        ...    placeholder=Enter feedback here
+        ...    maximum_rows=5
+        ${result}=    Run dialog
+        Send feedback message    ${result.email}  ${result.message}
+
+
+.. code-block:: python
+
+    def success_dialog():
+        assistant = Assistant()
+        assistant.add_icon("success")
+        assistant.add_heading("Your orders have been processed")
+        assistant.add_files("*.txt")
+        assistant.run_dialog(title="Success")
+
+    def failure_dialog():
+        assistant = Assistant()
+        assistant.add_icon("failure")
+        assistant.add_heading("There was an error")
+        assistant.add_text("The assistant failed to login to the Enterprise portal")
+        assistant.add_link("https://robocorp.com/docs", label="Troubleshooting guide")
+        assistant.add_files("*.txt")
+        assistant.run_dialog(title="Failure")
+
+    def large_dialog():
+        assistant = Assistant()
+        assistant.add_heading("A real chonker", size="large")
+        assistant.add_image("fat-cat.jpeg")
+        assistant.run_dialog(title="Large", height=1024, width=1024)
+
+    def confirmation_dialog():
+        assistant = Assistant()
+        assistant.add_icon("warning")
+        assistant.add_heading("Delete user ${username}?")
+        assistant.add_submit_buttons(buttons="No, Yes", default="Yes")
+        result = assistant.run_dialog()
+        if result.submit == "Yes":
+            delete_user(username)
+
+    def input_from_dialog():
+        assistant = Assistant()
+        assistant.add_heading("Send feedback")
+        assistant.add_text_input("email", label="E-mail address")
+        assistant.add_text_input("message", label="Feedback", placeholder="Enter feedback here", maximum_rows=5)
+        assistant.add_submit_buttons("Submit", default="Submit")
+        result = assistant.run_dialog()
+        send_feedback_message(result.email, result.message)</doc>
+<tags>
+<tag>dialog</tag>
+<tag>input</tag>
+<tag>layout</tag>
+<tag>running</tag>
+</tags>
+<inits>
+</inits>
+<keywords>
+<kw name="Add Button" lineno="1423">
+<arguments repr="label: str, function: Callable | str, *args, location: VerticalLocation = Left, **kwargs">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="label: str">
+<name>label</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="function: Callable | str">
+<name>function</name>
+<type name="Union" union="true">Callable | str<type name="Callable">Callable</type><type name="str" typedoc="string">str</type></type>
+</arg>
+<arg kind="VAR_POSITIONAL" required="false" repr="*args">
+<name>args</name>
+</arg>
+<arg kind="NAMED_ONLY" required="false" repr="location: VerticalLocation = Left">
+<name>location</name>
+<type name="VerticalLocation" typedoc="VerticalLocation">VerticalLocation</type>
+<default>Left</default>
+</arg>
+<arg kind="VAR_NAMED" required="false" repr="**kwargs">
+<name>kwargs</name>
+</arg>
+</arguments>
+<doc>Create a button and execute the `function` as a callback when pressed.
+
+:param label: Text for the button
+:param function: Python function or Robot Keyword name, that will get ``*args``
+    and ``**kwargs`` passed into it
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    First View
+        Add Heading  Here is the first view of the app
+        Add Button  Change View  Second View
+
+    Second View
+        Add Heading  Let's build an infinite loop
+        Add Button  Change View  First View
+
+.. code-block:: python
+
+    def first_view():
+        assistant = Assistant()
+        assistant.add_heading("Here is the first view of the app")
+        assistant.add_button("Change view", second_view)
+        assistant.run_dialog()
+
+    def second_view():
+        assistant = Assistant()
+        assistant.add_heading("Let's build an infinite loop")
+        assistant.add_button("Change view", first_view)
+        assistant.run_dialog()</doc>
+<shortdoc>Create a button and execute the `function` as a callback when pressed.</shortdoc>
+<tags>
+<tag>dialog</tag>
+</tags>
+</kw>
+<kw name="Add Checkbox" lineno="1198">
+<arguments repr="name: str, label: str, default: bool = False">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="label: str">
+<name>label</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: bool = False">
+<name>default</name>
+<type name="bool" typedoc="boolean">bool</type>
+<default>False</default>
+</arg>
+</arguments>
+<doc>Add a checkbox element
+
+:param name:    Name of result field
+:param label:   Label text for checkbox
+:param default: Default checked state
+
+Adds a checkbox that indicates a true or false value.
+The selection will be available in the ``name`` field of the result,
+and the ``label`` text will be shown next to the checkbox.
+
+The boolean ``default`` value will define the initial checked
+state of the element.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Select checkboxes
+        Add heading     Enable features
+        Add checkbox    name=vault        label=Enable vault       default=True
+        Add checkbox    name=triggers     label=Enable triggers    default=False
+        Add checkbox    name=assistants   label=Enable assistants  default=True
+        ${result}=      Run dialog
+        IF    $result.vault
+            Enable vault
+        END
+
+.. code-block:: python
+
+    def select_checkboxes():
+        assistant = Assistant()
+        assistant.add_heading("Enable features")
+        assistant.add_checkbox(name="vault", label="Enable vault", default=True)
+        assistant.add_checkbox(name="triggers", label="Enable triggers", default=False)
+        assistant.add_checkbox(name="assistants", label="Enable assistants", default=True)
+        result = assistant.run_dialog()
+        if(result.vault):
+            enable_vault()</doc>
+<shortdoc>Add a checkbox element</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Date Input" lineno="1070">
+<arguments repr="name: str, default: date | str | None = None, label: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: date | str | None = None">
+<name>default</name>
+<type name="Union" union="true">date | str | None<type name="date" typedoc="date">date</type><type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a date input element.
+
+:param name:    Name of the result field
+:param default: The default set date
+:param label:   Label for the date input field
+
+Displays a date input. The selection the user makes will be available
+as a ``date`` object in the ``name`` field of the result.
+The ``default`` argument can be a pre-set date as object or string in
+"YYYY-MM-DD" format, otherwise the current date is used.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Select birthdate
+        Add heading       Enter your birthdate
+        Add Date Input    birthdate    default=1993-04-26
+        ${result} =       Run dialog
+        Log To Console    User birthdate year should be: ${result.birthdate.year}
+
+.. code-block:: python
+
+    def select_birthdate():
+        assistant = Assistant()
+        assistant.add_heading("Enter your birthdate")
+        assistant.add_date_input("birthdate", default="1993-04-26")
+        result = assistant.run_dialog()
+        print("User birthdate year should be: ", result.birthdate.year)</doc>
+<shortdoc>Add a date input element.</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Drop-Down" lineno="1010">
+<arguments repr="name: str, options: List[str] | str, default: str | None = None, label: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="options: List[str] | str">
+<name>options</name>
+<type name="Union" union="true">List[str] | str<type name="List" typedoc="list">List[str]<type name="str" typedoc="string">str</type></type><type name="str" typedoc="string">str</type></type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: str | None = None">
+<name>default</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a drop-down element
+
+:param name:    Name of result field
+:param options: List of drop-down options
+:param default: The default selection
+:param label:   Label for input field
+
+Creates a drop-down menu with the given ``options``. The selection
+the user makes will be available in the ``name`` field of the result.
+
+The ``default`` argument can be one of the defined options,
+and the dialog automatically selects that option for the input.
+
+A custom ``label`` text can also be added.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Select user type from drop down
+        Add heading     Select user type
+        Add drop-down
+        ...    name=user_type
+        ...    options=Admin,Maintainer,Operator
+        ...    default=Operator
+        ...    label=User type
+        ${result}=      Run dialog
+        Log    User type should be: ${result.user_type}
+
+.. code-block:: python
+
+    def select_user_type_from_drop_down():
+        assistant = Assistant()
+        assistant.add_heading("Select user type")
+        assistant.add_drop_down(
+            name="user_type",
+            options="Admin,Maintainer,Operator",
+            default="Operator",
+            label="User type"
+        )
+        result = assistant.run_dialog()
+        print("User type should be: ", result.user_type)</doc>
+<shortdoc>Add a drop-down element</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add File" lineno="467">
+<arguments repr="path: str, label: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="path: str">
+<name>path</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a file element, which links to a local file
+
+:param path:  The path to the file
+:param label: A custom label text for the file
+
+Adds a button which opens a local file with the corresponding
+default application. Can be used for instance to display generated
+files from the robot to the end-user.
+
+Optionally a custom ``label`` can be given for the button text.
+By default uses the filename of the linked file.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Open file button
+        ${path}=   Generate order files
+        Add heading    Current orders
+        Add file    ${path}    label=Current
+        Run dialog
+
+.. code-block:: python
+
+    def open_file_button():
+        path = generate_order_files()
+        assistant = Assistant()
+        assistant.add_heading("Current orders")
+        assistant.add_file(path, label="Current")
+        assistant.run_dialog()</doc>
+<shortdoc>Add a file element, which links to a local file</shortdoc>
+</kw>
+<kw name="Add File Input" lineno="903">
+<arguments repr="name: str, label: str | None = None, source: str | None = None, file_type: str | None = None, multiple: bool = False">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="source: str | None = None">
+<name>source</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="file_type: str | None = None">
+<name>file_type</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="multiple: bool = False">
+<name>multiple</name>
+<type name="bool" typedoc="boolean">bool</type>
+<default>False</default>
+</arg>
+</arguments>
+<doc>Add a file input element
+
+:param name:        Name of result field
+:param label:       Label for input field
+:param source:      Default source directory
+:param file_type:   Accepted file types
+:param multiple:    Allow selecting multiple files
+
+Adds a native file selection dialog for inputting one or more files.
+The list of selected files will be available in the ``name`` field
+of the result.
+
+By default opens up in the user's home directory, but it can be
+set to a custom path with the ``source`` argument.
+
+The argument ``file_type`` restricts the possible file extensions
+that the user can select. The format of the argument is as follows:
+``pdf,png,svg``. For instance, an argument
+to limit options to Excel files could be: ``xls,xlsx``.
+
+To allow selecting more than one file, the ``multiple`` argument
+can be enabled.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Multiple file selections
+        # This can be any one file
+        Add file input    name=anything
+
+        # This can be multiple files
+        Add file input    name=multiple  multiple=True
+
+        # This opens the select dialog to a custom folder
+        Add file input    name=src       source=C:\Temp\Output\
+
+        # This restricts files to certain types
+        Add file input    name=types     file_type=pdf
+
+        # Every file input result is a list of paths
+        ${result}=    Run dialog
+        FOR    ${path}    IN    @{result.multiple}
+            Log    Selected file: ${path}
+        END
+
+.. code-block:: python
+
+    def multiple_file_selections():
+        assistant = Assistant()
+        # This can be any one file
+        assistant.add_file_input(name="anything")
+
+        # This can be multiple files
+        assistant.add_file_input(name="multiple", multiple=True)
+
+        # This opens the select dialog to a custom folder
+        assistant.add_file_input(name="src", source="./C:/Temp/Output")
+
+        # This restricts files to certain types
+        assistant.add_file_input(name="types", file_type="pdf")
+
+        # Every file input result is a list of paths
+        result = assistant.run_dialog()
+        for path in result.multiple:
+            print("Selected file: ", path)</doc>
+<shortdoc>Add a file input element</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Files" lineno="525">
+<arguments repr="pattern: str">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="pattern: str">
+<name>pattern</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+</arguments>
+<doc>Add multiple file elements according to the given file pattern
+
+:param pattern: File matching pattern
+
+See the keyword ``Add file`` for information about the inserted
+element itself.
+
+The keyword uses Unix-style glob patterns for finding matching files,
+and the supported pattern expressions are as follow:
+
+========== ================================================
+Pattern    Meaning
+========== ================================================
+``*``      Match everything
+``?``      Match any single character
+``[seq]``  Match any character in seq
+``[!seq]`` Match any character not in seq
+``**``     Match all files, directories, and subdirectories
+========== ================================================
+
+If a filename has any of these special characters, they
+can be escaped by wrapping them with square brackets.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Open multiple files buttons
+        # Add all excel files
+        Add files    *.xlsx
+
+        # Add all log files in any subdirectory
+        Add files    **/*.log
+
+        # Add all PDFs between order0 and order9
+        Add files    order[0-9].pdf
+
+.. code-block:: python
+
+    def open_multiple_files_buttons():
+        assistant = Assistant()
+        # Add all excel files
+        assistant.add_file("*.xlsx")
+        # Add all log files in any subdirectory
+        assistant.add_file("**/*.log")
+        # Add all PDFs between order0 and order9
+        assistant.add_file("order[0-9].pdf")
+        assistant.run_dialog()</doc>
+<shortdoc>Add multiple file elements according to the given file pattern</shortdoc>
+</kw>
+<kw name="Add Flet Icon" lineno="639">
+<arguments repr="icon: str, color: str | None = None, size: int | None = 24">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="icon: str">
+<name>icon</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="color: str | None = None">
+<name>color</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="size: int | None = 24">
+<name>size</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>24</default>
+</arg>
+</arguments>
+<doc>Add an icon from a large gallery of icons.
+
+:param icon:      Corresponding flet icon name. Check
+                  https://gallery.flet.dev/icons-browser/ for a list of icons.
+                  Write the name in ``lower_case``
+:param color:     Color for the icon. Default depends on icon. Allowed values
+                  are colors from
+                  https://github.com/flet-dev/flet/blob/035b00104f782498d084c2fd7ee96132a542ab7f/sdk/python/packages/flet-core/src/flet_core/colors.py#L37
+                  or ARGB/RGB (#FFXXYYZZ or #XXYYZZ).
+:param size:      Integer size for the icon.
+
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Add custom icon
+        Add Heading    Check icon
+        Add Flet Icon  icon_name=check_circle_rounded  color=FF00FF  size=48
+        Run Dialog
+
+.. code-block:: python
+
+    def add_custom_icon()
+        assistant = Assistant()
+        assistant.add_heading("Check icon")
+        assistant.add_flet_icon(icon="check_circle_rounded", color="FF00FF", size="48")
+        assistant.run_dialog()</doc>
+<shortdoc>Add an icon from a large gallery of icons.</shortdoc>
+</kw>
+<kw name="Add Heading" lineno="285">
+<arguments repr="heading: str, size: Size = Medium">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="heading: str">
+<name>heading</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="size: Size = Medium">
+<name>size</name>
+<type name="Size" typedoc="Size">Size</type>
+<default>Medium</default>
+</arg>
+</arguments>
+<doc>Add a centered heading text element
+
+:param heading: The text content for the heading
+:param size:    The size of the heading
+
+Supported ``size`` values are Small, Medium, and Large. By default uses
+the value Medium.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Add dialog heading
+        Add heading     User information  size=Large
+        Add heading     Location          size=Small
+        Add text input  address           label=User address
+        Run dialog
+
+
+.. code-block:: python
+
+    def add_dialog_heading():
+        assistant = Assistant()
+        assistant.add_heading("User information", size="large")
+        assistant.add_heading("Location", size="small")
+        assistant.add_text_input("address", label="User address")
+        assistant.run_dialog()</doc>
+<shortdoc>Add a centered heading text element</shortdoc>
+</kw>
+<kw name="Add Hidden Input" lineno="862">
+<arguments repr="name: str, value: str">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="value: str">
+<name>value</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+</arguments>
+<doc>Add a hidden input element
+
+:param name:  Name of result feild
+:param value: Value for input
+
+Adds a special hidden result field that is not visible
+to the user and always contains the given static value.
+
+Can be used to keep user input together with already known
+values such as user IDs, or to ensure that dialogs with differing
+elements all have the same fields in results.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Get user information
+        Add hidden input   user_id   ${USER_ID}
+        Add text input     username
+        ${result}=         Run dialog
+        Enter user information    ${result.user_id}    ${result.username}
+
+.. code-block:: python
+
+    def get_user_information():
+        assistant = Assistant()
+        user_id = "Your user value"
+        assistant.add_hidden_input("user_id", user_id)
+        assistant.add_text_input("username")
+        result = assistant.run_dialog()
+        enter_user_information(result.user_id, result.username)</doc>
+<shortdoc>Add a hidden input element</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Icon" lineno="584">
+<arguments repr="variant: Icon, size: int = 48">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="variant: Icon">
+<name>variant</name>
+<type name="Icon" typedoc="Icon">Icon</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="size: int = 48">
+<name>size</name>
+<type name="int" typedoc="integer">int</type>
+<default>48</default>
+</arg>
+</arguments>
+<doc>Add an icon element from RPA.Assistant's short icon list.
+
+:param variant: The icon type
+:param size:    The size of the icon
+
+Adds an icon which can be used to indicate status
+or the type of dialog being presented.
+
+The currently supported icon types are:
+
+======= ==========================
+Name    Description
+======= ==========================
+Success A green check mark
+Warning An orange warning triangle
+Failure A red cross or X mark
+======= ==========================
+
+The ``size`` of the icon can also be changed,
+to a given height/width of pixels.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Confirmation dialog
+        Add icon              Warning    size=64
+        Add heading           Do you want to delete this order?
+        Add submit buttons    buttons=No,Yes
+        ${result}=    Run dialog
+
+.. code-block:: python
+
+    def confirmation_dialog():
+        assistant = Assistant()
+        assistant.add_icon("warning", size="64")
+        assistant.add_heading("Do you want to delete this order?")
+        assistant.add_submit_buttons(buttons="No, Yes")
+        result = assistant.run_dialog()</doc>
+<shortdoc>Add an icon element from RPA.Assistant's short icon list.</shortdoc>
+</kw>
+<kw name="Add Image" lineno="420">
+<arguments repr="url_or_path: str, width: int | None = None, height: int | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="url_or_path: str">
+<name>url_or_path</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="width: int | None = None">
+<name>width</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="height: int | None = None">
+<name>height</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add an image element, from a local file or remote URL
+
+:param url_or_path: The location of the image
+:param width:       The static width of the image, in pixels
+:param height:      The static height of the image, in pixels
+
+Adds an inline image to the dialog, which can either
+point to a local file path on the executing machine or to
+a remote URL.
+
+By default the image is resized to fit the width of the dialog
+window, but the width and/or height can be explicitly defined
+to a custom value. If only one of the dimensions is given,
+the other is automatically changed to maintain the correct aspect ratio.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Display image
+        Add image      company-logo.png
+        Add heading    To start, please press the Continue button   size=Small
+        Add submit buttons    Continue
+        Run dialog
+
+.. code-block:: python
+
+    def display_image():
+        assistant = Assistant()
+        assistant.add_image("company-logo.png")
+        assistant.add_heading("To start, please press the Continue button", size="small")
+        assistant.add_submit_buttons("Continue")
+        assistant.run_dialog()</doc>
+<shortdoc>Add an image element, from a local file or remote URL</shortdoc>
+</kw>
+<kw name="Add Link" lineno="376">
+<arguments repr="url: str, label: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="url: str">
+<name>url</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add an external URL link element
+
+:param url:   The URL for the link
+:param label: A custom label text for the link
+
+Adds a clickable link element, which opens the user's default
+browser to the given ``url``. Optionally a ``label`` can be given
+which is shown as the link text, instead of the raw URL.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Display troubleshoot link
+        Add heading    An error occurred
+        Add text       See link for documentation
+        Add link       https://robocorp.com/docs    label=Troubleshooting
+        Run dialog
+
+.. code-block:: python
+
+    def add_troubleshoot_link():
+        assistant = Assistant()
+        assistant.add_heading("An error occurred")
+        assistant.add_text("See link for documentation")
+        assistant.add_link("https://robocorp.com/docs", label="Troubleshooting")
+        assistant.run_dialog()</doc>
+<shortdoc>Add an external URL link element</shortdoc>
+</kw>
+<kw name="Add Loading Bar" lineno="1637">
+<arguments repr="name: str, width: int = 16, bar_height: int = 16, color: str | None = None, tooltip: str | None = None, value: float | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="width: int = 16">
+<name>width</name>
+<type name="int" typedoc="integer">int</type>
+<default>16</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="bar_height: int = 16">
+<name>bar_height</name>
+<type name="int" typedoc="integer">int</type>
+<default>16</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="color: str | None = None">
+<name>color</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="tooltip: str | None = None">
+<name>tooltip</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="value: float | None = None">
+<name>value</name>
+<type name="Union" union="true">float | None<type name="float" typedoc="float">float</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a loading bar.
+
+:param name:        Name of the element
+:param width:       Width of the bar
+:param bar_height:  Height of the bar
+:param color:       Color of the bar's stroke.
+                    Allowed values are colors from
+                    [https://github.com/flet-dev/flet/blob/035b00104f782498d084c2fd7ee96132a542ab7f/sdk/python/packages/flet-core/src/flet_core/colors.py#L37|Flet Documentation] (in the format ``black12``, ``red500``)
+                    or ARGB/RGB (#FFXXYYZZ or #XXYYZZ).XXYYZZ
+:param tooltip:     Tooltip to be displayed on mouse hover.
+:param value:       Between 0.0 and 1.0 if you want to manually control it's completion.
+                    Use `None` for indeterminate progress indicator.</doc>
+<shortdoc>Add a loading bar.</shortdoc>
+<tags>
+<tag>dialog</tag>
+<tag>running</tag>
+</tags>
+</kw>
+<kw name="Add Loading Spinner" lineno="1600">
+<arguments repr="name: str, width: int = 16, height: int = 16, stroke_width: int = 2, color: str | None = None, tooltip: str | None = None, value: float | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="width: int = 16">
+<name>width</name>
+<type name="int" typedoc="integer">int</type>
+<default>16</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="height: int = 16">
+<name>height</name>
+<type name="int" typedoc="integer">int</type>
+<default>16</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="stroke_width: int = 2">
+<name>stroke_width</name>
+<type name="int" typedoc="integer">int</type>
+<default>2</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="color: str | None = None">
+<name>color</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="tooltip: str | None = None">
+<name>tooltip</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="value: float | None = None">
+<name>value</name>
+<type name="Union" union="true">float | None<type name="float" typedoc="float">float</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a loading spinner.
+
+:param name:        Name of the element
+:param width:       Width of the spinner
+:param height:      Height of the spinner
+:param stroke_width: Width of the spinner's stroke
+:param color:       Color of the spinner's stroke.
+                    Allowed values are colors from
+                    [https://github.com/flet-dev/flet/blob/035b00104f782498d084c2fd7ee96132a542ab7f/sdk/python/packages/flet-core/src/flet_core/colors.py#L37|Flet Documentation] (in the format ``black12``, ``red500``)
+                    or ARGB/RGB (#FFXXYYZZ or #XXYYZZ).XXYYZZ
+:param tooltip:     Tooltip to be displayed
+                    on mouse hover.
+:param value:       Between 0.0 and 1.0 if you want to manually control it's completion.
+                    If `None` it will spin endlessy.</doc>
+<shortdoc>Add a loading spinner.</shortdoc>
+<tags>
+<tag>dialog</tag>
+<tag>running</tag>
+</tags>
+</kw>
+<kw name="Add Next Ui Button" lineno="1474">
+<arguments repr="label: str, function: Callable | str">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="label: str">
+<name>label</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="function: Callable | str">
+<name>function</name>
+<type name="Union" union="true">Callable | str<type name="Callable">Callable</type><type name="str" typedoc="string">str</type></type>
+</arg>
+</arguments>
+<doc>Create a button that leads to the next UI page, calling the passed
+keyword or function, and passing current form results as first positional
+argument to it.
+
+:param label: Text for the button
+:param function: Python function or Robot Keyword name, that will take form
+    results as its first argument
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Retrieve User Data
+        # Retrieves advanced data that needs to be displayed
+
+    Main Form
+        Add Heading  Username input
+        Add Text Input  name=username_1  placeholder=username
+        Add Next Ui Button        Show customer details  Customer Details
+
+    Customer Details
+        [Arguments]  ${form}
+        ${user_data}=  Retrieve User Data  ${form}[username_1]
+        Add Heading  Retrieved Data
+        Add Text  ${user_data}[phone_number]
+        Add Text  ${user_data}[address]
+
+.. code-block:: python
+
+    def main_form():
+        assistant = Assistant()
+        assistant.add_heading("Username input")
+        assistant.add_text_input("username_1", placeholder="username")
+        assistant.add_next_ui_button("Show customer details", customer_details)
+        assistant.run_dialog()
+
+    def customer_details(form):
+        assistant = Assistant()
+        user_data = retrieve_user_data(form.username_1)
+        assistant.add_heading("Retrieved Data")
+        assistant.add_text(user_data[phone_number])
+        assistant.add_text(user_data[address])
+        assistant.run_dialog()</doc>
+<shortdoc>Create a button that leads to the next UI page, calling the passed keyword or function, and passing current form results as first positional argument to it.</shortdoc>
+<tags>
+<tag>dialog</tag>
+</tags>
+</kw>
+<kw name="Add Password Input" lineno="814">
+<arguments repr="name: str, label: str | None = None, placeholder: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="placeholder: str | None = None">
+<name>placeholder</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a password input element
+
+:param name:        Name of result field
+:param label:       Label for field
+:param placeholder: Placeholder text in input field
+
+Adds a text field that hides the user's input. The entered
+content will be available in the ``name`` field of the result.
+
+For customizing the look of the input, the ``label`` text can be given
+to add a descriptive label and the ``placholder`` text can be given
+to act as an example of the input value.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Change password
+        Add heading    Change password
+        Add text input        username    label=Current username
+        Add password input    password    label=New password
+        Add submit buttons    buttons=Submit
+        ${result}=    Run dialog
+        Change user password    ${result.username}  ${result.password}
+
+.. code-block:: python
+
+    def change_password():
+        assistant = Assistant()
+        assistant.add_heading("Change password")
+        assistant.add_text_input("username", label="Current username")
+        assistant.add_password_input("password", label="New password")
+        assistant.add_submit_buttons(buttons="Submit")
+        result = assistant.run_dialog()
+        change_user_password(result.username, result.password)</doc>
+<shortdoc>Add a password input element</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Radio Buttons" lineno="1136">
+<arguments repr="name: str, options: List[str] | str, default: str | None = None, label: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="options: List[str] | str">
+<name>options</name>
+<type name="Union" union="true">List[str] | str<type name="List" typedoc="list">List[str]<type name="str" typedoc="string">str</type></type><type name="str" typedoc="string">str</type></type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: str | None = None">
+<name>default</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add radio button elements
+
+:param name:    Name of result field
+:param options: List of drop-down options
+:param default: The default selection
+:param label:   Label for input field
+
+Creates a set of radio buttons with the given ``options``. The selection
+the user makes will be available in the ``name`` field of the result.
+
+The ``default`` argument can be one of the defined options,
+and the dialog automatically selects that option for the input.
+
+A custom ``label`` text can also be added.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Select user type from radio buttons
+        Add heading     Select user type
+        Add radio buttons
+        ...    name=user_type
+        ...    options=Admin,Maintainer,Operator
+        ...    default=Operator
+        ...    label=User type
+        ${result}=      Run dialog
+        Log    User type should be: ${result.user_type}
+
+.. code-block:: python
+
+    def select_user_type_from_radio_buttons():
+        assistant = Assistant()
+        assistant.add_heading("Select user type")
+        assistant.add_radio_buttons(
+            name="user_type",
+            options="Admin,Maintainer,Operator",
+            default="Operator",
+            label="User type"
+        )
+        result = assistant.run_dialog()
+        print("User type should be: ", result.user_type)</doc>
+<shortdoc>Add radio button elements</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Slider" lineno="1529">
+<arguments repr="name: str, slider_min: int | float = 0, slider_max: int | float = 100, thumb_text={value}, steps: int | None = None, default: int | float | None = None, decimals: int | None = 1">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="slider_min: int | float = 0">
+<name>slider_min</name>
+<type name="Union" union="true">int | float<type name="int" typedoc="integer">int</type><type name="float" typedoc="float">float</type></type>
+<default>0</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="slider_max: int | float = 100">
+<name>slider_max</name>
+<type name="Union" union="true">int | float<type name="int" typedoc="integer">int</type><type name="float" typedoc="float">float</type></type>
+<default>100</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="thumb_text={value}">
+<name>thumb_text</name>
+<default>{value}</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="steps: int | None = None">
+<name>steps</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: int | float | None = None">
+<name>default</name>
+<type name="Union" union="true">int | float | None<type name="int" typedoc="integer">int</type><type name="float" typedoc="float">float</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="decimals: int | None = 1">
+<name>decimals</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>1</default>
+</arg>
+</arguments>
+<doc>Add a slider input.
+
+:param name:        Name of result field
+:param slider_min:  Minimum value of the slider
+:param slider_max:  Maximum value of the slider
+:param thumb_label: Text to display when the slider is being slided. Use the
+                    placeholder {value} for the number. (thumb text `{value%}`
+                    will display values: `0%`, `100%`)
+:param steps:       Amount of steps for the slider. If None, the slider will be
+                    continuous.
+                    For integer output, specify a steps value where all the
+                    steps will be integers, or implement rounding when
+                    retrieving the result.
+:param default:     Default value for the slider. Must be between min and max.
+:param decimals:    How many decimals should the value have and show.
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Create Percentage Slider
+        Add Text    Percentage slider
+        Add Slider  name=percentage  slider_min=0  slider_max=100
+                    thumb_text={value}%  steps=100  round=1
+
+.. code-block:: python
+
+    def create_percentage_slider():
+        assistant = Assistant()
+        assistant.add_text("Percentage slider")
+        assistant.add_slider(
+            name="percentage",
+            slider_min=0,
+            slider_max=100,
+            thumb_text="{value}%",
+            steps=100,
+            decimals=1
+        )
+        assistant.run_dialog()</doc>
+<shortdoc>Add a slider input.</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Submit Buttons" lineno="1251">
+<arguments repr="buttons: List[str] | str, default: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="buttons: List[str] | str">
+<name>buttons</name>
+<type name="Union" union="true">List[str] | str<type name="List" typedoc="list">List[str]<type name="str" typedoc="string">str</type></type><type name="str" typedoc="string">str</type></type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: str | None = None">
+<name>default</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add custom submit buttons
+
+:param buttons: Submit button options
+:param default: The primary button
+
+The result field will always be called ``submit`` and will contain
+the pressed button text as a value.
+
+If one of the custom ``options`` should be the preferred option,
+the ``default`` argument controls which one is highlighted with
+an accent color.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Delete user warning
+        Add icon      Warning
+        Add heading   Delete user ${username}?
+        Add submit buttons    buttons=No,Yes    default=Yes
+        ${result}=    Run dialog
+        IF   $result.submit == "Yes"
+            Delete user    ${username}
+        END
+
+.. code-block:: python
+
+    def delete_user_warning():
+        assistant = Assistant()
+        username = "user_01"
+        assistant.add_icon("warning")
+        assistant.add_heading(f"Delete user {username}?")
+        assistant.add_submit_buttons(buttons="No, Yes", default="Yes")
+        result = assistant.run_dialog()
+        if result.submit == "Yes":
+            delete_user(username)</doc>
+<shortdoc>Add custom submit buttons</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Add Text" lineno="331">
+<arguments repr="text: str, size: Size = Medium">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="text: str">
+<name>text</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="size: Size = Medium">
+<name>size</name>
+<type name="Size" typedoc="Size">Size</type>
+<default>Medium</default>
+</arg>
+</arguments>
+<doc>Add a text paragraph element, for larger bodies of text
+
+:param text: The text content for the paragraph
+:param size: The size of the text
+
+Supported ``size`` values are Small, Medium, and Large. By default uses
+the value Medium.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Show error dialog
+        Add heading   An error occurred
+        Add text      There was an error while requesting user information
+        Add text      ${error}   size=Small
+        Run dialog
+
+.. code-block:: python
+
+    def show_error_dialog():
+        error = "Your error message"
+        assistant = Assistant()
+        assistant.add_heading("An error occurred")
+        assistant.add_text("There was an error while requesting user information")
+        assistant.add_text(f"{error}", size="small")
+        assistant.run_dialog()</doc>
+<shortdoc>Add a text paragraph element, for larger bodies of text</shortdoc>
+</kw>
+<kw name="Add Text Input" lineno="679">
+<arguments repr="name: str, label: str | None = None, placeholder: str | None = None, validation: Callable | str | None = None, default: str | None = None, required: bool = False, minimum_rows: int | None = None, maximum_rows: int | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="name: str">
+<name>name</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="label: str | None = None">
+<name>label</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="placeholder: str | None = None">
+<name>placeholder</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="validation: Callable | str | None = None">
+<name>validation</name>
+<type name="Union" union="true">Callable | str | None<type name="Callable">Callable</type><type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="default: str | None = None">
+<name>default</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="required: bool = False">
+<name>required</name>
+<type name="bool" typedoc="boolean">bool</type>
+<default>False</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="minimum_rows: int | None = None">
+<name>minimum_rows</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="maximum_rows: int | None = None">
+<name>maximum_rows</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Add a text input element
+
+:param name:        Name of result field
+:param label:       Label for field
+:param placeholder: Placeholder text in input field
+:param validation:   Validation function for the input field
+:param default:     Default value if the field wasn't completed
+:param required:    If true, will display an error if not completed
+:param minimum_rows: Minimum number of rows to display for the input field
+:param maximum_rows: Maximum number of rows to display for the input field, the
+                     input content can be longer but a scrollbar will appear
+
+Adds a text field that can be filled by the user. The entered
+content will be available in the ``name`` field of the result.
+
+For customizing the look of the input, the ``label`` text can be given
+to add a descriptive label and the ``placholder`` text can be given
+to act as an example of the input value.
+
+The `default` value will be assigned to the input field if the user
+doesn't complete it. If provided, the placeholder won't be shown.
+This is `None` by default. Also, if a default value is provided
+and the user deletes it, `None` will be the corresponding value in
+the results dictionary.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Send feedback
+        Add heading    Send feedback
+        Add text input    email    label=E-mail address
+        Add text input    message
+        ...    label=Feedback
+        ...    placeholder=Enter feedback here
+        ${result}=    Run dialog
+        Send feedback message    ${result.email}  ${result.message}
+
+Validation example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Validate Email
+        [Arguments]    ${email}
+        # E-mail specification is complicated, this matches that the e-mail has
+        # at least one character before and after the @ sign, and at least one
+        # character after the dot.
+        ${regex}=    Set Variable    ^.+@.+\..+
+        ${valid}=    Run Keyword And Return Status    Should Match Regexp  ${email}  ${regex}
+        IF  not $valid
+            RETURN  Invalid email address
+        END
+
+    Open Dialog
+        Add heading    Send feedback
+        Add text input    email
+        ...    label=Email
+        ...    validation=Validate Email
+        ${result}=    Run dialog
+        Log  ${result.email}
+
+.. code-block:: python
+
+    import re
+    def validate_email(email):
+        # E-mail specification is complicated, this matches that the e-mail has
+        # at least one character before and after the @ sign, and at least one
+        # character after the dot.
+        regex = r"^.+@.+\..+"
+        valid = re.match(regex, email)
+        if not valid:
+            return "Invalid email address"
+
+    def open_dialog():
+        assistant.add_heading("Send feedback")
+        assistant.add_text_input("email", label="Email", validation=validate_email)
+        result = run_dialog()
+        print(result.email)</doc>
+<shortdoc>Add a text input element</shortdoc>
+<tags>
+<tag>input</tag>
+</tags>
+</kw>
+<kw name="Ask User" lineno="1378">
+<arguments repr="timeout: int = 180, **options: Any">
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="timeout: int = 180">
+<name>timeout</name>
+<type name="int" typedoc="integer">int</type>
+<default>180</default>
+</arg>
+<arg kind="VAR_NAMED" required="false" repr="**options: Any">
+<name>options</name>
+<type name="Any" typedoc="Any">Any</type>
+</arg>
+</arguments>
+<doc>Same as ``Run Dialog`` it will create a dialog from all the defined
+elements and block until the user has handled it. It will also add
+by default a submit and close buttons.
+
+:param timeout: Time to wait for dialog to complete, in seconds
+:param options: Options for the dialog
+
+Returns a result object with all input values.
+
+For more information about possible options for opening the dialog,
+see the documentation for the keyword ``Run Dialog``.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Ask user dialog
+        Add heading     Please enter your username
+        Add text input  name=username
+        ${result}=      Ask User
+        Log    The username is: ${result.username}
+
+.. code-block:: python
+
+    def ask_user_dialog():
+        assistant = Assistant()
+        assistant.add_heading("Please enter your username")
+        assistant.add_text_input("username")
+        result = assistant.ask_user()
+        print("The username is: ", result.username)</doc>
+<shortdoc>Same as ``Run Dialog`` it will create a dialog from all the defined elements and block until the user has handled it. It will also add by default a submit and close buttons.</shortdoc>
+<tags>
+<tag>dialog</tag>
+</tags>
+</kw>
+<kw name="Clear Dialog" lineno="279">
+<arguments repr="">
+</arguments>
+<doc>Clear dialog and results while it is running.</doc>
+<shortdoc>Clear dialog and results while it is running.</shortdoc>
+<tags>
+<tag>dialog</tag>
+<tag>running</tag>
+</tags>
+</kw>
+<kw name="Close Column" lineno="1963">
+<arguments repr="">
+</arguments>
+<doc>Closes previously opened Column.
+
+Raises LayoutError if called with no Column open, or if another layout element
+was opened more recently than a Column.</doc>
+<shortdoc>Closes previously opened Column.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Close Container" lineno="1803">
+<arguments repr="">
+</arguments>
+<doc>Close previously opened container.
+
+Raises LayoutError if called with no Row open, or if another layout element was
+opened more recently than a row.</doc>
+<shortdoc>Close previously opened container.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Close Navbar" lineno="1852">
+<arguments repr="">
+</arguments>
+<doc>Close previously opened navbar.
+
+Raises LayoutError if called with no Row open, or if another layout element was
+opened more recently than a row.</doc>
+<shortdoc>Close previously opened navbar.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Close Row" lineno="1718">
+<arguments repr="">
+</arguments>
+<doc>Close previously opened row.
+
+Raises LayoutError if called with no Row open, or if another layout element was
+opened more recently than a row.</doc>
+<shortdoc>Close previously opened row.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Close Stack" lineno="1915">
+<arguments repr="">
+</arguments>
+<doc>Close previously opened Stack.
+
+Raises LayoutError if called with no Stack open, or if another layout element
+was opened more recently than a Stack.</doc>
+<shortdoc>Close previously opened Stack.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Open Column" lineno="1924">
+<arguments repr="">
+</arguments>
+<doc>Open a Column layout container. Following ``Add &lt;element&gt;`` calls will add
+items into that Column until ``Close Column`` is called.
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Double Column Layout
+        Open Row
+        Open Column
+        Add Text      First item in the first column
+        Add Text      Second item on the first column
+        Close Column
+        Open Column
+        Add Text      First item on the second column
+        Close Column
+        Close Row
+
+.. code-block:: python
+
+    def double_column_layout():
+        assistant = Assistant()
+        assistant.open_row()
+        assistant.open_column()
+        assistant.add_text("First item in the first column")
+        assistant.add_text("Second item on the first column")
+        assistant.close_column()
+
+        assistant.open_column()
+        assistant.add_text("First item on the second column")
+        assistant.close_column()
+        assistant.close_row()
+
+        assistant.run_dialog()</doc>
+<shortdoc>Open a Column layout container. Following ``Add &lt;element&gt;`` calls will add items into that Column until ``Close Column`` is called.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Open Container" lineno="1727">
+<arguments repr="margin: int | None = 5, padding: int | None = None, width: int | None = None, height: int | None = None, background_color: str | None = None, location: Location | Tuple[int, int] | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="margin: int | None = 5">
+<name>margin</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>5</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="padding: int | None = None">
+<name>padding</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="width: int | None = None">
+<name>width</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="height: int | None = None">
+<name>height</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="background_color: str | None = None">
+<name>background_color</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="location: Location | Tuple[int, int] | None = None">
+<name>location</name>
+<type name="Union" union="true">Location | Tuple[int, int] | None<type name="Location" typedoc="Location">Location</type><type name="Tuple" typedoc="tuple">Tuple[int, int]<type name="int" typedoc="integer">int</type><type name="int" typedoc="integer">int</type></type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Open a single element container. The following ``Add &lt;element&gt;`` calls adds
+an element inside the container. Can be used for styling elements.
+
+
+:param margin: How much margin to add around the container. RPA.Assistant adds
+               by default a container of margin 5 around all elements, to have
+               a smaller margin use containers with smaller margin value for
+               elements.
+:param padding: How much padding to add around the content of the container.
+:param width: Width of the container.
+:param height: Height of the container.
+
+:param bgcolor:   Background color for the container. Default depends on icon.
+                  Allowed values are colors from
+                  [https://github.com/flet-dev/flet/blob/035b00104f782498d084c2fd7ee96132a542ab7f/sdk/python/packages/flet-core/src/flet_core/colors.py#L37|Flet Documentation] (in the format ``black12``, ``red500``)
+                  or ARGB/RGB (#FFXXYYZZ or #XXYYZZ).XXYYZZ
+:param location:  Where to place the container (A Location value or tuple of
+                  ints). Only works inside a Stack layout element.
+
+                  To use any Center___ or ___Center locations you must define
+                  width and height to the element.
+
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Padded Element With Background
+        Open Container  padding=20  background_color=blue500
+        Add Text        sample text
+        Close Container
+
+.. code-block:: python
+
+    def padded_element_with_background():
+        assistant = Assistant()
+        assistant.open_container(padding=20, background_color="blue500")
+        assistant.add_text("Sample text")
+        assistant.close_container()
+        assistant.run_dialog()</doc>
+<shortdoc>Open a single element container. The following ``Add &lt;element&gt;`` calls adds an element inside the container. Can be used for styling elements.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Open Navbar" lineno="1812">
+<arguments repr="title: str | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="title: str | None = None">
+<name>title</name>
+<type name="Union" union="true">str | None<type name="str" typedoc="string">str</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Create a Navigation Bar. Following ``Add &lt;element&gt;`` calls will add
+items into the Navbar until ``Close Navbar`` is called.
+
+Navbar doesn't clear when Clear Dialog is called.
+
+Only one Navbar can be initialized at a time. Trying to make a second one will
+raise a LayoutError.
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+        Go To Start Menu
+            Add Heading  Start menu
+            Add Text  Start menu content
+
+        Assistant Navbar
+            Open Navbar  title=Assistant
+            Add Button   menu  Go To Start Menu
+            Close Navbar
+
+.. code-block:: python
+
+    def go_to_start_menu():
+        assistant = Assistant()
+        assistant.add_heading("Start menu")
+        assistant.add_text("Start menu content")
+        assistant.run_dialog()
+
+    def assistant_navbar():
+        assistant = Assistant()
+        assistant.open_navbar(title="Assistant")
+        assistant.add_button("menu", go_to_start_menu)
+        assistant.close_navbar()
+        assistant.run_dialog()</doc>
+<shortdoc>Create a Navigation Bar. Following ``Add &lt;element&gt;`` calls will add items into the Navbar until ``Close Navbar`` is called.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Open Row" lineno="1691">
+<arguments repr="">
+</arguments>
+<doc>Open a row layout container. Following ``Add &lt;element&gt;`` calls will add
+items into that row until ``Close Row`` is called.
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Side By Side Elements
+        Open Row
+        Add Text  First item on the row
+        Add Text  Second item on the row
+        Close Row
+
+.. code-block:: python
+
+    def side_by_side_elements():
+        assistant = Assistant()
+        assistant.open_row()
+        assistant.add_text("First item on the row")
+        assistant.add_text("Second item on the row")
+        assistant.close_row()
+        assistant.run_dialog()</doc>
+<shortdoc>Open a row layout container. Following ``Add &lt;element&gt;`` calls will add items into that row until ``Close Row`` is called.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Open Stack" lineno="1860">
+<arguments repr="width: int | None = None, height: int | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="width: int | None = None">
+<name>width</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="height: int | None = None">
+<name>height</name>
+<type name="Union" union="true">int | None<type name="int" typedoc="integer">int</type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Create a "Stack" layout element. Stack can be used to position elements
+absolutely and to have overlapping elements in your layout. Use Container's
+`top` and `left` arguments to position the elements in a stack.
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Absolutely Positioned Elements
+        # Positioning containers with relative location values requires
+        # absolute size for the Stack
+        Open Stack  height=360  width=360
+
+        Open Container  width=64  height=64  location=Center
+        Add Text  center
+        Close Container
+
+        Open Container  width=64  height=64  location=TopRight
+        Add Text  top right
+        Close Container
+
+        Open Container  width=64  height=64  location=BottomRight
+        Add Text  bottom right
+        Close Container
+
+        Close Stack
+
+.. code-block:: python
+
+    def absolutely_positioned_elements():
+        # Positioning containers with relative location values requires
+        # absolute size for the Stack
+        assistant = Assistant()
+        assistant.open_stack(height=360, width=360)
+
+        assistant.open_container(width=64, height=64, location=Center)
+        assistant.add_text("center")
+        assistant.close_container()
+
+        assistant.open_container(width=64, height=64, location=TopRight)
+        assistant.add_text("top right")
+        assistant.close_container()
+
+        assistant.open_container(width=64, height=64, location=BottomRight)
+        assistant.add_text("bottom right")
+        assistant.close_container()
+
+        assistant.close_stack()
+        assistant.run_dialog()</doc>
+<shortdoc>Create a "Stack" layout element. Stack can be used to position elements absolutely and to have overlapping elements in your layout. Use Container's `top` and `left` arguments to position the elements in a stack.</shortdoc>
+<tags>
+<tag>layout</tag>
+</tags>
+</kw>
+<kw name="Refresh Dialog" lineno="1416">
+<arguments repr="">
+</arguments>
+<doc>Can be used to update UI elements when adding elements while dialog is
+running</doc>
+<shortdoc>Can be used to update UI elements when adding elements while dialog is running</shortdoc>
+<tags>
+<tag>dialog</tag>
+<tag>running</tag>
+</tags>
+</kw>
+<kw name="Run Dialog" lineno="1305">
+<arguments repr="timeout: int = 180, title: str = Assistant, height: int | Literal[AUTO] = AUTO, width: int = 480, on_top: bool = False, location: WindowLocation | Tuple[int, int] | None = None">
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="timeout: int = 180">
+<name>timeout</name>
+<type name="int" typedoc="integer">int</type>
+<default>180</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="title: str = Assistant">
+<name>title</name>
+<type name="str" typedoc="string">str</type>
+<default>Assistant</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="height: int | Literal[AUTO] = AUTO">
+<name>height</name>
+<type name="Union" union="true">int | Literal[AUTO]<type name="int" typedoc="integer">int</type><type name="Literal">Literal[AUTO]<type name="AUTO">AUTO</type></type></type>
+<default>AUTO</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="width: int = 480">
+<name>width</name>
+<type name="int" typedoc="integer">int</type>
+<default>480</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="on_top: bool = False">
+<name>on_top</name>
+<type name="bool" typedoc="boolean">bool</type>
+<default>False</default>
+</arg>
+<arg kind="POSITIONAL_OR_NAMED" required="false" repr="location: WindowLocation | Tuple[int, int] | None = None">
+<name>location</name>
+<type name="Union" union="true">WindowLocation | Tuple[int, int] | None<type name="WindowLocation" typedoc="WindowLocation">WindowLocation</type><type name="Tuple" typedoc="tuple">Tuple[int, int]<type name="int" typedoc="integer">int</type><type name="int" typedoc="integer">int</type></type><type name="None" typedoc="None">None</type></type>
+<default>None</default>
+</arg>
+</arguments>
+<doc>Create a dialog from all the defined elements and block
+until the user has handled it.
+
+:param timeout: Time to wait for dialog to complete, in seconds
+:param title:  Title of dialog
+:param height: Height of dialog (in pixels or 'AUTO')
+:param width:  Width of dialog (in pixels)
+:param on_top: Show dialog always on top of other windows
+:param location: Where to place the dialog (options are Center, TopLeft, or a
+                 tuple of ints)
+
+If the `location` argument is `None` it will let the operating system
+place the window.
+
+Returns a result object with all input values.
+
+When the dialog closes elements are cleared.
+
+Example:
+
+.. code-block:: robotframework
+
+    *** Keywords ***
+    Open dialog
+        Add heading     Please enter your username
+        Add text input  name=username
+        ${result}=      Run dialog
+        Log    The username is: ${result.username}
+
+.. code-block:: python
+
+    def open_dialog():
+        assistant = Assistant()
+        assistant.add_heading("Please enter your username")
+        assistant.add_text_input("username")
+        result = assistant.run_dialog()
+        print("The username is: ", result.username)</doc>
+<shortdoc>Create a dialog from all the defined elements and block until the user has handled it.</shortdoc>
+<tags>
+<tag>dialog</tag>
+</tags>
+</kw>
+<kw name="Set Title" lineno="1670">
+<arguments repr="title: str">
+<arg kind="POSITIONAL_OR_NAMED" required="true" repr="title: str">
+<name>title</name>
+<type name="str" typedoc="string">str</type>
+</arg>
+</arguments>
+<doc>Set dialog title when it is running.</doc>
+<shortdoc>Set dialog title when it is running.</shortdoc>
+<tags>
+<tag>dialog</tag>
+<tag>running</tag>
+</tags>
+</kw>
+</keywords>
+<datatypes>
+<enums>
+<enum name="Icon">
+<doc>Icon variants</doc>
+<members>
+<member name="Success" value="success"/>
+<member name="Warning" value="warning"/>
+<member name="Failure" value="failure"/>
+</members>
+</enum>
+<enum name="Location">
+<doc>A relative location for placing elements or windows, that can go into any
+location</doc>
+<members>
+<member name="TopLeft" value="Alignment(x=-1, y=-1)"/>
+<member name="TopCenter" value="Alignment(x=0, y=-1)"/>
+<member name="TopRight" value="Alignment(x=1, y=-1)"/>
+<member name="CenterLeft" value="Alignment(x=-1, y=0)"/>
+<member name="Center" value="Alignment(x=0, y=0)"/>
+<member name="CenterRight" value="Alignment(x=1, y=0)"/>
+<member name="BottomLeft" value="Alignment(x=-1, y=1)"/>
+<member name="BottomCenter" value="Alignment(x=0, y=1)"/>
+<member name="BottomRight" value="Alignment(x=1, y=1)"/>
+</members>
+</enum>
+<enum name="Size">
+<doc>Element size options</doc>
+<members>
+<member name="Small" value="small"/>
+<member name="Medium" value="medium"/>
+<member name="Large" value="large"/>
+</members>
+</enum>
+<enum name="VerticalLocation">
+<doc>A vertical location</doc>
+<members>
+<member name="Left" value="Alignment(x=-1, y=0)"/>
+<member name="Center" value="Alignment(x=0, y=0)"/>
+<member name="Right" value="Alignment(x=1, y=0)"/>
+</members>
+</enum>
+<enum name="WindowLocation">
+<doc>A relative location for placing elements or windows</doc>
+<members>
+<member name="Center" value="1"/>
+<member name="TopLeft" value="2"/>
+</members>
+</enum>
+</enums>
+</datatypes>
+<typedocs>
+<type name="Any" type="Standard">
+<doc>Any value is accepted. No conversion is done.
+</doc>
+<accepts>
+<type>Any</type>
+</accepts>
+<usages>
+<usage>Ask User</usage>
+</usages>
+</type>
+<type name="boolean" type="Standard">
+<doc>Strings ``TRUE``, ``YES``, ``ON`` and ``1`` are converted to Boolean ``True``,
+the empty string as well as strings ``FALSE``, ``NO``, ``OFF`` and ``0``
+are converted to Boolean ``False``, and the string ``NONE`` is converted
+to the Python ``None`` object. Other strings and other accepted values are
+passed as-is, allowing keywords to handle them specially if
+needed. All string comparisons are case-insensitive.
+
+Examples: ``TRUE`` (converted to ``True``), ``off`` (converted to ``False``),
+``example`` (used as-is)
+</doc>
+<accepts>
+<type>string</type>
+<type>integer</type>
+<type>float</type>
+<type>None</type>
+</accepts>
+<usages>
+<usage>Add Checkbox</usage>
+<usage>Add File Input</usage>
+<usage>Add Text Input</usage>
+<usage>Run Dialog</usage>
+</usages>
+</type>
+<type name="date" type="Standard">
+<doc>Strings are expected to be a timestamp in
+[https://en.wikipedia.org/wiki/ISO_8601|ISO 8601] like date format
+``YYYY-MM-DD``, where any non-digit character can be used as a separator
+or separators can be omitted altogether. Possible time components are
+only allowed if they are zeros.
+
+Examples: ``2022-02-09``, ``2022-02-09 00:00``
+</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Add Date Input</usage>
+</usages>
+</type>
+<type name="float" type="Standard">
+<doc>Conversion is done using Python's
+[https://docs.python.org/library/functions.html#float|float] built-in function.
+
+Starting from RF 4.1, spaces and underscores can be used as visual separators
+for digit grouping purposes.
+
+Examples: ``3.14``, ``2.9979e8``, ``10 000.000 01``
+</doc>
+<accepts>
+<type>string</type>
+<type>Real</type>
+</accepts>
+<usages>
+<usage>Add Loading Bar</usage>
+<usage>Add Loading Spinner</usage>
+<usage>Add Slider</usage>
+</usages>
+</type>
+<type name="Icon" type="Enum">
+<doc>Icon variants</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Add Icon</usage>
+</usages>
+<members>
+<member name="Success" value="success"/>
+<member name="Warning" value="warning"/>
+<member name="Failure" value="failure"/>
+</members>
+</type>
+<type name="integer" type="Standard">
+<doc>Conversion is done using Python's [https://docs.python.org/library/functions.html#int|int]
+built-in function. Floating point
+numbers are accepted only if they can be represented as integers exactly.
+For example, ``1.0`` is accepted and ``1.1`` is not.
+
+Starting from RF 4.1, it is possible to use hexadecimal, octal and binary
+numbers by prefixing values with ``0x``, ``0o`` and ``0b``, respectively.
+
+Starting from RF 4.1, spaces and underscores can be used as visual separators
+for digit grouping purposes.
+
+Examples: ``42``, ``-1``, ``0b1010``, ``10 000 000``, ``0xBAD_C0FFEE``
+</doc>
+<accepts>
+<type>string</type>
+<type>float</type>
+</accepts>
+<usages>
+<usage>Add Flet Icon</usage>
+<usage>Add Icon</usage>
+<usage>Add Image</usage>
+<usage>Add Loading Bar</usage>
+<usage>Add Loading Spinner</usage>
+<usage>Add Slider</usage>
+<usage>Add Text Input</usage>
+<usage>Ask User</usage>
+<usage>Open Container</usage>
+<usage>Open Stack</usage>
+<usage>Run Dialog</usage>
+</usages>
+</type>
+<type name="list" type="Standard">
+<doc>Strings must be Python [https://docs.python.org/library/stdtypes.html#list|list]
+literals. They are converted to actual lists using the
+[https://docs.python.org/library/ast.html#ast.literal_eval|ast.literal_eval]
+function. They can contain any values ``ast.literal_eval`` supports, including
+lists and other containers.
+
+If the type has nested types like ``list[int]``, items are converted
+to those types automatically. This in new in Robot Framework 6.0.
+
+Examples: ``['one', 'two']``, ``[('one', 1), ('two', 2)]``
+</doc>
+<accepts>
+<type>string</type>
+<type>Sequence</type>
+</accepts>
+<usages>
+<usage>Add Drop-Down</usage>
+<usage>Add Radio Buttons</usage>
+<usage>Add Submit Buttons</usage>
+</usages>
+</type>
+<type name="Location" type="Enum">
+<doc>A relative location for placing elements or windows, that can go into any
+location</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Open Container</usage>
+</usages>
+<members>
+<member name="TopLeft" value="Alignment(x=-1, y=-1)"/>
+<member name="TopCenter" value="Alignment(x=0, y=-1)"/>
+<member name="TopRight" value="Alignment(x=1, y=-1)"/>
+<member name="CenterLeft" value="Alignment(x=-1, y=0)"/>
+<member name="Center" value="Alignment(x=0, y=0)"/>
+<member name="CenterRight" value="Alignment(x=1, y=0)"/>
+<member name="BottomLeft" value="Alignment(x=-1, y=1)"/>
+<member name="BottomCenter" value="Alignment(x=0, y=1)"/>
+<member name="BottomRight" value="Alignment(x=1, y=1)"/>
+</members>
+</type>
+<type name="None" type="Standard">
+<doc>String ``NONE`` (case-insensitive) is converted to Python ``None`` object.
+Other values cause an error.
+</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Add Date Input</usage>
+<usage>Add Drop-Down</usage>
+<usage>Add File</usage>
+<usage>Add File Input</usage>
+<usage>Add Flet Icon</usage>
+<usage>Add Image</usage>
+<usage>Add Link</usage>
+<usage>Add Loading Bar</usage>
+<usage>Add Loading Spinner</usage>
+<usage>Add Password Input</usage>
+<usage>Add Radio Buttons</usage>
+<usage>Add Slider</usage>
+<usage>Add Submit Buttons</usage>
+<usage>Add Text Input</usage>
+<usage>Open Container</usage>
+<usage>Open Navbar</usage>
+<usage>Open Stack</usage>
+<usage>Run Dialog</usage>
+</usages>
+</type>
+<type name="Size" type="Enum">
+<doc>Element size options</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Add Heading</usage>
+<usage>Add Text</usage>
+</usages>
+<members>
+<member name="Small" value="small"/>
+<member name="Medium" value="medium"/>
+<member name="Large" value="large"/>
+</members>
+</type>
+<type name="string" type="Standard">
+<doc>All arguments are converted to Unicode strings.</doc>
+<accepts>
+<type>Any</type>
+</accepts>
+<usages>
+<usage>Add Button</usage>
+<usage>Add Checkbox</usage>
+<usage>Add Date Input</usage>
+<usage>Add Drop-Down</usage>
+<usage>Add File</usage>
+<usage>Add File Input</usage>
+<usage>Add Files</usage>
+<usage>Add Flet Icon</usage>
+<usage>Add Heading</usage>
+<usage>Add Hidden Input</usage>
+<usage>Add Image</usage>
+<usage>Add Link</usage>
+<usage>Add Loading Bar</usage>
+<usage>Add Loading Spinner</usage>
+<usage>Add Next Ui Button</usage>
+<usage>Add Password Input</usage>
+<usage>Add Radio Buttons</usage>
+<usage>Add Slider</usage>
+<usage>Add Submit Buttons</usage>
+<usage>Add Text</usage>
+<usage>Add Text Input</usage>
+<usage>Open Container</usage>
+<usage>Open Navbar</usage>
+<usage>Run Dialog</usage>
+<usage>Set Title</usage>
+</usages>
+</type>
+<type name="tuple" type="Standard">
+<doc>Strings must be Python [https://docs.python.org/library/stdtypes.html#tuple|tuple]
+literals. They are converted to actual tuples using the
+[https://docs.python.org/library/ast.html#ast.literal_eval|ast.literal_eval]
+function. They can contain any values ``ast.literal_eval`` supports, including
+tuples and other containers.
+
+If the type has nested types like ``tuple[str, int, int]``, items are converted
+to those types automatically. This in new in Robot Framework 6.0.
+
+Examples: ``('one', 'two')``, ``(('one', 1), ('two', 2))``
+</doc>
+<accepts>
+<type>string</type>
+<type>Sequence</type>
+</accepts>
+<usages>
+<usage>Open Container</usage>
+<usage>Run Dialog</usage>
+</usages>
+</type>
+<type name="VerticalLocation" type="Enum">
+<doc>A vertical location</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Add Button</usage>
+</usages>
+<members>
+<member name="Left" value="Alignment(x=-1, y=0)"/>
+<member name="Center" value="Alignment(x=0, y=0)"/>
+<member name="Right" value="Alignment(x=1, y=0)"/>
+</members>
+</type>
+<type name="WindowLocation" type="Enum">
+<doc>A relative location for placing elements or windows</doc>
+<accepts>
+<type>string</type>
+</accepts>
+<usages>
+<usage>Run Dialog</usage>
+</usages>
+<members>
+<member name="Center" value="1"/>
+<member name="TopLeft" value="2"/>
+</members>
+</type>
+</typedocs>
+</keywordspec>
