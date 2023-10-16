@@ -1,0 +1,1 @@
+from istmo_email_checker.email.utils import Email
