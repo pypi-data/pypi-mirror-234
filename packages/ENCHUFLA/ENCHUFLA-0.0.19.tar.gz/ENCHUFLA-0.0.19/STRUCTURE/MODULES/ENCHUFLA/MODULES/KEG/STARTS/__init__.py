@@ -1,0 +1,41 @@
+
+
+from KEG.STARTS.ED448.BUILD_PRIVATE_KEY import BUILD_PRIVATE_KEY
+from KEG.STARTS.ED448.BUILD_PUBLIC_KEY import BUILD_PUBLIC_KEY
+
+def STARTS (
+	START = "",
+	FIELDS = ""
+):
+	if (START == "BUILD ED448 PRIVATE KEY"):
+		return BUILD_PRIVATE_KEY (
+			FIELDS = FIELDS
+		)
+		
+	if (START == "BUILD ED448 PUBLIC KEY"):
+		from DUOM.ED448.PUBLIC_KEY.CREATE import CREATE_PUBLIC_KEY
+		PUBLIC_KEY = CREATE_PUBLIC_KEY ({
+			"PRIVATE KEY PATH": FIELDS ["PRIVATE KEY PATH"],
+			"PUBLIC KEY PATH": FIELDS ["PUBLIC KEY PATH"],
+			"PUBLIC KEY FORMAT": "DER"
+		})
+		if (PUBLIC_KEY ["GOOD"] == False):
+			return {
+				"ALARM": PUBLIC_KEY ["ALARM"],
+				"GOOD": False
+			}
+		
+		return {
+			"GOOD": True
+		}
+		
+	if (START == "SIGN"):
+		return
+		
+	if (START == "VERIFY"):
+		return
+		
+	return {
+		"GOOD": False,
+		"ALARM": f"START: '{ START }' WAS NOT FOUND."
+	}
