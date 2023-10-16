@@ -1,0 +1,17 @@
+@tag_name_1 @tag_name_n <optional>
+User story: <descriptive title>  
+
+Contributes to <agile requirement artefact category> <filename or title of the artefact> <(optional in case the contribution is to an artefact that is detailed with rules) using rule <rule as it is formulated>   
+
+In order to <achieve a benefit>  
+As a <(user) role>  
+I want <a certain product behavior>  
+
+Estimate: <story points, scale?>  
+  
+Rule: <rule needed to fulfill the wanted product behavior>    
+Rule: <rule needed to fulfill the wanted product behavior>    
+Rule: <rule needed to fulfill the wanted product behavior>    
+
+Description (optional): <further optional description to understand
+the user story, markdown capable text formatting>
