@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+: git submodule
+
+set -eu
+
+help="$(cat <<EOF
+NAME
+  ${0##*/} - remove submodule
+
+DESCRIPTION
+  Exit with git error if submodule does not exists.
+  Accepts additional git-submodule(1) options at the end.
+
+SYNOPSYS
+  git [-C <path>] ${0##*git-} <name> [options]
+  git ${0##*git-} <name>
+  git -C <path> ${0##*git-} <name>
+  git -C <path> ${0##*git-} <name> --force
+
+ARGUMENTS
+  -h          show help and exit
+  --desc      show desc and exit
+  --version   show version and exit
+  name        submodule name
+EOF
+)"
+
+. git-top "$@"
+
+name="${1:?submodule name not provided\n${help}}"; shift 
+directory="$(git config --file .gitmodules submodule."${name}".path)"
+
+git submodule status "${name}" >/dev/null
+git submodule deinit "$@" "${name}"
+git rm "$@" "${directory}"
+
+find "${directory}" -maxdepth 0 -empty -exec rm -r "{}" \;
+
+rm -rf "$(git rev-parse --git-dir)/modules/$(basename "${name}")"
+git add .gitmodules
+git commit -m "submodule removed: ${name}" .gitmodules
+git push -u origin HEAD
