@@ -1,0 +1,3 @@
+from _typeshed import Incomplete
+
+def _get_gnu_triplet(os_, arch, compiler: Incomplete | None = ...): ...

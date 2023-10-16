@@ -1,0 +1,6 @@
+from _typeshed import Incomplete
+
+class Premake:
+    _conanfile: Incomplete
+    def __init__(self, conanfile) -> None: ...
+    def configure(self) -> None: ...

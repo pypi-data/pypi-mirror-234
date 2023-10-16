@@ -1,0 +1,9 @@
+from conan.tools.cmake.cmakedeps.templates import CMakeDepsFileTemplate as CMakeDepsFileTemplate
+
+class TargetsTemplate(CMakeDepsFileTemplate):
+    @property
+    def filename(self): ...
+    @property
+    def context(self): ...
+    @property
+    def template(self): ...

@@ -1,0 +1,3 @@
+from conan.tools.microsoft.msbuild import msbuild_arch as msbuild_arch
+
+def vs_layout(conanfile) -> None: ...

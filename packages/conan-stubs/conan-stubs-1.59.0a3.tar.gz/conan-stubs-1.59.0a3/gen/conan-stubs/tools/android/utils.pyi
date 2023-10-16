@@ -1,0 +1,3 @@
+from conan.errors import ConanException as ConanException
+
+def android_abi(conanfile, context: str = ...): ...
