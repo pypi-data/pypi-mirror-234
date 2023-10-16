@@ -1,0 +1,61 @@
+name: Build and publish docs
+
+on:
+  push:
+    # Sequence of patterns matched against refs/heads
+    branches:
+      - main
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - v*
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v3
+      with:
+        # require all of history to see all tagged versions' docs
+        fetch-depth: 0
+        submodules: true
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Check for sudo
+      shell: bash
+      run: |
+        if type sudo >/dev/null 2>&1; then SUDO="sudo"; else SUDO=""; fi
+        echo "SUDO=$SUDO" >> $GITHUB_ENV
+    - name: Install dependencies
+      run: |
+        $SUDO bash -c "$(curl -fsSL http://neuro.debian.net/_files/neurodebian-travis.sh)"
+        $SUDO apt-get update -qq
+        $SUDO apt-get install git-annex-standalone
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -e .[docs]
+        python -m pip install git+https://github.com/dls-controls/sphinx-multiversion@only-arg
+    - name: Configure git for datalad
+      run: |
+        git config --global user.email "runner@github.com"
+        git config --global user.name "GITHUB CI Runner"
+    - name: Checkout gh-pages
+      # As we already did a deploy of gh-pages above, it is guaranteed to be there
+      # so check it out so we can selectively build docs below
+      uses: actions/checkout@v3
+      with:
+          ref: gh-pages
+          path: docs/_build
+    - name: Build docs
+      # Use the args we normally pass to sphinx-build, but run sphinx-multiversion
+      run: |
+        make -C docs/ html
+        touch docs/_build/.nojekyll
+        cp docs/redirect.html docs/_build/index.html
+    - name: Publish docs to gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/_build
+        keep_files: true
