@@ -1,0 +1,62 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools ~=68.2.2",
+    "wheel ~=0.41.2",
+]
+
+[project]
+name = "alvin_simple_cli"
+version = "0.0.15"
+description = "Alvin Simple CLI"
+requires-python = ">=3.8"
+dynamic = ["dependencies"]
+license = {file = "LICENSE"}
+
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: PyPy"
+]
+
+[project.scripts]
+alvin = "alvin_cli.cli:run"
+
+[tool.coverage.run]
+omit = [
+    "*__test.py"
+]
+[tool.coverage.paths]
+source = [
+    "alvin_cli/*",
+]
+
+[tool.setuptools]
+include-package-data = false
+license-files = ["LICENSE"]
+[tool.setuptools.package-dir]
+alvin_cli = "alvin_cli"
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.prod.txt"]}
+
+[tool.ruff]
+select = ["E", "F", "B", "W", "I" ,"UP", "ANN", "BLE", "FBT", "A", "COM", "C4", "DTZ", "PIE", "Q", "RET", "SIM", "PL", "RUF"]
+fixable = ["ALL"]
+ignore = ["ANN101", "FBT001", "FBT002", "ANN102", "A003", "PLR0913"]
+exclude = ["alvin_cli/grpc_generated/*"]
+line-length = 120
+
+[tool.ruff.per-file-ignores]
+"alvin_cli/*/fixtures__test.py" = ["E501"]
+
+[tool.mypy]
+ignore_missing_imports = true
+follow_imports = "silent"
+disallow_untyped_defs = true
+exclude = "grpc_generated/"
+
+[[tool.mypy.overrides]]
+module = "alvin_cli.grpc_generated.*"
+ignore_errors = true
