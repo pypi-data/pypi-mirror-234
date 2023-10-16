@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+
+{% block page_title %}
+  Forms
+{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css" integrity="sha384-4Y0nObtF3CbKnh+lpzmAVdAMtQXl+ganWiiv73RcGVdRdfVIya8Cao1C8ZsVRRDz" crossorigin="anonymous">
+{% endblock css %}
+
+{% block js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js" integrity="sha384-g4mRvs7AO0/Ol5LxcGyz4Doe21pVhGNnC3EQw5shw+z+aXDN86HqUdwXWO+Gz2zI" crossorigin="anonymous"></script>
+<script>hljs.highlightAll();</script>
+
+<script>
+  const csrf_token = {{ csrf_token() | tojson }}
+  const create_sample_doc_url = {{ url_for('create_sample_doc') | string | tojson }}
+
+  async function create_sample_doc() {
+      const data = new URLSearchParams();
+      data.append("csrf_token", csrf_token);
+
+      const resp = await fetch(create_sample_doc_url, {
+          method: 'post',
+          body: data,
+      })
+      const failed = document.getElementById("create-sample-doc-failed");
+      const create_sample = document.getElementById("create-sample-doc");
+      const failedText = document.getElementById("create-sample-doc-failed-text");
+      create_sample.style.display = "none";
+
+      const payload = await resp.json()
+      if (resp.status === 200) {
+          if (payload.code === 'ok') {
+              const done = document.getElementById("create-sample-doc-done");
+              done.style.display = "block";
+          } else {
+              failedText.innerText = `Something went wrong, code=${payload.code}`;
+              failed.style.display = "block";
+          }
+      } else {
+          failedText.innerText = `Something went wrong, status=${resp.status}`;
+          failed.style.display = "block";
+      }
+      return false;
+  }
+</script>
+{% endblock js %}
+
+{% block content %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active"><a href="{{ url_for('home') }}" ria-current="page">Forms</a></li>
+    </ol>
+  </nav>
+
+  {% if form_doc is none %}
+    <h2>No form definitions found</h2>
+
+    <p>We cannot find the BeanHub Forms doc file in your current folder, <mark>{{ settings.BEANCOUNT_DIR }}</mark>.</p>
+    <p>To work with BeanHub Forms, you need to create the doc file at <mark>.beanhub/forms.yaml</mark> in your Beancount folder, then run beanhub-cli form server command in it like this:</p>
+
+    <div><pre><code class="language-bash">cd /path/to/your/beancount/folder
+bh form server
+</code></pre></div>
+
+    <p>For example, you can create the BeanHub Forms doc file at <mark>{{ settings.BEANCOUNT_DIR / ".beanhub" / "forms.yaml" }}</mark> with the following sample form as content:</p>
+
+    <div><pre><code class="language-yaml">{{ sample_form_doc }}</code></pre></div>
+    <p>Or, you can use the button below to create the file automatically and reload this page to try it out:</p>
+
+    <div class="d-flex justify-content-center mt-2 mb-3">
+      <span id="create-sample-doc">
+        <button class="btn btn-primary" onclick="return create_sample_doc();">
+          <i class="fa-solid fa-file-circle-plus"></i>
+          Create sample forms doc
+        </button>
+      </span>
+      <div id="create-sample-doc-done" style="display: none" class="text-center">
+        <small class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-success-emphasis bg-success-subtle border border-success-subtle rounded-2 align-items-center">
+          <i class="fa fa-check me-2"></i>
+          Sample form doc created
+        </small>
+        <div>
+          <a class="btn btn-primary" href="{{ url_for('home') }}">
+            <i class="fa fa-rotate"></i>
+            Reload page
+          </a>
+        </div>
+      </div>
+      <div id="create-sample-doc-failed" style="display: none" class="text-center">
+        <small class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-danger-emphasis bg-danger-subtle border border-danger-subtle rounded-2 align-items-center">
+          <i class="fa fa-xmark me-2"></i>
+          <span id="create-sample-doc-failed-text"></span>
+        </small>
+      </div>
+
+    </div>
+
+    <p>For more information about BeanHub Forms and how to use it, please read our blog post
+      <a href="https://beanhub.io/blog/2023/07/31/automating-beancount-data-input-with-beanhub-custom-forms/">Automating Beancount data input with custom forms makes your life 10 times easier!</a></p>
+  {% else %}
+    <h2>Forms</h2>
+    <ul>
+      {% for form in form_doc.forms %}
+      <li><a href="{{ url_for('submit_form', form_name=form.name) }}">{{ form.name if form.display_name is none else form.display_name }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock content %}
