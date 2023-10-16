@@ -1,0 +1,18 @@
+from aiogram.types import Message
+{% if state -%}
+from aiogram.fsm.context import FSMContext
+{% endif %}
+{%- if callback_data_class -%}
+from {{ callback_data_path }} import {{ callback_data_class }}
+{% endif %}
+
+async def {{ handler_name }}(
+        message: Message
+        {%- if state %}
+        state: FSMContext
+        {%- endif %}
+        {%- if callback_data_class %}
+        callback_data: {{ callback_data_class }}
+        {%- endif %}
+) -> None:
+    pass
