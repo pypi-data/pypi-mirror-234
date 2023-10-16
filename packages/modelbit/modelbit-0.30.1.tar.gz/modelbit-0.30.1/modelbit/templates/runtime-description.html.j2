@@ -1,0 +1,21 @@
+<div style="{{ styles.container }}">
+  <div style="{{ styles.header }}">
+    Deployment <span style="{{ styles.code }}">{{ runtimeName }}</span>:
+    {% if deployable %}
+      <span style="{{ styles.readyStyle }}">Ready to Deploy</span>
+    {% else %}  
+      <span style="{{ styles.notReadyStyle }}">Not Ready to Deploy</span>
+    {% endif %}
+  </div>
+  {% include 'runtime-notes.html.j2'%}
+  {% with headers=properties.headers, rows=properties.rows %}
+    {% include 'table.html.j2'%}
+  {% endwith %}
+
+  {% if tests.rows | length > 0 %}
+    <div style="{{ styles.header }} margin-top: 20px;">Tests</div>
+    {% with headers=tests.headers, rows=tests.rows %}
+      {% include 'table.html.j2'%}
+    {% endwith %}
+  {% endif %}
+</div>
