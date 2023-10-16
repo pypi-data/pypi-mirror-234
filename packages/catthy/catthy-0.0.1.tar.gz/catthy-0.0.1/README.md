@@ -1,0 +1,2 @@
+# catthy
+Functional Python library
