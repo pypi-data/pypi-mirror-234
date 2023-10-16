@@ -1,0 +1,106 @@
+Metadata-Version: 2.1
+Name: serial-data-handler-zxw
+Version: 0.6.1
+Summary: 人工智能_量化交易_金融数据预处理
+Home-page: UNKNOWN
+Author: xuewei zhang
+Author-email: jingmu_predict@qq.com
+License: UNKNOWN
+Platform: UNKNOWN
+Description-Content-Type: text/markdown
+Requires-Dist: pandas
+Requires-Dist: numpy
+Requires-Dist: tqdm
+Requires-Dist: torch
+
+# 人工智能训练中,对于时间断层数据的处理工具包
+**process serial data for AI training**
+
+- 根据断点,分配数据集,保证训练数据的连续性
+**allocate data set according to breakpoints, to ensure the continuity of training data**
+
+
+## 生成训练数据(避开数据断点)
+```python
+# 注意:
+# 传入的数据必须指定时间列(或其他顺序列)
+# 传入的数据必须已按顺序排列好
+
+# Attention:
+# You must specify the time column (or other sequential column) of the incoming pd原始数据
+# The incoming pd原始数据 must be sorted in order
+
+from datetime import timedelta
+from serial_data_handler_zxw import 生成训练数据_避开时间断点, 时间列_三角函数化
+import pandas as pd
+
+csv_path = "/Volumes/time_serial_data.csv"
+data = pd.read_csv(csv_path)
+
+
+# 指定时间列为'收盘时间',
+# 设置断点为2分钟,
+# 即如果两个相邻的原始数据pd间隔大于2分钟,则认为是一个断点
+
+# specific the time column named '收盘时间' , 
+# and set the gap is 2 minutes , 
+# it means that if the gap between two adjacent pd原始数据 > 2 minutes, it will be considered as a breakpoint
+x = 生成训练数据_避开时间断点(data, column_timestamp='收盘时间', gap=timedelta(minutes=2))
+print(x.断点)
+训练数据index = x.数据划分_避开断点(input长度=100, output长度=100, step=1)
+print(len(训练数据index))
+
+
+# 如果您的数据间隔小于1秒,请做相应的乘法转换, 例如: 1毫秒的数据,请乘以1000,转换为秒级数据
+# 时间列_三角函数化
+
+# If your pd原始数据 interval < 1s, please do the corresponding multiplication conversion
+# for example: 1ms pd原始数据, you should multiply by 1000, convert to second-level pd原始数据
+# time column trigonometric function
+data['收盘时间'] = pd.to_datetime(data['收盘时间'])
+data['收盘时间'] = 时间列_三角函数化(data['收盘时间'], 周期=timedelta(days=1))
+print(data['收盘时间'])
+```
+
+## 多尺度时间数据的对齐
+```python   
+import pandas as pd
+from datetime import datetime
+from serial_data_handler_zxw import 时间序列_数据对齐
+
+data = pd.read_csv('/Volumes/AI_1505056/量化交易/币安_K线数据_1d/BTCUSDT-1m-201909-202308.csv')
+
+# to datetime
+data['收盘时间'] = pd.to_datetime(data['收盘时间'])
+
+# 时间序列_数据对齐
+数据预处理 = 时间序列_数据对齐(data, '收盘时间')
+i = 数据预处理.查找_时间范围(datetime(2023, 8, 29, 16, 54, 0), 查找精度='1d')
+print(i)
+```
+
+## pytorch的金融K线数据预处理
+
+```python
+from serial_data_handler_zxw import 金融K线_AI数据预处理 as kAI
+
+# 输出注意事项, 使用方法
+kAI.金融K线_AI数据预处理.help()
+
+# 数据标准化
+csv_file = "/Volumes/AI_1505056/量化交易/币安_K线数据/BTCUSDT-1m-201909-202308.csv"
+x = kAI.金融K线_AI数据预处理(csv_file, 100, 100)
+xn = x.标准化(x.pd原始数据)
+
+# 适用dateset的__getitem__(i)的数据获取
+x.dataset__len__(是训练集=True)  # 是训练集=False时, 调用测试集数据
+x.dataset__get_item__(i=0, data=xn, 是训练集=True)
+```
+
+
+python setup.py sdist bdist_wheel
+twine upload dist/*
+twine upload dist/serial_data_handler_zxw-0.6.0-py3-none-any.whl
+
+
+
