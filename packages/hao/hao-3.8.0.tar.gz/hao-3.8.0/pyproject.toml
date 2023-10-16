@@ -1,0 +1,81 @@
+[project]
+name = "hao"
+description = "conf, logs, namespace, etc"
+authors = [{name = "orctom", email = "orctom@gmail.com"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+license-expression = "Apache-2.0"
+dynamic = ["version"]
+classifiers = [
+    'Intended Audience :: Developers',
+]
+requires-python = ">=3.8"
+dependencies = [
+    "PyYAML",
+    "requests",
+    "charset-normalizer",
+    "dateparser",
+    "regex",
+    "tqdm",
+    "decorator",
+    "urllib3>=1.26.5",
+    "minio",
+]
+
+[project.urls]
+homepage = "https://github.com/orctom/hao"
+repository = "https://github.com/orctom/hao"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.2.0",
+    "elasticsearch<8",
+    "pymongo",
+    "kafka-python",
+    "pymysql",
+    "dbutils>=3.0.0",
+    "psycopg[binary]",
+    "kombu",
+    "redis",
+    "sqlalchemy",
+]
+
+[build-system]
+requires = ["flit_core>=3.8.0,<4"]
+build-backend = "flit_core.buildapi"
+
+[project.scripts]
+h-s3-init = "hao.s3:init"
+h-run = "hao.cli:run"
+h-split = "hao.files:split_cli"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q -s"
+testpaths = [
+    "tests",
+]
+
+[tool.autopep8]
+max_line_length = 135
+in-place = true
+recursive = true
+aggressive = 3
+
+[tool.black]
+line-length = 135
+target-version = ['py38']
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | data
+)/
+'''
