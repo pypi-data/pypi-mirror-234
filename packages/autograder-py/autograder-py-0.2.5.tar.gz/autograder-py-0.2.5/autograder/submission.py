@@ -1,0 +1,292 @@
+import glob
+import json
+import os
+import shutil
+import traceback
+
+import autograder.assignment
+import autograder.git
+import autograder.utils
+
+TEST_SUBMISSION_FILENAME = 'test-submission.json'
+GRADER_FILENAME = 'grader.py'
+
+CONFIG_KEY_STATIC_FILES = 'static-files'
+CONFIG_KEY_PRE_STATIC_OPS = 'pre-static-files-ops'
+CONFIG_KEY_POST_STATIC_OPS = 'post-static-files-ops'
+CONFIG_KEY_POST_SUB_OPS = 'post-submission-files-ops'
+
+FILESPEC_DELIM = '::'
+FILESPEC_GIT = 'git'
+FILESPEC_GIT_PREFIX = FILESPEC_GIT + FILESPEC_DELIM
+
+def do_file_operation(operation, op_dir):
+    if ((operation is None) or (len(operation) == 0)):
+        raise ValueError("File operation is empty.")
+
+    if (operation[0] == 'mv'):
+        if (len(operation) != 3):
+            raise ValueError("Incorrect number of argument for 'mv' file operation."
+                + " Expected 2, found %d." % ((len(operation) - 1)))
+
+        shutil.move(os.path.join(op_dir, operation[1]), os.path.join(op_dir, operation[2]))
+    elif (operation[0] == 'cp'):
+        if (len(operation) != 3):
+            raise ValueError("Incorrect number of argument for 'cp' file operation."
+                + " Expected 2, found %d." % ((len(operation) - 1)))
+
+        autograder.utils.copy_dirent(os.path.join(op_dir, operation[1]), os.path.join(op_dir,
+            operation[2]))
+    else:
+        raise ValueError("Unknown file operation: '%s'." % (operation[0]))
+
+def handle_git_static_file(filespec, dest_dir):
+    parts = filespec.split(FILESPEC_DELIM)
+
+    if ((len(parts) < 2) or (len(parts) > 4) or (parts[0] != FILESPEC_GIT)):
+        raise ValueError("Unknown git filespec: '%s'." % (filespec))
+
+    url = parts[1]
+
+    dirname = url.split('/')[-1].removesuffix('.git')
+    if (len(parts) >= 3):
+        dirname = parts[2]
+
+    ref = None
+    if (len(parts) >= 4):
+        ref = parts[3]
+
+    dest_path = os.path.join(dest_dir, dirname)
+
+    autograder.git.ensure_repo(url, dest_path, update = True, ref = ref)
+
+def copy_assignment_file(filename, source_dir, dest_dir, only_contents):
+    source_path = os.path.join(source_dir, filename)
+    dest_path = os.path.join(dest_dir, os.path.basename(filename))
+
+    if (only_contents):
+        autograder.utils.copy_dirent_contents(source_path, dest_path)
+    else:
+        autograder.utils.copy_dirent(source_path, dest_path)
+
+def copy_assignment_files(source_dir, dest_dir, op_dir, files,
+        only_contents = False, pre_ops = [], post_ops = []):
+    """
+    Copy over assignment files:
+    1) Do pre-copy operations.
+    2) Copy.
+    3) Do post-copy operations.
+    """
+
+    # Do pre operations.
+    for file_operation in pre_ops:
+        do_file_operation(file_operation, op_dir)
+
+    # Copy over the assignment's files.
+    for filespec in files:
+        if (filespec.startswith(FILESPEC_GIT_PREFIX)):
+            handle_git_static_file(filespec, dest_dir)
+        else:
+            copy_assignment_file(filespec, source_dir, dest_dir, only_contents)
+
+    # Do post operations.
+    for file_operation in post_ops:
+        do_file_operation(file_operation, op_dir)
+
+def fetch_test_submissions(path):
+    path = os.path.abspath(path)
+    test_submissions = []
+
+    if (os.path.isfile(path)):
+        if (os.path.basename(path) != TEST_SUBMISSION_FILENAME):
+            raise ValueError("Passed in submission is not named like a test submission ('%s')." % (
+                TEST_SUBMISSION_FILENAME))
+
+        test_submissions.append(path)
+    else:
+        test_submissions += glob.glob(os.path.join(path, '**', TEST_SUBMISSION_FILENAME),
+                recursive = True)
+
+    return test_submissions
+
+def prep_temp_grading_dir(assignment_config_path, submission_dir, debug = False):
+    """
+    Create a directory for grading a submission.
+    1) Create a temp dir.
+    2) Create the three core directories (input/output/work) in the temp dir.
+    3) Copy over the static files (includng pre/post operations).
+    4) Copy over the submission files (includng pre/post operations).
+    5) Load the grader class.
+    6) Return the temp dir and grader class.
+    """
+
+    temp_dir = autograder.utils.get_temp_path(prefix = 'autograder-submission-',
+            rm = (not debug))
+    os.makedirs(temp_dir)
+
+    if (debug):
+        print("Using temp/work dir: '%s'." % (temp_dir))
+
+    input_dir, output_dir, work_dir = prep_grading_dir(assignment_config_path, temp_dir,
+        submission_dir)
+
+    grader_path = os.path.join(work_dir, GRADER_FILENAME)
+    assignment_class = autograder.assignment.fetch_assignment(grader_path)
+
+    return ((input_dir, output_dir, work_dir), assignment_class)
+
+def make_core_dirs(base_dir):
+    """
+    Make the three core directories.
+    """
+
+    input_dir = os.path.join(base_dir, 'input')
+    os.makedirs(input_dir, exist_ok = True)
+
+    output_dir = os.path.join(base_dir, 'output')
+    os.makedirs(output_dir, exist_ok = True)
+
+    work_dir = os.path.join(base_dir, 'work')
+    os.makedirs(work_dir, exist_ok = True)
+
+    return input_dir, output_dir, work_dir
+
+def prep_grading_dir(assignment_config_path, base_dir, submission_dir, skip_static = False):
+    input_dir, output_dir, work_dir = make_core_dirs(base_dir)
+
+    # Load the assignment config.
+
+    assignment_config_path = os.path.abspath(assignment_config_path)
+    assignment_base_dir = os.path.dirname(assignment_config_path)
+
+    try:
+        with open(assignment_config_path, 'r') as file:
+            assignment_config = json.load(file)
+    except Exception as ex:
+        raise ValueError("Failed to load assignment config: " + assignment_config_path) from ex
+
+    if (not skip_static):
+        # Copy static files.
+        copy_assignment_files(assignment_base_dir, work_dir, base_dir,
+                assignment_config.get(CONFIG_KEY_STATIC_FILES, []),
+                pre_ops = assignment_config.get(CONFIG_KEY_PRE_STATIC_OPS, []),
+                post_ops = assignment_config.get(CONFIG_KEY_POST_STATIC_OPS, []))
+
+    # Copy submission files.
+    copy_assignment_files(submission_dir, input_dir, base_dir,
+        ['.'], only_contents = True,
+        pre_ops = [],
+        post_ops = assignment_config.get(CONFIG_KEY_POST_SUB_OPS, []))
+
+    return input_dir, output_dir, work_dir
+
+def run_test_submission(assignment_config_path, submission_config_path, debug = False):
+    print("Testing assignment '%s' and submission '%s'." % (assignment_config_path,
+        submission_config_path))
+
+    dirs, assignment_class = prep_temp_grading_dir(assignment_config_path,
+        os.path.dirname(submission_config_path), debug = debug)
+    input_dir, output_dir, work_dir = dirs
+
+    if (assignment_class is None):
+        return False
+
+    actual_result = run_submission(assignment_class, input_dir, output_dir, work_dir)
+    if (actual_result is None):
+        return False
+
+    return compare_test_submission(submission_config_path, actual_result)
+
+def compare_test_submission(test_config_path, actual_result, print_result = True):
+    with open(test_config_path, 'r') as file:
+        test_config = json.load(file)
+
+    expected_result = autograder.assignment.GradedAssignment.from_dict(test_config['result'])
+    ignore_messages = test_config.get('ignore_messages', False)
+
+    match = actual_result.equals(expected_result, ignore_messages = ignore_messages)
+
+    if ((not match) and print_result):
+        print("Submission does not match expected output: '%s'." % (test_config_path))
+        print('Expected:')
+        print(expected_result.report(prefix = '    '))
+        print('---')
+        print('Actual:')
+        print(actual_result.report(prefix = '    '))
+        print('---')
+
+    return match
+
+def run_submission(assignment_class, input_dir, output_dir, work_dir):
+    try:
+        assignment = assignment_class(input_dir = input_dir, output_dir = output_dir,
+                work_dir = work_dir)
+        return assignment.grade()
+    except Exception as ex:
+        print("Failed to run assignment (%s) on submission '%s': '%s'." % (
+            assignment_class.__name__, input_dir, ex))
+        traceback.print_exc()
+        return None
+
+class SubmissionSummary(object):
+    """
+    A summary of a grading submission.
+    """
+
+    def __init__(self,
+            id = '',
+            max_points = 0, score = 0,
+            message = '',
+            grading_start_time = None,
+            **kwargs):
+        self.id = id
+
+        self.max_points = max_points
+        self.score = score
+
+        self.message = message
+
+        self.grading_start_time = None
+        if (grading_start_time is not None):
+            self.grading_start_time = autograder.utils.get_timestamp(grading_start_time)
+
+    def to_dict(self):
+        """
+        Convert to all simple structures that can be later converted to JSON.
+        """
+
+        return {
+            'id': self.id,
+            'max_points': self.max_points,
+            'score': self.score,
+            'message': self.message,
+            'grading_start_time': autograder.utils.timestamp_to_string(self.grading_start_time),
+        }
+
+    @staticmethod
+    def from_dict(data):
+        """
+        Partner to to_dict().
+        """
+
+        return SubmissionSummary(**data)
+
+    def short_id(self):
+        return self.id.split('::')[-1]
+
+    def pretty_time(self):
+        return autograder.utils.timestamp_to_string(self.grading_start_time, pretty = True)
+
+    def __repr__(self):
+        """
+        Get a string that represents the summary.
+        """
+
+        message = '.'
+        if ((self.message is not None) and (self.message != '')):
+            message = ", Message: '%s'." % (self.message)
+
+        return "Submission ID: %s, Score: %s / %s, Time: %s%s" % (
+            self.short_id(), self.score, self.max_points,
+            self.pretty_time(),
+            message)
