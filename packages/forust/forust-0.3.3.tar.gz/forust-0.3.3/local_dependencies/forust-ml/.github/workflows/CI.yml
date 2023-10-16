@@ -1,0 +1,199 @@
+name: Test and Deploy
+on: [pull_request, push]
+
+jobs:
+  windows-build-tests:
+    strategy:
+      matrix:
+        pyversion: ["3.8", "3.9", "3.10", "3.11"]
+    runs-on: "windows-latest"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install latests stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.pyversion }}
+          architecture: x64
+      - name: Install deps
+        run: pip install numpy pandas seaborn xgboost=='1.6.1' scikit-learn toml
+      - run: |
+          cp README.md py-forust/README.md
+          cp LICENSE py-forust/LICENSE
+      - name: Update TOML
+        run: python scripts/remove-optional-deps.py
+      - name: Build test data
+        run: python scripts/make_resources.py
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Build Wheels with maturin
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          command: build
+          args: --release --strip --interpreter python --manifest-path py-forust/Cargo.toml --out dist
+      - name: Install wheel
+        run: pip install forust --no-index --find-links dist --no-deps --force-reinstall
+      - name: Run Package Tests
+        run: |
+          pip install pytest pytest-cov black ruff
+          cd py-forust
+          ruff check .
+          black --check .
+          pytest --cov-fail-under=90 tests
+          cd ..
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+      - if: "startsWith(github.ref, 'refs/tags/')"
+        name: Publish Wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: publish
+          args: --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_PASSWORD }} --interpreter python --skip-existing --manifest-path py-forust/Cargo.toml
+
+  macos-build-test:
+    strategy:
+      matrix:
+        pyversion: ["3.8", "3.9", "3.10", "3.11"]
+    runs-on: "macos-latest"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install latests stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.pyversion }}
+          architecture: x64
+      - name: Install deps
+        run: pip install numpy pandas seaborn xgboost=='1.6.1' scikit-learn toml
+      - run: |
+          cp README.md py-forust/README.md
+          cp LICENSE py-forust/LICENSE
+      - name: Update TOML
+        run: python scripts/remove-optional-deps.py
+      - name: Build test data
+        run: python scripts/make_resources.py
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Build Wheels with maturin
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          command: build
+          args: --release --strip --interpreter python --manifest-path py-forust/Cargo.toml --out dist
+      - name: Install wheel
+        run: pip install forust --no-index --find-links dist --no-deps --force-reinstall
+      - name: Run Package Tests
+        run: |
+          pip install pytest pytest-cov black ruff
+          cd py-forust
+          ruff check .
+          black --check .
+          pytest --cov-fail-under=90 tests
+          cd ..
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+      - if: "startsWith(github.ref, 'refs/tags/')"
+        name: Publish Wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: publish
+          target: x86_64
+          args: --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_PASSWORD }} --interpreter python --skip-existing --manifest-path py-forust/Cargo.toml
+
+  linux-build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pyversion: ["3.8", "3.9", "3.10", "3.11"]
+        # target: [x86_64, i686]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install latests stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.pyversion }}
+          architecture: x64
+      - name: Install deps
+        run: pip install numpy pandas seaborn xgboost=='1.6.1' scikit-learn toml
+      - run: |
+          cp README.md py-forust/README.md
+          cp LICENSE py-forust/LICENSE
+      - name: Update TOML
+        run: python scripts/remove-optional-deps.py
+      - name: Build test data
+        run: python scripts/make_resources.py
+      - name: Run tests
+        run: cargo test --verbose
+      - name: Build Wheels with maturin
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          manylinux: auto
+          command: build
+          args: --release --strip --interpreter python${{ matrix.pyversion }} --manifest-path py-forust/Cargo.toml --out dist
+      - name: Install wheel
+        run: pip install forust --no-index --find-links dist --no-deps --force-reinstall
+      - name: Run Package Tests
+        run: |
+          pip install pytest pytest-cov black ruff
+          cd py-forust
+          ruff check .
+          black --check .
+          pytest --cov-fail-under=90 tests
+          cd ..
+      - name: Save Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: dist
+      - if: "startsWith(github.ref, 'refs/tags/')"
+        name: Publish Wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          command: publish
+          target: x86_64
+          manylinux: auto
+          args: --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_PASSWORD }} --interpreter python${{ matrix.pyversion }} --skip-existing --manifest-path py-forust/Cargo.toml
+
+  cargo-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install latests stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          architecture: x64
+      - name: Install deps
+        run: pip install numpy pandas seaborn xgboost=='1.6.1' scikit-learn toml
+      - run: |
+          cp README.md py-forust/README.md
+          cp LICENSE py-forust/LICENSE
+      - name: Update TOML
+        run: python scripts/remove-optional-deps.py
+      - name: Build test data
+        run: python scripts/make_resources.py
+      - name: Run tests
+        run: cargo test --verbose
+      - if: "startsWith(github.ref, 'refs/tags/')"
+        name: Publish Crate
+        run: cargo publish --token ${CRATES_TOKEN} --allow-dirty
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
