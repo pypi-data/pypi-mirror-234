@@ -1,0 +1,17 @@
+###############################################################################
+
+# regeneration logic
+
+rule compile_config
+  command = {{entry}} compile_config $out $in
+
+build $include_dir/compiled_config.json: compile_config {{config_file}}
+build check_config: phony $include_dir/compiled_config.json
+
+rule native
+  command = {{entry}} native -n -c $in
+
+build | build.ninja: native {{config_file}} | check_config
+build regen: phony build.ninja
+
+###############################################################################
