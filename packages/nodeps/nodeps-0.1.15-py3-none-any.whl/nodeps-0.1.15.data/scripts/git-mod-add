@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+: git submodule
+
+set -eu
+
+help="$(cat <<EOF
+NAME
+  ${0##*/} - add submodule using the repository name from the url as the name of the submodule
+
+DESCRIPTION
+  Submodule is added if name not on the index (does not return error if exists).
+  Accepts additional git-submodule(1) options at the end.
+
+SYNOPSYS
+  git [-C <path>] ${0##*git-} <url> [directory] [options]
+  git ${0##*git-} <url>
+  git ${0##*git-} <url> [directory]
+  git -C <path> ${0##*git-} <url> [directory]
+  git -C <path> ${0##*git-} <url> [directory] --force
+
+ARGUMENTS
+  -h          show help and exit
+  --desc      show desc and exit
+  --version   show version and exit
+  url         remote url
+  
+OPTIONS
+  directory   relative directory (excluding the name)
+EOF
+)"
+  
+. git-top "$@"
+
+url="${1:?url not provided\n${help}}"; shift 
+name="$(basename "${url}" .git)"
+directory=(); [ ! "${2-}" ] || { directory+=("${2}/${name}"); shift; }
+
+if ! git submodule status "${name}" &>/dev/null; then
+  git submodule add --quiet --recursive "$@" --name "${name}" "${url}" "${directory[@]}"
+  git add .gitmodules
+  git commit -m "submodule added: ${name}" .gitmodules
+  git push -u origin HEAD
+fi
