@@ -1,0 +1,125 @@
+# HYPERPARAMETER OPTIMIZATION
+import optuna
+from {{import_library}} import {{ model_name }}
+
+
+# NEED CV: ex.) optuna.integration.OptunaSearchCV()
+class Objective(object):
+    def __init__(self, feature_train, target_train, feature_test, target_test, __random_state):
+        self.feature_train = feature_train
+        self.target_train = target_train
+        self.feature_test = feature_test
+        self.target_test = target_test 
+        self.__random_state = __random_state
+    def __call__(self, trial):
+        def set_hyperparameters(trial):
+            params = {}
+{{ params }}
+            return params
+        
+        # SET DATA
+        import numpy as np
+    
+        if isinstance(self.feature_train, pd.DataFrame):
+            feature_train = self.feature_train
+        elif isinstance(self.feature_train, np.ndarray):
+            feature_train = pd.DataFrame(self.feature_train)
+        else:
+            feature_train = pd.DataFrame(self.feature_train.toarray())
+    
+        if isinstance(self.target_train, pd.DataFrame):
+            target_train = self.target_train
+        elif isinstance(self.target_train, np.ndarray):
+            target_train = pd.DataFrame(self.target_train)
+        else:
+            target_train = pd.DataFrame(self.target_train.toarray())
+    
+        if isinstance(self.feature_test, pd.DataFrame):
+            feature_test = self.feature_test
+        elif isinstance(self.feature_test, np.ndarray):
+            feature_test = pd.DataFrame(self.feature_test)
+        else:
+            feature_test = pd.DataFrame(self.feature_test.toarray())
+    
+        if isinstance(self.target_test, pd.DataFrame):
+            target_test = self.target_test
+        elif isinstance(self.target_test, np.ndarray):
+            target_test = pd.DataFrame(self.target_test)
+        else:
+            target_test = pd.DataFrame(self.target_test.toarray())
+
+        # MODEL 
+        params = set_hyperparameters(trial)
+{% if flag_no_random_seed_model %}
+        model = {{ model_name }}(**params)
+{% else %}
+        model = {{ model_name }}(random_state=self.__random_state, **params)
+{% endif %}
+{% if is_multioutput_regression%}
+        from sklearn.multioutput import MultiOutputRegressor
+
+        model = MultiOutputRegressor(model)
+{% elif is_multioutput_classification %}
+        from sklearn.multioutput import MultiOutputClassifier
+
+        model = MultiOutputClassifier(model)
+{% endif %}
+{% set xgbclassifier = "XGBClassifier" %}
+{% if model_name == xgbclassifier %}
+        from sklearn.preprocessing import LabelEncoder
+
+        label_encoder = LabelEncoder()
+        target_train = label_encoder.fit_transform(target_train)
+{% endif %}
+
+{% if pipeline.task.target_columns|length == 1 %}
+{% if model_name == xgbclassifier %}
+        model.fit(feature_train, target_train.ravel())
+{% else %}
+        model.fit(feature_train, target_train.values.ravel())
+{% endif %}
+{% else %}
+        model.fit(feature_train, target_train)
+{% endif %}
+{% if flag_predict_proba == False %}
+        y_pred = model.predict(feature_test)
+{% if model_name == xgbclassifier and not flag_predict_proba%}
+        y_pred = label_encoder.inverse_transform(y_pred)
+{% endif %}
+{% elif flag_predict_proba == True %}
+        y_pred = model.predict_proba(feature_test)
+{% filter indent(width=8, first=True) %}
+{{ binary_classification_snippet }}
+{% endfilter %}
+{% endif %}
+        
+{{ evaluation }}
+        
+        return score
+    
+n_trials = {{ pipeline.config.hyperparameter_tuning_n_trials }}
+timeout = {{ timeout }} 
+random_state = {{ pipeline.config.hyperparameter_tuning_random_state}} 
+random_state_model = {{ pipeline.config.seed_for_model}} 
+
+{% set maximize_metrics = [macros.Metric.AUC.value, macros.Metric.Accuracy.value, macros.Metric.F1.value, macros.Metric.R2.value, macros.Metric.Gini.value, macros.Metric.ROC_AUC.value] %}
+{% set minimize_metrics = [macros.Metric.RMSE.value, macros.Metric.RMSLE.value, macros.Metric.MAE.value, macros.Metric.LogLoss.value] %}
+
+{% if pipeline.adaptation_metric in maximize_metrics %}
+direction = 'maximize' 
+{% elif pipeline.adaptation_metric in minimize_metrics %}
+direction = 'minimize' 
+{% else %}
+direction = 'maximize' 
+{% endif %}
+    
+study = optuna.create_study(direction=direction,
+                sampler=optuna.samplers.TPESampler(seed=random_state)) 
+{{ enqueue_default_hyperparameters }}
+study.optimize(Objective(feature_train, target_train, feature_test, target_test, random_state_model), 
+                n_trials=n_trials, 
+                timeout=timeout)
+best_params = study.best_params
+
+print("best params:", best_params)
+print("RESULT: {{ pipeline.task.adaptation_metric }}: " + str(study.best_value))
