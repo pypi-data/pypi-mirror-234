@@ -1,0 +1,55 @@
+- project:
+    name: x/group-based-policy-ui
+    templates:
+      - openstack-python3-yoga-jobs
+      - publish-to-pypi
+    # REVISIT: In the jobs below, the required-projects clause is needed on
+    # the master branch to select the correct version of the requirements
+    # repository. Otherwise, the master version will be used. It can be
+    # eliminated on the stable branches, and on the master branch once this
+    # repository's master branch is based on the neutron repository's master
+    # branch.
+    check:
+      jobs:
+        - openstack-tox-pep8:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - openstack-tox-py36:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - openstack-tox-py37:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - openstack-tox-py38:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - test-release-openstack:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+    gate:
+      jobs:
+        - openstack-tox-pep8:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - openstack-tox-py36:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - openstack-tox-py37:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - openstack-tox-py38:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
+        - test-release-openstack:
+            required-projects:
+              - name: openstack/requirements
+                override-checkout: stable/yoga
