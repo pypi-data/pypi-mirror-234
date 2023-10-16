@@ -1,0 +1,153 @@
+# 用于描述输入界面的yaml配置
+# 输入界面类型一般如下：
+# <label1>  <textField1> <unit1>
+# <label2>  <textField2> <unit2>
+# <label3>  <textField3> <unit3>
+#
+#         <btn_apply>   <btn_ok>
+
+
+# ===========================定义一些yaml变量，用于公共使用的部分，一般为单位列表或者尺寸描述=============================
+unit:
+  massflowrate: &unit_massflowrate
+    - t/h
+    - kg/s
+  power: &unit_power
+    - W
+    - kW
+    - MW
+
+interp:
+  method: &interp_method
+    - rbf
+    - linear
+    - cubic
+    - sbs
+    - lsgbs
+    - kriging
+
+size:
+  width:
+    - 120  # <label>的宽度
+    - 140  # <textField>的宽度
+    - 50  # <unit>的宽度
+# ===========================定义一些yaml变量，用于公共使用的部分，一般为单位列表或者尺寸描述=============================
+
+# ===========================定义界面信息=============================
+calculate: # 计算对应的输入面板配置
+  inputArea: # 输入面板中的输入区域，是一个列表，每一个列表对应一项输入
+    - # 第一个设置项
+      label: "#1 中压供汽量"
+      value: 240
+      unit: *unit_massflowrate
+      unit_selected: "t/h"
+    - # 第二个设置项
+      label: "低压供汽需求"
+      value: 200
+      unit: *unit_massflowrate
+      unit_selected: "t/h"
+    - # 第三个设置项
+      label: "#2 功率"
+      value: 350
+      value_validator: "int, 210, 350"  # value只能是210~350之间的整数
+      unit: *unit_power
+      unit_selected: "MW"
+    - label: 当前城市
+      value: ["北京", "上海", "西安"]
+      value_selected: "西安"
+      value_text_changed: "btn_clicked"  # combobox的值改变时触发方法
+    - label: "按钮示例-当前选择文件"
+      value: ""
+      unit: "<button on-click='btn_clicked'>选择</button>"
+  buttons:
+    - # 第一个按钮
+      text: "应用"
+      on_click: "root.btn_clicked"  # 按钮点击触发的事件
+    - # 第二个按钮
+      text: "寻优"
+      on_click: "root.btn_clicked"  # 按钮点击触发的事件
+
+calculate2: # 计算对应的输入面板配置
+  inputArea: # 输入面板中的输入区域，是一个列表，每一个列表对应一项输入
+    - # 第一个设置项
+      label: "#1 中压供汽量"
+      value: 240
+      unit: *unit_massflowrate
+      unit_selected: "t/h"
+    - # 第二个设置项
+      label: "低压供汽需求"
+      value: 200
+      unit: *unit_massflowrate
+      unit_selected: "t/h"
+    - # 第三个设置项
+      label: "全厂总功率"
+      value: 380
+      unit: *unit_power
+      unit_selected: "MW"
+  buttons:
+    - # 第一个按钮
+      text: "应用"
+      on_click: "root.btn_clicked"  # 按钮点击触发的事件
+    - # 第二个按钮
+      text: "寻优"
+      on_click: "root.btn_clicked"  # 按钮点击触发的事件
+
+display:
+  inputArea:
+    - # 第一个设置项
+      label: "绘制种群图"
+      value: 0
+    - # 第二个设置项
+      label: "1号机功率拟合方法"
+      value: *interp_method
+      value_selected: "rbf"
+    - # 第三个设置项
+      label: "2号机热耗拟合方法"
+      value: *interp_method
+      value_selected: "rbf"
+    - # 种群图类型
+      type: checkbox
+      label: "种群图类型"
+      items:
+        - scatter
+        - line
+        - bar
+      checked:
+        - scatter
+        - line
+    - # 种群图横坐标
+      label: Y轴最小值
+      value: 0
+    - label: Y轴最大值
+      value: 7900
+  buttons:
+    - # 第一个按钮
+      text: "应用"
+      connect: "root.btn_clicked"  # 按钮点击触发的事件
+    - text: "确定"
+      connect: "root.btn_clicked"  # 按钮点击触发的事件
+
+algorithm:
+  inputArea:
+    - # 第一个设置项
+      label: "种群大小"
+      value: 50
+    - # 第二个设置项
+      label: "遗传代数"
+      value: 200
+    - # 第三个设置项
+      label: "变异概率"
+      value: 0.1
+    - # 第三个设置项
+      label: "交叉概率"
+      value: 0.4
+    - # 第三个设置项
+      label: "选择方法"
+      value: "轮盘赌"
+  buttons:
+    - # 第一个按钮
+      text: "应用"
+      connect: "root.btn_clicked"  # 按钮点击触发的事件
+    - text: "确定"
+      connect: "root.btn_clicked"  # 按钮点击触发的事件
+
