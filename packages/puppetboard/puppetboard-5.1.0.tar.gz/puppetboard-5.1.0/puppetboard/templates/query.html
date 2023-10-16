@@ -1,0 +1,131 @@
+{% extends 'layout.html' %}
+{% import '_macros.html' as macros %}
+
+{% block content %}
+<h2>Compose</h2>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="ui {{ category }} message">
+  {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    if (window.location.href.indexOf("#") > -1) {
+        const pb_query = document.getElementById("query");
+        const hrefArray = window.location.href.split("#");
+        pb_query.value = decodeURI(hrefArray[1]);
+    }
+  });
+</script>
+
+<script type="text/javascript">
+    function chgAction()
+        {
+        const pb_form = document.getElementById("form");
+        const pb_query = document.getElementById("query");
+        pb_form.action = pb_form.action + "#" + encodeURI(pb_query.value);
+        pb_form.submit();
+        }
+</script>
+
+<div class="ui form">
+  <form method="POST" id="form" action="{{ url_for('query', env=current_env) }}">
+    {{ form.csrf_token }}
+    <div class="field {% if form.query.errors %} error {% endif %}">
+      {{ form.query(autofocus="autofocus", rows=5, placeholder="nodes { certname = \"hostname\" }") }}
+    </div>
+    <div class="inline fields">
+      <div class="field">
+        API Endpoint: {{ form.endpoints() }}
+      </div>
+      <div class="field">
+        {{ form.rawjson(active=True) }} Raw (but pretty and colored) JSON
+      </div>
+      <div class="ui active submit button" onclick="chgAction()">
+          Submit
+      </div>
+    </div>
+  </form>
+</div>
+
+{% if result or zero_results or error_text %}
+
+<div class="row">
+ <div class="span12">
+  <h2 id="results_header">Result</h2>
+
+  {% if result %}
+    <p id="number_of_results" class="info_message">Number of results: {{ result | length }}</p>
+    {% if form.rawjson.data %}
+    <pre class="result" id="result"></pre>
+    <script>
+    try {
+        $("#result").html(pretty_print(JSON.parse('{{ result | tojson }}')));
+    } catch (e) {
+        $("#result").html(pretty_print({{ result | tojson }}));
+    }
+    </script>
+    {% else %}
+    <table id="query_table" class='ui fixed compact very basic sortable table'>
+        <thead>
+        <tr>
+        {% for column in columns %}
+            <th>{{ column }}</th>
+        {% endfor %}
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    {% endif %}
+
+  {% elif zero_results %}
+
+    <div class="ui warning message">
+        <div class="header">Zero results</div>
+        <p id="zero_results" class="warning_message">The query was successful but the response is empty. Please try changing query conditions.</p>
+    </div>
+
+  {% elif error_text %}
+
+    <div class="ui error message">
+        <div class="header">Invalid query</div>
+        <pre id="invalid_query" class="error_message">{{ error_text }}</pre>
+    </div>
+
+  {% endif %}
+
+ </div>
+</div>
+{% endif %}
+{% endblock content %}
+
+{% block onload_script %}
+{% if not form.rawjson.data %}
+    {% macro extra_options(caller) %}
+    'columns': [
+        {% for column in columns %}
+        {
+            "title": "{{ quote_columns_data(column) }}",
+    {% if column in ['node', 'certname'] %}
+            "render": function (data, type, full, meta) {
+                return `<a href='{{ url_for("node", node_name="") }}${data}'>${data}</a>`
+            },
+    {% endif %}
+        },
+        {% endfor %}
+    ],
+    'serverSide': false,
+    {% endmacro %}
+
+    {% if not result %}
+        {% set result = [] %}
+    {% endif %}
+    {{ macros.datatable_init(table_html_id="query_table", ajax_url=None, data=result|tojson, default_length=config.NORMAL_TABLE_COUNT, length_selector=config.TABLE_COUNT_SELECTOR, extra_options=extra_options) }}
+{% endif %}
+{% endblock onload_script %}
