@@ -1,0 +1,292 @@
+# This is an `argrelay` server config.
+# To test, symlink this files as user dot file - see `@/exe/dev_shell.bash` script.
+
+connection_config:
+    server_host_name: localhost
+    server_port_number: 8787
+
+mongo_config:
+    use_mongomock_only: True
+    mongo_client:
+        # See `MongoClientConfigSchema` for detailed connection string format:
+        client_connection_string: mongodb://localhost
+    mongo_server:
+        database_name: argrelay
+        start_server: True
+        # See `mongo_notes.md`:
+        server_start_command: ~/argrelay.git/temp/mongo/mongodb-linux-x86_64-rhel80-6.0.3/bin/mongod --dbpath ~/argrelay.git/temp/mongo/data
+
+query_cache_config:
+    enable_query_cache: True
+    query_cache_ttl_sec: 60
+    query_cache_max_size_bytes: 1048576 # 1 MiB
+
+gui_banner_config:
+
+    header_html: |
+        <div style="color: grey; font-size: small;">
+
+        For example, type either|or:
+        <ul>
+            <li>relay_demo goto host</li>
+            <li>relay_demo goto service</li>
+        </ul>
+        Then, narrow down search by... IP, region, etc.
+
+        </div>
+
+    footer_html: |
+        <div style="color: grey; font-size: small;">
+
+        This test/demo GUI client allows simple browser-only access by anyone with URL (without shell access and shell config to run CLI).<br/>
+        It is convenient for search, testing and command lookup.<br/>
+        The server data is mocked.<br/>
+        <br/>
+        Normally, CLI client is used to receive these responses from the server:
+        <ol>
+            <li>auto-completion options (on Tab)</li>
+            <li>search responses (on Alt+Shift+Q)</li>
+            <li>command invocation data (on Enter)</li>
+        </ol>
+        However, this GUI client is limited and slightly different from CLI client:
+        <ul>
+            <li>(1) Tab is only used to complete common_infix - request to provide suggestions is sent automatically on timeout.</li>
+            <li>(2) Search request (Alt+Shift+Q) is sent automatically on timeout.</li>
+            <li>(3) Command invocation (Enter) is disabled printing only invocation data from the server (use CLI client to run commands).</li>
+        </ul>
+
+        </div>
+
+plugin_instance_id_load_list:
+
+    -   FirstArgInterpFactory
+    -   TreePathInterpFactory
+    -   DemoInterpFactory.intercept_func
+    -   DemoInterpFactory.help_func
+    -   DemoInterpFactory.external
+    -   DemoInterpFactory.any
+    -   NoopInterpFactory
+
+    -   NoopLoader
+    -   InterceptLoader
+    -   HelpDelegator
+    -   ServiceLoader
+    -   GitRepoLoader
+
+    -   NoopDelegator
+    -   InterceptDelegator
+    -   HelpLoader
+    -   ServiceDelegator
+    -   GitRepoDelegator
+    -   ErrorDelegator
+
+plugin_dict:
+
+    FirstArgInterpFactory:
+        plugin_module_name: argrelay.plugin_interp.FirstArgInterpFactory
+        plugin_class_name: FirstArgInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            first_arg_vals_to_next_interp_factory_ids:
+                # This binding uses existing file system name `relay_demo`:
+                relay_demo: TreePathInterpFactory
+                # Another equivalent binding (but `some_command` does not exist in this repo):
+                some_command: TreePathInterpFactory
+
+    TreePathInterpFactory:
+        plugin_module_name: argrelay.plugin_interp.TreePathInterpFactory
+        plugin_class_name: TreePathInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            interp_selector_tree:
+                intercept: DemoInterpFactory.intercept_func
+                help: DemoInterpFactory.help_func
+                subtree:
+                    # child subtree matches parent:
+                    intercept: DemoInterpFactory.intercept_func
+                    help: DemoInterpFactory.help_func
+                    "": DemoInterpFactory.external
+                "": DemoInterpFactory.external
+
+    DemoInterpFactory.intercept_func:
+        plugin_module_name: argrelay.custom_integ.DemoInterpFactory
+        plugin_class_name: DemoInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            function_search_control:
+                envelope_class: ClassFunction
+                keys_to_types_list:
+                    -   category: FunctionCategory
+                    -   action: ActionType
+                    -   object: ObjectSelector
+            function_init_control:
+                init_types_to_values:
+                    # Note that it already specifies all "coordinates" specifically for `intercept` func.
+                    FunctionCategory: "internal"
+                    ActionType: "intercept"
+                    ObjectSelector: "func"
+
+    DemoInterpFactory.help_func:
+        plugin_module_name: argrelay.custom_integ.DemoInterpFactory
+        plugin_class_name: DemoInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            function_search_control:
+                envelope_class: ClassFunction
+                keys_to_types_list:
+                    -   category: FunctionCategory
+                    -   action: ActionType
+                    -   object: ObjectSelector
+            function_init_control:
+                init_types_to_values:
+                    # Note that it already specifies all "coordinates" specifically for `help` func.
+                    FunctionCategory: "internal"
+                    ActionType: "help"
+                    ObjectSelector: "func"
+
+    DemoInterpFactory.external:
+        plugin_module_name: argrelay.custom_integ.DemoInterpFactory
+        plugin_class_name: DemoInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            function_search_control:
+                envelope_class: ClassFunction
+                keys_to_types_list:
+                    -   category: FunctionCategory
+                    -   action: ActionType
+                    -   object: ObjectSelector
+            function_init_control:
+                init_types_to_values:
+                    FunctionCategory: "external"
+
+    DemoInterpFactory.any:
+        plugin_module_name: argrelay.custom_integ.DemoInterpFactory
+        plugin_class_name: DemoInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            function_search_control:
+                envelope_class: ClassFunction
+                keys_to_types_list:
+                    -   category: FunctionCategory
+                    -   action: ActionType
+                    -   object: ObjectSelector
+            function_init_control:
+                init_types_to_values: { }
+
+    NoopInterpFactory:
+        plugin_module_name: argrelay.plugin_interp.NoopInterpFactory
+        plugin_class_name: NoopInterpFactory
+        plugin_type: InterpFactoryPlugin
+        plugin_config:
+            arbitrary_comment: "test plugin"
+
+    NoopLoader:
+        plugin_module_name: argrelay.plugin_loader.NoopLoader
+        plugin_class_name: NoopLoader
+        plugin_type: LoaderPlugin
+        plugin_config: { }
+
+    InterceptLoader:
+        plugin_module_name: argrelay.plugin_loader.InterceptLoader
+        plugin_class_name: InterceptLoader
+        plugin_type: LoaderPlugin
+        plugin_config: { }
+
+    HelpLoader:
+        plugin_module_name: argrelay.plugin_loader.HelpLoader
+        plugin_class_name: HelpLoader
+        plugin_type: LoaderPlugin
+        plugin_config: { }
+
+    ServiceLoader:
+        plugin_module_name: argrelay.custom_integ.ServiceLoader
+        plugin_class_name: ServiceLoader
+        plugin_type: LoaderPlugin
+        plugin_config:
+            test_data_ids_to_load:
+                #-   TD_70_69_38_46  # no data
+                -   TD_63_37_05_36  # demo
+                # WARNING: with `mongomock` and not `enable_query_cache` requests run up for TD_38_03_48_51 may run up to 10 mins:
+                #-   TD_38_03_48_51  # large generated
+
+    GitRepoLoader:
+        plugin_module_name: argrelay.custom_integ.GitRepoLoader
+        plugin_class_name: GitRepoLoader
+        plugin_type: LoaderPlugin
+        plugin_config:
+            is_plugin_enabled: False
+            load_repo_commits: False
+            repo_entries:
+                "~/repos":
+                    -   repo_rel_path: argrelay.git
+                        envelope_properties:
+                            GitRepoAlias: ar
+                            GitRepoContentType: code
+                    -   repo_rel_path: argcomplete.git
+                        is_repo_enabled: True
+                        envelope_properties:
+                            GitRepoAlias: ac
+                            GitRepoContentType: ref
+                    -   repo_rel_path: marshmallow.git
+                        is_repo_enabled: False
+                        envelope_properties:
+                            GitRepoAlias: mm
+                            GitRepoContentType: code
+
+    NoopDelegator:
+        plugin_module_name: argrelay.plugin_delegator.NoopDelegator
+        plugin_class_name: NoopDelegator
+        plugin_type: DelegatorPlugin
+        plugin_config: { }
+
+    InterceptDelegator:
+        plugin_module_name: argrelay.plugin_delegator.InterceptDelegator
+        plugin_class_name: InterceptDelegator
+        plugin_type: DelegatorPlugin
+        plugin_config:
+            # `intercept` works only with `external` functions:
+            next_interp_plugin_instance_id: DemoInterpFactory.external
+
+    HelpDelegator:
+        plugin_module_name: argrelay.plugin_delegator.HelpDelegator
+        plugin_class_name: HelpDelegator
+        plugin_type: DelegatorPlugin
+        plugin_config:
+            # `help` works with any (`external`, or `internal`, or ...) functions:
+            next_interp_plugin_instance_id: DemoInterpFactory.any
+
+    ServiceDelegator:
+        plugin_module_name: argrelay.custom_integ.ServiceDelegator
+        plugin_class_name: ServiceDelegator
+        plugin_type: DelegatorPlugin
+        plugin_config: { }
+
+    GitRepoDelegator:
+        plugin_module_name: argrelay.custom_integ.GitRepoDelegator
+        plugin_class_name: GitRepoDelegator
+        plugin_type: DelegatorPlugin
+        plugin_config: { }
+
+    ErrorDelegator:
+        plugin_module_name: argrelay.plugin_delegator.ErrorDelegator
+        plugin_class_name: ErrorDelegator
+        plugin_type: DelegatorPlugin
+        plugin_config: { }
+
+
+# TODO: Currently, loader plugins write their data under `data_envelope`-s section on start.
+#       Data by loader plugins has to be loaded via the same API which should be exposed via REST
+#       (plugin may use direct API calls as they are within the same process with the server).
+#       See: FS_74_69_61_79 / get set data_envelope: https://github.com/argrelay/argrelay/issues/20
+
+# This data is loaded as part of the config on start (and will be available even if all loader plugins removed).
+# Loader plugins are also supposed to add more data (but they also can modify or completely remove data defined below).
+static_data:
+
+    first_interp_factory_id: FirstArgInterpFactory
+
+    # TODO: rename to make it explicit that it is indexed fields.
+    known_arg_types: [ ]
+
+    # TODO: define internal function here instead of trivial `InterceptLoader` and `HelpLoader` plugins:
+    data_envelopes: [ ]

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="{{ url_for("static", filename = "argrelay_style.css") }}"/>
+    <script
+        type="text/javascript"
+        src="{{ url_for("static", filename = "argrelay_client.js") }}"
+        propose_arg_values_url="{{ url_for("blueprint_api.propose_arg_values") }}"
+        describe_line_args_url="{{ url_for("blueprint_api.describe_line_args") }}"
+        relay_line_args_url="{{ url_for("blueprint_api.relay_line_args") }}"
+        defer
+    ></script>
+    <title>argrelay</title>
+</head>
+<body>
+
+    <div class="top_container">
+        <div id="argrelay_title">
+        <a class="argrelay_link" href="https://github.com/argrelay/argrelay" target="_blank">argrelay <img class="external_link_img" src="{{ url_for("static", filename = "external_link.svg") }}"/></a>
+        </div>
+        <div id="argrelay_version">
+        <a class="argrelay_link" href="https://pypi.org/project/argrelay/{{ argrelay_version }}/" target="_blank">{{ argrelay_version }} <img class="external_link_img" src="{{ url_for("static", filename = "external_link.svg") }}"/></a>
+        </div>
+        <div id="argrelay_api_docs">
+        <a class="argrelay_link" href="{{ argrelay_api_docs_path }}" target="_blank">API docs <img class="external_link_img" src="{{ url_for("static", filename = "external_link.svg") }}"/></a>
+        </div>
+        <div id="argrelay_api_spec">
+        <a class="argrelay_link" href="{{ argrelay_api_spec_path }}" target="_blank">API spec <img class="external_link_img" src="{{ url_for("static", filename = "external_link.svg") }}"/></a>
+        </div>
+        <div id="server_start_time" title="server start time (UTC)">
+            {{ server_start_time }}
+        </div>
+
+        {{ header_html | safe }}
+    </div>
+
+    <div class="top_container">
+        <div
+            id="command_history_label"
+            class="box_label"
+            for="command_history"
+        >command history:</div>
+        <select
+            id="command_history"
+            data-cy="command_history"
+        >
+        </select>
+    </div>
+
+    <div class="top_container">
+        <div
+            id="command_line_label"
+            class="box_label"
+            for="command_line_input"
+        >input command line:</div>
+        <input
+            id="command_line_input"
+            data-cy="command_line_input"
+            contenteditable="true"
+            spellcheck="false"
+            type="text"
+            placeholder="... type command selecting suggested args via Tab-auto-completion"
+        />
+    </div>
+
+    <div class="legend_container">
+        <div class="legend_caption">
+            command line legend:
+        </div>
+        <div class="input_legend">
+            <span class="io_state_client_synced_input">[client_synced]</span><span class="io_state_pending_request_input">[pending_request]</span><span class="io_state_pending_response_input">[pending_response]</span><span class="io_state_request_failed_input">[request_failed]</span>
+        </div>
+    </div>
+
+    <div class="top_container">
+        <div
+            id="suggestion_output_label"
+            class="box_label"
+            for="suggestion_output"
+        >suggested args:</div>
+        <div
+            id="suggestion_output"
+            class="output_box"
+            data-cy="suggestion_output"
+        >
+        </div>
+    </div>
+
+    <div class="legend_container">
+        <div class="legend_caption">
+            suggested arg legend:
+        </div>
+        <div class="output_legend">
+            <span class="input_part">[intput_prefix]</span><span class="incomplete_part">[common_infix]</span><span class="unique_part">[unique_tail]</span><span class="comment_part">[arg_comment]</span>
+        </div>
+    </div>
+
+    <div class="top_container">
+        <div
+            id="describe_output_label"
+            class="box_label"
+            for="describe_output"
+        >search outline:</div>
+       <div
+           id="describe_output"
+           class="output_box"
+       >
+       </div>
+    </div>
+
+    <div class="top_container">
+        <div
+            id="invocation_output_label"
+            class="box_label"
+            for="invocation_output"
+        >last invocation response:</div>
+        <div
+            id="invocation_output"
+            class="output_box"
+        >
+        </div>
+    </div>
+
+    <div class="top_container">
+        {{ footer_html | safe }}
+    </div>
+
+    <!------------------------------------------------------------------------------------------------------------------
+    Templates
+    ------------------------------------------------------------------------------------------------------------------->
+
+    <template id="envelope_container_temp">
+        <div>
+            <span class="envelope_class"></span>
+            <span class="found_count"></span>
+            <div class="arg_list_container">
+            </div>
+        </div>
+    </template>
+
+    <template id="arg_container_temp">
+        <div>
+            <span class="arg_type"></span>
+            <span class="arg_value"></span>
+            <span class="arg_source"></span>
+            <span class="remaining_values"></span>
+        </div>
+    </template>
+
+    <template id="command_history_option_temp">
+        <option value="-1">unknown_item</option>
+    </template>
+
+    <template id="suggested_item_temp">
+        <div class="suggested_item"><span class="input_part"></span><span class="incomplete_part"></span><span class="unique_part"></span><span class="comment_part"></span></div>
+    </template>
+
+</body>
+</html>
