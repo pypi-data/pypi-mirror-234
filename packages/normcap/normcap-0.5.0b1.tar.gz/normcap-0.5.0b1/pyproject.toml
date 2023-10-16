@@ -1,0 +1,335 @@
+[tool.poetry]
+name = "normcap"
+version = "0.5.0-beta1"
+description = "OCR-powered screen-capture tool to capture information instead of images."
+keywords = ["screenshot", "ocr", "capture", "clipboard"]
+license = "GPLv3"
+authors = ["dynobo <dynobo@mailbox.org>"]
+readme = "README.md"
+homepage = "https://dynobo.github.io/normcap/"
+repository = "https://github.com/dynobo/normcap"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Utilities",
+  "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+]
+include = [
+  "README.md",
+  "CHANGELOG",
+  "LICENSE",
+  "normcap/**/*.icns",
+  "normcap/**/*.ico",
+  "normcap/**/*.png",
+  "normcap/**/*.svg",
+  "normcap/**/*.mo",
+]
+
+[tool.poetry.urls]
+"FAQs" = "https://dynobo.github.io/normcap/#faqs"
+"Issues" = "https://github.com/dynobo/normcap/issues"
+
+[tool.poetry.scripts]
+normcap = "normcap.app:main"
+
+[build-system]
+requires = ["babel>=2.12.1", "poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.build]
+script = "l10n.py"
+generate-setup-file = false
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+PySide6-Essentials = "6.5.3"
+
+[tool.poetry.group.dev.dependencies]
+babel = ">=2.12.1"
+black = ">=23.1.0"
+briefcase = "0.3.15"
+coverage = { extras = ["toml"], version = ">=6.4.2" }
+coveralls = ">=3.3.1"
+mdformat-gfm = ">=0.3.5"
+mypy = ">=1.3.0"
+pip-audit = ">=2.5.5"
+pre-commit = ">=3.0.2"
+pydeps = ">=1.11.0"
+pytest = ">=7.2.1"
+pytest-cov = ">=4.0.0"
+pytest-qt = ">=4.2.0"
+pytest-xvfb = ">=3.0.0"
+rope = ">=1.7.0"
+ruff = ">=0.0.239"
+tbump = ">=6.9.0"
+toml = ">=0.10.2"
+types-toml = ">=0.10.8.1"
+typing-extensions = ">=4.4.0"
+mdformat-pyproject = "^0.0.1"
+retry = "^0.9.2"
+types-retry = "^0.9.9.4"
+
+[tool.poetry.group.analysis]
+optional = true
+
+[tool.poetry.group.analysis.dependencies]
+radon = ">=5.1.0"
+viztracer = ">=0.15.3"
+vulture = ">=2.4"
+
+[tool.black]
+line-length = 88
+include = '''
+(
+    ^/tests/.*py
+  | ^/normcap/.*py
+)
+'''
+exclude = '''
+(
+    __pycache__
+)
+'''
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+exclude = [".venv"]
+select = [
+  "F",    # Pyflakes
+  "E",    # pycodestyle
+  "I",    # Isort
+  "D",    # pydocstyle
+  "W",    # warning
+  "UP",   # pyupgrad
+  "N",    # pep8-naming
+  "C90",  # mccabe
+  "TRY",  # tryceratops (exception handling)
+  "ANN",  # flake8-annotations
+  "S",    # flake8-bandits
+  "C4",   # flake8-comprehensions
+  "B",    # flake8-bugbear
+  "A",    # flake8-builtins
+  "ISC",  # flake8-implicit-str-concat
+  "ICN",  # flake8-import-conventions
+  "T20",  # flake8-print
+  "PYI",  # flake8-pyi
+  "PT",   # flake8-pytest-style
+  "Q",    # flake8-quotes
+  "RET",  # flake8-return
+  "SIM",  # flake8-simplify
+  "PTH",  # flake8-use-pathlib
+  "G",    # flake8-logging-format
+  "PL",   # pylint
+  "RUF",  # meta rules (unused noqa)
+  "PL",   # meta rules (unused noqa)
+  "PERF", # perflint
+]
+ignore = [
+  "D100",   # Missing docstring in public module
+  "D101",   # Missing docstring in public class
+  "D102",   # Missing docstring in public method
+  "D103",   # Missing docstring in public function
+  "D104",   # Missing docstring in public package
+  "D105",   # Missing docstring in magic method
+  "D107",   # Missing docstring in __init__
+  "ANN101", # Missing type annotation for `self` in method
+  "TRY003", # Avoid specifying long messages outside the exception class
+]
+per-file-ignores = { "tests*" = ["S101", "ANN", "D", "PLR2004", "PLR0913"] }
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+files = ["normcap/**/*.py", "tests/**/*.py", "bundle/**/*.py"]
+follow_imports = "skip"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
+xvfb_width = 1920
+xvfb_height = 1080
+addopts = [
+  "--durations=5",
+  "--showlocals",
+  "--cov",
+  "--cov-report=xml",
+  "--cov-report=html",
+]
+markers = ["gui: tests which require a graphical interface to run"]
+
+[tool.coverage.run]
+source = ["normcap"]
+
+[tool.mdformat]
+wrap = 88
+number = true
+end_of_line = "lf"
+
+[tool.pydeps]
+no_show = true
+cluster = true
+max_cluster_size = 1
+
+[tool.briefcase]
+project_name = "NormCap"
+bundle = "eu.dynobo"
+version = "0.5.0"
+url = "https://github.com/dynobo/normcap"
+license = "GPLv3"
+author = 'dynobo'
+author_email = "dynobo@mailbox.org"
+
+[tool.briefcase.app.normcap]
+formal_name = "NormCap"
+description = "OCR-powered screen-capture tool to capture information instead of images"
+sources = ["normcap"]
+icon = "bundle/imgs/normcap"
+installer_icon = "bundle/imgs/normcap_install"
+installer_background = "bundle/imgs/normcap_install_bg"
+requires = ["PySide6-Essentials==6.5.3"]
+cleanup_paths = [
+  # Globs
+  "**/[pP]y[sS]ide6/*[qQ]t*[oO]pen[gG][lL]*",
+  "**/*.debug",
+  "**/*[lL]abs*",
+  "**/*[qQ]t[xX]ml*",
+  "**/*[qQ]t*[dD]esigner*",
+  "**/*[qQ]t*[hH]elp*",
+  "**/*[qQ]t*[pP]df*",
+  "**/*[qQ]t*[pP]rint[sS]upport*",
+  "**/*[qQ]t*[sS]ql*",
+  "**/*[qQ]t*[sS]tate[mM]achine*",
+  "**/*[qQ]t*[tT]est*",
+  "**/*[qQ]t*[lL]anguage[sS]erver*",
+  "**/*[qQ]t*[wW]eb[sS]ockets*",
+  "**/*[qQ]uick*",
+  "**/*[sS]cene*",
+  "**/*[uU]i[tT]ools*",
+  "**/*[vV]irtual[kK]eyboard*",
+  "**/*QtQml*",
+  "**/bin/pyside6-*",
+  "**/PySide6/[aA]ssistant*",
+  "**/PySide6/[dD]esigner*",
+  "**/PySide6/[lL]inguist*",
+  # Folders
+  "**/__pycache__",
+  "**/examples",
+  "**/libexec",
+  "**/plugins/designer",
+  "**/plugins/printsupport",
+  "**/plugins/qmltooling",
+  "**/plugins/sqldrivers",
+  "**/Qt/qml/QtQml",
+  "**/Qt/translations",
+  "**/tests",
+  "**/typesystems",
+  # Files
+  "**/PySide6/lrelease",
+  "**/PySide6/lupdate",
+  # Windows specific files
+  "**/NormCap.exe.metagen",
+  "**/NormCap.pdb",
+]
+[tool.briefcase.app.normcap.macOS]
+requires = ["std-nslog==1.0.0"]
+
+[tool.briefcase.app.normcap.linux]
+system_requires = [
+  "wget",
+  "tesseract",
+  # wl-clipboard deps
+  "wayland-devel",
+  "wayland-protocols-devel",
+  "meson",
+  # xcb-utils-cursor deps
+  "libxcb-devel",
+  "libxkbcommon-x11",
+  "epel-release",     # for xcb-util-cursor
+]
+
+dockerfile_extra_content = """
+USER root
+
+RUN dnf config-manager --add-repo https://download.opensuse.org/repositories/home:Alexander_Pozdnyakov:tesseract5/CentOS_8/home:Alexander_Pozdnyakov:tesseract5.repo
+RUN dnf config-manager --set-enabled home_Alexander_Pozdnyakov_tesseract5
+RUN dnf upgrade -y
+
+RUN wget "https://pkgs.dyn.su/el8/base/x86_64/raven-release.el8.noarch.rpm"
+RUN rpm -ivh raven-release*.rpm
+RUN dnf update -y
+RUN dnf install -y qt6-qtwayland
+
+RUN dnf install -y xcb-util-cursor xcb-util-wm xcb-util-keysyms
+
+RUN git clone https://github.com/bugaevc/wl-clipboard.git
+RUN cd wl-clipboard \
+  && git checkout tags/v2.2.1 -b v2.2.1-branch \
+  && meson setup build \
+  && cd build \
+  && ninja \
+  && meson install
+
+USER brutus
+"""
+
+[tool.briefcase.app.normcap.linux.appimage]
+template = "https://github.com/beeware/briefcase-linux-appimage-template"
+template_branch = "main"
+manylinux = "manylinux_2_28"
+
+[tool.briefcase.app.normcap.windows]
+use_full_install_path = false
+
+[tool.tbump]
+
+[tool.tbump.version]
+current = "0.5.0-beta1"
+regex = '''
+  (?P<major>\d+)
+  \.
+  (?P<minor>\d+)
+  \.
+  (?P<patch>\d+)
+  (\-
+    (?P<extra>.+)
+  )?
+  '''
+
+[tool.tbump.git]
+message_template = "build(release): bump to {new_version}"
+tag_template = "v{new_version}"
+
+[[tool.tbump.file]]
+# Poetry version and Briefcase version
+src = "pyproject.toml"
+search = 'version = "{current_version}"'
+
+[[tool.tbump.file]]
+src = "normcap/__init__.py"
+search = '__version__ = "{current_version}"'
+
+[[tool.tbump.file]]
+src = "docs/index.html"
+
+[[tool.tbump.file]]
+src = "README.md"
+search = 'NormCap-{current_version}-'
+
+[[tool.tbump.file]]
+src = "README.md"
+search = 'download/v{current_version}/'
+
+[[tool.tbump.before_commit]]
+name = "check changelog"
+cmd = "grep -q {new_version} CHANGELOG"
