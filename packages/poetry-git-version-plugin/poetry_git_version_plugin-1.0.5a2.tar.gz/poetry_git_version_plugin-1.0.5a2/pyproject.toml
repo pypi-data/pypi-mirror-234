@@ -1,0 +1,107 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "poetry-git-version-plugin"
+version = "0.0.0"
+description = "Poetry plugin to get package version from git"
+homepage = "https://gitlab.com/rocshers/python/poetry-git-version-plugin"
+repository = "https://gitlab.com/rocshers/python/poetry-git-version-plugin"
+authors = ["irocshers <develop.iam@rocshers.com>"]
+readme = "readme.md"
+license = "MIT"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Topic :: Software Development",
+    "Topic :: System :: Archiving :: Packaging",
+    "Topic :: System :: Installation/Setup",
+    "Topic :: System :: Software Distribution",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3 :: Only",
+]
+packages = [{include = "poetry_git_version_plugin"}]
+
+[tool.poetry.plugins."poetry.plugin"]
+poetry-git-version-plugin = "poetry_git_version_plugin.plugins:PoetryGitVersionPlugin"
+
+[tool.poetry.plugins."poetry.application.plugin"]
+poetry-git-version-plugin = "poetry_git_version_plugin.plugins:PoetryGitVersionApplicationPlugin"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+poetry = "^1.2.2"
+gitpython = "^3.1.29"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.2"
+pytest-cov = "^4.0.0"
+ruff = "^0.0.260"
+black = "^23.3.0"
+isort = "^5.12.0"
+pre-commit = "^3.2.2"
+mypy = "^1.2.0"
+
+[tool.black]
+skip-string-normalization = true
+line-length = 120
+target-version = ["py37"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.ruff]
+select = ["A", "B", "C", "E", "F", "I", "UP"]
+fixable = ["A", "B", "C", "D", "E", "F", "I", "UP"]
+ignore = ["UP004", "D100", "D101", "D102", "D103", "D104", "D107", "D400", "D415"]
+line-length = 120
+target-version = "py37"
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "install-poetry.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.pytest.ini_options]
+addopts = "-vvs --tb=short"
+xfail_strict = true
+testpaths = [
+    "tests",
+    "integration",
+]
+python_files = [
+    "tests/*.py",
+    "test_*.py"
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:Module already imported:pytest.PytestWarning"
+]
+
+[tool.mypy]
+python_version = 3.8
+
+# [tool.poetry-git-version-plugin]
+# ignore_pep440=0
+# ignore_public_pep440=0
+# ignore_semver=0
+# ignore_errors=0
