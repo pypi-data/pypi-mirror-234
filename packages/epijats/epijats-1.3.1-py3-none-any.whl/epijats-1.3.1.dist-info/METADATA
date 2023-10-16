@@ -1,0 +1,94 @@
+Metadata-Version: 2.1
+Name: epijats
+Version: 1.3.1
+Summary: E-Printing Identified JATS
+Home-page: https://gitlab.com/perm.pub/epijats
+Author: Castedo Ellerman
+Author-email: castedo@castedo.com
+License: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX
+Classifier: Development Status :: 4 - Beta
+Classifier: Topic :: Text Processing :: Markup :: XML
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: setuptools
+Provides-Extra: html
+Requires-Dist: jinja2 ; extra == 'html'
+Provides-Extra: jats
+Requires-Dist: elifetools >=0.26 ; extra == 'jats'
+Requires-Dist: GitPython ; extra == 'jats'
+Requires-Dist: jsoml ; extra == 'jats'
+Provides-Extra: jsoml
+Requires-Dist: jsoml ; extra == 'jsoml'
+Provides-Extra: pdf
+Requires-Dist: jinja2 ; extra == 'pdf'
+Requires-Dist: weasyprint >=57.2 ; extra == 'pdf'
+Provides-Extra: successions
+Requires-Dist: hidos ; extra == 'successions'
+Provides-Extra: yaml
+Requires-Dist: ruamel.yaml ; extra == 'yaml'
+
+epijats
+=======
+
+`epijats` converts [baseprint](https://baseprints.singlesource.pub)
+JATS XML to PDF in three independent stages:
+
+```
+          JATS
+Stage 1:   ▼
+          "webstract" interchange format (json, yaml, or jsoml)
+Stage 2:   ▼
+          HTML
+Stage 3:   ▼
+          PDF
+```
+
+Using the `epijats` command line tool, you can start and stop at any stage with the
+`--from` and `--to` command line options. The output of `epijats --help` is:
+
+```
+usage: __main__.py [-h] [--from {jats,json,yaml,jsoml,html}]
+                   [--to {json,yaml,jsoml,html,html+pdf,pdf}] [--no-web-fonts]
+                   inpath outpath
+
+Eprint JATS
+
+positional arguments:
+  inpath                input directory/path
+  outpath               output directory/path
+
+options:
+  -h, --help            show this help message and exit
+  --from {jats,json,yaml,jsoml,html}
+                        format of source
+  --to {json,yaml,jsoml,html,html+pdf,pdf}
+                        format of target
+  --no-web-fonts        Do not use online web fonts
+```
+
+
+Installation
+------------
+
+```
+python3 -m pip install epijats[format1,format2,...]
+```
+where each `formatN` etc.. is one of `jats`, `html`, `pdf`, `yaml`, or `jsoml`.
+Json support is automatic.
+
+
+### Non-Python requirements
+
+If you are converting from JATS, the following dependencies must be installed:
+
+<ul>
+  <li> <a href="https://pandoc.org">pandoc</a>
+  <li> pandoc-katex-filter Node.js NPM package
+  <li> git
+</ul>
+
+All other dependencies will be automatically installed by `pip`.
