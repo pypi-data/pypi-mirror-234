@@ -1,0 +1,157 @@
+[build-system]
+requires = ["hatchling>=0.7", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "module-qc-analysis-tools"
+dynamic = ["version"]
+authors = [
+  { name="Jay Chan", email="jay.chan@cern.ch" },
+]
+maintainers = [
+    { name = "Giordon Stark", email = "gstark@cern.ch" },
+]
+description = "Module qc analysis tools"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "module-qc-data-tools >= 1.0.9",
+    "typer",
+    "importlib_resources>=1.4.0; python_version < '3.9'",  # for resources
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-analysis-tools"
+"Bug Tracker" = "https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-analysis-tools/-/issues"
+"Source" = "https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-analysis-tools"
+
+[project.scripts]
+module-qc-analysis-tools = "module_qc_analysis_tools.cli:app"
+"mqat" = "module_qc_analysis_tools.cli:app"
+analysis-ADC-CALIBRATION = "module_qc_analysis_tools.cli.ADC_CALIBRATION:app"
+analysis-ANALOG-READBACK = "module_qc_analysis_tools.cli.ANALOG_READBACK:app"
+analysis-INJECTION-CAPACITANCE = "module_qc_analysis_tools.cli.INJECTION_CAPACITANCE:app"
+analysis-SLDO = "module_qc_analysis_tools.cli.SLDO:app"
+analysis-VCAL-CALIBRATION = "module_qc_analysis_tools.cli.VCAL_CALIBRATION:app"
+analysis-LP-MODE = "module_qc_analysis_tools.cli.LP_MODE:app"
+analysis-MASS-MEASUREMENT = "module_qc_analysis_tools.cli.MASS_MEASUREMENT:app"
+analysis-IV-MEASURE = "module_qc_analysis_tools.cli.IV_MEASURE:app"
+analysis-VISUAL-INSPECTION = "module_qc_analysis_tools.cli.VISUAL_INSPECTION:app"
+analysis-QUAD-MODULE-METROLOGY = "module_qc_analysis_tools.cli.QUAD_MODULE_METROLOGY:app"
+analysis-overwrite-config = "module_qc_analysis_tools.cli.overwrite_config:app"
+analysis-update-chip-config = "module_qc_analysis_tools.cli.update_chip_config:app"
+analysis-OVERVOLTAGE-PROTECTION = "module_qc_analysis_tools.cli.OVERVOLTAGE_PROTECTION:app"
+analysis-load-yarr-scans = "module_qc_analysis_tools.cli.load_yarr_scans:app"
+analysis-MIN-HEALTH-TEST = "module_qc_analysis_tools.cli.MIN_HEALTH_TEST:app"
+analysis-TUNING = "module_qc_analysis_tools.cli.TUNING:app"
+analysis-PIXEL-FAILURE-ANALYSIS = "module_qc_analysis_tools.cli.PIXEL_FAILURE_ANALYSIS:app"
+analysis-UNDERSHUNT-PROTECTION = "module_qc_analysis_tools.cli.UNDERSHUNT_PROTECTION:app"
+analysis-WIREBOND-PULL-TEST = "module_qc_analysis_tools.cli.WIREBOND_PULL_TEST:app"
+analysis-GLUE-MODULE-FLEX-ATTACH = "module_qc_analysis_tools.cli.GLUE_MODULE_FLEX_ATTACH:app"
+analysis-WIREBONDING = "module_qc_analysis_tools.cli.WIREBONDING_INFORMATION:app"
+analysis-PARYLENE = "module_qc_analysis_tools.cli.PARYLENE:app"
+analysis-BARE-MODULE-SENSOR-IV = "module_qc_analysis_tools.cli.BARE_MODULE_SENSOR_IV:app"
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/module_qc_analysis_tools/_version.py"
+
+[tool.hatch.build.targets.sdist]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "tbump>=6.7.0",
+    "pylint",
+    "build",
+    "twine",
+]
+
+[tool.hatch.envs.default.scripts]
+tag = "tbump {args}"
+lint = "pylint src"
+build = "python -m build"
+validate = "twine check dist/*"
+# https://github.com/linkchecker/linkchecker/issues/678
+build-check = [
+  "build",
+  "validate",
+]
+upload = "twine upload dist/*"
+
+[tool.hatch.envs.dev]
+template = "dev"
+# pylint and pytest needs to be installed into package environment
+detached = false
+dependencies = [
+    "pytest >=6",
+]
+
+[tool.hatch.envs.dev.scripts]
+test = "pytest -ra"
+
+[tool.ruff]
+select = [
+  "E", "F", "W", # flake8
+  "B",  "B904",  # flake8-bugbear
+  "I",           # isort
+  "ARG",         # flake8-unused-arguments
+  "C40",         # flake8-comprehensions
+  "EM",          # flake8-errmsg
+  "ICN",         # flake8-import-conventions
+  "ISC",         # flake8-implicit-str-concat
+  "PGH",         # pygrep-hooks
+  "PIE",         # flake8-pie
+  "PL",          # pylint
+  "PT",          # flake8-pytest-style
+  "PTH",         # flake8-use-pathlib
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+  "SIM",         # flake8-simplify
+  "T20",         # flake8-print
+  "UP",          # pyupgrade
+  "YTT",         # flake8-2020
+]
+extend-ignore = ["PLR", "E501"]
+target-version = "py37"
+typing-modules = ["module_qc_analysis_tools._compat.typing"]
+src = ["src"]
+unfixable = ["T20", "F841"]
+exclude = []
+isort.required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.per-file-ignores]
+"src/module_qc_analysis_tools/cli/main.py" = ["B008"]
+
+[tool.pylint]
+master.py-version = "3.7"
+master.ignore-paths= ["src/module_qc_analysis_tools/_version.py"]
+reports.output-format = "colorized"
+similarities.ignore-imports = "yes"
+messages_control.disable = [
+  "design",
+  "fixme",
+  "line-too-long",
+  "missing-module-docstring",
+  "wrong-import-position",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+xfail_strict = true
+filterwarnings = ["error"]
+testpaths = [
+    "tests",
+]
