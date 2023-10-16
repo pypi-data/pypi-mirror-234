@@ -1,0 +1,77 @@
+#!/usr/bin/sh
+# -*- mode: shell-script; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+# ex: ts=8 sw=4 sts=4 et filetype=sh
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+set -e
+
+COMMAND="${1:?}"
+KERNEL_VERSION="${2:?}"
+
+ENTRY_TOKEN="$KERNEL_INSTALL_ENTRY_TOKEN"
+BOOT_ROOT="$KERNEL_INSTALL_BOOT_ROOT"
+
+UKI_DIR_BOOT="$BOOT_ROOT/EFI/Linux"
+UKI_DIR_ESP="`bootctl -p`/EFI/Linux"
+
+TRIES_FILE="${KERNEL_INSTALL_CONF_ROOT:-/etc/kernel}/tries"
+if [ -f "$TRIES_FILE" ]; then
+    echo "Error: boot counting is not supported by $0." >&2
+    exit 1
+fi
+
+UKI_FILE_BOOT="$UKI_DIR_BOOT/$ENTRY_TOKEN-$KERNEL_VERSION.efi"
+UKI_FILE_ESP="$UKI_DIR_ESP/$ENTRY_TOKEN-$KERNEL_VERSION.efi"
+
+if [ "$KERNEL_INSTALL_VERBOSE" -gt 0 ]; then
+    LOGLEVEL="--loglevel info"
+else
+    LOGLEVEL="--loglevel error"
+fi
+
+case "$COMMAND" in
+    remove)
+        # $ENTRY_TOKEN might have changed since "kernel-install add"
+        # fedora cloud image kickstart resets machine-id for example
+        for kernel in "$UKI_DIR_ESP/"*"-$KERNEL_VERSION.efi"; do
+            [ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] && \
+                echo "Removing $kernel from UEFI boot entries"
+            kernel-bootcfg $LOGLEVEL --remove-uki "$kernel"
+            if [ "$UKI_FILE_BOOT" != "$UKI_FILE_ESP" ]; then
+                [ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] && \
+                    echo "Removing $kernel from ESP"
+                rm -f "$kernel"
+            fi
+        done
+        ;;
+    add)
+        [ "$KERNEL_INSTALL_LAYOUT" = "uki" ] || exit 0
+
+        # UKI is always copied to $BOOT by the standard 90-uki-copy.install
+        if [ ! -f "$UKI_FILE_BOOT" ]; then
+            echo "$UKI_FILE_BOOT does not exist!" >&2
+            exit 1
+        fi
+
+        # Move the UKI to the ESP when $BOOT and ESP differ
+        if [ "$UKI_FILE_BOOT" != "$UKI_FILE_ESP" -a ! -f "$UKI_FILE_ESP" ]; then
+            [ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] && \
+                echo "Moving $UKI_FILE_BOOT to ESP"
+            mkdir -p "$UKI_DIR_ESP"
+            mv "$UKI_FILE_BOOT" "$UKI_FILE_ESP" || {
+                echo "Error: could not move '$UKI_FILE_BOOT' to '$UKI_FILE_ESP'." >&2
+	        exit 1
+            }
+            sync
+        fi
+
+        [ "$KERNEL_INSTALL_VERBOSE" -gt 0 ] && \
+            echo "Adding $UKI_FILE_ESP to UEFI boot entries"
+        kernel-bootcfg $LOGLEVEL --add-uki "$UKI_FILE_ESP" --title "$KERNEL_VERSION" --once
+        ;;
+    *)
+        exit 0
+        ;;
+esac
+
+exit 0
