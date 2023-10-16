@@ -1,0 +1,143 @@
+---
+layout: container
+name:  "{{ config.name }}"
+maintainer: "@vsoch"
+github: "{{ github_url }}"
+config_url: "{{ config_url }}"
+updated_at: "{{ creation_date }}"
+latest: "{{ config.latest.name }}"
+container_url: "{{ config.url }}"
+{% if aliases %}aliases:{% for alias in aliases %}
+ - "{{ alias.name }}"{% endfor %}{% endif %}
+versions:{% for version in config.tags.keys() %}
+ - "{{ version }}"{% endfor %}
+{% if config.description %}description: "{{ config.description }}"{% endif %}
+config: {{ config_json }}
+---
+
+This module is a singularity container wrapper for {{ config.name }}.
+{% if config.description %}{{ config.description }}{% endif %}
+After [installing shpc](#install) you will want to install this container module:
+
+
+```bash
+$ shpc install {{ config.name }}
+```
+
+Or a specific version:
+
+```bash
+$ shpc install {{ config.name }}:{{ config.tag.name }}
+```
+
+And then you can tell lmod about your modules folder:
+
+```bash
+$ module use ./modules
+```
+
+And load the module, and ask for help, or similar.
+
+```bash
+$ module load {{ config.name }}/{{ config.tag.name }}
+$ module help {{ config.name }}/{{ config.tag.name }}
+```
+
+You can use tab for auto-completion of module names or commands that are provided.
+
+<br>
+
+### Commands
+
+When you install this module, you will be able to load it to make the following commands accessible.
+Examples for both Singularity, Podman, and Docker (container technologies supported) are included.
+
+#### {|module_name|}-run:
+
+```bash
+$ singularity run {% if settings.bindpaths %}-B {{ settings.bindpaths }} {% endif %}<container>
+$ podman run --rm {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} -v ${PWD} -w ${PWD} <container>
+$ docker run --rm {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} -v ${PWD} -w ${PWD} <container>
+```
+
+#### {|module_name|}-shell:
+
+```bash
+$ singularity shell -s {{ settings.singularity_shell }} {% if settings.bindpaths %}-B {{ settings.bindpaths }} {% endif %}<container>
+$ podman run --it --rm --entrypoint {{ settings.podman_shell }} {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} -v ${PWD} -w ${PWD} <container>
+$ docker run --it --rm --entrypoint {{ settings.docker_shell }} {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} -v ${PWD} -w ${PWD} <container>
+```
+
+#### {|module_name|}-exec:
+
+```bash
+$ singularity exec {% if settings.bindpaths %}-B {{ settings.bindpaths }} {% endif %}<container> "$@"
+$ podman run --it --rm --entrypoint "" {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} -v ${PWD} -w ${PWD} <container> "$@"
+$ docker run --it --rm --entrypoint "" {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} -v ${PWD} -w ${PWD} <container> "$@"
+```
+
+#### {|module_name|}-inspect:
+
+Podman and Docker only have one inspect type.
+
+```bash
+$ podman inspect <container>
+$ docker inspect <container>
+```
+
+#### {|module_name|}-inspect-runscript:
+
+```bash
+$ singularity inspect -r <container>
+```
+
+#### {|module_name|}-inspect-deffile:
+
+```bash
+$ singularity inspect -d <container>
+```
+
+{% if aliases %}{% for alias in aliases %}
+#### {{ alias.name }}
+
+```bash
+$ singularity exec {% if settings.bindpaths %}-B {{ settings.bindpaths }} {% endif %}{% if alias.options %}{{ alias.options }} {% endif %}<container> {{ alias.command }}
+$ podman run --it --rm --entrypoint {{ alias.entrypoint }} {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} {% if alias.options %}{{ alias.options }} {% endif %} -v ${PWD} -w ${PWD} <container> -c "{{ alias.args }} $@"
+$ docker run --it --rm --entrypoint {{ alias.entrypoint }} {% if settings.bindpaths %}-v {{ settings.bindpaths }} {% endif %} {% if alias.options %}{{ alias.options }} {% endif %} -v ${PWD} -w ${PWD} <container> -c "{{ alias.args }} $@"
+```
+
+{% endfor %}{% else %}
+
+#### {|module_name|}
+
+```bash
+$ singularity run {% if settings.bindpaths %}-B {{ settings.bindpaths }}{% endif %}<container>
+$ podman run --rm {% if settings.bindpaths %}-v {{ settings.bindpaths }}{% endif %} -v ${PWD} -w ${PWD} <container>
+$ docker run --rm {% if settings.bindpaths %}-v {{ settings.bindpaths }}{% endif %} -v ${PWD} -w ${PWD} <container>
+```
+{% endif %}
+
+In the above, the `<container>` directive will reference an actual container provided
+by the module, for the version you have chosen to load. An environment file in the
+module folder will also be bound. Note that although a container
+might provide custom commands, every container exposes unique exec, shell, run, and
+inspect aliases. For anycommands above, you can export:
+
+ - SINGULARITY_OPTS: to define custom options for singularity (e.g., --debug)
+ - SINGULARITY_COMMAND_OPTS: to define custom options for the command (e.g., -b)
+ - PODMAN_OPTS: to define custom options for podman or docker
+ - PODMAN_COMMAND_OPTS: to define custom options for the command
+
+<br>
+
+### Install
+
+You can install shpc locally (for yourself or your user base) as follows:
+
+```bash
+$ git clone https://github.com/singularityhub/singularity-hpc
+$ cd singularity-hpc
+$ pip install -e .
+```
+
+Have any questions, or want to request a new module or version? [ask for help!](https://github.com/singularityhub/singularity-hpc/issues)
