@@ -1,0 +1,133 @@
+1.0     Jan 7, 2015
+        original
+
+2.0     Oct 28, 2017
+        - sections and keywords can now include '-' character
+        - definitions file can now take a section:keyword besides
+          just keyword
+        - config file  can now specify over-riding 'type' via
+            keyword (type) = value(s)
+          where type is one of scalar (default), array or hash
+        - get_type(), get_separator():
+            - can take section parameter.  Backward compatible
+              by only giving (keyword) instead of (section, keyword)
+        - handle 'allowed-values' from defs file
+        - handle escape character
+            - escape separator character
+            - double escape character to include escape character in data
+            - handling of escape chars in process_file
+            - now handles a escaped backslash at the end of a line instead
+              of incorrectly thinking it is a continuation line indicator
+        - added class method set_debug()
+        - definitions file now handles continuation lines
+        - overhauled handling of debug statements
+        - refactoring
+        - verify that any type given in both the defs file and the config
+          file match.  Error otherwise
+        - created sample-program.py
+        - updated README.md
+        - created Makefile
+        - added LICENSE.txt
+
+2.1     Nov 24, 2017
+        - got rid of get_separator function.  It provided no value.
+
+3.0     Feb 12, 2018
+        - can now accept comments with initial whitespace and not just
+          beginning of the line
+        - better error checking for hash values - that they really are
+          "keyword = value" pairs
+        - values in hashes can now have '=' signs in them
+        - code refactoring.  simplifying, removing crap
+        - the 'main' test program in module much smarter and has real
+          options checking (and --help|-h option)
+        - added more entries to configs/test-defs.conf so that 
+          AcceptUndefinedKeywords does not need to be setting for testing
+          of main program in module without the --accept option
+
+3.1     Feb 23, 2018
+        - typos fixed in RELEASE-NOTES
+        - added files to create a proper Python distribution
+          (setup.py, MANIFEST.in, README.txt, INSTALL, ...)
+        - Makefile updated to favor setup.py installation
+
+3.2     Dec 15, 2019
+        - moved setting of debug value to before loading of config if
+          module run as test program so we can find problems easier
+        - now supports Python 3.  Backwards compatible
+        - check that a valid section name is in effect when it comes across
+          a keyword
+        - removed data dump of config file in debug mode in config.py
+          since you get this anyway by running the module as a program
+          (__main__)
+        - initialization routine prints out which major version of
+          Python is running when in debug mode
+        - changed the names of the test config and defs file the module
+          uses when run as a program (__main__)
+        - sample-program.py updated to be Python 3 compliant
+        - test.py removed.  sample-program.py is a better version of it
+        - added 'clean' and 'sdist' target to Makefile
+        - added '__pycache__' and 'README.dist' to .gitignore
+        - completely overhauled the test configs in subdir ./configs
+          old ones removed.
+        - run-tests.py overhauled to handle new test configs and also
+          be Python 3 compliant
+        - updated code example in README.txt and README.md to be python3
+          compliant
+
+3.2.1   Jan 3, 2020
+        - updated VERSION to reflect these RELEASE-NOTES
+        - added -f to rm in 'make clean'
+
+3.2.2   July 15, 2020
+        - fixed error message in get_keywords()
+
+3.2.3   Dec 13, 2020
+        - fixed 2 calls to close() - was missing brackets
+        - removed unnecessary start of line anchor for re.match
+        - fixed statement printed in run-tests.py that was misleading
+        - refactored some debug statements and empty/indented line checks
+
+4.0     Oct 4, 2023
+        INSTALL location now changed !!
+        no longer installs into ${HOME}/lib/python
+        now installs into Python standard location of ${HOME}/.local/lib/...
+
+        - overhauled to better reflect the latest best practices in
+          building and distributing Python code.  Uses a pyproject.toml
+          file now instead of setup.py.  Module is now a (single module)
+          package called config_moxad to avoid conflicts with other config
+          packages/modules that users may be using or installed from PyPi.
+        - module config.py now moved to config_moxad/config.py
+        - the module still uses _VERSION, but also now uses __version__
+          to be more consistent with the normal convention
+        - The Makefile no longer allows installing as root
+        - no longer has a user install into ${HOME}/lib/python and instead
+          will (likely) end up in ${HOME}/.local/lib/python...  as per the
+          accepted default (unless you are using a virtual environment)
+        - the various test and sample programs have had their shebang
+          paths changed to python3 instead of just python, since newer
+          systems are doing away with 'python' (Like Linux Mint).
+        - So now, instead of programs importing this as:
+                import config
+          they should now be doing a:
+                from config_moxad import config
+          and then the rest of the code won't have to change
+
+4.0.1       Oct 9, 2023
+        config_moxad/config.py
+          - changed module variables PY2, PY3, and string_type to have a
+            leading underscore to make them internal semi-private variables
+          - changed comment style at beginning of module from '#' to
+            """ so it looks better with pydoc
+          - now prints out what version this module is in debug mode
+        README.md, README.txt, README.install
+          - minor grammar fixes
+        README.install:
+          - added some more detail: installing from PyPI
+        sample-program.py:
+          - wrapped a line that was too long for easy reading
+        doc/config.html:
+          - updated with 'make htmldoc'
+        Makefile:
+          - made default target (first entry) a new help entry
