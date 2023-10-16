@@ -1,0 +1,78 @@
+Metadata-Version: 2.1
+Name: gdmath
+Version: 1.4.2
+Summary: GdMath: a fast math library for game development
+Author-email: shBLOCK <sh@shblock.xyz>
+License: MIT License
+        
+        Copyright (c) 2019 Federico Stra
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Documentation, https://github.com/shBLOCK/GdMath/wiki
+Project-URL: Source, https://github.com/shBLOCK/GdMath
+Project-URL: Issue Tracker, https://github.com/shBLOCK/GdMath/issues
+Keywords: vector,gamedev,linear algebra,math library,math,game development
+Classifier: Programming Language :: Cython
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Software Development :: Libraries
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+
+# GdMath: a fast math library for game development
+
+[![Codegen](https://github.com/shBLOCK/GdMath/actions/workflows/codegen.yml/badge.svg)](https://github.com/shBLOCK/GdMath/actions/workflows/codegen.yml)
+[![Tests](https://github.com/shBLOCK/GdMath/actions/workflows/tests.yml/badge.svg)](https://github.com/shBLOCK/GdMath/actions/workflows/tests.yml)
+[![Release](https://github.com/shBLOCK/GdMath/actions/workflows/release.yml/badge.svg)](https://github.com/shBLOCK/GdMath/actions/workflows/release.yml)
+
+## Main features
+- 100% Cython implementation (~30x speedup from pure python on average)
+  - Codegen based
+- Linear Algebra
+  - [Vector](https://github.com/shBLOCK/GdMath/wiki#vectors)
+    - Pythonic and GLSL-like
+    - Operators +, -, *, /, @(dot), ^(cross), |(distance) ...
+    - Fast swizzling (e.g. `Vec3(1, 2, 3).zxy`)
+    - Flexible constructor (e.g. `Vec3(Vec2(1, 2), 3)`)
+    - Iterating and unpacking (e.g. `x, y, z = Vec3(1, 2, 3)`)
+  - Transform
+    - [Transform2D](https://github.com/shBLOCK/GdMath/wiki#transform2d) & [Transform3D](https://github.com/shBLOCK/GdMath/wiki#transform3d)
+    - Godot and GLSL like api
+
+Please refer to the [wiki](https://github.com/shBLOCK/GdMath/wiki) for more details
+
+## Implementation details
+**This library uses code generation.**   
+Every swizzle pattern and constructor are implemented as individual methods and properties (For performance reasons).   
+As a result, code generation is required so that I don't have to maintain 50,000+ lines of code by hand...   
+Besides, it also has the convenience that vector classes of every dimension and type (e.g. Vec2 Vec3 Vec2i Vec3i) are generated from the same template, so a lot of repetitive code is avoided.
+
+## Notes
+- This library was initially inspired by [Godot](https://godotengine.org/)'s math library. (pun intended)   
+- FYI, when I was coding this, I didn't know about `Cython.Tempita` until it's too late. It'd probably be a lot easier if I knew it from the beginning and don't have to write as much codegen by myself... But I'd still need to do things like overloading by myself anyway, so it's not a big deal.
