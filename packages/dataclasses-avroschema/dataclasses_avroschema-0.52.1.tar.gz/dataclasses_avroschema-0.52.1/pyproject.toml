@@ -1,0 +1,122 @@
+[tool.poetry]
+name = "dataclasses-avroschema"
+version = "0.52.1"
+description = "Generate Avro Schemas from Python classes. Serialize/Deserialize python instances with avro schemas"
+authors = ["Marcos Schroh <schrohm@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "dataclasses_avroschema"}]
+
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastavro = "^1.7.3"
+dacite = "^1.8.0"
+faker = {version = ">=18.3.1,<20.0.0", optional = true}
+inflector = "^3.1.0"
+faust-streaming = {version = "^0.10.11", optional = true}
+casefy = "^0.1.7"
+pydantic = {version = "^1.10.9", optional = true, extras = ["email"]}
+typing-extensions = {version = "^4.2.0", python = "<3.9"}
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1"
+ruff = "^0"
+black = "^23"
+pytest = "^7"
+pytest-cov = "^4"
+types-pytz = "^2023"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1"
+mkdocs-material = "^9"
+
+[tool.poetry.group.cli.dependencies]
+dc-avro = "^0.6.4"
+
+
+[tool.poetry.group.ci-publish.dependencies]
+commitizen = "^3.2.2"
+
+[tool.poetry.extras]
+pydantic = [
+    "pydantic",
+]
+faust = [
+    "faust-streaming",
+]
+faker = [
+    "faker"
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+target_version = ['py37']
+
+[tool.mypy]
+allow_empty_bodies = true
+
+[[tool.mypy.overrides]]
+module = "stringcase.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "inflector.*"
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 120
+select = [
+    # Pyflakes
+    "F",
+    # isort
+    "I001"
+]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    ".venv",
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.commitizen]
+version = "0.52.1"
+tag_format = "$version"
+version_files = [
+    "pyproject.toml:version",
+]
+update_changelog_on_bump = true
+major_version_zero = true
