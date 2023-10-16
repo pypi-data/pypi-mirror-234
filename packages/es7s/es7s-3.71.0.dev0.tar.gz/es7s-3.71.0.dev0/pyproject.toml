@@ -1,0 +1,237 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "es7s"
+dynamic = ["version"]
+description = "es7s system (un-)installer, shared code, settings manager"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+platforms = ["linux"]
+keywords = [
+    "es7s", "cli", "terminal", "console", "system", "monitor", "prmopt", "shell", "daemon",
+]
+authors = [
+    { name = "Aleksandr Shavykin", email = "0.delameter@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Environment :: Console",
+    "Environment :: No Input/Output (Daemon)",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Terminals",
+]
+dependencies = [
+    "click~=8.1",
+    "readchar~=4.0",
+    "psutil~=5.9",
+    #"pytermor @ git+https://gitlab.com/dp3.dl/pytermor.git@dev",
+    "pytermor>=2.0",
+    "python-daemon~=2.3",
+    "pysuncalc>=0.0.1",
+    "PyYAML~=6.0",
+    "requests[socks]~=2.28",
+    "python-Levenshtein~=0.21",
+    "beautifulsoup4~=4.12",
+    "lxml~=4.9",
+    "emoji~=2.8",
+]
+
+[project.optional-dependencies]
+gtk = [
+    "pycairo~=1.23",
+    "pygobject~=3.42",
+]
+web = [
+    "Flask~=2.2.2",
+    "gunicorn~=20.1.0",
+]
+test = [
+    "coverage[toml]~=6.4",
+    "flake8~=5.0",
+    "pydeps~=1.10",
+    "pytest~=7.1",
+    "pytest-cov~=4.1",
+]
+
+[project.package-data]
+es7s = "data/*"
+
+[project.scripts]
+es7s = "es7s.cli.__main__:main"
+es7s-daemon = "es7s.d.__main__:main"
+es7s-indicators = "es7s.gtk.__main__:main"
+es7s-edit-image = "es7s.cli.__main__:edit_image"  # @TODO выпилить к черту
+
+[project.urls]
+Homepage = "https://github.com/es7s/core"
+
+# ---------------------------------------------------------
+# build
+
+[tool.hatch.publish.index]
+disable = false
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/es7s",
+    "/tests",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "es7s/_version.py"
+
+# ---------------------------------------------------------
+# envs.default
+
+[tool.hatch.envs.default.scripts]
+version = "python -m es7s.cli -V"
+cli = "python -m es7s.cli"
+daemon = "python -m es7s.d"
+
+[tool.hatch.envs.default.env-vars]
+PIP_EXTRA_INDEX_URL = "https://gitlab.com/api/v4/projects/46749041/packages/pypi/simple/ https://pypi.org/simple/"
+
+# envs.build
+
+[tool.hatch.envs.build]
+detached = true
+extra-dependencies = [
+    "build~=0.8",
+    "setuptools~=65.3",
+    "twine~=4.0",
+]
+
+# envs.test
+
+[tool.hatch.envs.test]
+features = [
+    'gtk',
+    'test',
+]
+
+[tool.hatch.envs.test.scripts]
+test = "pytest"
+cover = [
+    "coverage run -m pytest",
+    "coverage html",
+]
+depends = "bash pydeps.sh es7s misc/depends LR"
+
+
+# envs.dev
+
+[tool.hatch.envs.dev]
+features = [
+    'gtk',
+    'web',
+    'test',
+]
+extra-dependencies = [
+    #"PyGObject-stubs==2.4.0",
+    "line-profiler-pycharm~=1.1.0",
+    "memory_profiler~=0.61.0",
+    "memray~=1.9.1",
+]
+post-install-commands = [
+    "pip install pygobject-stubs --no-cache-dir --config-settings=config=Gtk3,Gdk3,Soup2",
+]
+
+[tool.hatch.envs.dev.scripts]
+indicators = "python -m es7s.gtk"
+profile-import = [
+#    "for m in cli d gtk tmux web; do python -qX importtime -c 'import es7s.'$m'' 2>&1 | tail -1 ; done"
+    """
+    for m in cli d gtk tmux web; do
+        python -qX importtime -m es7s.$m 2> import.$m.log | tail -1
+    done
+    timeout 5 tuna import.*.log
+    """
+]
+profile-import-tuna = [
+    "python -X importtime -m es7s.cli exec ls 2> import.log",
+    "tuna import.log"
+]
+profile-cli = [
+    "python -mcProfile -o cli.prof -m es7s.cli",
+    "tuna cli.prof"
+]
+
+# ---------------------------------------------------------
+# lint
+
+[flake8]
+max-line-length = 100
+extend-ignore = ["E203", "E227"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+# ---------------------------------------------------------
+# test
+
+[tool.pytest.ini_options]
+testpaths = [
+    "es7s",
+    "tests",
+]
+addopts = [
+    "-p", "no:doctest",
+    "-W", "ignore:pkg_resources",
+    "--strict-config",
+    "--strict-markers",
+    "--maxfail", "15",
+    "--durations", "5",
+    "--tb=short",
+]
+xfail_strict = true
+markers = [
+    "logger_params(**kwargs): logger params",
+    "io_params(**kwargs): io params",
+    "injector_params(intercept: bool): injector params",
+]
+
+# ---------------------------------------------------------
+# cover
+
+[tool.coverage.run]
+source = ["es7s"]
+branch = true
+omit = [
+    "*/__init__.py",
+    "pytermor/__main__.py",
+]
+dynamic_context = "test_function"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]
+ignore_errors = true
+
+[tool.coverage.html]
+directory = "misc/coverage"
+title = "es7s coverage report"
+
+# ---------------------------------------------------------
+# *
+
+[tool.pydeps]

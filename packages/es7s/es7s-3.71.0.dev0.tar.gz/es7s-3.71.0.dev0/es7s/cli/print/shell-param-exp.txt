@@ -1,0 +1,190 @@
+╔══════════════════════════════════════════════════════════════════════════════════════════╗                   ᵣₑᵥ ₅₀
+║ᵉˢ⁷ˢ           SHELL PARAMETER               expansion exmp. param   param   param is ║                   ᵒᶜᵗ ²³
+║             EXPANSION (bash v5.0)            input↓ output↘   =1486   =null   unset  ║
+╠══════════════════════════════════════════════════════════════════════════════════════════╣ ¹ the first form (with :)
+║░${var:-defv}░░░░░│ if var is empty¹,         │░${param:-1486}░│░░1486░░│░░2023░░│░░2023░░║   treats  as  empty  both
+║░░░░░░Use░default░│ use default value instead │░${param-1486}░░│░░1486░░│░░null░░│░░2023░░║   unset vars,  as well as
+║░░░░░░░░░░░░░░░░░░│───────────────────────────│░░░░░░░░░░░░░░░░│░░░░░░░░│░░░░░░░░│░░░░░░░░║   zero-length strings (or
+║░${var:=defv}░░░░░│ if var is empty,          │░${param:=1486}░│░░1486░░│░░2023░░│░░2023░░║   nulls); the second form
+║░░░Assign░default░│ set it to default and use │░${param=1486}░░│░░1486░░│░░null░░│░░2023░░║   replaces only unset va-
+║░░░░░░░░░░░░░░░░░░│───────────────────────────│░░░░░░░░░░░░░░░░│░░░░░░░░│░░░░░░░░│░░░░░░░░║   riables, while 0-length
+║░${var:?ERRO}░░░░░│ if var is empty,          │░${param:?OOPS}░│░░1486░░│░░OOPS░░│░░OOPS░░║   strings are kept as is.
+║░░░░░░Throw░error░│ echo error msg and exit   │░${param?OOPS}░░│░░1486░░│░░null░░│░░OOPS░░║ ² pattern starting with #
+║░░░░░░░░░░░░░░░░░░│───────────────────────────│░░░░░░░░░░░░░░░░│░░░░░░░░│░░░░░░░░│░░░░░░░░║   must match at the start
+║░${var:+altv}░░░░░│ if var is NOT empty,      │░${param:+0000}░│░░0000░░│░░null░░│░░null░░║   of expanded value;
+║░░Use░alternative░│ use alter value instead   │░${param+0000}░░│░░0000░░│░░0000░░│░░null░░║   pattern starting with %
+╠══════════════════════════════════════════════════════════════════════════════════════════╣   must  match  at the end
+║░${var:offset:length}░░░░░│░${var[*]:index:count}░░│░${!var[*]}░░│░${#var}░░░░│░$0░$1░$2…░║   of expanded value.
+║░░░░░░░░░░░░░░░░Substring░│░░░░░░░░░░░░Array░items░│░░Array░keys░│░░░░░Length░│░░░░░░Args░║ ³ single-char form yields
+║░░░░░░░░░░░░░░░░░░░░░░░░░░│░░░░░░░░░░░░░░░░░░░░░░░░│░░░░░░░░░░░░░░░░░░░░░░░░░░│░$#░░░░░░░░║   the shortest substring,
+║░${var/pattern/repl}░░░░░░│░${!prefix*}░░░░░░░░░░░░│░${var@operator}░░░░░░░░░░│░░░░░count░║   double  —  the longest.
+║░░░░░Pattern░substitution²│░░░░░░Matching░varnames░│░░░░░░░░░░░Transformation░│░$*░$@░░░░░║ ⁴ ^ transforms lowercased
+║░░░░░░░░░░░░░░░░░░░░░░░░░░│░░░░░░░░░░░░░░░░░░░░░░░░│░@Q░│░to░reuse░as░input░░░│░░░░arrays░║   letters to  upper case;
+║░${var#prefix}░░░░░░░░░░░░│░${var^pattern}░░░░░░░░░│░@E░│░'\'░seq.░expansion░░│░${@:3:5}░░║   , converts upper to lo-
+║░${var##prefix}░░░░░░░░░░░│░${var^^pattern}░░░Case⁴│░@P░│░prompt░seq.░expans.░│░░░░░slice░║   wer instead; double ch.
+║░${var%suffix}░░░░Partial░│░${var,pattern}░░░trans-│░@A░│░to░reuse░in░assign.░│░${!#}░░░░░║   form  modifies each ma-
+║░${var%%suffix}░░░░remove³│░${var,,pattern}░░░form░│░@a░│░var░attributes░░░░░░│░░░░░░last░║   tched character,  while
+╚══════════════════════════════════════════════════════════════════════════════════════════╝   single — only 1st one.  
+
+(ˢᵉᵖ|ᵒᶜᵗ)						[53m\1[55m
+(var\b|param\b)					[97m\1[39m
+(defv|altv|pattern|offset|operator|alter\b|var\b|repl\b|prefix|suffix|length|index|(?<=:)count)(?=\S)		[34;4m\1[39;24m
+([║░┤]?░+)([A-Zb-z]\b|(sub|na|[a-ln-zA-Z])[A-Za-z0-9.░-]+|(?<=░░)a(?=░░))		\1[97;1m\2[39;22m
+(\$\{)([^${}]+)(\})				[33m\1[39m\2[33m\3[39m
+([^[])([@*]+)					\1[35;1m\2[39;22m
+(\[)([*@]|\d+)(\])				[93m\1[97m\2[93m\3
+([!:#%/^+?\\]|[-=+](?=2023))	[35;1m\1[39;22m
+(?<=\s\s\s)(,)					[35;3;1m\1[39;23m
+(error_msg)						[31;4m\1[39;24m
+(ERROR?)						[91;1m\1[39;22m
+1486							[95m1487[39m
+(null)							[3;2m\1[22;23m
+(unset)							[3;2m\1[22;23m
+(\s[¹²³⁴]\s.+)░░░				[53m\1[55m
+([¹²³⁴])						[1;97m\1[22;39m
+([│─┌┬┐├┼┤└┴┘╷░]+)				[22;37;2m\1[22;39m
+([║═╤╧╪╠╟╢╔╦╗╠╬╣╚╩╝]+)			[90;1m\1[22;39m
+([║═╔╠╚]+)(.+)([╗╣╝║░])			[48;5;16m\1\2\3[m
+(ᵣₑᵥ[^\x1b]{3})					[2m\1[22m
+
+
+#!/usr/bin/bash
+# ------------------------------------------------------------------------------
+# es7s/core (G1/legacy)
+# (c) 2022-2023 A. Shavykin <0.delameter@gmail.com>
+# -----------------------------------------------------------------------------
+# shellcheck disable=SC2119,SC2016
+# shellcheck source=../../data/es7s-shell-commons.sh
+#__E7SL() { local c="$(realpath "$(dirname "$(readlink -f "$0")")")" ; local l=\
+#"es7s-shell-commons.sh" ; local p=( "$ES7S_SHELL_COMMONS" "$HOME/.es7s/data/$l"
+#"$c/../$l" ); while [[ ! $(type -t __es7s_com) =~ ^fu ]];do [[ -f "${p[0]}" ]]\
+#&& source "${p[0]}"; p=("${p[@]:1}"); [[ "${#p[@]}" -gt 0 ]] && continue; echo\
+#'ERROR: es7s/commons is missing (ES7S_SHELL_COMMONS)'; exit 57; done } ; __E7SL
+## ------------------------------------------------------------- loader v.3B ---
+
+#[[ $* =~ --help ]] && exit 0
+#[[ $# -gt 0 ]] && echo "No arguments allowed" && exit 2
+#
+#function pvalue() {
+#    local v="$*"
+#    [[ -z $v ]] && echo "$nullstr" || echo "$v"
+#}
+#function try_1() {
+#    if (pvalue "${!1?$2}") 2> /dev/null ; then return ; fi
+#    pvalue "$2"
+# }
+#function try_2() {
+#    if (pvalue "${!1:?$2}") 2> /dev/null ; then return ; fi
+#    pvalue "$2"
+# }
+## -----------------------------------------------------------------------------
+#C_RST=$_f
+#C_BOLD=$(_cs $I_BOLD)
+#C_ULINE=$(_cs $I_UNDERL)
+#function _mr() { echo     "$(_m "$IH_RED" ${*})" ; }
+#function _my() { echo  "$(_m "$IH_YELLOW" ${*})" ; }
+#function _mg() { echo   "$(_m "$IH_GREEN" ${*})" ; }
+#function _mb() { echo    "$(_m "$IH_BLUE" ${*})" ; }
+#function _mm() { echo "$(_m "$IH_MAGNETA" ${*})" ; }
+#function  _m() { echo          "$(_cs ${1})${*:2}${C_RST}" ; }
+#function  _i() { echo  "$(_cs ${1}  $I_INV)${*:2}${C_RST}" ; }
+#function  _b() { echo  "$(_cs ${1} $I_BOLD)${*:2}${C_RST}" ; }
+#function  _c() { echo "$(alignc ${1} "${*:2}")" ; }
+#function  _l() { echo "$(alignl ${1} "${*:2}")" ; }
+#function  _r() { echo "$(alignr ${1} "${*:2}")" ; }
+#C_TABLE=$(_cs $IH_GRAY )
+#pl_sc=$(_b "$I_MAGNETA" ':')
+#mn_sc=$(_b "$I_MAGNETA" ':')
+#eq_sc=$(_b "$I_MAGNETA" ':')
+#qs_sc=$(_b "$I_MAGNETA" ':')
+#pl_op=$(_b "$I_MAGNETA" '+')
+#mn_op=$(_b "$I_MAGNETA" '-')
+#eq_op=$(_b "$I_MAGNETA" '=')
+#qs_op=$(_b "$I_MAGNETA" '?')
+#pl_param=$(_mb "alt_v")
+#mn_param=$(_my "def_v")
+#eq_param=$(_mg "def_v")
+#qs_param=$(_mr "err_v")
+#nullstr=$(_m "37 3" "null")
+#pl_p=$(_mb "A")
+#mn_p=$(_my "D")
+#eq_p=$(_mg "D")
+#qs_p=$(_mr "E")
+#v=$(_mm 1486)
+#vnull=$(_m "3 37" "(null)")
+#vunset=$(_m "3 37" "(unset)")
+#p_v=param=
+#p_e=param=
+#expct=$(_mr "err_v")
+#p_ns=$'\u2205'
+## -----------------------------------------------------------------------------
+#a=$(_mm 1486)
+#b=
+#unset c
+## -----------------------------------------------------------------------------
+#printf "$C_TABLE"'╔ %---------58s ╤ %-27s ╗' '' '' | sed "s/ /═/g"
+#
+#printf "\n$C_TABLE"'║ %---------58s │ %-27s ║' "$(_c 58 "${C_RST}${_b}Shell parameter${_f}$C_TABLE")" \
+#                                                               "$(_l 27 "param=")"
+#
+#printf "\n$C_TABLE"'║ %---------58s │ %-7s │ %-7s │ %-7s ║' "$(_c 58 "${C_RST}${_b}expansion (bash)${_f}$C_TABLE")" "$C_RST$(_r 7 "$v")$C_TABLE"\
+#                                                               "$C_RST$(_r 7 "$vnull")$C_TABLE"\
+#                                                               "$C_RST$(_r 7 "$vunset")$C_TABLE"
+#
+#printf "\n$C_TABLE"'╟ %--36s   %-20s┼ %-7s ┼ %-7s ┼ %-7s ╢' '' '' '' '' '' | sed "s/ /─/g"
+#
+#printf "\n$C_TABLE"'║ %--36s     %-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 "${C_BOLD}Use Default:${C_RST} if unset ($mn_op) or empty ($mn_sc$mn_op),")"\
+#                                                             "$(_r 20 "\${${C_TABLE}param${C_RST}$mn_op$mn_param}${C_TABLE}=>${C_RST}")"\
+#                                                             "$C_RST$(_r 7 "$(pvalue ${a-$mn_param})")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue ${b-$mn_param})")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue ${c-$mn_param})")$C_TABLE"
+#
+#printf "\n$C_TABLE"'║ %--36s     %-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 ", use $(_my "def_v") instead")"\
+#                                                             "$(_r 20 "\${${C_TABLE}param${C_RST}$mn_sc$mn_op$mn_param}${C_TABLE}=>${C_RST}")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${a:-$mn_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${b:-$mn_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${c:-$mn_param}")")$C_TABLE"
+#
+#printf "\n$C_TABLE"'╟ %--36s   %-20s┼ %-7s ┼ %-7s ┼ %-7s ╢' '' | sed "s/ /─/g"
+#
+#printf "\n$C_TABLE"'║ %--36s  %-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 "${C_BOLD}Assign Default:${C_RST} if unset ($eq_op) or empty ($eq_sc$eq_op),")"\
+#                                                             "$(_r 20 "\${${C_TABLE}param${C_RST}$eq_op$eq_param}${C_TABLE}=>${C_RST}")"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${a=$eq_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${b=$eq_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${c=$eq_param}")")$C_TABLE"
+#
+#printf "\n$C_TABLE"'║ %--36s     %--20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 "${C_BOLD}$(_mg assign)${C_RST} param=$(_mg def_v) and use")"\
+#                                                              "$(_r 20 "\${${C_TABLE}param${C_RST}$eq_sc$eq_op$eq_param}${C_TABLE}=>${C_RST}")"\
+#                                                              "$C_RST$(_r 7 "$(pvalue "${a:=$eq_param}")")$C_TABLE"\
+#                                                              "$C_RST$(_r 7 "$(pvalue "${b:=$eq_param}")")$C_TABLE"\
+#                                                              "$C_RST$(_r 7 "$(pvalue "${c:=$eq_param}")")$C_TABLE"
+#
+#printf "\n$C_TABLE"'╟ %---------58s ┼ %-7s ┼ %-7s ┼ %-7s ╢' '' | sed "s/ /─/g"
+#
+#printf "\n$C_TABLE"'║ %--36s     %-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 "${C_BOLD}Throw Error:${C_RST} if unset ($qs_op) or empty ($qs_sc$qs_op),")"\
+#                                                             "$(_r 20 "\${${C_TABLE}param${C_RST}$qs_op$qs_param}${C_TABLE}=>${C_RST}")"\
+#                                                             "$C_RST$(_r 7 "$(try_1 "a" "$qs_param")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(try_1 "b" "$qs_param")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(try_1 "c" "$qs_param")")$C_TABLE"
+#
+#printf "\n$C_TABLE"'║ %--36s     %-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 ", print $(_m "$IH_RED" 'err_v') and ${C_BOLD}$(_m "$IH_RED" 'exit')${C_RST}")"\
+#                                                             "$(_r 20 "\${${C_TABLE}param${C_RST}$qs_sc$qs_op$qs_param}${C_TABLE}=>${C_RST}")"\
+#                                                             "$C_RST$(_r 7 "$(try_2 "a" $qs_param)")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(try_2 "b" $qs_param)")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(try_2 "c" $qs_param)")$C_TABLE"
+#
+#printf "\n$C_TABLE"'╟ %------ --58s ┼ %-7s ┼ %-7s ┼ %-7s ╢' '' | sed "s/ /─/g"
+#
+#printf "\n$C_TABLE"'║ %--36s%-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_l 36 "${C_BOLD}Use Alternative:${C_RST} if unset ($pl_op) or empty ($pl_sc$pl_op)")" \
+#                                                             "$(_r 18 "\${${C_TABLE}param${C_RST}$pl_op$pl_param}${C_TABLE}=>${C_RST}")"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${a+$pl_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${b+$pl_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${c+$pl_param}")")$C_TABLE"
+#
+#printf "\n$C_TABLE"'║ %--36s %-20s%-7s │ %-7s │ %-7s ║'  "$C_RST$(_r 36 "use $nullstr; ${C_BOLD}$(_m "$IH_BLUE" 'otherwise')${C_RST} use $(_mb alt_v)")"\
+#                                                             "$(_r 19 "\${${C_TABLE}param${C_RST}$pl_sc$pl_op$pl_param}${C_TABLE}=>${C_RST}")"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${a:+$pl_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${b:+$pl_param}")")$C_TABLE"\
+#                                                             "$C_RST$(_r 7 "$(pvalue "${c:+$pl_param}")")$C_TABLE"
+#printn
+# -----------------------------------------------------------------------------
