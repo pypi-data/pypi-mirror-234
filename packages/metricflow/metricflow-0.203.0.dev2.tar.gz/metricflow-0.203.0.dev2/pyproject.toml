@@ -1,0 +1,196 @@
+[build-system]
+requires = ["hatchling~=1.14.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "metricflow"
+version = "0.203.0.dev2"
+description = "Translates a simple metric definition into reusable SQL and executes it against the SQL engine of your choice."
+readme = "README.md"
+requires-python = ">=3.8,<3.12"
+license = "BUSL-1.1"
+keywords = []
+authors = [
+    {name = "dbt Labs"}
+]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "Jinja2>=2.11.3",
+  "MarkupSafe==2.0.1", # pandas implicitly requires this version
+  "PyYAML~=6.0",
+  "click>=7.1.2",
+  "dbt-core~=1.6.0",
+  "dbt-semantic-interfaces~=0.2.0",
+  "graphviz>=0.18.2, <0.21",
+  "halo~=0.0.31",
+  "more-itertools>=8.10.0, <10.2.0",
+  "numpy>=1.22.2",
+  "pandas~=1.5.0",
+  "pydantic~=1.10.0",
+  "python-dateutil~=2.8.2",
+  "rapidfuzz~=3.0",
+  "ruamel.yaml~=0.17.21",
+  "rudder-sdk-python~=1.0.3",
+  "tabulate>=0.8.9",
+  "typing_extensions>=4.0.0",
+  "update-checker~=0.18.0",
+]
+
+[project.urls]
+Documentation = "https://transform.co/metricflow"
+"Source Code" = "https://github.com/transform-data/metricflow"
+
+[project.scripts]
+mf = 'metricflow.cli.main:cli'
+
+[project.optional-dependencies]
+dev-packages = [
+  "mypy~=1.3.0",
+  "pre-commit~=3.2.2",
+  # Bug with mypy: https://github.com/pallets/click/issues/2558#issuecomment-1656546003
+  "click>=8.1.6",
+  "pytest-mock~=3.7.0",
+  "pytest-xdist~=3.2.1",
+  "pytest~=7.1.1",
+  "types-PyYAML",
+  "types-python-dateutil",
+  "types-tabulate",
+]
+
+# These are currently separate for ease of removal, but due to the way Python
+# handles import statements they are required in all test environments
+sql-client-packages = [
+  "SQLAlchemy~=1.4.42",
+  "sqlalchemy2-stubs~=0.0.2a21",
+]
+
+dbt-postgres = [
+  "dbt-postgres~=1.6.0",
+]
+
+dbt-bigquery = [
+  "dbt-bigquery~=1.6.0",
+]
+
+dbt-databricks = [
+  "dbt-databricks==1.6.0",
+]
+
+dbt-redshift = [
+  "dbt-redshift~=1.6.0",
+]
+
+dbt-snowflake = [
+  "dbt-snowflake~=1.6.0",
+]
+
+dbt-duckdb = [
+  "dbt-duckdb~=1.6.0",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/.github",
+  "/.changes",
+  ".changie.yaml",
+  ".gitignore",
+  ".pre-commit-config.yaml",
+  "CONTRIBUTING.md",
+  "MAKEFILE",
+  "/tests",
+]
+
+[tool.hatch.envs.dev-env]
+description = "Environment for development. Includes a DuckDB-backed client."
+features = [
+  "dev-packages",
+  "dbt-duckdb",
+  "sql-client-packages",
+]
+
+[tool.hatch.envs.dev-env.env-vars]
+	MF_TEST_ADAPTER_TYPE="duckdb"
+  MF_SQL_ENGINE_URL="duckdb://"
+
+[tool.hatch.envs.postgres-env.env-vars]
+	MF_SQL_ENGINE_URL="postgresql://metricflow@localhost:5432/metricflow"
+	MF_SQL_ENGINE_PASSWORD="metricflowing"
+	MF_TEST_ADAPTER_TYPE="postgres"
+
+[tool.hatch.envs.postgres-env]
+description = "Dev environment for working with Postgres adapter"
+features = [
+  "dev-packages",
+  "dbt-postgres",
+  "sql-client-packages",
+]
+
+# NOTE: All of the below should have their authentication credentials
+# configured independently of the hatch env construction
+
+[tool.hatch.envs.bigquery-env.env-vars]
+	MF_TEST_ADAPTER_TYPE="bigquery"
+
+[tool.hatch.envs.bigquery-env]
+description = "Dev environment for working with the BigQuery adapter"
+features = [
+  "dev-packages",
+  "dbt-bigquery",
+  "sql-client-packages",
+]
+
+[tool.hatch.envs.databricks-env.env-vars]
+	MF_TEST_ADAPTER_TYPE="databricks"
+
+[tool.hatch.envs.databricks-env]
+description = "Dev environment for working with the Databricks adapter"
+features = [
+  "dev-packages",
+  "dbt-databricks",
+  "sql-client-packages",
+]
+
+[tool.hatch.envs.redshift-env.env-vars]
+	MF_TEST_ADAPTER_TYPE="redshift"
+
+[tool.hatch.envs.redshift-env]
+description = "Dev environment for working with the Redshift adapter"
+features = [
+  "dev-packages",
+  "dbt-redshift",
+  "sql-client-packages",
+]
+
+[tool.hatch.envs.snowflake-env.env-vars]
+	MF_TEST_ADAPTER_TYPE="snowflake"
+
+[tool.hatch.envs.snowflake-env]
+description = "Dev environment for working with Snowflake adapter"
+features = [
+  "dev-packages",
+  "dbt-snowflake",
+  "sql-client-packages",
+]
+
+[tool.black]
+line-length = 120
+
+# Many deprecation warnings come from 3rd-party libraries and make the
+# output of pytest noisy. Since no action is going to be taken, hide those
+# warnings.
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Deprecated call to.*",
+    "ignore:pkg_resources is deprecated as an API"
+]
+python_functions = "test_* populate_source_schema"

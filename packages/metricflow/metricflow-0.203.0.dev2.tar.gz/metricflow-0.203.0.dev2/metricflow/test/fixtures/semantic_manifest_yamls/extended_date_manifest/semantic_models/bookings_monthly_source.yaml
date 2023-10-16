@@ -1,0 +1,30 @@
+---
+semantic_model:
+  name: bookings_monthly_source
+  description: bookings_monthly_source
+
+  node_relation:
+    schema_name: $source_schema
+    alias: fct_bookings_extended_monthly
+
+  defaults:
+    agg_time_dimension: monthly_ds
+
+  measures:
+    - name: bookings_monthly
+      agg: sum
+      create_metric: true
+
+  primary_entity: booking
+
+  dimensions:
+    - name: monthly_ds
+      expr: ds
+      type: time
+      type_params:
+        time_granularity: month
+
+  entities:
+    - name: listing
+      expr: listing_id
+      type: foreign
