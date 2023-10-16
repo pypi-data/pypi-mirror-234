@@ -1,0 +1,44 @@
+[build-system]
+requires = ["maturin>=0.13.4"]
+build-backend = "maturin"
+
+[project]
+name = "pineappl"
+requires-python = ">=3.7"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Natural Language :: English",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Rust",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+dependencies = ["numpy>=1.16.0,<2.0.0"]
+
+[project.optional-dependencies]
+docs = ["sphinx>=6.2.1", "sphinx_rtd_theme>=1.2.2", "sphinxcontrib-bibtex>=2.5.0", "nbsphinx>=0.9.2"]
+test = ["pytest", "pytest-cov"]
+
+[project.urls]
+homepage = "https://n3pdf.github.io/pineappl/"
+documentation = "https://pineappl.readthedocs.io/"
+changelog = "https://github.com/NNPDF/pineappl/blob/master/CHANGELOG.md"
+
+[tool.maturin]
+bindings = "pyo3"
+strip = true
+manifest-path = "pineappl_py/Cargo.toml"
+
+[tool.pytest.ini_options]
+testpaths = ['tests/']
+addopts = [
+  '--cov=pineappl',
+  '--cov-report=html',
+  '--cov-report=xml',
+  '--strict-markers',
+]
