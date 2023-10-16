@@ -1,0 +1,78 @@
+[tool.poetry]
+name = "casparser"
+version = "0"  # Fetched from casparser.__init__
+description = "(Karvy/Kfintech/CAMS) Consolidated Account Statement (CAS) PDF parser"
+authors = ["Sandeep Somasekharan <codereverser@gmail.com>"]
+homepage = "https://github.com/codereverser/casparser"
+license = "MIT License"
+readme= "README.md"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent"
+]
+include = [ "CHANGELOG.md" ]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+casparser-isin = ">=2023.9.3"
+click = ">=7.0,<9.0"
+colorama = "^0.4.6"
+"pdfminer.six" = "20221105"
+python-dateutil = "^2.8.2"
+rich = "^13.5.2"
+pydantic = "^2.3.0"
+PyMuPDF = {version = "^1.23.0", optional = true}
+
+[tool.poetry.extras]
+mupdf = ["PyMuPDF"]
+fast = ["PyMuPDF"]
+
+[tool.poetry.dev-dependencies]
+coverage = {version = "^7.1", extras=["toml"]}
+ipython = "^8.1.0"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pre-commit = "^3.4.0"
+
+[tool.poetry.scripts]
+casparser = 'casparser.cli:cli'
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "--cov=casparser --cov-report=xml --cov-report=html --exitfirst"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.report]
+omit = [
+    "casparser/cli.py"
+]
+precision = 3
+
+[tool.coverage.run]
+omit = [
+    "casparser/cli.py"
+]
+
+[tool.poetry-version-plugin]
+source = "init"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
