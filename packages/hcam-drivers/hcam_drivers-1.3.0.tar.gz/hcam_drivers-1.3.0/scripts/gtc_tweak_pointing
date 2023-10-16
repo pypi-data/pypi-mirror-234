@@ -1,0 +1,45 @@
+#! /usr/bin/env python
+#
+# This is open-source software licensed under a BSD license.
+# Please see the file LICENSE.txt for details.
+#
+from __future__ import print_function, absolute_import, unicode_literals, division
+import sys
+
+from hcam_devices.wamp.utils import call
+from hcam_devices.gtc.headers import create_header_from_telpars
+from hcam_drivers.utils.gtc import calculate_sky_offset
+
+
+def get_input():
+    response = input('> Enter desired x and y offset ')
+    try:
+        xoff, yoff = response.split(',')
+    except ValueError:
+        xoff, yoff = response.split()
+    return float(xoff), float(yoff)
+
+
+if __name__ == "__main__":
+
+    carry_on = True
+    try:
+        pars = call('hipercam.gtc.rpc.get_telescope_pars')
+        hdr = create_header_from_telpars(pars)
+    except Exception as err:
+        print('failed to get telescope params from GTC server: ' + str(err))
+        sys.exit(-1)
+
+    msg = 'Send pointing offsets to GTC:\n'
+    msg += '(+ve offset moves stars right and up)'
+    while carry_on:
+        try:
+            xoff, yoff = get_input()
+            pars = call('hipercam.gtc.rpc.get_telescope_pars')
+            hdr = create_header_from_telpars(pars)            
+            sky_pa = float(hdr['INSTRPA'])
+            raoff, decoff = calculate_sky_offset(xoff, yoff, sky_pa)
+
+            call('hipercam.gtc.rpc.gtc.do_offset', raoff=raoff, decoff=decoff)
+        except KeyboardInterrupt:
+            carry_on = False
