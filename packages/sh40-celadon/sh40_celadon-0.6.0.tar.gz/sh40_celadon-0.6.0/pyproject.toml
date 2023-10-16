@@ -1,0 +1,100 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sh40-celadon"
+description = "A modern TUI library taking the right lessons from the web."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "bczsalba", email = "bczsalba@gmail.com" },
+]
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Typing :: Typed",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Terminals",
+  "Topic :: Text Processing :: Markup",
+]
+dependencies = [
+    "sh40-slate",
+    "sh40-zenith",
+    "PyYAML",
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/shade40/celadon#readme"
+Issues = "https://github.com/shade40/celadon/issues"
+Source = "https://github.com/shade40/celadon"
+
+[tool.hatch.version]
+path = "celadon/__about__.py"
+
+[tool.hatch.build]
+include = [
+  "celadon/*.py",
+  "celadon/widgets/*.py",
+  "celadon/py.typed",
+  "/tests",
+]
+
+[tool.hatch.envs.default]
+dependencies = [
+  "mypy",
+  "pylint",
+  "pytest",
+  "pytest-cov",
+]
+
+[tool.hatch.envs.test]
+dependencies = [
+  "mypy",
+  "pylint",
+  "pytest",
+  "pytest-cov",
+]
+
+[tool.hatch.envs.default.scripts]
+test = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=celadon --cov=tests && coverage html"
+lint = "pylint celadon"
+type = "mypy celadon"
+upload = "hatch build && twine upload dist/* && hatch clean"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["38", "39", "310", "311"]
+
+[tool.pylint]
+fail-under = 9.9
+disable = "fixme, missing-module-docstring, no-member"
+good-names = ["i", "j", "k", "ex", "Run", "_", "x" ,"y", "fd"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+  "celadon/__about__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no-cov",
+  "def __repr__",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
