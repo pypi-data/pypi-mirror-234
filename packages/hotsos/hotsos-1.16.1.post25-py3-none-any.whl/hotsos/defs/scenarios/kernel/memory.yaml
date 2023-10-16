@@ -1,0 +1,47 @@
+vars:
+  nodes_with_limited_high_order_memory: '@hotsos.core.plugins.kernel.memory.MemoryChecks.nodes_with_limited_high_order_memory'
+  compact_success: '@hotsos.core.plugins.kernel.memory.VMStat.compact_success'
+  compaction_failures_percent: '@hotsos.core.plugins.kernel.memory.VMStat.compaction_failures_percent'
+  slab_major_consumers: '@hotsos.core.plugins.kernel.memory.SlabInfo.major_consumers'
+  # We use an arbitrary threshold of 10k to suggest that a lot of
+  # compaction has occurred but noting that this is a rolling counter
+  # and is not necessarily representative of current state.
+  min_compaction_success: 10000
+  max_compaction_failures_pcent: 10
+checks:
+  low_free_high_order_mem_blocks:
+    varops: [[$nodes_with_limited_high_order_memory], [length_hint]]
+  high_compaction_failures:
+    - varops: [[$compact_success], [gt, $min_compaction_success]]
+    - varops: [[$compaction_failures_percent], [gt, $max_compaction_failures_pcent]]
+conclusions:
+  low_free_high_order_mem_blocks:
+    decision: low_free_high_order_mem_blocks
+    raises:
+      type: MemoryWarning
+      message: >-
+        The following numa nodes have limited high order memory available: {nodes}.
+        At present the top 5 highest consumers of memory are: {top5}. See `memory:nodes`
+        section in kernel summary or /proc/buddyinfo for more info.
+      format-dict:
+        nodes: $nodes_with_limited_high_order_memory:comma_join
+        top5: $slab_major_consumers:comma_join
+  high_compaction_failures:
+    decision:
+      # We only report on compaction errors if there is a shortage of
+      # high-order zones.
+      - low_free_high_order_mem_blocks
+      - high_compaction_failures
+    raises:
+      type: MemoryWarning
+      message: >-
+        Memory compaction (defragmentation) success to failure ratio is at {pcent}%.
+        This suggests that the system's memory is getting fragmented but the defragmentation
+        attempts are failing at a significant rate, which can indicate that there are
+        insufficient high-order memory blocks available and the kernel cannot form larger
+        blocks on request. Running on a highly fragmented memory will have a negative impact on
+        the system's performance, especially for memory I/O intensive workloads. See /proc/vmstat
+        for more info.
+      format-dict:
+        pcent: $compaction_failures_percent
+
