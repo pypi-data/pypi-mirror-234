@@ -1,0 +1,208 @@
+import * as Blockly from 'blockly';
+import { pythonGenerator } from 'blockly/python';
+import { javascriptGenerator } from 'blockly/javascript';
+import { luaGenerator } from 'blockly/lua';
+import { dartGenerator } from 'blockly/dart';
+import { phpGenerator } from 'blockly/php';
+import En from 'blockly/msg/en';
+import { TOOLBOX } from './utils';
+/**
+ * BlocklyRegistry is the class that JupyterLab-Blockly exposes
+ * to other plugins. This registry allows other plugins to register
+ * new Toolboxes, Blocks and Generators that users can use in the
+ * Blockly editor.
+ */
+export class BlocklyRegistry {
+    /**
+     * Constructor of BlocklyRegistry.
+     */
+    constructor() {
+        this._language = "En";
+        this._toolboxes = new Map();
+        this._toolboxes.set('default', TOOLBOX);
+        //
+        this._generators = new Map();
+        this._generators.set('python', pythonGenerator);
+        this._generators.set('javascript', javascriptGenerator);
+        this._generators.set('lua', luaGenerator);
+        this._generators.set('dart', dartGenerator);
+        this._generators.set('php', phpGenerator);
+    }
+    /**
+     * Returns a map with all the toolboxes.
+     */
+    get toolboxes() {
+        return this._toolboxes;
+    }
+    /**
+     * Returns a map with all the generators.
+     */
+    get generators() {
+        return this._generators;
+    }
+    /**
+     * Returns language (2 charactors).
+     */
+    get language() {
+        return this._language;
+    }
+    /**
+     * Register a toolbox for the editor.
+     *
+     * @argument name The name of the toolbox.
+     *
+     * @argument toolbox The toolbox to register.
+     */
+    registerToolbox(name, toolbox) {
+        this._toolboxes.set(name, toolbox);
+    }
+    /**
+     * Register block definitions.
+     *
+     * @argument blocks A list of block definitions to register.
+     */
+    registerBlocks(blocks) {
+        Blockly.defineBlocksWithJsonArray(blocks);
+    }
+    /**
+     * Register a language generator.
+     *
+     * @argument language The language output by the generator.
+     *
+     * @argument generator The generator to register.
+     *
+     * #### Notes
+     * If a generator already exists for the given language it is overwritten.
+     */
+    registerGenerator(language, generator) {
+        this._generators.set(language, generator);
+    }
+    /**
+     * Register blocks codes.
+     *
+     * @argument language The name of the programming language. python, lua, javascript, ...
+     *
+     * @argument funcs Imported functions.
+     */
+    registerCodes(language, funcs) {
+        let generator = this._generators.get(language);
+        Object.assign(generator, funcs);
+    }
+    setlanguage(language) {
+        this._language = language;
+        Private.importLanguageModule(language);
+    }
+}
+var Private;
+(function (Private) {
+    // Dynamically importing the language modules needed for each respective
+    // user, in order to change the Blockly language in accordance to the
+    // JL one.
+    async function importLanguageModule(language) {
+        let module;
+        switch (language) {
+            case 'En':
+                module = import('blockly/msg/en');
+                break;
+            case 'Es':
+                module = import('blockly/msg/es');
+                break;
+            case 'Fr':
+                module = import('blockly/msg/fr');
+                break;
+            case 'Sa' || 'Ar':
+                module = import('blockly/msg/ar');
+                break;
+            case 'Cz':
+                module = import('blockly/msg/cs');
+                break;
+            case 'Dk':
+                module = import('blockly/msg/da');
+                break;
+            case 'De':
+                module = import('blockly/msg/de');
+                break;
+            case 'Gr':
+                module = import('blockly/msg/el');
+                break;
+            case 'Ee':
+                module = import('blockly/msg/et');
+                break;
+            case 'Fi':
+                module = import('blockly/msg/fi');
+                break;
+            case 'Il':
+                module = import('blockly/msg/he');
+                break;
+            case 'Hu':
+                module = import('blockly/msg/hu');
+                break;
+            case 'Am':
+                module = import('blockly/msg/hy');
+                break;
+            case 'Id':
+                module = import('blockly/msg/id');
+                break;
+            case 'It':
+                module = import('blockly/msg/it');
+                break;
+            case 'Jp':
+                module = import('blockly/msg/ja');
+                break;
+            case 'Kr':
+                module = import('blockly/msg/ko');
+                break;
+            case 'Lt':
+                module = import('blockly/msg/lt');
+                break;
+            case 'Nl':
+                module = import('blockly/msg/nl');
+                break;
+            case 'Pl':
+                module = import('blockly/msg/pl');
+                break;
+            case 'Br':
+                module = import('blockly/msg/pt');
+                break;
+            case 'Ro':
+                module = import('blockly/msg/ro');
+                break;
+            case 'Ru':
+                module = import('blockly/msg/ru');
+                break;
+            case 'Lk':
+                module = import('blockly/msg/si');
+                break;
+            case 'Tr':
+                module = import('blockly/msg/tr');
+                break;
+            case 'Ua':
+                module = import('blockly/msg/uk');
+                break;
+            case 'Vn':
+                module = import('blockly/msg/vi');
+                break;
+            case 'Tw':
+                module = import('blockly/msg/zh-hant');
+                break;
+            case 'Cn':
+                module = import('blockly/msg/zh-hans');
+                break;
+            default:
+                // Complete with all the cases taken from: (last updates June 2022)
+                // List of languages in blockly: https://github.com/google/blockly/tree/master/msg/js
+                // List of languages in Lab: https://github.com/jupyterlab/language-packs/tree/master/language-packs
+                console.warn('Language not found. Loading english');
+                module = Promise.resolve(En);
+                break;
+        }
+        // Setting the current language in Blockly.
+        module.then(lang => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            Blockly.setLocale(lang);
+        });
+    }
+    Private.importLanguageModule = importLanguageModule;
+})(Private || (Private = {}));
+//# sourceMappingURL=registry.js.map
