@@ -1,0 +1,39 @@
+Metadata-Version: 2.1
+Name: streambatch
+Version: 0.1.9
+Summary: Use this package to get daily, 10m resolution NDVI time series data for any location on Earth via the Streambatch.io API.
+Project-URL: Homepage, https://github.com/tammer/streambatch
+Author-email: Tammer Kamel <tammer@tammer.com>
+License-File: LICENSE
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.7
+Requires-Dist: pandas
+Requires-Dist: pyarrow
+Requires-Dist: requests
+Requires-Dist: s3fs
+Requires-Dist: scipy
+Description-Content-Type: text/markdown
+
+<img src="http://www.tammer.com/logo.png" width="300">
+
+Streambatch is an API for time series NDVI data
+
+- **Documentation:** https://docs.streambatch.io/reference/streambatch-api
+- **Website:** https://www.streambatch.io
+- **Package source code:** https://github.com/tammer/streambatch
+
+This API provides up-to-date daily time series NDVI from 2013 to today for any location on Earth. You send a request to the server specifying any number of locations (single points or polygons).  The request is processed asynchronously. Data is returned as a pandas dataframe.
+
+### Installation
+
+    pip install streambatch
+
+### Example
+
+    from streambatch import StreambatchConnection
+    connection = StreambatchConnection(api_key=YOUR_API_KEY)
+    query_id = connection.request_ndvi(points=[[long,lat],[long,lat]...])
+    data = connection.get_data(query_id)
+
