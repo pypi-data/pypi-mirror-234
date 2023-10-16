@@ -1,0 +1,274 @@
+
+..  _RefElementBasicDocTests:
+
+Doctests for the fundamental element classes
+****************************************************************************
+
+Test fixture initialization::
+
+    >>> from dragonfly import *
+    >>> from dragonfly.test import ElementTester
+
+
+Alternative element class
+============================================================================
+
+Usage::
+
+    >>> alt = Alternative([Literal("hello"), Literal("goodbye")])
+    >>> test_alt = ElementTester(alt)
+    >>> test_alt.recognize("hello")
+    u'hello'
+    >>> test_alt.recognize("goodbye")
+    u'goodbye'
+    >>> test_alt.recognize("hi")
+    RecognitionFailure
+
+
+Literal element class
+============================================================================
+
+Usage::
+
+    >>> literal = Literal("hello")
+    >>> test_literal = ElementTester(literal)
+    >>> test_literal.recognize("hello")
+    u'hello'
+    >>> test_literal.recognize("goodbye")
+    RecognitionFailure
+
+Literal with non-ASCII characters::
+
+    >>> # We do not test the confusing Python 3 "bytes" type here.
+    >>> string = "touch\xe9"
+    >>> literal = Literal(string)
+    >>> test_literal = ElementTester(literal)
+    >>> test_literal.recognize(string)
+    u'touch\xe9'
+
+    >>> string = u"touch\xe9"
+    >>> literal = Literal(string)
+    >>> test_literal = ElementTester(literal)
+    >>> test_literal.recognize(string)
+    u'touch\xe9'
+
+Quoted words usage::
+
+    >>> # Quoted words are not joined in the 'words' property.
+    >>> # Also, double quotes are not present.
+    >>> literal = Literal('this is a "quoted string" example')
+    >>> literal.words
+    ['this', 'is', 'a', 'quoted', 'string', 'example']
+    >>> # The 'words_ext' property shows quoted words as single items.
+    >>> # Double quotes are also not present.
+    >>> literal.words_ext
+    ['this', 'is', 'a', 'quoted string', 'example']
+    >>> # Rules with quoted words can be recognized.
+    >>> test_literal = ElementTester(literal)
+    >>> test_literal.recognize('this is a quoted string example')
+    u'this is a quoted string example'
+
+Incomplete quotes::
+
+    >>> # Incomplete quotes are left in.
+    >>> literal = Literal('"quote')
+    >>> literal.words
+    ['"quote']
+    >>> literal.words_ext
+    ['"quote']
+    >>> literal = Literal('a "quoted string" example plus "quote')
+    >>> literal.words
+    ['a', 'quoted', 'string', 'example', 'plus', '"quote']
+    >>> literal.words_ext
+    ['a', 'quoted string', 'example', 'plus', '"quote']
+
+Non-default quote constructor arguments::
+
+    >>> literal = Literal(u'this is a «quoted string» example',
+    ...                   quote_start_str=u'«', quote_end_str=u'»')
+    >>> literal.words
+    ['this', 'is', 'a', 'quoted', 'string', 'example']
+    >>> literal.words_ext
+    ['this', 'is', 'a', 'quoted string', 'example']
+    >>> test_literal = ElementTester(literal)
+    >>> test_literal.recognize('this is a quoted string example')
+    u'this is a quoted string example'
+
+    >>> # Quotes are left in if specified.
+    >>> literal = Literal('"quoted string"', strip_quote_strs=False)
+    >>> literal.words
+    ['"quoted', 'string"']
+    >>> literal.words_ext
+    ['"quoted string"']
+
+
+Optional element class
+============================================================================
+
+Usage::
+
+    >>> seq = Sequence([Literal("hello"), Optional(Literal("there"))])
+    >>> test_seq = ElementTester(seq)
+    >>> # Optional parts of the sequence can be left out.
+    >>> test_seq.recognize("hello")
+    [u'hello', None]
+    >>> test_seq.recognize("hello there")
+    [u'hello', u'there']
+    >>> test_seq.recognize("goodbye")
+    RecognitionFailure
+
+
+Sequence element class
+============================================================================
+
+Basic usage::
+
+    >>> seq = Sequence([Literal("hello"), Literal("world")])
+    >>> test_seq = ElementTester(seq)
+    >>> test_seq.recognize("hello world")
+    [u'hello', u'world']
+    >>> test_seq.recognize("hello universe")
+    RecognitionFailure
+
+Constructor arguments::
+
+    >>> c1, c2 = Literal("hello"), Literal("world")
+    >>> len(Sequence(children=[c1, c2]).children)
+    2
+    >>> Sequence(children=[c1, c2], name="sequence_test").name
+    'sequence_test'
+    >>> Sequence([c1, c2], "sequence_test").name
+    'sequence_test'
+    >>> Sequence("invalid_children_type")
+    Traceback (most recent call last):
+      ...
+    TypeError: children object must contain only <class 'dragonfly.grammar.elements_basic.ElementBase'> types.  (Received ('i', 'n', 'v', 'a', 'l', 'i', 'd', '_', 'c', 'h', 'i', 'l', 'd', 'r', 'e', 'n', '_', 't', 'y', 'p', 'e'))
+
+
+Repetition element class
+============================================================================
+
+Basic usage::
+
+    >>> # Repetition is given a dragonfly element, in this case a Sequence.
+    >>> seq = Sequence([Literal("hello"), Literal("world")])
+    >>> # Specify min and max values to allow more than one repetition.
+    >>> rep = Repetition(seq, min=1, max=16, optimize=False)
+    >>> test_rep = ElementTester(rep)
+    >>> test_rep.recognize("hello world")
+    [[u'hello', u'world']]
+    >>> test_rep.recognize("hello world hello world")
+    [[u'hello', u'world'], [u'hello', u'world']]
+    >>> # Incomplete recognitions result in recognition failure.
+    >>> test_rep.recognize("hello universe")
+    RecognitionFailure
+    >>> test_rep.recognize("hello world hello universe")
+    RecognitionFailure
+    >>> # Too many recognitions also result in recognition failure.
+    >>> test_rep.recognize(" ".join(["hello world"] * 17))
+    RecognitionFailure
+    >>> # Using the 'optimize' argument:
+    rep = Repetition(seq, min=1, max=16, optimize=True)
+    >>> test_rep = ElementTester(rep)
+    >>> test_rep.recognize("hello world")
+    [[u'hello', u'world']]
+    >>> test_rep.recognize("hello world hello world")
+    [[u'hello', u'world'], [u'hello', u'world']]
+
+Exact number of repetitions::
+
+    >>> seq = Sequence([Literal("hello"), Literal("world")])
+    >>> rep = Repetition(seq, min=3, max=None, optimize=False)
+    >>> test_rep = ElementTester(rep)
+    >>> test_rep.recognize("hello world")
+    RecognitionFailure
+    >>> test_rep.recognize("hello world hello world")
+    RecognitionFailure
+    >>> test_rep.recognize("hello world hello world hello world")
+    [[u'hello', u'world'], [u'hello', u'world'], [u'hello', u'world']]
+    >>> test_rep.recognize("hello world hello world hello world hello world")
+    RecognitionFailure
+
+min must be less than max::
+
+    >>> rep = Repetition(Literal("hello"), min=3, max=3, optimize=False)
+    Traceback (most recent call last):
+      ...
+    AssertionError: min must be less than max
+
+
+Modifier element class
+============================================================================
+
+Basic usage::
+
+    >>> # Repetition is given a dragonfly element, in this case an IntegerRef.
+    >>> i = IntegerRef("n", 1, 10)
+    >>> # Specify min and max values to allow more than one repetition.
+    >>> rep = Repetition(i, min=1, max=16, optimize=False)
+    >>> # Modify the element to format the output
+    >>> mod = Modifier(rep, lambda rep: ", ".join(map(str, rep)))
+    >>> test_rep = ElementTester(mod)
+    >>> test_rep.recognize("one two three four")
+    '1, 2, 3, 4'
+
+
+RuleRef element class
+============================================================================
+
+Basic usage::
+
+    >>> # Define a simple private CompoundRule and reference it.
+    >>> greet = CompoundRule(name="greet", spec="greetings", exported=False)
+    >>> ref = RuleRef(rule=greet, name="greet")
+    >>> test_ref = ElementTester(ref)
+    >>> test_ref.recognize("greetings")
+    u'greetings'
+    >>> test_ref.recognize("hello")
+    RecognitionFailure
+
+
+Empty element class
+============================================================================
+
+Usage::
+
+    >>> empty = Empty()
+    >>> test_empty = ElementTester(empty)
+    >>> test_empty.recognize("hello")
+    RecognitionFailure
+    >>> empty_seq = Sequence([Literal("hello"), Empty(),
+    ...                       Literal("goodbye")])
+    >>> test_empty = ElementTester(empty_seq)
+    >>> test_empty.recognize("hello goodbye")
+    [u'hello', True, u'goodbye']
+    >>> test_empty.recognize("hello empty goodbye")
+    RecognitionFailure
+    >>> empty_seq = Sequence([Literal("hello"),
+    ...                       Alternative([Literal("gorgeous"),
+    ...                                    Empty()])])
+    >>> test_empty = ElementTester(empty_seq)
+    >>> test_empty.recognize("hello")
+    [u'hello', True]
+    >>> test_empty.recognize("hello gorgeous")
+    [u'hello', u'gorgeous']
+
+
+Impossible element class
+============================================================================
+
+Usage::
+
+    >>> impossible = Impossible()
+    >>> test_impossible = ElementTester(impossible)
+    >>> test_impossible.recognize("hello")
+    RecognitionFailure
+    >>> test_impossible.recognize("")
+    RecognitionFailure
+    >>> impossible_seq = Sequence([Literal("hello"), Impossible(),
+    ...                       Literal("goodbye")])
+    >>> test_impossible = ElementTester(impossible_seq)
+    >>> test_impossible.recognize("hello goodbye")
+    RecognitionFailure
+    >>> test_impossible.recognize("hello empty goodbye")
+    RecognitionFailure

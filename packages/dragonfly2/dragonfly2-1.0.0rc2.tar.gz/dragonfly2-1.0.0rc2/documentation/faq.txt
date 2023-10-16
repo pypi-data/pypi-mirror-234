@@ -1,0 +1,578 @@
+
+.. _RefFAQ:
+
+Frequently Asked Questions (FAQ)
+============================================================================
+
+The following is a list of frequently asked questions related to the
+Dragonfly speech recognition framework.
+
+.. contents:: Table of Contents
+   :local:
+
+
+General Questions
+----------------------------------------------------------------------------
+
+What is Dragonfly?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dragonfly is a speech recognition framework for Python that makes it
+convenient to create custom commands to use with speech recognition
+software.  It was written to make it very easy for Python macros, scripts,
+and applications to interface with speech recognition engines.  Its design
+allows speech commands and grammar objects to be treated as first-class
+Python objects.
+
+Dragonfly can be used for general programming by voice.  It is flexible
+enough to allow programming in any language, not just Python.  It can also
+be used for speech-enabling applications, automating computer activities and
+dictating prose.
+
+
+Which speech recognition software and operating systems are supported?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dragonfly supports the following speech recognition (SR) engines:
+
+* :ref:`Dragon <RefNatlinkEngine>`, a product of *Nuance*. All versions up
+  to 16 (the latest) are supported. *Home*, *Professional Individual* and
+  previous similar editions of *Dragon* are supported. Other editions may
+  work too.
+* :ref:`Windows Speech Recognition <RefSapi5Engine>` (WSR), included with
+  Microsoft Windows Vista, Windows 7+, and freely available for Windows XP.
+* :ref:`Kaldi <RefKaldiEngine>`
+* :ref:`CMU Pocket Sphinx <RefSphinxEngine>`
+
+Dragonfly has cross platform support for Windows, macOS and Linux
+(X11-only).  The following table shows which engines are available on which
+platforms:
+
+================================     =======================
+Operating system                     Available SR engines
+================================     =======================
+Windows                              DNS, WSR, Kaldi, Sphinx
+Linux                                Kaldi, Sphinx
+macOS                                Kaldi, Sphinx
+================================     =======================
+
+Please note that editions of Dragon for macOS are not supported.
+
+Windows-only speech recognition software (DNS and WSR) may be used to
+control Linux or macOS machines via `Aenea`_, a client-server library for
+using Dragonfly voice macros on remote hosts.
+
+Dragonfly's X11 support is dependent on the external *xdotool*, *wmctrl*
+and *xsel* programs.  These programs are available for most Linux
+distributions.  They are also available for other operating systems, such as
+FreeBSD.  At present, since *xdotool* is not available for it, Dragonfly
+will not work properly in a Cygwin environment.
+
+
+Where can I find examples Dragonfly command modules?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There is a list of repositories and other projects containing Dragonfly
+command modules under the :ref:`RefRelatedResources` ->
+:ref:`RefCommandModulesList` section of the documentation. There are also
+example command modules in `dragonfly/examples`_.
+
+
+What is the difference between dragonfly and dragonfly2?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Dragonfly* is the `original project`_ written by Christo Butcher.  It is no
+longer maintained.  *Dragonfly2* is a `fork`_ of Dragonfly that uses a
+different *distribution* name.
+
+It is important to note that the *import name* is still "dragonfly":
+
+.. code-block:: python
+
+   from dragonfly import Grammar, MappingRule, Key, Text, Mouse, Dictation
+
+Dragonfly2 is intended to be backwards-compatible continuation of the
+original project.  Many problems are fixed in this version.  It supports
+alternative speech recognition engine backends (e.g. the
+:ref:`Kaldi engine <RefKaldiEngine>`), works with Python 3 and has
+cross-support for macOS and the X Window System (X11).  Dragonfly2 also has
+some new features not found in the old version.
+
+See the :ref:`changelog <RefChangelog>` for the full list of changes between
+the two versions.
+
+
+How can I use older Dragonfly scripts written for Python 2.7?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This version of Dragonfly has been written with backwards-compatibility in
+mind.  Older Dragonfly scripts, many of which were written with Python
+version 2 in mind, will either work perfectly without any changes or will
+after minor changes.
+
+Although Python version 2.7 reached the end of its life in January 2020,
+Dragonfly has, for the most part, retained support for it.  This has been
+done because the library has always supported Python 2 and because retaining
+this support is, at present, neither difficult nor detrimental to the
+library's support for Python version 3.  The Kaldi engine back-end is the
+one (optional) component of Dragonfly that requires Python version 3.
+
+If the reader must use Python 3, then the Python 2 code typically needs to
+be converted.  The following two command-line programs may be used to this
+end:
+
+* `2to3`_ - reads Python 2 source code and applies a series of fixers to
+  transform it into valid Python 3 code.
+* `python-modernize`_ - uses *2to3* to make Python 2 code compatible with
+  Python 3.
+
+The `Python 2-3 code porting guide`_ may also be of interest.
+
+A number of older Dragonfly command modules also include the following code:
+
+.. code-block:: python
+
+   try:
+       import pkg_resources
+       pkg_resources.require("dragonfly >= 0.6.5")
+   except ImportError:
+       pass
+
+Since the distribution name has been changed to *dragonfly2*,
+:code:`dragonfly` will need to be replaced with :code:`dragonfly2`.
+
+
+Where are some good resources on learning Python?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you want to use Dragonfly for flexible computer control or for
+programming in other languages and don't have much knowledge of Python, then
+the following resources from might be of use:
+
+* `Beginner's Guide for non-programmers
+  <https://wiki.python.org/moin/BeginnersGuide/NonProgrammers>`__
+
+* `Beginner's Guide for programmers
+  <https://wiki.python.org/moin/BeginnersGuide/Programmers>`__
+
+* `The Python Tutorial <https://docs.python.org/tutorial/index.html>`__
+
+* `Latest Python documentation <https://docs.python.org>`__
+
+
+API Questions
+----------------------------------------------------------------------------
+
+How do I use an "extra" in a Dragonfly spec multiple times?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes it is desirable to use the same "extra" multiple times in a
+Dragonfly :code:`Compound`, :code:`CompoundRule` or :code:`MappingRule`
+specification (or "spec").  Unfortunately, this is not directly possible.
+But, the special :code:`RuleWrap` element may be utilized to reference an
+"extra" multiple times.  See the following example:
+
+.. code-block:: python
+
+   from dragonfly import (Choice, RuleWrap, RuleRef, Key, MappingRule,
+                          Grammar)
+
+   # Define a Choice for matching "alpha", "bravo" or "charlie".
+   my_choice = Choice("", {
+       "alpha": "a",
+       "bravo": "b",
+       "charlie": "c"
+   })
+
+   # Use *my_choice* to make a private rule using RuleWrap.
+   my_choice_rule = RuleWrap("", my_choice).rule
+
+   # Define *Letter1* and *Letter2* as references to the new rule.
+   alpha_extras = [
+       RuleRef(my_choice_rule, "Letter1"),
+       RuleRef(my_choice_rule, "Letter2")
+   ]
+
+   # Define a command for typing two letters separated by a space.
+   mapping = {
+       "<Letter1> and <Letter2>": Key("%(Letter1)s, space, %(Letter2)s")
+   }
+
+   # Create a new grammar with this command and load it.
+   grammar = Grammar("letters")
+   grammar.add_rule(MappingRule(mapping=mapping, extras=alpha_extras))
+   grammar.load()
+
+
+Is there a way to re-use a function with different "extra" names?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dragonfly's :class:`Function` action class is normally used to call a Python
+function when a spoken command is recognized.  :class:`Function` actions
+pass recognized "extra" values via key word arguments, rather than
+positional arguments.
+
+Below are two methods to re-use a Python function without redefining
+it:
+
+.. code-block:: python
+
+   from dragonfly import Function
+
+   # Define a function to be used by two Function actions.
+   def add_and_print(x, y):
+       print("%d" % (x + y))
+
+   # --- Method one ---
+   # Use a lambda function.
+   Function(lambda x, z: add_and_print(x, z))
+
+   # --- Method two ---
+   # Use the optional 'remap_data' argument to pass the 'z' argument
+   # as 'y' internally.
+   Function(add_and_print, dict(z='y'))
+
+
+See the :ref:`Function action's documentation <RefFunctionAction>`
+for more information and code examples.
+
+
+Is there a way to recognize negative integers with Dragonfly?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes.  The simplest way of recognizing negative integers is to use
+:class:`IntegerRef` and :class:`Modifier` elements together in a command
+with an appropriate prefix word such as "negative" or "minus":
+
+.. code-block:: python
+
+   from dragonfly import IntegerRef, Modifier, Text
+
+   # Define a MappingRule command for typing a negative integer.
+   mapping = {
+       "(minus|negative) <n>": Text("%(n)d"),
+   }
+
+   # The special Modifier element lets us modify the value of an element.
+   #  Here we use it to specify the "n" extra as a negated integer between 1
+   #  and 50.
+   extras = [
+       Modifier(IntegerRef("n", 1, 50), lambda n: n*-1)
+   ]
+
+
+Is there a way to construct Dragonfly grammars manually with elements?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes.  The :class:`dragonfly.grammar.rule_basic.BasicRule` is the rule class
+to use for constructing Dragonfly rules and grammars manually with elements
+instead of with compound specs and extras.
+
+The following is an example of how to use :class:`BasicRule` and common
+Dragonfly element and action classes together:
+
+.. code-block:: python
+
+   from dragonfly import (BasicRule, Repetition, Alternative, Literal, Text,
+                          Grammar)
+
+   class ExampleRule(BasicRule):
+       # Define a rule element that accepts 1 to 5 (exclusive) repetitions
+       #  of either 'test one', 'test two' or 'test three'.  These commands
+       #  type their respective numbers in succession using the Text action.
+       element = Repetition(
+           Alternative((
+               Literal("test one", value=Text("1")),
+               Literal("test two", value=Text("2")),
+               Literal("test three", value=Text("3")),
+           )),
+           1, 5
+       )
+
+   # Create a grammar with the example rule and load it.
+   rule = ExampleRule()
+   grammar = Grammar("BasicRule Example")
+   grammar.add_rule(rule)
+   grammar.load()
+
+
+Please note that extras in action specification strings (e.g. *n* in
+:code:`Key("left:%(n)d")`) will **not** work for the :class:`BasicRule`
+class.  For this functionality, a :class:`CompoundRule` or
+:class:`MappingRule` must be used.  See the :ref:`RefRuleClasses` section
+for more information.
+
+
+Does Dragonfly support using Windows Speech Recognition (WSR) with the GUI?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes. To use WSR with the GUI, specify "sapi5shared" as the engine name.
+
+In a command-module or loader program:
+
+.. code-block:: python
+
+   from dragonfly import get_engine
+   get_engine("sapi5shared")
+
+On the command-line::
+
+  python -m dragonfly load -e sapi5shared _notepad_example.py
+
+You may experience problems using Dragonfly and WSR this way.
+
+
+Is there an easy way to check which speech recognition engine is in use?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Yes. The current engine can be checked using the
+:py:meth:`dragonfly.engines.get_current_engine` function. The following code
+prints the name of the current engine if one has been initialized:
+
+.. code-block:: python
+
+   from dragonfly import get_current_engine
+   engine = get_current_engine()
+   if engine:
+       print("Engine name: %r" % engine.name)
+   else:
+       print("No engine has been initialized.")
+
+
+Troubleshooting Questions
+----------------------------------------------------------------------------
+
+Why are my command modules are not being loaded/detected?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have placed Python files into the *MacroSystem* / user directory
+(using DNS/Natlink) or the directory where your module loader script is
+(using another engine) and there is no indication that the files were
+loaded, then there can be a few reasons why:
+
+#. Your Python files don't start with an underscore `_` and end with
+   `.py`.
+
+#. You've put the files in the wrong directory.
+   If you're using Natlink, then try running the Natlink configuration-
+   program to double check where Natlink loads files from.
+
+In the case that your command modules are being loaded and you're getting
+error messages not mentioned in the FAQ, then see the
+:ref:`RefFAQUnansweredQuestions` section.
+
+
+How do I fix "No handlers could be found for logger X" error messages?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This error is specific to Python 2. It isn't a Dragonfly error, but as many
+Dragonfly users still use Python 2, it is listed here.  This is one common
+example of the error: ::
+
+  No handlers could be found for logger "action"
+
+There are two easy methods for to solving this problem:
+
+.. code-block:: python
+
+   # --- Method one ---
+   # Set up a basic logging handler for console output using the 'logging'
+   # module.
+   import logging
+   logging.basicConfig()
+
+   # --- Method two ---
+   # Set up Dragonfly's logging handler from the 'dragonfly.log' module.
+   # This sets up a logging handler for console output, appends log messages
+   # to a log file (~/.dragonfly.log) and sets sane defaults for Dragonfly's
+   # internal loggers.
+   from dragonfly.log import setup_log
+   setup_log()
+
+For either method, add the two lines of code near the top of one of your
+command modules, or command module loader script, if you use one.
+
+
+Cannot load compatibility module support error when starting Dragon
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a known issue with Natlink. Please see this
+`Natlink troubleshooting page`_ for solutions on how to solve this and other
+issues that occur before the Natlink messages window appears.
+
+
+How do I run a GUI when using Natlink?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Common GUI libraries will not function in modules loaded by Natlink.  To
+sidestep this issue, write the GUI as an independent program and start it
+via the built-in :code:`subprocess` module.
+
+
+How do I fix "failed to decode recognition" errors?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+"Failed to decode recognition" is the error message displayed when Dragonfly
+is unable to match what was said to a grammar rule.  One way around this
+problem to add an "extra" for reserved words:
+
+.. code-block:: python
+
+   from dragonfly import Choice, Text
+
+   mapping = {
+       "reserved <reserved>": Text("%(reserved)s")
+   }
+
+   extras = [
+       Choice("reserved", {
+           "alpha": "alpha",
+           "bravo": "bravo",
+           "charlie": "charlie",
+       })
+   ]
+
+
+How can I increase the speech recognition accuracy?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Low recognition accuracy is usually caused by either bad-quality audio input
+or a speech model that isn't trained to your voice or use case. You might
+try the following:
+
+ * Re-positioning your microphone.
+ * Using a different microphone.
+ * Training words or phrases.
+ * Change the speech recognition engine settings (e.g. adjust Dragon's
+   accuracy/speed slider).
+ * Using a different engine back-end if possible, e.g. the Kaldi back-end is
+   typically more accurate than CMU Pocket Sphinx and WSR back-ends.
+
+Dragonfly also has programmatic methods for increasing recognition accuracy.
+They can be used to fine tune accuracy for specific commands or parts of
+commands:
+
+ #. :ref:`Kaldi Grammar/Rule/Element Weights <RefKaldiEngineWeights>`
+    (Kaldi-only)
+ #. Quoted words in :class:`dragonfly.grammar.elements_basic.Literal`
+    elements (Dragon-only)
+
+
+Why isn't Dragonfly code aware of DPI scaling settings on Windows?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There can be problems with the mouse action on Windows Vista and above if
+the system is set up to use one or more monitors with a high number of dots
+per inch (DPI).  For this reason, Dragonfly attempts to set the DPI
+awareness for the process when it is imported.
+
+If you need to set the DPI awareness manually using a different DPI
+awareness value, do so before importing Dragonfly.  The following is
+essentially what Dragonfly does internally on Windows 8.1 and above:
+
+.. code-block:: python
+
+   import ctypes
+   ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+
+For more information, please see Microsoft's own documentation:
+
+* `High DPI Desktop Application Development on Windows`_
+* `Setting the default DPI awareness for a process`_
+
+
+How to use Dragonfly actions with administrative applications on Windows?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is not normally possible to interact with applications running in
+elevated mode.  The recommended way to do so is to use Dragon's built-in
+commands, which can interact with such applications.
+
+The :code:`Key`, :code:`Text` and :code:`Mouse` action classes may be
+configured to send input events via Natlink to Dragon.  To enable this
+feature, run the following code, or add it into one of your command modules:
+
+  .. code-block:: python
+
+     # Enable sending keyboard events via Natlink to Dragon.
+     from dragonfly.actions.keyboard import Keyboard
+     Keyboard.try_natlink = True
+
+     # Enable sending mouse events via Natlink to Dragon.
+     from dragonfly.actions.mouse import ButtonEvent
+     ButtonEvent.try_natlink = True
+
+If you are not using Dragon, or if you want to use your own commands instead
+of the built-ins, try running the appropriate command-module loader script
+in `dragonfly/examples`_ as the administrator.
+
+
+Why aren't Dragonfly's input actions working on my Linux system?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Dragonfly's :code:`Key`, :code:`Text` and :code:`Mouse` action classes use
+the `xdotool`_ program on Linux.  These actions will not work if it isn't
+installed.  It can normally be installed through your system's package
+manager. On Debian-based or Ubuntu-based systems, this is done by running
+the following console command::
+
+  sudo apt install xdotool
+
+The :code:`Window` class also requires the `wmctrl`_ program::
+
+  sudo apt install wmctrl
+
+The keyboard and mouse input classes on Linux (or similar) systems will only
+work in an X11 session.  The following error will occur if these classes are
+used under `Wayland`_::
+
+  NotImplementedError: Keyboard support is not implemented for this platform!
+
+Wayland users are recommended to either, `switch to X11`_, or to use Windows
+or macOS instead.  You might also consider using `numen`_, a different voice
+control system with excellent Linux support.
+
+If you are using X11 and still see this message, it means that the
+:code:`DISPLAY` environment variable has not been set.
+
+
+.. _RefFAQUnansweredQuestions:
+
+Unanswered Questions
+----------------------------------------------------------------------------
+
+If your question isn't listed above, then there are a few ways to get in
+touch:
+
+* Open a `new issue`_ on GitHub.
+* Join one of Dragonfly's chat channels:
+
+  * `Gitter channel`_
+  * `Matrix channel`_
+
+* Ask your question on the `Dragonfly mailing list`_.
+* Send an email to Dane Finlay, the project maintainer, at
+  `dane@danefinlay.net`_.
+
+
+.. Links.
+.. _2to3: https://docs.python.org/2/library/2to3.html
+.. _Aenea: https://github.com/dictation-toolbox/aenea
+.. _dane@danefinlay.net: mailto:dane@danefinlay.net
+.. _Dragonfly mailing list: https://groups.google.com/forum/#!forum/dragonflyspeech
+.. _Gitter Channel: https://gitter.im/dictation-toolbox/dragonfly
+.. _High DPI Desktop Application Development on Windows: https://docs.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows
+.. _Matrix channel: https://app.element.io/#/room/#dictation-toolbox_dragonfly:gitter.im
+.. _Natlink Troubleshooting page: https://qh.antenna.nl/unimacro/installation/installforpython27/problemswithinstallation.html
+.. _Python 2-3 code porting guide: https://docs.python.org/3/howto/pyporting.html
+.. _Setting the default DPI awareness for a process: https://docs.microsoft.com/en-us/windows/win32/hidpi/setting-the-default-dpi-awareness-for-a-process
+.. _Wayland: https://wayland.freedesktop.org/
+.. _dragonfly/examples: https://github.com/dictation-toolbox/dragonfly/tree/master/dragonfly/examples
+.. _fork: https://en.wikipedia.org/wiki/Fork_(software_development)
+.. _new issue: https://github.com/dictation-toolbox/dragonfly/issues/new
+.. _numen: https://numenvoice.org/
+.. _original project: https://github.com/t4ngo/dragonfly
+.. _python-modernize: https://pypi.org/project/modernize/
+.. _switch to X11: https://askubuntu.com/questions/961304/how-do-you-switch-from-wayland-back-to-xorg-in-ubuntu-17-10
+.. _wmctrl: https://www.freedesktop.org/wiki/Software/wmctrl/
+.. _xdotool: https://www.semicomplete.com/projects/xdotool
