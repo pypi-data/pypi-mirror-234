@@ -1,0 +1,48 @@
+[tool.bandit]
+exclude_dirs = ["tests", "features"]
+
+[tool.black]
+max-line-length = 120
+target-version = ['py310', 'py311', 'py312']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+ignore_missing_imports = true
+# https://stackoverflow.com/questions/62265366/does-mypy-only-type-check-a-function-if-it-declares-a-return-type
+check_untyped_defs = true
+
+[tool.poetry]
+name = "toolcat"
+version = "0.0.13"
+description = "Essential Libraries and Tools for Streamlined Development"
+authors = ["Luís Miranda <luistm@gmail.com>"]
+license = "The Unlicence"
+readme = "README.md"
+packages = [
+    { include = "toolcat", from = "src" },
+    { include = "testcat", from = "src"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+toml = "^0.10.2"
+sqlalchemy = "^2.0.21"
+
+[tool.poetry.group.dev.dependencies]
+bandit = { extras = ["toml"], version = "^1.7.5" }
+black = "^23.9.1"
+coverage = "^7.3.2"
+flake8 = "^6.1.0"
+isort = "^5.12.0"
+mypy = "^1.5.1"
+nox = "^2023.4.22"
+pre-commit = "^3.4.0"
+pytest = "^7.4.2"
+pytest-xdist = "^3.3.1"
+types-toml = "^0.10.8.7"
+
+[tool.pytest.ini_options]
+markers = ["integration: tags a test as integration tests"]
