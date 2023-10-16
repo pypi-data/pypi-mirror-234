@@ -1,0 +1,96 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  LINUX_ANACONDA_FOLDER: "/opt/anaconda"
+  LINUX_BUILD: "/opt/Temporary/"
+  LINUX_ARCHIVE: "/opt/Archive/"
+  WIN64_ENGINE_FOLDER: "{{cookiecutter.win64_engine_path}}"
+  WIN64_PROJECT_FOLDER: "{{cookiecutter.win64_project_folder}}"
+  WIN64_ANACONDA_FOLDER: "{{cookiecutter.win64_anaconda_path}}"
+  WIN64_BUILD: "{{cookiecutter.win64_build_path}}"
+  WIN64_ARCHIVE: "{{cookiecutter.win64_archive_path}}"
+  PROJECT_NAME: "{{cookiecutter.plugin_name}}"
+  NAMESPACE: "{{cookiecutter.plugin_namespace}}"
+
+
+build-win64:
+  stage: build
+
+  tags:
+    - windows-ue5
+
+  needs:
+    - setup-win64
+
+  variables:
+    OUTPUT: "${WIN64_BUILD}/{{cookiecutter.plugin_name}}"
+
+  script:
+    - echo "-- UPDATE --"
+    - $LATEST_TAG = git describe --tags --abbrev=0 --always
+    - . "$WIN64_ANACONDA_FOLDER/shell/condabin/conda-hook.ps1"
+    - conda activate "$WIN64_ANACONDA_FOLDER"
+    - pip install --upgrade uetools
+    - uecli init --engine $WIN64_ENGINE_FOLDER --project $WIN64_PROJECT_FOLDER
+    - echo "-- BUILD --"
+    - uecli gamekit gitversion --namespace $NAMESPACE --file ./Source/${PROJECT_NAME}/${PROJECT_NAME}.Build.cs
+    - uecli plugin package ${PROJECT_NAME}.uplugin --StrictIncludes --output $OUTPUT --platforms Win64
+    - uecli plugin finalize ${PROJECT_NAME}.uplugin $OUTPUT/${PROJECT_NAME}.uplugin --marketplace
+    - Compress-Archive -Force -CompressionLevel Optimal -Path $OUTPUT -DestinationPath $WIN64_ARCHIVE/${PROJECT_NAME}_Win64_${LATEST_TAG}_${CI_COMMIT_SHORT_SHA}.zip
+
+
+build-linux:
+  stage: build
+
+  tags:
+    - linux-ue5
+
+  variables:
+    OUTPUT: "${LINUX_ANACONDA_FOLDER}/{{cookiecutter.plugin_name}}"
+  
+  script:
+    - echo "-- UPDATE --"
+    - LATEST_TAG=$(git describe --tags --abbrev=0)
+    - eval "$($LINUX_ANACONDA_FOLDER/bin/conda shell.bash hook)"
+    - PATH="$PATH:$HOME/.local/bin/"
+    - pip install --upgrade uetools
+    - echo "-- BUILD --"
+    - uecli gamekit gitversion --namespace $NAMESPACE --file ./Source/${PROJECT_NAME}/${PROJECT_NAME}.Build.cs
+    - uecli plugin package ${PROJECT_NAME}.uplugin --output $OUTPUT --platforms Linux
+    - zip -r $LINUX_ARCHIVE/${PROJECT_NAME}_Linux_${LATEST_TAG}_${CI_COMMIT_SHORT_SHA}.zip $OUTPUT
+
+
+# Generate the documentation
+pages:
+  stage: deploy
+  image: python:3.9-alpine
+
+  tags:
+    - docker
+
+  needs: []
+
+  script:
+    - apk update
+    - apk add doxygen
+    - apk add graphviz
+    - apk add git
+    - apk add make
+    - pip install -r Docs/requirements.txt
+    - cd Docs
+    - make build-doc
+    - cd ..
+    - mkdir .public
+    - cp -r Docs/_build/html/* .public
+    - rm -rf public
+    - mv .public public
+
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+
