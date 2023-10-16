@@ -1,0 +1,64 @@
+[db]
+    backend = "sqlite"
+    local_dir = "/home/nua/db"
+    url = "sqlite:////home/nua/db/nua.db"
+    echo = false
+[host]
+    host_user = "nua"
+    host_home = "/home/nua"
+    host_priv_key_blob = ""
+    host_admin_mail = "jd@abilian.com"
+    # choices for certbot_strategy: "auto", "none", ENV: NUA_CERTBOT_STRATEGY
+    certbot_strategy = "auto"
+    docker_remove_timeout = 10
+    docker_kill_timeout = 10
+    docker_run_timeout = 30
+    nginx_wait_after_restart = 1
+[backup]
+    location = "/home/nua/backups"
+[ports]
+    # todo: use a list of ranges
+    start = 8100
+    end = 9000
+[server]
+    log_file = "//home/nua/log/nua_orchestrator.log"
+[[container]]
+    # unused
+    format = "docker"
+    transport = "ssh"
+    repository = "registry"
+# [[registry]]
+#     priority = 10
+#     format = "docker_registry"
+#     url = "https://docker.io/nua"
+[docker_default_run]
+    # docker run default
+    auto_remove = false
+    mem_limit = "16G"
+[[registry]]
+    priority = 5
+    format = "docker_registry"
+    url = "https://localhost/nua"
+[[registry]]
+    priority = 1
+    format = "docker_tar"
+    url = "file:///var/tmp"
+# [registry.local]
+#     container.tag = "registry:2.8"
+#     container.name = "nua-registry"
+#     address = "127.0.0.1"
+#     cont_port = "5000"
+#     host_port = "5010"
+#     volume.path = "/var/tmp/nua/registry/data"
+#     volume.env = "REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY"
+[[services]]
+    name = "postgres"
+    enable = true # default is true
+# [[services]]
+#     name = "postgres-docker"
+#     enable = true
+#     image = "docker.io/library/postgres:14.5"
+#     format = "docker"
+[[services]]
+    name = "mariadb"
+    # enable = true # default is true
