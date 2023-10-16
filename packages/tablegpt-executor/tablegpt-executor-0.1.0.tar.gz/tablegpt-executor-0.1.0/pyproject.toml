@@ -1,0 +1,58 @@
+[project]
+name = "tablegpt-executor"
+version = "0.1.0"
+description = "Tablegpt executor python client"
+authors = [
+    {name = "saf", email = "saf@zjuici.com"},
+    {name = "jlzhou", email = "jlzhou@zjuici.com"},
+]
+dependencies = [
+    "requests>=2.31.0",
+    "aiohttp>=3.8.6",
+    "pydantic>=2.0.0,<3.0.0",
+]
+requires-python = ">=3.10,<3.12"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest>=7.4.2",
+    "pytest-mock>=3.11.1",
+    "pytest-asyncio>=0.21.1",
+]
+dev = [
+    "black>=23.9.1",
+]
+
+[tool.pdm.scripts]
+lint = "black . --check"
+format = "black ."
+test = "pytest"
+
+[tool.black]
+target-version = ["py310","py311"]
+exclude = '''
+/(
+  \.toml
+  |\.sh
+  |\.git
+  |\.venv
+  |\venv
+  |\.ini
+  |Dockerfile
+)/
+'''
+
+[tool.pdm.version]
+source = "scm"
+write_to = "tablegpt_executor_client/VERSION"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning"
+]
+addopts = "-v -r aR"
+testpaths = [
+    "tests/",
+]
