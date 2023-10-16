@@ -1,0 +1,151 @@
+Metadata-Version: 2.1
+Name: switrs-to-sqlite
+Version: 4.1.1
+Summary: Script for converting SWITRS reports to SQLite.
+Home-page: https://github.com/agude/SWITRS-to-SQLite
+Author: Alexander Gude
+Author-email: alex.public.account@gmail.com
+License: GPLv3+
+Keywords: switrs,sqlite,data
+Platform: any
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Utilities
+Requires-Python: >=3.8, <4
+License-File: LICENSE.md
+
+SWITRS-to-SQLite
+================
+
+**Looking to get right to work with the data? Checkout the cleaned
+dataset on Kaggle:**\ `California Traffic Collision Data from
+SWITRS <https://www.kaggle.com/alexgude/california-traffic-collision-data-from-switrs>`__
+
+SWITRS-to-SQLite is a Python3 script that will convert the CSV files
+provided by the California Highway Patrol’s `Statewide Integrated
+Traffic Records System
+(SWITRS) <http://iswitrs.chp.ca.gov/Reports/jsp/userLogin.jsp>`__ and
+convert them to an `SQLite3 <https://www.sqlite.org/>`__ database.
+
+Instructions to **download the SWITRS data** can be found
+`here <requesting_data.md>`__.
+
+Versioning
+----------
+
+This repository follows `Semver <https://semver.org/>`__. I will
+increment the **MAJOR** version if a change is backwards incompatible
+for either the Python command line or the structure of the output
+database.
+
+Installation
+------------
+
+The best way to install SWITRS-to-SQLite is with ``pip``:
+
+.. code:: bash
+
+   pip install switrs-to-sqlite
+
+This will give you access to the script simply by calling:
+
+.. code:: bash
+
+   switrs_to_sqlite --help
+
+You can also clone this repository:
+
+.. code:: bash
+
+   git clone https://github.com/agude/SWITRS-to-SQLite.git
+   cd SWITRS-to-SQLite
+   ./switrs_to_sqlite/switrs_to_sqlite --help
+
+If you clone the repository, SWITRS-to-SQLite can be installed as a
+local application using the ``setup.py`` script:
+
+.. code:: bash
+
+   git clone https://github.com/agude/SWITRS-to-SQLite.git
+   cd SWITRS-to-SQLite
+   ./setup.py install
+
+Which, like using ``pip``, will give you access to the script by calling
+``switrs_to_sqlite``.
+
+SWITRS-to-SQLite requires only Python3.
+
+Usage
+-----
+
+Using SWITRS-to-SQLite is simple, just point it to the unzipped files
+from SWITRS and it will run the conversion:
+
+.. code:: bash
+
+   switrs_to_sqlite \
+   CollisionRecords.txt \
+   PartyRecords.txt \
+   VictimRecords.txt
+
+The script also supports reading ``gzip``\ ed records files:
+
+.. code:: bash
+
+   switrs_to_sqlite \
+   CollisionRecords.txt.gz \
+   PartyRecords.txt.gz \
+   VictimRecords.txt.gz
+
+The conversion process will take about an hour to write the database,
+which by default is saved to a file named ``switrs.sqlite3``. The output
+file can be changed as follows:
+
+.. code:: bash
+
+   switrs_to_sqlite \
+   CollisionRecords.txt \
+   PartyRecords.txt \
+   VictimRecords.txt \
+   -o new_db_file.sql
+
+The program provides the following help menu when called with
+``--help``:
+
+.. code:: bash
+
+   usage: switrs_to_sqlite [-h] [-o OUTPUT_FILE]
+                                collision_record party_record victim_record
+
+   Convert SWITRS text files to a SQLite database
+
+   positional arguments:
+     collision_record      the CollisionRecords.txt file or the same file gzipped
+     party_record          the PartyRecords.txt file or the same file gzipped
+     victim_record         the VictimRecords.txt file or the same file gzipped
+
+   optional arguments:
+     -h, --help            show this help message and exit
+     -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                           file to save the database to
+
+Unit Tests
+----------
+
+SWITRS-to-SQLite uses ``pytest`` to run unit tests (contained in the
+``tests`` folders). To run the tests, run this command from the base
+directory:
+
+.. code:: bash
+
+   python3 -m pytest -v
