@@ -1,0 +1,255 @@
+[build-system]
+requires = ["hatchling>=1.18.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dd_yandex_pay"
+description = "Wrapper for Yandex Pay API."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "LGPL-3.0"
+authors = [
+	{ name = "Dmitry Dobrynin", email = "dd@tovarisch.engineer" },
+]
+keywords = ["yandex", "yandex pay", "payment"]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Environment :: Web Environment",
+	"Intended Audience :: Developers",
+	"License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+	"Natural Language :: Russian",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3 :: Only",
+	"Programming Language :: Python :: Implementation :: CPython",
+	"Programming Language :: Python :: Implementation :: PyPy",
+	"Topic :: Internet :: WWW/HTTP",
+	"Topic :: Software Development :: Libraries",
+	"Topic :: Utilities",
+]
+dependencies = [
+	"requests>=2,<3",
+]
+dynamic = ["version"]
+
+[project.urls]
+"Documentation" = "https://dd.github.io/dd_yandex_pay"
+"Repository" = "https://github.com/dd/dd_yandex_pay"
+"Changelog" = "https://dd.github.io/dd_yandex_pay/changelog/"
+"Bug Tracker" = "https://github.com/dd/dd_yandex_pay/issues"
+
+[tool.hatch.version]
+path = "dd_yandex_pay/__init__.py"
+
+[tool.hatch.build]
+include = [
+	"dd_yandex_pay",
+	"AUTHORS",
+]
+exclude = [
+	"/docs",
+	".gitignore",
+	"CHANGELOG.md",
+	"CONTRIBUTING.md",
+	"tests",
+]
+
+[tool.hatch.envs.default]
+description = "Dev environment"
+python = "3.12"
+dependencies = [
+	"pre-commit==3.4.0",
+	"ipython==8.16.1",
+	"requests>=2,<3",
+]
+[tool.hatch.envs.default.env-vars]
+PYTHONPATH  = "."
+[tool.hatch.envs.default.scripts]
+precommit_install = "pre-commit install {args}"
+precommit_uninstall = "pre-commit uninstall {args}"
+init = [
+	"git config --local gitflow.branch.master \"main\"",
+	"git config --local gitflow.branch.develop \"dev\"",
+	"git config --local gitflow.prefix.feature \"feature/\"",
+	"git config --local gitflow.prefix.bugfix \"bugfix/\"",
+	"git config --local gitflow.prefix.release \"release/\"",
+	"git config --local gitflow.prefix.hotfix \"hotfix/\"",
+	"git config --local gitflow.prefix.support \"support/\"",
+	"git config --local gitflow.prefix.versiontag \"v\"",
+	"git config --local gitflow.path.hooks $(pwd)\"/.git/hooks\"",
+	"precommit_install",
+]
+remove = [
+	"git config --local --remove-section gitflow.branch",
+	"git config --local --remove-section gitflow.prefix",
+	"git config --local --remove-section gitflow.path",
+	"precommit_uninstall",
+]
+changelog-update = [
+	"git fetch origin --tags",
+	"gitmoji-changelog update \"$(hatch version)\" --preset generic --group-similar-commits",
+]
+
+[tool.hatch.envs.lint]
+description = "Lint environment"
+detached = true
+python = "3.12"
+dependencies = [
+	"ruff==0.0.292",
+	"black==23.9.1",
+]
+[tool.hatch.envs.lint.scripts]
+check = [
+	"ruff {args:.}",
+	"black --check --diff {args:.}",
+]
+format = [
+	"ruff --fix {args:.}",
+	"black {args:.}",
+]
+
+[tool.hatch.envs.test]
+description = "Tests environment"
+detached = true
+python = "3.12"
+dependencies = [
+	"pytest==7.4.2",
+	"pytest-cov==4.1.0",
+	"requests>=2,<3",
+]
+[tool.hatch.envs.test.env-vars]
+PYTHONPATH  = "."
+[tool.hatch.envs.test.scripts]
+check = "pytest {args:--cov=dd_yandex_pay --cov-report term-missing}"
+
+[tool.hatch.envs.mtest]
+description = "Test matrix environment"
+detached = true
+dependencies = [
+	"pytest==7.4.2",
+	"pytest-cov==4.1.0",
+	"requests>=2,<3",
+]
+[tool.hatch.envs.mtest.env-vars]
+PYTHONPATH  = "."
+[tool.hatch.envs.mtest.scripts]
+check = "pytest {args:-q}"
+[[tool.hatch.envs.mtest.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.docs]
+description = "Docs environment"
+detached = true
+python = "3.12"
+dependencies = [
+	"mkdocs[i18n]==1.5.3",
+	"mkdocs-literate-nav==0.6.1",
+	"mkdocs-material==9.4.4",
+	"mkdocs-git-revision-date-localized-plugin==1.2.0",
+	"mkdocs-git-authors-plugin==0.7.2",
+	"mkdocstrings-python==1.7.2",
+	"black==23.9.1",
+	"mkdocs-minify-plugin==0.7.1",
+	"mkdocs-gen-files==0.5.0",
+	"Pygments==2.16.1",
+	"mike==1.1.2",
+	"setuptools==68.2.2",  # need for mike
+	"linkchecker==10.3.0",
+]
+[tool.hatch.envs.docs.env-vars]
+DDYP_MKDOCS_ENABLE_MINIFY = "false"
+DDYP_MKDOCS_CONFIG = "mkdocs.yml"
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build --config-file {env:DDYP_MKDOCS_CONFIG} --clean --strict {args}"
+serve = "mkdocs serve --config-file {env:DDYP_MKDOCS_CONFIG} --dev-addr localhost:8000 {args}"
+ci-build = "mike deploy --config-file {env:DDYP_MKDOCS_CONFIG} --update-aliases {args}"
+validate = "linkchecker --config .linkcheckerrc docs/dist"
+build-check = [
+	"build --no-directory-urls",
+	"validate",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+show-fixes = true
+# update-check = true
+select = [
+	"A",
+	"B",
+	"C",
+	"DTZ",
+	"E",
+	"EM",
+	"F",
+	"I",
+	"ICN",
+	"ISC",
+	"N",
+	"PLC",
+	"PLE",
+	"PLR",
+	"PLW",
+	"Q",
+	"RUF",
+	"S",
+	"SIM",
+	"T",
+	"TID",
+	"UP",
+	"W",
+	"YTT",
+]
+ignore = [
+	"RUF001",  # Allow similar characters like latin `c` and cyrillic `с`
+	"RUF002",  # Allow russian at docstrings
+	"RUF003",  # Allow russian at comment
+	"PLR0913",  # Allow any number of function arguments
+	"E741",  # Allow variables of like "l", "O",  "i"
+	# # Allow non-abstract empty methods in abstract base classes
+	# "B027",
+	# # Ignore checks for possible passwords
+	# "S105", "S106", "S107",
+	# # Ignore complexity
+	# "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+	# "PLC1901", # empty string comparisons
+	# "PLW2901", # `for` loop variable overwritten
+	"SIM114", # Combine `if` branches using logical `or` operator
+]
+[tool.ruff.extend-per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"yp_client.py" = ["N803"]
+"test_*.py" = ["S101", "PLR2004", "DTZ001", "RUF012"]
+[tool.ruff.flake8-import-conventions]
+[tool.ruff.flake8-import-conventions.extend-aliases]
+[tool.ruff.flake8-quotes]
+[tool.ruff.flake8-unused-arguments]
+ignore-variadic-names = true
+[tool.ruff.isort]
+force-single-line = true
+known-first-party = ["dd_yandex_pay"]
+lines-after-imports = 2
+no-lines-before = ["local-folder"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+[tool.ruff.isort.sections]
+
+[tool.isort]
+known_first_party = ["dd_yandex_pay"]
+lines_after_imports = 2
+no_lines_before = ["LOCALFOLDER"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+force_single_line  = true
+
+[tool.coverage.run]
+omit = ["*/tests/*"]
+source = ["dd_yandex_pay"]
