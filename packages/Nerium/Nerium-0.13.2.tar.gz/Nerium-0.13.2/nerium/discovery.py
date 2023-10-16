@@ -1,0 +1,72 @@
+import re
+from pathlib import Path
+from types import SimpleNamespace
+
+import sqlparse
+from raw import db
+from sqlparse.sql import Identifier, IdentifierList
+
+from nerium.query import parse_query_file
+
+
+def list_reports():
+    """Return list of available report names from query dir"""
+    flat_queries = db.list_queries()
+    query_names = [Path(i).stem for i in flat_queries]
+
+    query_names.sort()
+    reports = dict(reports=query_names)
+    return reports
+
+
+def columns_from_metadata(query):
+    """Return `columns` block from query front matter, if present"""
+    columns = None
+    if "columns" in query.metadata.keys():
+        columns = query.metadata.pop("columns")
+    return columns
+
+
+def columns_from_statement(query):
+    """Parse columns from SELECT list"""
+    # TODO: can we base this on SQLA attributes instead of using sqlparse?
+    columns = []
+    parsed_query = sqlparse.parse(query.statement)[0]
+    for tkn in parsed_query.tokens:
+        if isinstance(tkn, IdentifierList):
+            for id_ in tkn:
+                if isinstance(id_, Identifier):
+                    columns.append(id_.get_name())
+    return columns
+
+
+def params_from_metadata(query):
+    params = None
+    if "params" in query.metadata.keys():
+        params = query.metadata.pop("params")
+    return params
+
+
+def params_from_statement(query):
+    # TODO: can we base this on SQLA attributes instead of using sqlparse?
+    param_regex = re.compile("(?<!\\w)\\:\\w+")
+    param_list = [i.strip(":") for i in re.findall(param_regex, query.statement)]
+    return param_list
+
+
+def describe_report(query_name):
+    report_query = parse_query_file(query_name)
+    if report_query.error:
+        return report_query
+    params = params_from_metadata(report_query) or params_from_statement(report_query)
+    columns = columns_from_metadata(report_query) or columns_from_statement(
+        report_query
+    )
+    report_description = SimpleNamespace(
+        error=report_query.error,
+        name=report_query.name,
+        columns=columns,
+        params=params,
+        metadata=report_query.metadata,
+    )
+    return report_description
