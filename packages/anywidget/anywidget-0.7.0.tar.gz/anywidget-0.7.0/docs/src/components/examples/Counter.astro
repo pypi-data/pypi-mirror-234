@@ -1,0 +1,88 @@
+---
+import CodeHero from "../CodeHero.astro";
+
+let widgetCode = `
+import anywidget
+import traitlets
+
+
+class CounterWidget(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+      let count = () => model.get("value");
+      let btn = document.createElement("button");
+      btn.innerHTML = \`count is \${count()}\`;
+      btn.addEventListener("click", () => {
+        model.set("value", count() + 1);
+        model.save_changes();
+      });
+      model.on("change:value", () => {
+        btn.innerHTML = \`count is \${count()}\`;
+      });
+      el.appendChild(btn);
+    }
+    """
+    value = traitlets.Int(0).tag(sync=True)
+`;
+
+let notebookCode = `\
+from mywidget import CounterWidget 
+
+counter = CounterWidget()
+counter`;
+---
+
+
+<CodeHero
+	filename="mywidget/__init__.py"
+	lang="python"
+	code={widgetCode}
+	url={"localhost:8888/Demo.ipynb"}
+	showGrid={false}
+>
+	<div class="text-sm flex-col space-y-4">
+
+		<button id="input-1" class="hover:border-gray-50 w-full rounded border border-solid border-gray-400 text-left text-sm bg-transparent">
+			<code class="py-2 text-left whitespace-pre text-gray-200 bg-transparent">{notebookCode}</code>
+		</button>
+
+		<div>
+			<button
+				class="text-xs text-white py-2 px-4 hover:bg-primary-800 bg-primary-600 rounded shadow"
+				id="output-1"
+			>
+			</button>
+		</div>
+
+		<button id="input-2" class="hover:border-gray-50 w-full rounded border border-solid border-gray-400 text-left text-sm bg-transparent">
+			<code class="py-2 text-left whitespace-pre text-gray-200 bg-transparent">counter.value</code>
+		</button>
+
+		<pre id="output-2" class="text-xs bg-transparent pl-1 py-0"></pre>
+	</div>
+</CodeHero>
+
+<script is:inline>
+	let count = 0;
+	let input1 = document.querySelector("#input-1");
+	let output1 = document.querySelector("#output-1");
+	let input2 = document.querySelector("#input-2");
+	let output2 = document.querySelector("#output-2");
+
+	function setCount(value) {
+		output1.innerHTML = `count is ${value}`;
+	}
+
+	input1.addEventListener("click", () => {
+		setCount(count = 0);
+	});
+	output1.addEventListener("click", () => {
+		setCount(++count);
+	});
+	input2.addEventListener("click", () => {
+		output2.innerHTML = count;
+	});
+
+	setCount(0);
+	output2.innerHTML = "0";
+</script>

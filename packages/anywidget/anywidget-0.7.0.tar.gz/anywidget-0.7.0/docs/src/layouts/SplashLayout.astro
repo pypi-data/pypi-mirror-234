@@ -1,0 +1,44 @@
+---
+import HeadSEO from "../components/HeadSEO.astro";
+import HeadCommon from "../components/HeadCommon.astro";
+import Header from "../components/Header/Header.astro";
+import type * as CONSTS from "../consts";
+import { getTitle } from "../util";
+
+type Props = {
+	frontmatter?: CONSTS.Frontmatter;
+};
+
+const { frontmatter } = Astro.props as Props;
+const currentPage = Astro.url.pathname;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<html
+	dir={frontmatter?.dir ?? "ltr"}
+	lang={frontmatter?.lang ?? "en-us"}
+	class="initial"
+>
+	<head>
+		<HeadCommon />
+		<HeadSEO frontmatter={frontmatter} canonicalUrl={canonicalURL} />
+		<title>{getTitle(frontmatter)}</title>
+		<style>
+			.layout {
+				height: calc(100vh - var(--theme-navbar-height));
+			}
+			:global(#menu-toggle) {
+				display: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<Header currentPage={currentPage} />
+		<main class="layout">
+			<article>
+				<slot />
+			</article>
+		</main>
+	</body>
+</html>

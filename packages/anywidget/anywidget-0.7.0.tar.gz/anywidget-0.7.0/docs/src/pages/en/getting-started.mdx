@@ -1,0 +1,128 @@
+---
+title: Getting Started
+description: Docs getting started
+layout: ../../layouts/MainLayout.astro
+---
+
+import CounterButton from "../../components/CounterButton.astro";
+
+## What is anywidget?
+
+**anywidget** is a Python library that simplifies creating and publishing
+custom [Jupyter Widgets](https://ipywidgets.readthedocs.io/en/latest/).
+No messy build configuration or complicated cookiecutter templates.
+
+It is <u>**not**</u> a new interactive widgets framework, but rather
+an abstraction for creating custom Jupyter Widgets using modern web standards.
+
+## Key features
+
+- 🛠️ Create widgets **without complicated cookiecutter templates**
+- 📚 **Publish to PyPI** like any other Python package
+- 🤖 Prototype **within** `.ipynb` or `.py` files
+- 🚀 Run in **Jupyter**, **JupyterLab**, **Google Colab**, **VSCode**, and more
+- ⚡ Develop with **instant HMR**, like modern web frameworks
+
+
+## Example
+
+```
+pip install "anywidget[dev]"
+```
+
+```python
+import anywidget
+import traitlets
+
+class CounterWidget(anywidget.AnyWidget):
+    _esm = """
+    export function render({ model, el }) {
+      let getCount = () => model.get("count");
+      let button = document.createElement("button");
+      button.classList.add("counter-button");
+      button.innerHTML = `count is ${getCount()}`;
+      button.addEventListener("click", () => {
+        model.set("count", getCount() + 1);
+        model.save_changes();
+      });
+      model.on("change:count", () => {
+        button.innerHTML = `count is ${getCount()}`;
+      });
+      el.appendChild(button);
+    }
+    """
+    _css="""
+    .counter-button { background-color: #ea580c; }
+    .counter-button:hover { background-color: #9a3412; }
+    """
+    count = traitlets.Int(0).tag(sync=True)
+
+counter = CounterWidget()
+counter.count = 42
+counter
+```
+
+<CounterButton size={"lg"} initialValue={42} />
+
+What's going on here:
+
+- `count` is a stateful property for that both the client JavaScript and Python have access to.
+  Shared state is defined via [traitlets](https://traitlets.readthedocs.io/en/stable/) with the `sync=True`
+  keyword argument.
+
+- `_esm` specifies a <u>**required**</u> [ECMAScript module](https://nodejs.org/api/esm.html) for the widget.
+  It _must_ export `render`, a function that defines rendering logic and initializes dynamic updates for the custom widget.
+
+- `_css` specifies an <u>**optional**</u> CSS stylesheet to load for the widget. It can be a full URL or plain text. Styles are loaded
+  in the global scope if using this feature, so take care to avoid naming conflicts.
+
+ECMAScript modules are the offical standard format to package JavaScript code for reuse and are supported
+natively across [all major browsers](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules#javascript.statements.export).
+Therefore, dependencies can be imported directly via a fully qualified URL.
+
+```javascript
+import * as d3 from "https://esm.sh/d3@7";
+
+/** @param {{ model: DOMWidgetModel, el: HTMLElement }} context */
+export function render({ model, el }) {
+	let selection = d3.select(el);
+	/* ... */
+}
+```
+
+The `render` function can also (optionally) return a callback that is executed any time the view is
+removed from the DOM. This feature is useful when dealing with complex event listeners, subscriptions,
+or third-party libraries that require proper teardown.
+
+```javascript
+/** @param {{ model: DOMWidgetModel, el: HTMLElement }} context */
+export function render({ model, el }) {
+	// Create DOM elements and set up subscribers
+	return () => {
+		// Optionally cleanup
+	};
+}
+```
+
+## Progressive Development
+
+As your widgets grow in complexity, it is recommended to separate your
+front-end code from your Python code. Just move the `_esm` and `_css` 
+definitions to separate files and reference them via path.
+
+```python
+import pathlib
+import anywidget
+import traitlets
+
+class CounterWidget(anywidget.AnyWidget):
+    _esm = pathlib.Path(__file__).parent / "index.js"
+    _css = pathlib.Path(__file__).parent / "index.css"
+    count = traitlets.Int(0).tag(sync=True)
+```
+
+This is both easier to read and allows you to use your favorite editor/IDE for your front-end code.
+Using file paths also enables **anywidget**'s [built-in HMR](/blog/anywidget-02/#native-hot-module-replacement-hmr),
+allowing real-time updates to your widget during development (below).
+
+![Real-time widget development entirely from within JupyterLab](https://miro.medium.com/v2/resize:fit:1400/1*VCG-57YX8IrfTyeby3Ybjg.gif)
