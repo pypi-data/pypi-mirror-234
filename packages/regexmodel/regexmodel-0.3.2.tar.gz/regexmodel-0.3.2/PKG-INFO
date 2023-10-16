@@ -1,0 +1,125 @@
+Metadata-Version: 2.1
+Name: regexmodel
+Version: 0.3.2
+Summary: Package modeling structured strings with regex.
+Author-email: Raoul Schram <r.d.schram@uu.nl>
+License: MIT License
+        
+        Copyright (c) 2023 SoDa
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: GitHub, https://github.com/sodascience/regexmodel
+Keywords: regex,fitting,modeling,statistics
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: polars>=0.14.17
+Requires-Dist: numpy>=1.20
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pylint; extra == "test"
+Requires-Dist: pydocstyle; extra == "test"
+Requires-Dist: mypy; extra == "test"
+Requires-Dist: ruff; extra == "test"
+Requires-Dist: nbval; extra == "test"
+Provides-Extra: tutorial
+Requires-Dist: pyvis; extra == "tutorial"
+Requires-Dist: networkx; extra == "tutorial"
+Requires-Dist: faker; extra == "tutorial"
+
+# regexmodel
+
+Regexmodel is a python package that uses a graph model to fit and synthesize structured strings.
+Structured strings are strings such as license plates, credit card numbers ip-addresses, and phone numbers. Regexmodel can infer a regex-like structure from a series of positive examples and create new samples
+(such as phone numbers etc.).
+
+Features:
+
+- Draw new synthetic values
+- Only on the numpy and polar libraries (faker for benchmarks).
+- Fast (on average < 1 second for about 500 positive examples).
+- Can provide statistics on how good the regexmodel has fit your values using log likelihood.
+- Can be serialized and can be modified by hand.
+
+## Installation
+
+You can install regexmodel using pip:
+
+```bash
+pip install regexmodel
+```
+
+If you want the latest version of git, use:
+
+```bash
+pip install git+https://github.com/sodascience/regexmodel.git
+```
+
+If you want to run the benchmarks, you should also install the faker package:
+
+```bash
+pip install faker
+```
+
+## Using regexmodel
+
+Fitting the regexmodel is as simple as:
+
+```python
+from regexmodel import RegexModel
+
+model = RegexModel.fit(your_values_to_fit, count_thres=10, method="accurate")
+```
+
+The `count_thres` parameter changes how detailed and time consuming the fit is. A higher threshold means
+a shorter time to fit, but also a worse fit.
+
+The `method` parameter determines the performance/how fast the model is trained. For better looking results,
+the "accurate" method is advised. If the quickness of the fit is more important, then you can use the "fast" method. The "accurate" method is generally slow with very long/branching/unstructured strings.
+
+Then synthesizing a new value is done with:
+
+```python
+model.draw()
+```
+
+## Serialization
+
+The regex model can be serialized so that it can be stored in for example a JSON file:
+
+```python
+import json
+with open(some_file, "w") as handle:
+    json.dump(model.serialize(), handle)
+```
+
+And deserialized:
+
+```python
+with open(some_file, "r") as handle:
+    model = RegexModel(json.load(handle))
+```
