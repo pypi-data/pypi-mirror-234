@@ -1,0 +1,125 @@
+ChangeLog
+=========
+
+0.7.1 (2023-10-09)
+    * Attribute ro renamed to read_only
+    * Inotify using improvement
+
+0.7.0 (2023-05-02)
+    * Added new flat struct for filesystem, old one is renamed to legacy
+    * transfer_id moved to root to all events
+    * New kwargs parameter "force" added to DELETE_FOLDER command
+    * Camera support
+        - Autodetection
+        - Resolution changing
+        - Trigger schemes for time and layer based values
+        - Camera ordering preparation
+        - Config saving, loading and updating
+    * Fix priority commands (RESET_PRINTER)
+    * Remove PREPARED, use only READY and IDLE
+    * Shorten the request timeout from 30 to 10 seconds
+    * Transfer ID changed from 64bit to 32bit number
+    * IDLE / READY states correction
+    * Improve error callbacks
+    * File and Folder name validation
+    * Registration headers update
+    * Create directory function does nothing if folder already exists
+    * get_free_space() replaced by get_space_info(), added total size info
+    * Make on the fly download throttling possible
+    * Add mesh bed levelling event
+    * Added command_id to telemetry, if there's a command in progress
+    * 4xx responses handling change
+    * Add sheet settings and mbl data
+    * Add Transfer ID as a 64-bit int
+    * Added new SET_PRINTER_READY / CANCEL_PRINTER_READY cmds
+    * Inotify fix - handling nested files
+    * Introduce a new conditions system
+    * Added StorageType enum to const
+    * TRANSFER_INFO improvement
+    * Make downloads from connect time out after 30s of inactivity
+    * Send state in every Event
+
+0.6.0 (2021-12-17)
+    * Introduce `const.State.PREPARED`
+    * remove m_time from file structure
+    * telemetry method use self.state instead of argument state
+    * Filesystem can mount directory to root
+    * Fixed last_updated value for nested files
+    * Added LOAD/UNLOAD filament constants
+    * Added TransferInfo class and TransferType contants
+    * Changed DOWNLOAD constants to TRANSFER
+    * Download object replaced by Transfer object
+    * Refactor of Transfer object, added reset method
+    * Implementation of START_URL_DOWNLOAD and START_CONNECT_DOWNLOAD commands
+    * Added RegistrationStatus constants
+    * Added code attribute to Printer
+    * Added filename length and forbidden characters check
+    * Added foldername length check
+    * Filename and foldername exceptions rework
+    * Temporary-Code header changed to Code, added printer_type attribute
+
+0.5.0 (2021-07-14)
+    * FILE_CHANGED event sends free_space
+    * Fix metadata parsing being slow (works for supported files)
+    * Metadata parsing is not loading the whole gcode file into RAM anymore
+    * Added additional network info
+    * Implement DOWNLOAD, DOWNLOAD_INFO and DOWNLOAD_STOP command
+    * checked state flag support
+    * Error states iteration support
+    * Added m_timestamp to file attributes
+    * Command classes store both args and kwargs.
+    * `max_retries` can be passed to Printer
+    * Command handlers use kwargs.
+
+0.4.0 (2021-03-30)
+    * new CONNECTION_TIOMEOUT constant set to 30s
+    * better Event repr
+    * estimated_to_seconds do not need seconds
+
+0.3.0 (2021-03-22)
+    * fix update file structure
+    * add commands DELETE_FILE,DELETE_DIRECTORY,CREATE_DIRECTORY
+    * add error.ErrorState - chained error state infrastructure
+    * rename metadata.*filaname to metadata.*path where appropriate
+    * check gcode extensions ".gcode", ".gc", ".g", ".gco" for FDM
+    * bugfix: don't fail on extracting metadata from non-existing files
+    * introduce basic ErrorState instances in errors.py and use in __init__.py
+    * introduce errors.TOKEN signaling if a token is available
+    * add ironing to FDM metadata
+    * introduce `File.size` as a settable property
+    * added functions for save/load cache of data
+    * fix event data structure
+    * new STOPPED state
+    * typed package
+    * load() function and test_metadata modification
+    * cache file name modification
+    * if metadata are empty, cache is not created
+    * No notification handler
+    * No communication without token
+    * automatically creating and delete cache using inotify handler
+    * SDK ignores hidden .<filename> files
+    * SDK ignores hidden .<foldername> folders and files inside
+    * Don't throw an exception on processing invalid metadata
+    * layer_height attribute added to FDM metadata
+    * estimated_to_seconds function
+    * Added function for check free space of storage
+    * Send `Clock-Adjusted: 1` header on clock adjustments
+    * Added free_space attribute for INFO, MEDIUM_INSERTED and FILE_CHANGED events
+    * Added last_updated attribute to Mount class
+    * new stop_loop method
+    * inotify_handler is not call in Printer.loop
+    * get_file_info` raises a ValueError for dirs
+    * fingerprint in INFO event
+
+0.2.0 (2020-12-14)
+
+    * get_token method called in Printer.loop
+    * Python 3.9 check
+    * api_key in INFO event
+    * metadata in file_info
+    * preview in metadata
+
+0.1.3 (2020-12-01)
+
+    * Printer object without sn, fingerprint, server and token
+    * Revert ability to use any Command class as it seems too confusing
