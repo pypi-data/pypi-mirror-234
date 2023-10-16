@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl-3.0-standalone.html). -->
+<odoo>
+<data noupdate="1">
+<record id="policy_template_data_requirement" model="policy.template">
+    <field name="name">Standard</field>
+    <field name="model_id" ref="model_data_requirement" />
+    <field
+                name="state_field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','state')]"
+            />
+    <field name="sequence" eval="100" />
+    <field name="python_code">result=True</field>
+</record>
+
+<!-- Open -->
+<record id="policy_template_data_requirement_open" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','open_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('data_requirement_user_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Confirm -->
+<record id="policy_template_data_requirement_confirm" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','confirm_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','=','open')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('data_requirement_user_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart Approval -->
+<record
+            id="policy_template_data_requirement_restart_approval"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','restart_approval_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('data_requirement_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Approve -->
+<record id="policy_template_data_requirement_approve" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','approve_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+<!-- Reject -->
+<record id="policy_template_data_requirement_reject" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','reject_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+
+
+<!-- Cancel -->
+<record id="policy_template_data_requirement_cancel" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','cancel_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','in',['draft','confirm','done'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('data_requirement_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart -->
+<record id="policy_template_data_requirement_restart" model="policy.template_detail">
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','restart_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','in',['cancel','reject'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('data_requirement_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Manual Number -->
+<record
+            id="policy_template_data_requirement_manual_number"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement'),('name','=','manual_number_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field name="group_ids" eval="[(6,0,[ref('data_requirement_validator_group')])]" />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<record id="policy_template_data_requirement_package" model="policy.template">
+    <field name="name">Standard</field>
+    <field name="model_id" ref="model_data_requirement_package" />
+    <field
+                name="state_field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','state')]"
+            />
+    <field name="sequence" eval="100" />
+    <field name="python_code">result=True</field>
+</record>
+
+
+<!-- Confirm -->
+<record
+            id="policy_template_data_requirement_package_confirm"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','confirm_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('data_requirement_package_user_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart Approval -->
+<record
+            id="policy_template_data_requirement_package_restart_approval"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','restart_approval_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('data_requirement_package_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Approve -->
+<record
+            id="policy_template_data_requirement_package_approve"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','approve_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+<!-- Reject -->
+<record
+            id="policy_template_data_requirement_package_reject"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','reject_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','=','confirm')]"
+            />
+    <field name="restrict_user" eval="0" />
+    <field name="restrict_additional" eval="1" />
+    <field name="additional_python_code">result = False
+if env.user.id in document.active_approver_user_ids.ids:
+    result = True</field>
+</record>
+
+
+
+<!-- Cancel -->
+<record
+            id="policy_template_data_requirement_package_cancel"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','cancel_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','in',['draft','confirm','done'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('data_requirement_package_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Restart -->
+<record
+            id="policy_template_data_requirement_package_restart"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','restart_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','in',['cancel','reject'])]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('data_requirement_package_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+
+<!-- Manual Number -->
+<record
+            id="policy_template_data_requirement_package_manual_number"
+            model="policy.template_detail"
+        >
+    <field name="template_id" ref="policy_template_data_requirement_package" />
+    <field
+                name="field_id"
+                search="[('model_id.model','=','data_requirement_package'),('name','=','manual_number_ok')]"
+            />
+    <field name="restrict_state" eval="1" />
+    <field
+                name="state_ids"
+                search="[('field_id.model_id.model','=','data_requirement_package'),('value','=','draft')]"
+            />
+    <field name="restrict_user" eval="1" />
+    <field name="computation_method">use_group</field>
+    <field
+                name="group_ids"
+                eval="[(6,0,[ref('data_requirement_package_validator_group')])]"
+            />
+    <field name="restrict_additional" eval="0" />
+</record>
+</data>
+</odoo>
