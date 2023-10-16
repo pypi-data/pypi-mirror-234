@@ -1,0 +1,132 @@
+from enum import IntFlag
+
+
+class TagStructType(IntFlag):
+    Root = 0
+    Tagblock = 1
+    ExternalFileDescriptor = 2
+    ResourceHandle = 3
+    NoDataStartBlock = 4
+
+class TagElemntTypeOld(IntFlag):
+    Comment = 0
+    Explanation = 1
+    CustomLikeGrouping = 2
+    ArrayFixLen = 3
+    GenericBlock = 4
+    TagStructData = 5
+    TagData = 6
+    EnumGroup = 7
+    UFourByte = 8
+    UTwoByte = 9
+    SByte = 10
+    FourByte = 11
+    TwoByte = 12
+    Byte = 13
+    Float = 14
+    TagRef = 15
+    Pointer = 16
+    Tagblock = 17
+    ResourceHandle = 18
+    TagStructBlock = 19
+    String = 20
+    StringTag = 21
+    Flags = 22
+    FlagGroup = 23
+    Mmr3Hash = 24
+    RGB = 25
+    ARGB = 26
+    BoundsFloat = 27
+    Bounds2Byte = 28
+    Point2DFloat = 29
+    Point2D2Byte = 30
+    Point3D = 31
+    Quaternion = 32
+    Plane2D = 33
+    Plane3D = 34
+    RootTagInstance = 35
+    TagInstance = 36
+    TagParentInstance = 37
+    RgbPixel32 = 38
+    ArgbPixel32 = 39
+    Unmapped = -1
+
+class TagElemntType(IntFlag):
+    Undefined = -1
+    RootTagInstance = 0x100
+    String = 0x0 # size 32 string
+    LongString = 0x1 # size 256 , # _field_long_string
+    Mmr3Hash = 0x2 # size 4 , # _field_string_id
+    NotFound03 = 0x3 # size 4 , # ## Not found in any tag type
+    Char = 0x4 # size 1 , # _field_char_integer
+    Short = 0x5 # size 2 , # _field_short_integer
+    Long = 0x6 # size 4 , # _field_long_integer
+    Int64 = 0x7 # size 8 , # _field_int64_integer
+    Angle = 0x8 # size 4 , # _field_angle
+    StringTag = 0x9 # size 4 , # _field_tag
+    CharEnum = 0xA # size 1 , # _field_char_enum
+    ShortEnum = 0xB # size 2 , # _field_short_enum
+    LongEnum = 0xC # size 4 , # _field_long_enum
+    LongFlags = 0xD # size 4 , # _field_long_flags
+    WordFlags = 0xE # size 2 , # _field_word_flags
+    ByteFlags = 0xF # size 1 , # _field_byte_flags
+    Point2D = 0x10 # size 4 , # _field_point_2d -- 2 2bytes?
+    Rectangle2D = 0x11 # size 4 , # _field_rectangle_2d
+    RgbColor = 0x12 # size 4 , # _field_rgb_color -- hex color codes --- rgb pixel 32 - it's technically only 3 bytes but the final byte is FF
+    ArgbColor = 0x13 # size 4 , # _field_argb_color --- argb pixel 32
+    Real = 0x14 # size 4 , # _field_real
+    RealFraction = 0x15 # size 4 , # _field_real_fraction
+    RealPoint2D = 0x16 # size 8 , # _field_real_point_2d
+    RealPoint3D = 0x17 # size 12 , # _field_real_point_3d
+    RealVector2D = 0x18 # size 8 , # _field_real_vector_2d -- 
+    RealVector3D = 0x19 # size 12 , # _field_real_vector_3d
+    RealQuaternion = 0x1A # size 16 , # _field_real_quaternion
+    RealEulerAngles2D = 0x1B # size 8 , # _field_real_euler_angles_2d
+    RealEulerAngles3D = 0x1C # size 12 , # _field_real_euler_angles_3d
+    RealPlane2D = 0x1D # size 12 , # _field_real_plane_2d
+    RealPlane3D = 0x1E # size 16 , # _field_real_plane_3d
+    RealRgbColor = 0x1F # size 12 , # _field_real_rgb_color
+    RealARgbColor = 0x20 # size 16 , # _field_real_argb_color
+    RealHsvColor = 0x21 # size 4 , # _field_real_hsv_colo
+    RealAhsvColor = 0x22 # size 4 , # _field_real_ahsv_color
+    ShortBounds = 0x23 # size 4 , # _field_short_bounds
+    AngleBounds = 0x24 # size 8 , # _field_angle_bounds
+    RealBounds = 0x25 # size 8 , # _field_real_bounds
+    RealFractionBounds = 0x26 # size 8 , # _field_real_fraction_bounds
+    Unmapped27 = 0x27 # size 4 , # ## Not found in any tag type
+    Unmapped28 = 0x28 # size 4 , # ## Not found in any tag type
+    LongBlockFlags = 0x29 # size 4 , # _field_long_block_flags
+    WordBlockFlags = 0x2A # size 4 , # _field_word_block_flags
+    ByteBlockFlags = 0x2B # size 4 , # _field_byte_block_flags
+    CharBlockIndex = 0x2C # size 1 , # _field_char_block_index
+    CustomCharBlockIndex = 0x2D # size 1 , # _field_custom_char_block_index
+    ShortBlockIndex = 0x2E # size 2 , # _field_short_block_index
+    CustomShortBlockIndex = 0x2F # size 2 , # _field_custom_short_block_index
+    LongBlockIndex = 0x30 # size 4 , # _field_long_block_index
+    CustomLongBlockIndex = 0x31 # size 4 , # _field_custom_long_block_index
+    NotFound32 = 0x32 # size 4 , # ## Not found in any tag type
+    NotFound33 = 0x33 # size 4 , # ## Not found in any tag type
+    Pad = 0x34 # size 4 , # _field_pad ## variable length
+    Skip = 0x35 # size 4 , # 'field_skip' ## iirc
+    Explanation = 0x36 # size 0 , # _field_explanation
+    Custom = 0x37 # size 0 , # _field_custom
+    Struct = 0x38 # size 0 , # _field_struct
+    Array = 0x39 # size 32 , # _field_array
+    Unmapped3A = 0x3A # size 4 ,
+    EndStruct = 0x3B # size 0 , # ## end of struct or something
+    ByteInteger = 0x3C # size 1 , # _field_byte_integer
+    Word = 0x3D # size 2 , # _field_word_integer
+    Dword = 0x3E # size 4 , # _field_dword_integer
+    Qword = 0x3F # size 8 , # _field_qword_integer
+    Block = 0x40 # size 20 , # _field_block_v2
+    TagReference = 0x41 # size 28 , # _field_reference_v2
+    DataV2 = 0x42 # size 24 , # _field_data_v2
+
+    ResourceHandle = 0x43 # size 16 , # ok _field_resource_handle
+
+    DataPath = 0x44 # size 256, # revisar original 4 --- data path
+    Unmapped45 = 0x45 # size 4 ,
+
+    NotFound69 = 0x69
+
+BLOCKS = TagElemntType.Block | TagElemntType.Array | TagElemntType.RootTagInstance
