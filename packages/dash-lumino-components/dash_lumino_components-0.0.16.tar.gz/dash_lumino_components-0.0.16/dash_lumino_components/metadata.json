@@ -1,0 +1,567 @@
+{
+  "src/lib/components/BoxPanel.react.js": {
+    "description": "A panel which arranges its widgets in a single row or column.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/boxpanel.html}\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\nboxPanel = dlc.BoxPanel([\n  dlc.SplitPanel([], id=\"split-panel\")\n], id=\"box-panel\")",
+    "displayName": "BoxPanel",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "alignment": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "the content alignment of the layout (\"start\" | \"center\" | \"end\" | \"justify\")\n@type {string}",
+        "defaultValue": {
+          "value": "'start'",
+          "computed": false
+        }
+      },
+      "direction": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "a type alias for a box layout direction (\"left-to-right\" | \"right-to-left\" | \"top-to-bottom\" | \"bottom-to-top\")\n@type {string}",
+        "defaultValue": {
+          "value": "'left-to-right'",
+          "computed": false
+        }
+      },
+      "spacing": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "The spacing between items in the layout\n@type {number}",
+        "defaultValue": {
+          "value": "0",
+          "computed": false
+        }
+      },
+      "addToDom": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "bool if the object has to be added to the dom directly\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "The widgets\n@type {Array<Panel, SplitPanel, DockPanel>}"
+      }
+    }
+  },
+  "src/lib/components/Command.react.js": {
+    "description": "A widget which displays items as a canonical menu.\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\ncommand_open = dlc.Command(id=\"com:openwidget\", label=\"Open\", icon=\"fa fa-plus\")",
+    "displayName": "Command",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "any"
+        },
+        "required": false,
+        "description": "The id of the command\n@type {string}"
+      },
+      "label": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The label of the command\n@type {string}"
+      },
+      "icon": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The icon of the command (a cass class name)\n@type {string}"
+      },
+      "n_called": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "Number of times the command was called\n@type {number}",
+        "defaultValue": {
+          "value": "0",
+          "computed": false
+        }
+      },
+      "n_called_timestamp": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "Last time that command was called.\n@type {number}",
+        "defaultValue": {
+          "value": "-1",
+          "computed": false
+        }
+      },
+      "setProps": {
+        "type": {
+          "name": "func"
+        },
+        "required": false,
+        "description": "Dash-assigned callback that gets fired when the value changes.\n@private"
+      }
+    }
+  },
+  "src/lib/components/DockPanel.react.js": {
+    "description": "A widget which provides a flexible docking area for widgets.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/dockpanel.html}\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\ndock = dlc.DockPanel([\n    dlc.Widget(\n        \"Example Content\",\n        id=\"initial-widget\",\n        title=\"Hallo\",\n        icon=\"fa fa-folder-open\",\n        closable=True)\n], id=\"dock-panel\")",
+    "displayName": "DockPanel",
+    "methods": [
+      {
+        "name": "handleWidgetEvent",
+        "docblock": "Handle the lumino:deleted event a widget creates on closing\nNote: There seem to be some probelms with removing dash components!\nCurrently only the dom elements are moved back to their initial position\nand the lumino component is deleted. In the future we want to clean up\nthe children of the dock also here!\n@param {*} msg \n@ignore",
+        "modifiers": [],
+        "params": [
+          {
+            "name": "msg",
+            "description": null,
+            "type": {
+              "name": "mixed"
+            },
+            "optional": false
+          }
+        ],
+        "returns": null,
+        "description": "Handle the lumino:deleted event a widget creates on closing\nNote: There seem to be some probelms with removing dash components!\nCurrently only the dom elements are moved back to their initial position\nand the lumino component is deleted. In the future we want to clean up\nthe children of the dock also here!"
+      }
+    ],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "mode": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "mode for the dock panel: (\"single-document\" | \"multiple-document\")\n@type {string}",
+        "defaultValue": {
+          "value": "'multiple-document'",
+          "computed": false
+        }
+      },
+      "spacing": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "The spacing between the items in the panel.\n@type {number}",
+        "defaultValue": {
+          "value": "4",
+          "computed": false
+        }
+      },
+      "addToDom": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "bool if the object has to be added to the dom directly\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "The widgets\n@type {Widget[]}"
+      },
+      "setProps": {
+        "type": {
+          "name": "func"
+        },
+        "required": false,
+        "description": "Dash-assigned callback that should be called to report property changes\nto Dash, to make them available for callbacks.\n@private"
+      }
+    }
+  },
+  "src/lib/components/Menu.react.js": {
+    "description": "A widget which displays items as a canonical menu.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/menu.html}\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\n\nmenu = dlc.Menu([\n    dlc.Command(id=\"com:openwidget\", label=\"Open\", icon=\"fa fa-plus\"),\n    dlc.Separator(),\n    dlc.Menu([\n        dlc.Command(id=\"com:closeall\", label=\"Close All\", icon=\"fa fa-minus\"),\n        dlc.Command(id=\"com:closeone\",\n                    label=\"Close One\", icon=\"fa fa-minus\"),\n    ], id=\"extraMenu\", title=\"Extra\")\n], id=\"openMenu\", title=\"Widgets\")",
+    "displayName": "Menu",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "The ID used to identify this component in Dash callbacks.\n@type {string}"
+      },
+      "title": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The title of the menu\n@type {string}"
+      },
+      "iconClass": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The icon class of the menu\n@type {string}"
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "An array of the menu items (dlc.Command | dlc.Menu | dlc.Separator)\n@type {Array<Command, Menu, Separator>}"
+      }
+    }
+  },
+  "src/lib/components/MenuBar.react.js": {
+    "description": "A widget which displays menus as a canonical menu bar.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/menubar.html}\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\nmenuBar = dlc.MenuBar([\n    dlc.Menu([\n        dlc.Command(id=\"com:openwidget\", label=\"Open\", icon=\"fa fa-plus\"),\n    ], id=\"exampleMenu\", title=\"Example\")\n], 'menuBar')",
+    "displayName": "MenuBar",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "An array of the menus (dlc.Menu)\n@type {Menu[]}"
+      }
+    }
+  },
+  "src/lib/components/Panel.react.js": {
+    "description": "A simple and convenient panel widget class.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/panel.html}\n\nThis class is suitable to directly display a collection of dash widgets.\n@hideconstructor\n\n@example\n//Python:\nimport dash_lumino_components as dlc\nimport dash_html_components as html\n\npanelA = dlc.Panel(\n    id=\"panelA\",\n    children=html.Div(\"Content\"),\n    label=\"Test\",\n    icon=\"fa fa-plus\")\n\npanelB = dlc.Panel(\n    [\n        html.Div(\"Content\")\n    ],\n    id=\"panelB\",\n    label=\"Test\",\n    icon=\"fa fa-plus\")",
+    "displayName": "Panel",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "label": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The label of the panel\n@type {string}"
+      },
+      "icon": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The icon of the panel (a cass class name)\n@type {string}"
+      },
+      "addToDom": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "bool if the object has to be added to the dom directly\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "The widgets\n@type {Object | Array<Object>}"
+      }
+    }
+  },
+  "src/lib/components/Separator.react.js": {
+    "description": "A dummy widget to create a seperation in menus.  \nThis is actually not a component of lumino.\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\nmenu = dlc.Menu([\n    dlc.Command(id=\"com:openwidget\", label=\"Open\", icon=\"fa fa-plus\"),\n    dlc.Separator(),\n    dlc.Command(id=\"com:closeall\", label=\"Close All\", icon=\"fa fa-minus\")\n], id=\"openMenu\", title=\"File\")",
+    "displayName": "Separator",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The id of the separator\n@type {string}"
+      }
+    }
+  },
+  "src/lib/components/SplitPanel.react.js": {
+    "description": "A panel which arranges its widgets into resizable sections.   \n{@link https://jupyterlab.github.io/lumino/widgets/classes/splitpanel.html}\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\nsplitPanel = dlc.SplitPanel([\n    dlc.TabPanel([], id=\"tab-panel\"),\n    dlc.DockPanel([], id=\"dock-panel\")\n], id=\"split-panel\")",
+    "displayName": "SplitPanel",
+    "methods": [
+      {
+        "name": "updateSizes",
+        "docblock": "Redistribute the sizes if the total size chanches. Panel sizes of split panes are\ntaken from the width parameter, if they are not hidden.\nPanels with undefined width are equally spread.\n@private",
+        "modifiers": [],
+        "params": [],
+        "returns": null,
+        "description": "Redistribute the sizes if the total size chanches. Panel sizes of split panes are\ntaken from the width parameter, if they are not hidden.\nPanels with undefined width are equally spread."
+      }
+    ],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "alignment": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "the content alignment of the layout (\"start\" | \"center\" | \"end\" | \"justify\")\n@type {string}",
+        "defaultValue": {
+          "value": "'start'",
+          "computed": false
+        }
+      },
+      "orientation": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "a type alias for a split layout orientation (\"horizontal\" | \"vertical\")\n@type {string}",
+        "defaultValue": {
+          "value": "'horizontal'",
+          "computed": false
+        }
+      },
+      "spacing": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "The spacing between items in the layout\n@type {number}",
+        "defaultValue": {
+          "value": "0",
+          "computed": false
+        }
+      },
+      "addToDom": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "bool if the object has to be added to the dom directly\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "The widgets\n@type {Array<DockPanel, TabPanel, BoxPanel, Panel>}"
+      }
+    }
+  },
+  "src/lib/components/TabPanel.react.js": {
+    "description": "A widget which combines a TabBar and a StackedPanel.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/tabpanel.html}\n\nThis is a simple panel which handles the common case of a tab bar placed\nnext to a content area. The selected tab controls the widget which is\nshown in the content area.\nFor use cases which require more control than is provided by this panel,\nthe TabBar widget may be used independently.\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\nimport dash_html_components as html\nimport dash_bootstrap_components as dbc\n\ntabPanel = dlc.TabPanel(\n    [\n        dlc.Panel(\n            html.Div([\n                dbc.Button(\"Open Plot\",\n                           id=\"button2\",\n                           style={\"width\": \"100%\"})\n            ]),\n            id=\"tab-panel-A\"\n            label=\"Plots\",\n            icon=\"fa fa-bar-chart\")\n    ],\n    id='tab-panel-left')",
+    "displayName": "TabPanel",
+    "methods": [
+      {
+        "name": "_onTabIndexChanged",
+        "docblock": "this callback hids the stackedpanel if no tab is selected\nto make everything seamless, the resizing is handeled here\n@private",
+        "modifiers": [],
+        "params": [],
+        "returns": null,
+        "description": "this callback hids the stackedpanel if no tab is selected\nto make everything seamless, the resizing is handeled here"
+      }
+    ],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "tabPlacement": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "the placement of the tab bar relative to the content. (\"left\" | \"right\" | \"top\" | \"bottom\")\n@type {string}",
+        "defaultValue": {
+          "value": "'top'",
+          "computed": false
+        }
+      },
+      "tabsMovable": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "whether the tabs are movable by the user\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "allowDeselect": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "bool if all tabs can be deselected\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "width": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "the default width or height of the tab panel content\n@type {number}",
+        "defaultValue": {
+          "value": "250",
+          "computed": false
+        }
+      },
+      "addToDom": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "bool if the object has to be added to the dom directly\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "The widgets\n@type {Panel[]}"
+      },
+      "currentIndex": {
+        "type": {
+          "name": "number"
+        },
+        "required": false,
+        "description": "Get the index of the currently selected tab. It will be -1 if no tab is selected.\n@type {number}",
+        "defaultValue": {
+          "value": "-1",
+          "computed": false
+        }
+      },
+      "setProps": {
+        "type": {
+          "name": "func"
+        },
+        "required": false,
+        "description": "Dash-assigned callback that should be called to report property changes\nto Dash, to make them available for callbacks.\n@private"
+      }
+    }
+  },
+  "src/lib/components/Widget.react.js": {
+    "description": "The base class of the lumino widget hierarchy.  \n{@link https://jupyterlab.github.io/lumino/widgets/classes/widget.html}\n\nThis class will typically be subclassed in order to create a useful\nwidget. However, it can be used directly to host externally created\ncontent.\n@hideconstructor\n\n@example\n//Python:\nimport dash\nimport dash_lumino_components as dlc\n\ndock = dlc.DockPanel([\n    dlc.Widget(\n        \"Content\",\n        id=\"test-widget\",\n        title=\"Title\",\n        icon=\"fa fa-folder-open\",\n        closable=True,\n        caption=\"Hover label of the widget\"\n    )],\n    id=\"dock-panel\")",
+    "displayName": "Widget",
+    "methods": [],
+    "props": {
+      "id": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "ID of the widget\n@type {string}"
+      },
+      "children": {
+        "type": {
+          "name": "node"
+        },
+        "required": false,
+        "description": "The children of this component\n@type {Object | Object[]}"
+      },
+      "title": {
+        "type": {
+          "name": "string"
+        },
+        "required": true,
+        "description": "The title of the widget\n@type {string}"
+      },
+      "closable": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "Is the widget closable\n@type {boolean}",
+        "defaultValue": {
+          "value": "true",
+          "computed": false
+        }
+      },
+      "caption": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The long title of the widget\n@type {string}"
+      },
+      "deleted": {
+        "type": {
+          "name": "bool"
+        },
+        "required": false,
+        "description": "Is the widget deleted.\nNote: In the future this might dissapear and the deleted widgets are\nautomatically removed from the dom.\n@type {boolean}",
+        "defaultValue": {
+          "value": "false",
+          "computed": false
+        }
+      },
+      "icon": {
+        "type": {
+          "name": "string"
+        },
+        "required": false,
+        "description": "The icon of the widget (a cass class name)\n@type {string}"
+      },
+      "setProps": {
+        "type": {
+          "name": "func"
+        },
+        "required": false,
+        "description": "Dash-assigned callback that should be called to report property changes\nto Dash, to make them available for callbacks.\n@private"
+      }
+    }
+  }
+}
