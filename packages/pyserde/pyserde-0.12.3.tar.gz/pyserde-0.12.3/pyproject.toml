@@ -1,0 +1,132 @@
+[tool.poetry]
+name = "pyserde"
+version = "0.12.3"  # using poetry-dynamic-versioning
+description = "Yet another serialization library on top of dataclasses"
+authors = ["yukinarit <yukinarit84@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/yukinarit/pyserde"
+homepage = "https://github.com/yukinarit/pyserde"
+packages = [
+    { include = "serde" },
+]
+classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: Implementation :: CPython",
+		"Programming Language :: Python :: Implementation :: PyPy",
+    ]
+
+[tool.poetry.dependencies]
+python = "^3.7.0"
+typing_inspect = ">=0.4.0"
+typing_extensions = { version = ">=4.1.0", markers = "python_version ~= '3.7.0'" }
+casefy = "*"
+jinja2 = "*"
+msgpack = { version = "*", markers = "extra == 'msgpack' or extra == 'all'", optional = true }
+tomli = { version = "*", markers = "extra == 'toml' or extra == 'all'", optional = true }
+tomli-w = { version = "*", markers = "extra == 'toml' or extra == 'all'", optional = true }
+pyyaml = { version = "*", markers = "extra == 'yaml' or extra == 'all'", optional = true }
+numpy = [
+    { version = ">1.21.0", markers = "python_version ~= '3.7.0' and (extra == 'numpy' or extra == 'all')", optional = true },
+    { version = ">1.21.0", markers = "python_version ~= '3.8.0' and (extra == 'numpy' or extra == 'all')", optional = true },
+    { version = ">1.21.0", markers = "python_version ~= '3.9.0' and (extra == 'numpy' or extra == 'all')", optional = true },
+    { version = ">1.22.0", markers = "python_version ~= '3.10' and (extra == 'numpy' or extra == 'all')", optional = true },
+]
+orjson = { version = "*", markers = "extra == 'orjson' or extra == 'all'", optional = true }
+
+[tool.poetry.dev-dependencies]
+pyyaml = "*"
+tomli = { version = "*", markers = "python_version <= '3.11.0'" }
+tomli-w = "*"
+msgpack = "*"
+numpy = [
+    { version = ">1.21.0", markers = "python_version ~= '3.7.0'" },
+    { version = ">1.21.0", markers = "python_version ~= '3.8.0'" },
+    { version = ">1.21.0", markers = "python_version ~= '3.9.0'" },
+    { version = ">1.22.0", markers = "python_version ~= '3.10'" },
+]
+mypy = "==1.3.0"
+pytest = "*"
+pytest-cov = "*"
+pytest-watch = "*"
+pytest-flake8 = "*"
+coverage = "==7.2.7"
+pdoc = "^13"
+more-itertools = "~=8.6.0"
+pre-commit = "==v2.10.1"
+pytest-xdist = "^2.3.0"
+types-PyYAML = "^6.0.9"
+msgpack-types = "^0.2"
+envclasses = "^0.2.1"
+
+[tool.poetry.extras]
+msgpack = ["msgpack"]
+numpy = ["numpy"]
+toml = ["tomli", "tomli-w"]
+yaml = ["pyyaml"]
+orjson = ["orjson"]
+all = ["msgpack", "tomli", "tomli-w", "pyyaml", "numpy", "orjson"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry-dynamic-versioning]
+enable = false
+style = "pep440"
+
+[tool.black]
+target_version = ["py311"]
+line_length = 100
+
+[tool.pyright]
+include = [
+  "examples",
+  "serde/core.py",
+  "serde/compat.py",
+  "serde/inspect.py",
+  "serde/json.py",
+  "serde/se.py",
+  "serde/de.py",
+  "serde/msgpack.py",
+  "serde/toml.py",
+  "serde/yaml.py",
+  "serde/pickle.py"
+]
+exclude = [
+  "serde/numpy.py",
+  "bench",
+  "tests",
+  "serde/__init__.py"
+]
+pythonVersion = "3.11"
+reportMissingImports = false
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+exclude = [
+  "serde/numpy.py",
+  "bench",
+  "tests"
+]
+
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+line-length = 100
+
+[tool.ruff.mccabe]
+max-complexity = 30
