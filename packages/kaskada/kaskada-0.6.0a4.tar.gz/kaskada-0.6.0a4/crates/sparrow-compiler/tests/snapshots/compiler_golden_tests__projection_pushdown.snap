@@ -1,0 +1,199 @@
+---
+source: crates/sparrow-compiler/tests/compiler_golden_tests.rs
+expression: "compile(TestScript {\n            tables: vec![account_sent_table()],\n            feature_set: FeatureSet {\n                formulas: vec![],\n                query: \"{ amount: Sent | first() | $input.amount  }\".to_owned(),\n            },\n        }, None).await"
+---
+per_entity_behavior: 1
+operations:
+  - expressions:
+      - arguments: []
+        result_type:
+          kind:
+            Struct:
+              fields:
+                - name: sender
+                  data_type:
+                    kind:
+                      Primitive: 10
+                  nullable: true
+                - name: amount
+                  data_type:
+                    kind:
+                      Primitive: 13
+                  nullable: true
+                - name: receiver
+                  data_type:
+                    kind:
+                      Primitive: 10
+                  nullable: true
+                - name: store
+                  data_type:
+                    kind:
+                      Primitive: 10
+                  nullable: true
+        output: false
+        operator:
+          Input:
+            producing_operation: 0
+            input_column: 0
+            interpolation: 1
+            column:
+              ScanRecord: ~
+      - arguments: []
+        result_type:
+          kind:
+            Primitive: 24
+        output: false
+        operator:
+          LateBound: 1
+      - arguments: []
+        result_type:
+          kind:
+            Primitive: 14
+        output: false
+        operator:
+          Literal:
+            literal:
+              Utf8: amount
+      - arguments: []
+        result_type:
+          kind:
+            Primitive: 1
+        output: false
+        operator:
+          Literal:
+            literal: ~
+      - arguments:
+          - 0
+          - 3
+          - 3
+        result_type:
+          kind:
+            Struct:
+              fields:
+                - name: sender
+                  data_type:
+                    kind:
+                      Primitive: 10
+                  nullable: true
+                - name: amount
+                  data_type:
+                    kind:
+                      Primitive: 13
+                  nullable: true
+                - name: receiver
+                  data_type:
+                    kind:
+                      Primitive: 10
+                  nullable: true
+                - name: store
+                  data_type:
+                    kind:
+                      Primitive: 10
+                  nullable: true
+        output: false
+        operator:
+          Instruction: first
+      - arguments:
+          - 4
+          - 2
+        result_type:
+          kind:
+            Primitive: 13
+        output: false
+        operator:
+          Instruction: field_ref
+      - arguments:
+          - 2
+          - 5
+        result_type:
+          kind:
+            Struct:
+              fields:
+                - name: amount
+                  data_type:
+                    kind:
+                      Primitive: 13
+                  nullable: true
+        output: true
+        operator:
+          Instruction: record
+      - arguments:
+          - 6
+        result_type:
+          kind:
+            Primitive: 24
+        output: false
+        operator:
+          Instruction: time_of
+      - arguments:
+          - 7
+          - 1
+        result_type:
+          kind:
+            Primitive: 2
+        output: true
+        operator:
+          Instruction: gte
+    operator:
+      Scan:
+        table_id:
+          high: 1233317930569911709
+          low: 9279388510107214504
+        schema:
+          fields:
+            - name: sender
+              data_type:
+                kind:
+                  Primitive: 10
+              nullable: true
+            - name: amount
+              data_type:
+                kind:
+                  Primitive: 13
+              nullable: true
+            - name: receiver
+              data_type:
+                kind:
+                  Primitive: 10
+              nullable: true
+            - name: store
+              data_type:
+                kind:
+                  Primitive: 10
+              nullable: true
+        slice_plan:
+          table_name: Sent
+          slice: ~
+  - expressions:
+      - arguments: []
+        result_type:
+          kind:
+            Struct:
+              fields:
+                - name: amount
+                  data_type:
+                    kind:
+                      Primitive: 13
+                  nullable: true
+        output: true
+        operator:
+          Input:
+            producing_operation: 0
+            input_column: 3
+            interpolation: 1
+            column:
+              ProducerExpression: 6
+    operator:
+      Select:
+        input: 0
+        condition:
+          producing_operation: 0
+          input_column: 4
+          interpolation: 1
+          column:
+            ProducerExpression: 8
+primary_grouping: account
+primary_grouping_key_type:
+  kind:
+    Primitive: 10
+

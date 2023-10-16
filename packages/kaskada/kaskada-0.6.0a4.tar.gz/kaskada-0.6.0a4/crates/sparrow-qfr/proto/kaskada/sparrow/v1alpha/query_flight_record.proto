@@ -1,0 +1,136 @@
+syntax = "proto3";
+package kaskada.sparrow.v1alpha;
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "gitlab.com/kaskada/kaskada/wren/gen/go/kaskada/sparrow/v1alpha";
+option java_multiple_files = true;
+option java_package = "com.kaskada.sparrow.v1alpha1";
+
+// Metadata added at the beginning of the flight record file.
+//
+// Contains metadata on the query, plan, etc. useful for interepreting
+// the flight record.
+message FlightRecordHeader {
+  // The version of the flight record format contained here.
+  uint32 version = 1;
+
+  // The request ID this flight record is for.
+  string request_id = 2;
+
+  // Build information about the Sparrow Binary.
+  BuildInfo sparrow_build_info = 3;
+
+  // Register activities that may be reported during the query.
+  //
+  // This includes the set of all activities which may be produced by any query.
+  // Not all activities will be reported by any specific query.
+  repeated RegisterActivity activities = 4;
+
+  // Register metrics that may be reported during the query.
+  //
+  // Metrics may be reported as part of an activity (see ReportActivity) or
+  // at the top level during execution (see ReportMetrics).
+  //
+  // The set of metrics are static within the query engine, and correspond
+  // to any value that may be reported during the execution of a query. Not
+  // all metrics need to be reported for any given query.
+  repeated RegisterMetric metrics = 5;
+
+  message BuildInfo {
+    string sparrow_version = 1;
+    string github_ref = 2;
+    string github_sha = 3;
+    string github_workflow = 4;
+  }
+
+  message RegisterActivity {
+    uint32 activity_id = 1;
+
+    string label = 2;
+
+    // The ID of the parent activity.
+    //
+    // May be `None` / `null` to indicate a root activity.
+    google.protobuf.UInt32Value parent_activity_id = 3;
+  }
+
+  message RegisterMetric {
+    uint32 metric_id = 1;
+    string label = 2;
+    MetricKind kind = 3;
+
+    // string description = 4;
+    // string units = 5;
+
+    enum MetricKind {
+      METRIC_KIND_UNSPECIFIED = 0;
+
+      METRIC_KIND_U64_GAUGE = 10;
+      METRIC_KIND_I64_GAUGE = 11;
+      METRIC_KIND_F64_GAUGE = 12;
+
+      METRIC_KIND_U64_COUNTER = 20;
+      METRIC_KIND_I64_COUNTER = 21;
+      METRIC_KIND_F64_COUNTER = 22;
+    }
+  }
+}
+
+message FlightRecord {
+  oneof record {
+    // Register an execution thread.
+    // This is sent for each computation thread spawned for a specific query.
+    RegisterThread register_thread = 1;
+
+    /// Report an activity execution during the query.
+    ReportActivity report_activity = 2;
+
+    /// Report a top-level metric.
+    ReportMetrics report_metrics = 3;
+  }
+
+  message RegisterThread {
+    uint32 thread_id = 1;
+    string label = 2;
+  }
+
+  message ReportActivity {
+    uint32 activity_id = 1;
+    uint32 thread_id = 2;
+
+    // The time within the trace at which this event was recorded.
+    uint64 wall_timestamp_us = 3;
+
+    // Wall clock time spent executing this event.
+    //
+    // This should be `0` for point-wise events.
+    uint64 wall_duration_us = 4;
+
+    // CPU time spent executing this event.
+    uint64 cpu_duration_us = 5;
+
+    // Metrics to report associated with the given activity.
+    repeated MetricValue metrics = 6;
+  }
+
+  message ReportMetrics {
+    uint32 thread_id = 1;
+
+    // The time within the trace at which this event was recorded.
+    uint64 wall_timestamp_us = 2;
+
+    // Metrics to report against the given thread.
+    repeated MetricValue metrics = 3;
+  }
+}
+
+message MetricValue {
+  uint32 metric_id = 1;
+
+  oneof value {
+    uint64 u64_value = 2;
+    int64 i64_value = 3;
+    double f64_value = 4;
+  }
+}
