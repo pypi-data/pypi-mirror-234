@@ -1,0 +1,326 @@
+{% extends "base-layout.html" %}
+
+{% macro errors_block() %}
+	{% for error_description, error_content in errors %}
+		{% if error_content %}
+			<span class="alert alert-danger">{{error_description}}: {{error_content|join(", ")}}</span>
+		{% endif %}
+	{% endfor %}
+{% endmacro %}
+
+{% macro report_filters() %}
+<div class="panel-group hidden-print" id="filter-accordion">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<a role="button" data-toggle="collapse" data-parent="#accordion" href="#view-filters">Customize</a>
+			</h4>
+		</div>
+		<div id="view-filters" class="panel-collapse collapse">
+			<div class="panel-body">
+					<!-- hidden fields passed from previous query -->
+					<input type="hidden" id="build" name="build" value="{{extras.build}}">
+					<input type="hidden" id="interval_type" name="interval_type" value="{{extras.interval_type}}">
+				  <div>
+					<div class="form-group">
+					  <div class="row" {% if hidden %}hidden{% endif %}>
+						<div class="col-xs-6">
+						  <label class="control-label">Completeness cutoff</label>
+						  <select class="form-control" name="default_level" id="default_level">
+							{% for level, _ in levels.items() %}
+							  <option value="{{ level }}" {% if level == extras.level %} selected {% endif %}>{{ level }}x</option>
+							{% endfor %}
+						  </select>
+						</div>
+
+					<div class="col-xs-6">
+					  <label class="control-label">Gene panel name to <i>display</i></label>
+					  <input class="form-control" id="panel_name" type="text" placeholder="Skeletal dysplasia 3.2" value="{{ extras.panel_name or '' }}">
+					</div>
+				  </div>
+				</div>
+
+				<div class="form-group">
+				  <div class="row" {% if hidden %}hidden{% endif %}>
+					<div class="col-xs-7">
+					  <label class="control-label">Included genes (Comma separated list of Ensembl IDs, HGNC IDs or HGNC symbols)</label>
+					  <div><input class="form-control" type="text" name="gene_ids" id ="gene_ids" value="{{ extras.hgnc_gene_ids|join(', ') }}" placeholder="ADK,GIT"></div>
+					</div>
+
+					<div class="col-xs-2">
+					  <label class="control-label">&nbsp;</label>
+					  <button class="btn btn-default form-control" type="button" onclick="submitAsJson();">Update</button>
+					</div>
+				  </div>
+				</div>
+
+				{% for sample_id in sample_ids %}
+				  <input type="text" name="sample_id" value="{{ sample_id }}" hidden>
+				{% endfor %}
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endmacro %}
+
+{% macro sex_rows_block() %}
+<div class="table-responsive">
+  <table class="table table-bordered table-hover">
+    <caption>Sex metrics from sequencing data</caption>
+	<thead>
+	  <tr>
+		<th rowspan="2" id="sample">Sample</th>
+		<th rowspan="2" id="group">Group</th>
+		<th rowspan="2" id="analusis_date">Analyzed at</th>
+		<th rowspan="2" id="predicted sex">Sex according to sequence data</th>
+		<th colspan="2" class="center-align" id="avg_coverage">Average coverage [x]</th>
+	  </tr>
+	  <tr>
+		<th class="th-secondary" id="cov_x">Chromosome X</th>
+		<th class="th-secondary" id="cov_y">Chromosome Y</th>
+	  </tr>
+	</thead>
+	<tbody>
+		{% for sample in sex_rows %}
+		<tr>
+		  <td>{{ sample.sample }}</td>
+		  <td>{{ sample.case }}</td>
+		  <td>{{ sample.analysis_date.date() }}</td>
+		  <td>{{sample.predicted_sex}}</td>
+		  <td class="text-right">{{ sample.x_coverage }}</td>
+		  <td class="text-right">{{ sample.y_coverage }}</td>
+		</tr>
+	  {% endfor %}
+	</tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro important_metrics() %}
+<div class="table-responsive">
+  <table class="table table-bordered table-hover">
+    <caption>Average coverage and coverage completeness data</caption>
+	<thead>
+	  <tr>
+		<th>Sample</th>
+		<th>Average coverage[x]</th>
+		{% for level_int, level_key in levels.items() %}
+		  <th>Completeness {{ level_int }}x [%]</th>
+		{% endfor %}
+	  </tr>
+	</thead>
+	<tbody>
+	  {% for sample, stats in completeness_rows %}
+		<tr>
+			<td>{{ sample }}</td>
+			<td>{{ stats.mean_coverage|round(2) if stats.mean_coverage is defined }}</td>
+			{% for level_int, level_key in levels.items() %}
+				<td>{{ stats[level_key] if stats[level_key] is defined }} </td>
+			{% endfor %}
+		</tr>
+	  {% endfor %}
+	</tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro default_level_metrics() %}
+ <div class="col-xs-1 col-xs-offset-9" style="text-align: right;"><input type="checkbox" name="show_genes" onclick="toggle_visibility(['incompletelyCoveredGenesHeader', 'incompletelyCoveredGenesCell']);"></div>
+	 <div class="col-xs-2">
+		 <label class="control-label">Show genes</label>
+	 </div>
+<table class="table table-bordered table-hover">
+	 <caption>Genes/Transcripts/Exons coverage at default coverage threshold</caption>
+      <thead>
+        <tr>
+          <th>Sample</th>
+          <th>Fully covered {{ interval_type }} [%]</th>
+          <th>Incompletely covered {{ interval_type }}</th>
+		  <th id="incompletelyCoveredGenesHeader"  style="display: none;">Incompletely covered genes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for data in default_level_completeness_rows %}
+          <tr>
+			  <td>{{data[0]}}</td>
+			  {% if data[1] == 100.00 %}
+			  	<td colspan="2">
+				  No incompletely covered intervals.
+				</td>
+			  {% else %}
+				<td class="text-right">{{ data[1] }}</td>
+				<td class="text-center">{{ data[2] }}</td>
+			  	<td id="incompletelyCoveredGenesCell" class="text-center" style="display: none;">
+					{{ data[3]|join(", ") }}
+				</td>
+			  {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+ </table>
+
+{% endmacro %}
+
+{% macro explanations() %}
+<h4>General</h4>
+<p>
+  <a href="https://github.com/Clinical-Genomics/chanjo2" target="_blank" rel="noopener" title="chanjo2">Chanjo2</a>
+  was used for coverage analysis based on reads alignment. Chanjo2 computes coverage and coverage completeness using an internal module based on <a href="https://github.com/38/d4-format" target="_blank" rel="noopener">d4tools</a>.
+
+  The genome has been analyzed at the {{ extras.interval_type }} level, for genes defined at <a href="http://www.genenames.org/" target="_blank" rel="noopener">HGNC</a>.
+</p>
+
+{% if extras.panel_name %}
+  <p>
+	Final coverage metrics were calculated for genes from the clinical panels.
+	Note that <strong>estimations were made regarding coverage and completeness
+	  on the level of {{ extras.interval_type }}</strong>.
+  </p>
+{% endif %}
+
+<p>
+  <strong>Completeness</strong>:
+  defined as the ratio of bases
+  sequenced deeper than a specified cutoff
+  e.g. 10x
+</p>
+
+<p>
+  <strong>Gene/Transcripts/Exons coverage</strong>:
+  defined as the ratio of these intervals are fully covered
+  ('i.e. with a completeness of') 100% 'at' {{ extras.default_level }}x.
+</p>
+
+<p>
+  <strong>Gender prediction from data</strong>:
+  calculated by comparing relative chromosome coverage (X/Y).
+  Some reads randomly map to the Y chromosome.
+  Therefore, a less than 10 fold difference is used to infer a "male" sample.
+</p>
+
+{% endmacro %}
+
+{% block title %}
+<title>Coverage report</title>
+{% endblock %}
+
+
+{% block pdf_export %}
+	<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		<div class="nav navbar-nav navbar-right">
+			<button class="navbar-brand" onclick="window.focus(); window.print();">Create PDF</button>
+		</div>
+	</div><!-- /.navbar-collapse -->
+{% endblock %}
+
+{% block content%}
+	{{ report_filters() }}
+
+	{% if extras.case_name %}
+		<h2>Case name: {{extras.case_name}}</h2>
+	{% endif %}
+
+	<!-- Quality report -->
+
+	<h2>Quality report: clinical sequencing</h2>
+	{% if extras.panel_name %}
+		<p>Based on gene panel: <strong>{{ extras.panel_name }}</strong></p>
+	{% endif %}
+
+	{{ sex_rows_block() }}
+
+	<h3>Generally important metrics</h3>
+
+	{{ important_metrics() }}
+
+	<h3> Transcript coverage at {{ extras.default_level }}x</h3>
+
+	{{ default_level_metrics() }}
+	<hr>
+	{{ errors_block() }}
+	<!--End of Quality report -->
+
+	<h3>Explanations</h3>
+
+	{{ explanations() }}
+
+{% endblock %}
+
+
+{% block js_code %}
+	{{ super() }}
+
+	<script>
+		function toggle_visibility(ids)
+		{
+			for (let id of ids) {
+				var e = document.getElementById(id);
+				if (e.style.display == 'block'){
+					e.style.display = 'none';
+				}
+				else {
+					e.style.display = 'block';
+				}
+			}
+		}
+
+		// Extracts the content of the body element of an HTML page as a string
+		function updatedReportBody(html)
+		{
+			return /<body.*?>([\s\S]*)<\/body>/.exec(html)[1];
+		}
+
+		// Returns the list of HGNC genes present in the user query as a sring as a list of integers
+		function getFormGeneIDsAsList()
+		{
+			let geneIdsTypes = [null, null, null]; // [Ensembl_ids_list, HGNC_ids_list, HGNC_symbols_list];
+			let formGeneIds = document.getElementById('gene_ids').value.replace(/\s/g, '').split(",");
+			if (!isNaN(formGeneIds[0])) {
+				geneIdsTypes[1] = formGeneIds.map(Number);
+			}
+			else if (formGeneIds[0].startsWith('ENSG')){
+				geneIdsTypes[0] = formGeneIds;
+			}
+			else{
+				geneIdsTypes[2] = formGeneIds;
+			}
+			return geneIdsTypes;
+		}
+
+		function submitAsJson()
+		{
+			event.preventDefault();
+			let geneIds = getFormGeneIDsAsList();
+			let formDict = {
+				'build' : '{{ extras.build }}',
+				'completeness_thresholds' : {{ extras.completeness_thresholds }},
+				'ensembl_gene_ids': geneIds[0],
+				'hgnc_gene_ids' : geneIds[1],
+				'hgnc_gene_symbols' : geneIds[2],
+				'interval_type' : '{{ extras.interval_type }}',
+				'panel_name' : document.getElementById("panel_name").value,
+				'default_level' : document.getElementById("default_level").value,
+				'case_display_name' : '{{ extras.case_name }}',
+				'samples' : {{ extras.samples|safe }},
+			}
+
+			fetch('/report', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify(formDict)
+				})
+				.then(resp => resp.text())
+				.then(html => {
+					document.body.innerHTML = updatedReportBody(html);
+				})
+				.catch(error => {
+					console.error(error);
+			});
+		}
+	</script>
+
+{% endblock %}
