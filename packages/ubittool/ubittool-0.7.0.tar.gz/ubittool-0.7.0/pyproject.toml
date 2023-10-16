@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools", "poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# Poetry settings
+[tool.poetry]
+name = "ubittool"
+version = "0.7.0"
+description = "Tool to interface with the BBC micro:bit."
+authors = ["Carlos Pereira Atencio <carlosperate@embeddedlog.com>"]
+license = "MIT"
+homepage = "https://carlosperate.github.io/ubittool/"
+repository = "https://github.com/carlosperate/ubittool/"
+documentation = "https://carlosperate.github.io/ubittool/"
+readme = "README.md"
+keywords = ["microbit", "micro:bit", "bbcmicrobit", "ubittool"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Environment :: MacOS X",
+  "Environment :: Win32 (MS Windows)",
+  "Environment :: X11 Applications",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
+  "Topic :: Education",
+  "Topic :: Software Development :: Embedded Systems",
+]
+
+[tool.poetry.dependencies]
+python = "^3.6,<3.10"
+IntelHex = "^2.2.1"
+uflash = ">=1.1.0,<1.2.1"
+# This version of PyOCD fails in Python 3.10+
+pyocd = "0.19.0"
+click = "^7.0"
+
+[tool.poetry.dev-dependencies]
+# Packaging, PyInstaller needs macholib for macOS, pywin32 for Windows
+pyinstaller = "^4.7"
+macholib = { version = "^1.8", platform = "darwin" }
+pywin32 = { version = "^303", platform = "windows" }
+pywin32-ctypes = { version = "^0.2.0", platform = "windows" }
+# PyOCD needs this as a setup_requires, for some reason 'pipenv install' in
+# Travis doesn't pick it up and PyOCD fails to install or run
+setuptools_scm = "*"
+# Linting
+flake8 = "*"
+flake8-bugbear = { version = "*", python = "^3.5" }
+flake8-builtins = "*"
+flake8-docstrings = "*"
+black = { version = "19.10b0", python = "^3.6" }
+# Tests
+pytest = "*"
+pytest-cov = "*"
+
+[tool.poetry.scripts]
+ubit = 'ubittool.__main__:main'
+
+# Black settings
+[tool.black]
+line-length = 79
+target-version = ['py35']
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  # Above this line are defaults and below are project specific
+  | ignoreme
+)/
+'''
