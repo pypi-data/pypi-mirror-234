@@ -1,0 +1,11 @@
+# devopstestor
+
+Bienvenue sur le nouveau moteur des tests automatisés.  
+Ce moteur est entièrement développé en Python 3.6
+
+# Utilisation
+
+Il est nécessaire de créer une couche d'implémentation (voir sample-testauto-project)
+
+# Documentation
+[Documentation](documentations/home.md)
