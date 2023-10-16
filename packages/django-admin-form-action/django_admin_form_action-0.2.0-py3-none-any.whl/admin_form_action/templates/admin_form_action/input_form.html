@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls i18n static %}
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet"
+        type="text/css"
+        href="{% static "admin/css/forms.css" %}">
+{% endblock %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; {{ description|capfirst }}
+</div>
+{% endblock %}
+{% block content %}
+<div id="content-main">
+    <h1>{{ description|capfirst }}</h1>
+    <form action="" method="post">{% csrf_token %}
+        <fieldset class="module aligned">
+            {{ form.as_p }}
+        </fieldset>
+        <p><input type="hidden" name="action" value="{{ action }}" /></p>
+        <p class="submit-row">
+            <input type="submit"
+                   name="{{ action_submit_parameter }}"
+                   value="{% trans "Perform" %}"
+                   class="default" />
+        </p>
+    </form>
+    {% trans "selected" as selected %}
+    <h2>{{ selected|capfirst }} {{ opts.verbose_name_plural }}</h2>
+    <ul>{{ items|unordered_list }}</ul>
+</div>
+{% endblock %}
