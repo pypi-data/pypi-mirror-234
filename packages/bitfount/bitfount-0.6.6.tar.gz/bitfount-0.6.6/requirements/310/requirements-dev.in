@@ -1,0 +1,54 @@
+# Dev requirements
+# See requirements/requirements.in for more details
+
+# Parent requirement constraints
+-c requirements.txt
+-c requirements-test.txt
+
+# Constraints
+-c ../constraints-compatibility.txt
+-c ../constraints-direct.txt
+-c ../constraints-security.txt
+
+apispec # openapi spec
+bandit  # security tests
+black==23.1.0
+cleanpy  # useful for removing test/build cruft and speeding up pre-commit. Call `cleanpy -av .` to use.
+flake8~=6.0.0  # ensure other usages (Github actions, other -dev.in files, etc) match this version
+flake8-bugbear~=23.6.5  # ensure other usages (Github actions, other -dev.in files, etc) match this version
+flake8-docstrings~=1.7.0  # ensure other usages (Github actions, other -dev.in files, etc) match this version
+grpcio-tools>=1.48.0  # ensure the constraints here matches the grpcio constraints in requirements.in
+interrogate
+jupytext  # tutorial conversion to notebooks
+# mypy>=1.2.0  # protocol subtyping speed fixes from this version
+git+https://github.com/ilevkivskyi/mypy@negative-cache  # temp: use this fork until fix merged in; also uncomment in setup.py at that point
+mypy-protobuf  # for generating mypy stubs for grpc code
+pip-tools
+pre-commit
+rope  # for helping with refactoring (on VSCode)
+sqlalchemy[mypy]>=1.4.0  # used for database connections; this enforces the mypy extensions
+
+# For our documentation building
+sphobjinv
+pdoc3
+
+# Additional types for mypy
+# grpc-stubs  # Use custom stubs until this is resolved: https://github.com/shabbyrobe/grpc-stubs/issues/22
+msgpack-types
+pandas-stubs
+types-backports
+types-Flask
+types-Markdown
+types-mock
+types-Pillow
+types-protobuf  # this needs to be compatible with the protobuf version generated in requirements.txt
+types-psutil
+types-pytest-lazy-fixture
+types-python-dateutil
+types-PyYAML
+types-requests
+types-selenium
+types-setuptools
+types-six
+types-tabulate
+typing_extensions>=4.0.0  # backports of later python versions typing functionality
