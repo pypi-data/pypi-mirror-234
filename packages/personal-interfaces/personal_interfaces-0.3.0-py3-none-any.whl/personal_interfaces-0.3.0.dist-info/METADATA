@@ -1,0 +1,137 @@
+Metadata-Version: 2.1
+Name: personal-interfaces
+Version: 0.3.0
+Home-page: https://github.com/ricardoleal20/personal_interface/
+Author: Ricardo Leal
+Author-email: ricardo.lealpz@gmail.com
+Maintainer: Ricardo Leal
+Maintainer-email: ricardo.lealpz@gmail.com
+Project-URL: Bug Reports, https://github.com/ricardoleal20/personal_interface/issues
+Keywords: development,personal_usage
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3 :: Only
+Requires-Python: >=3.8, <4
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: deta >=1.2.0
+Requires-Dist: uvicorn >=0.23.2
+Requires-Dist: fastapi >=0.103.2
+Requires-Dist: attrs >=23.1.0
+Requires-Dist: rich >=13.6.0
+Requires-Dist: pyjwt >=2.8.0
+
+# Personal Interface
+
+The Personal Interface is a Python project that provides a simple model for connecting to a database using the Deta library, among other utilities as loggers. It offers basic database operations such as querying, creating, updating, and deleting records. This README provides an overview of the project, installation instructions, and usage examples.
+
+## Table of Contents
+
+- [Personal Interface](#personal-interface)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [DetaDatabase](#detadatabase)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+## Installation
+
+Before you can use the Personal Interface, make sure you have Python installed on your system. You'll also need to set up a Deta project and obtain an API key. Follow these steps to get started:
+
+1. Clone the repository:
+
+   ```bash
+   pip install personal_interfaces
+   ```
+
+2. Set your Deta project API key as an environment variable:
+
+    ### Method 1
+
+    Using bash:
+    ```bash
+    export DB_ACCESS_TOKEN=your_api_key
+    ```
+
+    ### Method 2
+
+    Using a `.env`
+    ```env
+    DB_ACCESS_TOKEN = your_api_key
+    ```
+
+   Replace `your_api_key` with your actual Deta API key.
+
+3. Set your private API key to access and use the code:
+
+    ### Method 1
+
+    Using bash:
+    ```bash
+    export API_KEY=your_api_key
+    ```
+
+    ### Method 2
+
+    Using a `.env`
+    ```env
+    API_KEY = your_api_key
+    ```
+
+   Replace `your_api_key` with your actual Deta API key.
+
+## Usage
+
+This interface can only be used with a private `API_KEY`. Without it, the tool is not functional.
+
+### DetaDatabase
+
+The Personal Interface provides a simple way to interact with your Deta database. Here's how you can use it in your Python code:
+
+1. Import the `DetaDatabase` class:
+
+   ```python
+   from personal_interfaces import DetaDatabase
+   ```
+
+2. Create an instance of the `DetaDatabase` class and connect to your Deta database:
+
+   ```python
+   db = DetaDatabase()
+   db.connect("your_database_name")
+   ```
+
+   Replace `"your_database_name"` with the name of your Deta database.
+
+3. Perform database operations such as querying, creating, updating, and deleting records using the provided methods. For example:
+
+   ```python
+   # Query for records
+   data = {"name": "John"}
+   results = db.query(data, filter_by="equal")
+
+   # Create a new record
+   new_data = {"name": "Alice", "age": 30}
+   key = db.create(new_data)
+
+   # Update an existing record
+   updated_data = {"key": key, "age": 31}
+   db.update(updated_data)
+
+   # Delete a record by its key
+   db.delete(key)
+   ```
+
+For more details on how to use the Personal Interface, refer to the [Python code documentation](https://github.com/ricardoleal20/deta_personal_interface/blob/main/deta_personal_interface/__main__.py) in the repository.
+
+## Contributing
+
+Contributions to this project are welcome! If you have suggestions, feature requests, or would like to report a bug, please open an issue on the [GitHub repository](https://github.com/ricardoleal20/deta_personal_interface). If you'd like to contribute code, please fork the repository, make your changes, and submit a pull request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/ricardoleal20/deta_personal_interface/blob/main/LICENSE) file for details.
