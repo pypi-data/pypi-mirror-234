@@ -1,0 +1,67 @@
+[build-system]
+requires = [ "poetry>=0.12",]
+build-backend = "poetry.masonry.api"
+
+[tool.poetry]
+name = "pipen"
+version = "0.11.1"
+description = "A pipeline framework for python"
+authors = [ "pwwang <pwwang@pwwang.com>",]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/pwwang/pipen"
+repository = "https://github.com/pwwang/pipen"
+
+[tool.poetry.build]
+generate-setup-file = true
+
+[tool.poetry.dependencies]
+python = "^3.8"
+liquidpy = "^0.8.1"
+pandas = "^2"
+enlighten = "^1"
+argx = "^0.2.10"
+xqute = "^0.2.4"
+## included in xqute
+# rich = "^13"
+# diot = "^0.1"
+# simplug = "^0.0"
+rtoml = "^0.8"
+# May not be rtoml
+python-simpleconf = {version = "^0.6", extras = ["toml"]}
+pipda = "^0.13"
+varname = "^0.12"
+
+[tool.poetry.dev-dependencies]
+openpyxl = "^3"
+pytest = "^7"
+pytest-cov = "^4"
+pytest-xdist = "^3"
+# This also installs scipy and wcwidth
+# datar = { version = "^0.15", extras = ["pandas"] }
+datar-pandas = "^0.5"
+datar = "^0.15"
+
+[tool.poetry.scripts]
+pipen = "pipen.cli:main"
+
+[tool.pytest.ini_options]
+addopts = "-vv -n auto -p no:asyncio -p no:benchmark -W error::UserWarning --cov-config=.coveragerc --cov=pipen --cov-report xml:.coverage.xml --cov-report term-missing"
+# addopts = "-vv -n auto -p no:asyncio -W error::UserWarning"
+console_output_style = "progress"
+junit_family = "xunit1"
+filterwarnings = [
+   "ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+allow_redefinition = true
+disable_error_code = ["attr-defined", "no-redef"]
+show_error_codes = true
+strict_optional = false
+
+[tool.black]
+line-length = 79
+target-version = ['py37', 'py38', 'py39']
+include = '\.pyi?$'
