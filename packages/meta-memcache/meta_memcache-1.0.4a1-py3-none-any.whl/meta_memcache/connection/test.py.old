@@ -1,0 +1,242 @@
+from abc import ABC, abstractmethod
+from typing import Dict, List
+from collections import defaultdict
+import itertools
+from re import I
+import threading
+import time
+from typing import DefaultDict, Iterator
+
+# import atomics
+from meta_memcache.protocol import MetaCommand
+from prometheus_client import Counter as PCounter, Gauge, Histogram, generate_latest
+
+
+class BaseMetricsCollector(ABC):
+    """
+    Base class for metrics collectors. Subclasses should implement the _report()` method
+    to integrate into the metrics system.`
+
+    To be used as:
+    next(metrics_collector.counters[[key])
+    metrics_collector.metrics[key].append(float_value)
+    """
+
+    def __init__(self, collect_interval: int = 10) -> None:
+        self._collect_interval = collect_interval
+        self._is_running = False
+        self._worker = threading.Thread(
+            target=self._collect,
+            name="CacheMetricsCollector",
+            daemon=True,
+        )
+        self.counters: DefaultDict[str, Iterator[int]] = defaultdict(
+            lambda: itertools.count(start=1)
+        )
+
+        self.metrics: DefaultDict[str, List[float]] = defaultdict(list)
+        self._total_metrics: DefaultDict[str, float] = defaultdict(float)
+
+    def _collect(self) -> None:
+        while self._is_running:
+            time.sleep(self._collect_interval)
+            # Swap the metrics instead of locking. Other threads might
+            # race but they will either append to the old or new one
+            metrics, self.metrics = self.metrics, defaultdict(list)
+            # Ensure all other threads ended their append
+            time.sleep(0.1)
+            for k, v in metrics.items():
+                self._total_metrics[k] += sum(v)
+            counters: Dict[str, int] = {
+                k: int(v.__reduce__()[1][0]) - 1 for k, v in self.counters.items()
+            }
+            self._report(counters, self._total_metrics)
+
+    @abstractmethod
+    def _report(self, counters: Dict[str, int], metrics: Dict[str, float]) -> None:
+        ...
+
+    def start(self) -> None:
+        if not self._is_running:
+            self._is_running = True
+            self._worker.start()
+
+    def stop(self) -> None:
+        self._is_running = False
+
+
+class MetricsCollector(BaseMetricsCollector):
+    def _report(
+        self, counters: Dict[MetaCommand, Dict[str, int]], metrics: Dict[str, float]
+    ) -> None:
+        print("Reporting")
+        print(counters)
+        print(metrics)
+
+
+class Counter:
+    def __init__(self, start: int = 0) -> None:
+        self._value: int = start
+        self._counter: itertools.count[int] = itertools.count(start=start + 1)
+
+    def increment(self) -> None:
+        # self._value = next(self._counter)
+        next(self._counter)
+
+    def nothing(self) -> None:
+        return None
+
+    def get(self) -> int:
+        return self._counter.__reduce__()[1][0] - 1
+
+    # def get(self) -> int:
+    #     return self._value
+
+    # class SuperCounter("itertools.count[int]", Iterator[int]):
+
+
+# class SuperCounter("itertools.count[int]"):
+class SuperCounter(itertools.count, Iterator[int]):
+    # class SuperCounter(itertools.count[int]):
+    # __slots__ = tuple()
+
+    def get(self) -> int:
+        return self.__reduce__()[1][0] - 1
+
+
+def get(self) -> int:
+    return self.__reduce__()[1][0] - 1
+
+
+class Foo:
+    def __init__(self) -> None:
+        self._a: SuperCounter = SuperCounter(start=1)
+        self._b: SuperCounter = SuperCounter(start=1)
+
+        self._a_counter: itertools.count[int] = itertools.count(start=1)
+        self._b_counter: itertools.count[int] = itertools.count(start=1)
+        # self._aa_counter: itertools.count[int] = itertools.count(start=1)
+        # self._a = 0
+
+        # self._b: Counter = Counter(0)
+        self.lock = threading.Lock()
+        self._c = 0
+        self._d = 0
+
+        self.local = threading.local()
+        self.local.a = 0
+        self.local.b = 0
+
+        # self._f = atomics.atomic(width=8, atype=atomics.UINT)
+        # self._g = atomics.atomic(width=8, atype=atomics.UINT)
+        self.m = MetricsCollector()
+
+        self.y = PCounter(
+            "foo",
+            "Description of counter",
+        )
+        self.zz = Gauge(
+            "barz",
+            "Description of counter",
+            labelnames=["kk"],
+        )
+        self.z = Gauge(
+            "bar",
+            "Description of counter",
+        )
+
+    def test_aa(self) -> None:
+        s = time.time()
+        for _ in range(1_000_000):
+            next(self._a)
+            next(self._b)
+        print(f"{(time.time()-s):.4f} us")
+
+    def test_a(self) -> None:
+        s = time.time()
+        for _ in range(1_000_000):
+            next(self._a_counter)
+            next(self._b_counter)
+        print(f"{(time.time()-s):.4f} us")
+
+    def test_m(self) -> None:
+        self.m.start()
+        names = {MetaCommand.META_GET: "get", MetaCommand.META_SET: "set"}
+        s = time.time()
+        for _ in range(1_000_000):
+            # next(self.m.counters[MetaCommand.META_GET][f"key"])
+            # next(self.m.counters[f"{MetaCommand.META_GET.name}.key2"])
+            # next(self.m.counters[MetaCommand.META_GET.name + ".key2"])
+            self.m.metrics["latency1"].append(1.0)
+            self.m.metrics["latency2"].append(1.0)
+            # self.m.metrics2["latency1"] += 1.0
+            # self.m.metrics2["latency2"] += 1.0
+
+        print(f"{(time.time()-s):.4f} us")
+        self.m.stop()
+
+    # def test_b(self) -> None:
+    #     s = time.time()
+    #     for _ in range(1_000_000):
+    #         self._b.increment()
+    #     print(f"{(time.time()-s):.4f} us")
+
+    def test_b(self) -> None:
+        s = time.time()
+        for _ in range(1_000_000):
+            self.local.a += 1
+            self.local.b += 1
+        print(f"{(time.time()-s):.4f} us")
+
+    def test_c(self) -> None:
+        s = time.time()
+        for _ in range(1_000_000):
+            with self.lock:
+                self._c += 1
+                self._d += 1
+        print(f"{(time.time()-s):.4f} us")
+
+    def test_z(self) -> None:
+        s = time.time()
+        for _ in range(1_000_000):
+            self.y.inc()
+            self.zz.set(1.8)
+            self.zz.labels(kk="foo").set(1.1)
+            self.z.set(1)
+        print(f"{(time.time()-s):.4f} us")
+
+    # def test_d(self) -> None:
+    #     s = time.time()
+    #     for _ in range(1_000_000):
+    #         self._f.inc()
+    #         self._g.inc()
+    #     print(f"{(time.time()-s):.4f} us")
+
+    # def test_nothing(self) -> None:
+    #     s = time.time()
+    #     for _ in range(1_000_000):
+    #         self._b.nothing()
+    #     print(f"{(time.time()-s):.4f} us")
+
+
+foo = Foo()
+foo.test_z()
+foo.test_m()
+foo.test_a()
+foo.test_aa()
+foo.test_b()
+foo.test_c()
+print(foo.y)
+print(foo.y.collect()[0].name)
+print(foo.y.collect()[0].samples)
+print(foo.z.collect()[0].name)
+print(foo.z.collect()[0].samples)
+print(generate_latest(foo.z))
+print(foo._a.get())
+print(foo._b.get())
+print(foo._a_counter.__reduce__()[1][0] - 1)
+print(foo._c)
+# print(foo._f.load())
+# print(foo._g.load())
+time.sleep(10)
+# print(foo._b.get2())
