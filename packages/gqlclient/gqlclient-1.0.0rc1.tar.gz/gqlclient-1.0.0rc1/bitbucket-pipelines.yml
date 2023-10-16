@@ -1,0 +1,28 @@
+image: python:3.10
+
+pipelines:
+  default:
+    - step:
+        script:
+          - python --version
+          - pip install -e .[async]
+          - pip install pytest pytest-cov codecov safety pydantic
+          - pytest -v --cov gqlclient
+          - codecov
+          - safety check
+  tags:
+    'v*':
+      - step:
+          script:
+            - python --version
+            - pip install -e .[async]
+            - pip install pytest pytest-cov codecov safety pydantic
+            - pytest -v --cov gqlclient
+            - codecov
+            - safety check
+      - step:
+          script:
+            - python setup.py sdist
+            - pip install --upgrade pip
+            - pip install twine
+            - twine upload dist/*
