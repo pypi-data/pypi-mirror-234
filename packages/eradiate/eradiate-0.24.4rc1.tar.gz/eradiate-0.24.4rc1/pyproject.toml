@@ -1,0 +1,88 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61", "setuptools_scm>=6.2"]
+
+[project]
+authors = [
+  {name = "The Eradiate Team"}
+]
+description = "A radiative transfer model for the Earth observation community"
+dynamic = ["version", "dependencies", "optional-dependencies"]
+license = {text = "LGPLv3"}
+maintainers = [
+  {name = "The Eradiate Team"}
+]
+name = "eradiate"
+readme = "README.md"
+requires-python = ">=3.8"
+
+[project.scripts]
+eradiate = "eradiate.cli:main"
+
+[project.urls]
+changelog = "https://github.com/eradiate/eradiate/CHANGELOG.md"
+documentation = "https://eradiate.readthedocs.io"
+repository = "https://github.com/eradiate/eradiate"
+
+[tool.coverage.run]
+omit = [
+  "*/tests/*"
+]
+source = [
+  "eradiate/"
+]
+
+[tool.isort]
+profile = "black"
+reverse_relative = true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "error",
+  "ignore:distutils Version classes are deprecated:DeprecationWarning",
+  # Remove the following when environment issues are solved
+  "ignore:numpy.ndarray size changed, may indicate binary incompatibility:RuntimeWarning",
+  # Remove the following when Jupyter stops issuing those
+  "ignore:Jupyter is migrating its paths to use standard platformdirs"
+]
+testpaths = "tests"
+
+[tool.ruff]
+select = [
+  "I"
+]
+src = ["src", "tests"]
+
+[tool.ruff.isort]
+relative-imports-order = "closest-to-furthest"
+
+[tool.setuptools]
+include-package-data = true  # Required because of package data
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements/pip/dependencies.txt"]}
+
+[tool.setuptools.dynamic.optional-dependencies]
+recommended = {file = ['requirements/pip/recommended.txt']}
+
+[tool.setuptools.package-data]
+# Required by PEP 561
+# https://mypy.readthedocs.io/en/stable/installed_packages.html#creating-pep-561-compatible-packages
+eradiate = ["py.typed", "*.pyi"]
+
+[tool.setuptools.packages.find]
+exclude = ["plugins"]
+include = ["eradiate*"]
+namespaces = false
+where = ["src"]
+
+[tool.setuptools_scm]
+git_describe_command = [
+  "git",
+  "describe",
+  "--dirty",
+  "--tags",
+  "--long",
+  "--match",
+  "v[0-9]*"
+]  # Redefined to avoid crashing with special build tags
