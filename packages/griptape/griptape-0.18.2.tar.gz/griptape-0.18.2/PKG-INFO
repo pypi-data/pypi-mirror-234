@@ -1,0 +1,130 @@
+Metadata-Version: 2.1
+Name: griptape
+Version: 0.18.2
+Summary: Modular Python framework for LLM workflows, tools, memory, and data.
+Home-page: https://github.com/griptape-ai/griptape
+License: Apache 2.0
+Author: Griptape
+Author-email: hello@griptape.ai
+Requires-Python: >=3.9,<4.0
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: PyPDF2 (>=3)
+Requires-Dist: anthropic (>=0.3.0,<0.4.0)
+Requires-Dist: attrs (>=22)
+Requires-Dist: boto3 (>=1.28.57,<2.0.0)
+Requires-Dist: cohere (>=4)
+Requires-Dist: docker (>=6.1.3,<7.0.0)
+Requires-Dist: fastapi (>=0.80)
+Requires-Dist: huggingface-hub (>=0.13)
+Requires-Dist: jinja2 (>=3.1)
+Requires-Dist: jsonschema (>=4)
+Requires-Dist: marqo (>=1.1.0)
+Requires-Dist: marshmallow (>=3)
+Requires-Dist: marshmallow-enum (>=1.5)
+Requires-Dist: numpy (>=1)
+Requires-Dist: openai (>=0.27)
+Requires-Dist: opensearch-py (>=2.3.1,<3.0.0)
+Requires-Dist: pandas (>=2.1.0,<3.0.0)
+Requires-Dist: pgvector (>=0.2.3,<0.3.0)
+Requires-Dist: pinecone-client (>=2)
+Requires-Dist: psycopg2-binary (>=2.9.9,<3.0.0)
+Requires-Dist: pymongo
+Requires-Dist: python-decouple (>=3)
+Requires-Dist: python-dotenv (>=0.21)
+Requires-Dist: pyyaml (>=6)
+Requires-Dist: redis (>=4.6.0,<5.0.0)
+Requires-Dist: requests-aws4auth (==1.2.3)
+Requires-Dist: rich (>=13)
+Requires-Dist: schema (>=0.7)
+Requires-Dist: snowflake-connector-python (>=3.2,<4.0)
+Requires-Dist: snowflake-sqlalchemy (>=1.4.7,<2.0.0)
+Requires-Dist: sqlalchemy (>=1.0,<2.0)
+Requires-Dist: sqlalchemy-redshift
+Requires-Dist: stopit
+Requires-Dist: stringcase (>=1.2.0,<2.0.0)
+Requires-Dist: tenacity (>=8.0)
+Requires-Dist: tiktoken (>=0.3)
+Requires-Dist: trafilatura (>=1.6)
+Requires-Dist: transformers (>=4.30,<5.0)
+Requires-Dist: uvicorn (>=0.20)
+Project-URL: Repository, https://github.com/griptape-ai/griptape
+Description-Content-Type: text/markdown
+
+# griptape
+
+[![PyPI Version](https://img.shields.io/pypi/v/griptape.svg)](https://pypi.python.org/pypi/griptape)
+[![Tests](https://github.com/griptape-ai/griptape/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/griptape-ai/griptape/actions/workflows/unit-tests.yml)
+[![Docs](https://readthedocs.org/projects/griptape/badge/)](https://griptape.readthedocs.io/)
+[![Griptape Discord](https://dcbadge.vercel.app/api/server/gnWRz88eym?compact=true&style=flat)](https://discord.gg/gnWRz88eym)
+
+**Griptape** is a modular Python framework for building AI-powered applications that connect securely to your enterprise data and APIs. It offers developers the ability to maintain control and flexibility at every step.
+
+**Build AI Apps**: Easily compose apps in Python with modular structures and ready-made tools. Use built-in drivers to connect to whichever LLMs and data stores you choose.
+
+**Control Data Access**: Connect securely to data sources with granular access controls, ensuring LLMs stay focused on the information that matters.
+
+**Scale With Your Workload**: Easily deploy and run apps in the cloud, where your data lives. Process data ahead of time or vectorize it on the fly.
+
+Using Griptape, you can securely integrate with your internal data stores and APIs. You get to control what data goes into the prompt, and what the LLM is allowed to do with it. 
+
+## Documentation
+
+Please refer to [Griptape Docs](https://docs.griptape.ai/) for:
+
+- Getting started guides. 
+- Core concepts and design overviews.
+- Examples.
+- Contribution guidelines.
+
+Please check out [Griptape Trade School](https://learn.griptape.ai/) for free online courses.
+
+## Quick Start
+
+First, install **griptape**:
+
+```
+pip install griptape -U
+```
+
+Second, configure an OpenAI client by [getting an API key](https://beta.openai.com/account/api-keys) and adding it to your environment as `OPENAI_API_KEY`. By default, Griptape uses [OpenAI Completions API](https://platform.openai.com/docs/guides/completion) to execute LLM prompts.
+
+With Griptape, you can create *structures*, such as `Agents`, `Pipelines`, and `Workflows`, that are composed of different types of tasks. Let's build a simple creative agent that dynamically uses two tools with shared short-term memory.
+
+```python
+from griptape.structures import Agent
+from griptape.tools import WebScraper
+
+agent = Agent(
+    tools=[WebScraper()]
+)
+
+agent.run(
+    "based on https://www.griptape.ai/, tell me what Griptape is"
+)
+```
+
+And here is the output:
+
+> Q: based on https://www.griptape.ai/, tell me what Griptape is  
+> A: Griptape is an opinionated Python framework that enables developers to fully harness the potential of LLMs while enforcing strict trust boundaries, schema validation, and activity-level permissions. It offers developers the ability to build AI systems that operate across two dimensions: predictability and creativity. Griptape can be used to create conversational and autonomous agents.
+
+During the run, the Griptape agent loaded a webpage with a **tool**, stored its full content in the **short-term memory**, and finally queried it to answer the original question. The important thing to note here is that no matter how big the webpage is it can never blow up the prompt token limit because the full content never goes back to the main prompt.
+
+[Check out our docs](https://docs.griptape.ai/griptape-framework/structures/prompt-drivers/) to learn more about how to use Griptape with other LLM providers like Anthropic, Claude, Hugging Face, and Azure.
+
+## Versioning
+
+Griptape is in constant development and its APIs and documentation are subject to change. Until we stabilize the API and release version 1.0.0, we will use minor versions (i.e., x.Y.z) to introduce features and breaking features, and patch versions (i.e., x.y.Z) for bug fixes.
+
+## Contributing
+
+Contributions in the form of bug reports, feature ideas, or pull requests are super welcome! Take a look at the current issues and if you'd like to help please submit a pull request with some tests.
+
+## License
+
+Griptape is available under the Apache 2.0 License.
+
