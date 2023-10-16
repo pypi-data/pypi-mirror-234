@@ -1,0 +1,47 @@
+default_stages: [commit, push]
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
+    hooks:
+      - id: black
+        language_version: python3.11
+  - repo: https://github.com/pycqa/flake8
+    rev: "6.1.0" # pick a git hash / tag to point to
+    hooks:
+      - id: flake8
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: bandit
+        description: "Bandit is a tool for finding common security issues in Python code"
+        entry: bandit
+        language: python
+        types: [python]
+        exclude: "(test/.*)|(docs/.*)"
+        args: [--configfile, bandit.yml]
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright (types)
+        entry: bash -c  'pyright -p pyrightconfig.json'
+        language: system
+      - id: pylint
+        name: pylint (linting)
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: "(examples/.*)|(docs/.*)|(.venv/.*)"
+        args: [--rcfile=setup.cfg]
+      - id: unittest
+        name: unittest (testing)
+        entry: bash -c 'PY_ENV=test coverage run --source=soil,soil_cli -m unittest discover -s test'
+        language: system
+        pass_filenames: false
+      - id: coverage
+        name: coverage (testing)
+        entry: coverage report -m
+        language: python
+        types: [python]
+        pass_filenames: false
+        verbose: true
