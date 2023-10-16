@@ -1,0 +1,137 @@
+Metadata-Version: 2.1
+Name: pywaterflood
+Version: 0.3.2
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Hydrology
+Requires-Dist: numpy >=1.21
+Requires-Dist: scipy >=1.4
+Requires-Dist: pandas >=1.3.5
+Requires-Dist: openpyxl >=3.0.9
+Requires-Dist: joblib >=1.1.0
+Requires-Dist: pytest >=6.2.5 ; extra == 'test'
+Requires-Dist: pytest-cov >=3.0.0 ; extra == 'test'
+Requires-Dist: coverage[toml] >=6.3.3 ; extra == 'test'
+Requires-Dist: furo ; extra == 'docs'
+Requires-Dist: myst_parser >=0.13 ; extra == 'docs'
+Requires-Dist: sphinx >=7.0 ; extra == 'docs'
+Requires-Dist: sphinx-autoapi ; extra == 'docs'
+Requires-Dist: sphinx-copybutton ; extra == 'docs'
+Requires-Dist: sphinx-design ; extra == 'docs'
+Requires-Dist: sphinx-sitemap ; extra == 'docs'
+Requires-Dist: ipykernel ; extra == 'devwork'
+Requires-Dist: seaborn ; extra == 'devwork'
+Provides-Extra: test
+Provides-Extra: docs
+Provides-Extra: devwork
+License-File: LICENSE
+Summary: Physics-inspired waterflood performance modeling
+Author-email: Frank Male <frmale@utexas.edu>
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown; charset=UTF-8; variant=GFM
+Project-URL: repository, https://github.com/frank1010111/pywaterflood
+Project-URL: documentation, https://pywaterflood.readthedocs.io
+Project-URL: Bug Tracker, https://github.com/frank1010111/pywaterflood/issues
+
+# `pywaterflood`: Waterflood Connectivity Analysis
+
+[![PyPI version](https://badge.fury.io/py/pywaterflood.svg)](https://badge.fury.io/py/pywaterflood)
+[![Conda](https://img.shields.io/conda/v/conda-forge/pywaterflood)](https://anaconda.org/conda-forge/pywaterflood)
+[![Documentation Status](https://readthedocs.org/projects/pywaterflood/badge/?version=latest)](https://pywaterflood.readthedocs.io/en/latest/?badge=latest)
+[![DOI](https://zenodo.org/badge/234408267.svg)](https://zenodo.org/badge/latestdoi/234408267)
+
+[![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
+[![codecov](https://codecov.io/gh/frank1010111/pywaterflood/branch/master/graph/badge.svg?token=3XRGLKO7T8)](https://codecov.io/gh/frank1010111/pywaterflood)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Python version](https://img.shields.io/pypi/pyversions/pywaterflood)](https://www.python.org/downloads/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/pywaterflood)](https://pypi.org/project/pywaterflood/)
+
+`pywaterflood` provides tools for capacitance resistance modeling, a
+physics-inspired model for estimating well connectivity between injectors and
+producers or producers and other producers. It is useful for analyzing and
+optimizing waterfloods, CO<sub>2</sub> floods, and geothermal projects.
+
+## Overview
+
+A literature review has been written by Holanda, Gildin, Jensen, Lake and Kabir,
+entitled "A State-of-the-Art Literature Review on Capacitance Resistance Models
+for Reservoir Characterization and Performance Forecasting."
+[They](https://doi.org/10.3390/en11123368) describe CRM as the following:
+
+> The Capacitance Resistance Model (CRM) is a fast way for modeling and
+> simulating gas and waterflooding recovery processes, making it a useful tool
+> for improving flood management in real-time. CRM is an input-output and
+> material balance-based model, and requires only injection and production
+> history, which are the most readily available data gathered throughout the
+> production life of a reservoir.
+
+There are several CRM versions (see Holanda et al., 2018). Through passing
+different parameters when creating the CRM instance, you can choose between
+CRMIP, where a unique time constant is used for each injector-producer pair, and
+CRMP, where a unique time constant is used for each producer. CRMIP is more
+reliable given sufficient data. With CRMP, you can reduce the number of
+unknowns, which is useful if available production data is limited.
+
+## Getting started
+
+You can install this package from PyPI with the line
+
+```
+pip install pywaterflood
+```
+
+Or from conda/mamba with
+
+```
+conda install -c conda-forge pywaterflood
+```
+
+Then, [read the docs](https://pywaterflood.readthedocs.io/) to learn more. If you
+want to try it out online before installing it on your computer, you can run
+[this google colab notebook](https://colab.research.google.com/github/frank1010111/pywaterflood/blob/master/docs/user-guide/7-minutes-to-pywaterflood.ipynb).
+
+### A simple example
+
+    import pandas as pd
+    from pywaterflood import CRM
+
+    gh_url = "https://raw.githubusercontent.com/frank1010111/pywaterflood/master/testing/data/"
+    prod = pd.read_csv(gh_url + 'production.csv', header=None).values
+    inj = pd.read_csv(gh_url + "injection.csv", header=None).values
+    time = pd.read_csv(gh_url + "time.csv", header=None).values[:,0]
+
+    crm = CRM(tau_selection='per-pair', constraints='up-to one')
+    crm.fit(prod, inj, time)
+    q_hat = crm.predict()
+    residuals = crm.residual()
+
+## Contributing
+
+Contributions are extremely welcome! Have [an issue to report](https://github.com/frank1010111/bluebonnet/issues/new)?
+Want to offer new features or documentation? Check out the [contribution guide](https://github.com/frank1010111/pywaterflood/blob/master/CONTRIBUTING.md)
+to help you set up. Discussions could start anytime at
+[the discussions section](https://github.com/frank1010111/pywaterflood/discussions).
+
+`pywaterflood` uses Rust for computation and python as the high level interface.
+Luckily, [maturin](https://www.maturin.rs/) is a very convenient tool for working
+with mixed Python-Rust projects.
+
+## License
+
+This software library is released under a BSD 2-Clause License.
+
+## Acknowledgments
+
+Capacitance resistance modeling would not have caught on without the persistence
+of two professors: Larry Lake and Jerry Jensen. Both of these gentlemen generously
+helped answer questions in the development of this library. Research funding for
+this project came from the Department of Energy grant "Optimizing Sweep based on
+Geochemical and Reservoir Characterization of the Residual Oil Zone of Hess Seminole
+Unit" (PI: Ian Duncan) and the State of Texas Advanced Resource Recovery program
+(PI: William Ambrose). Further development is supported by Penn State faculty
+promotion funds and volunteer time.
+
