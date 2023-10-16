@@ -1,0 +1,51 @@
+# Calculator Package
+
+The Calculator package provides a simple Python class, `Calculator`, that can perform basic arithmetic operations and manipulate a memory value.
+
+## Installation
+
+You can install the Calculator package using `pip`. Open your terminal and run:
+
+```bash
+pip install fkriza-calculator
+```
+
+## Usage
+
+Once installed, you can use the `Calculator` class in your Python code as follows:
+
+```python
+from calculator import Calculator
+
+# Create a Calculator instance
+calculator = Calculator()
+
+# Perform arithmetic operations
+result = calculator.add(5)  # Add 5 to the memory
+print(result)  # Output: 5
+
+result = calculator.subtract(3)  # Subtract 3 from the memory
+print(result)  # Output: 2
+
+result = calculator.multiply(4)  # Multiply the memory by 4
+print(result)  # Output: 8
+
+result = calculator.divide(2)  # Divide the memory by 2
+print(result)  # Output: 4.0
+
+result = calculator.nth_root(2)  # Take the square root of the memory
+print(result)  # Output: 2.0
+
+# Reset the memory to 0
+calculator.reset()
+print(calculator.memory)  # Output: 0.0
+```
+
+### Error Handling
+
+- Division by zero will raise a `ValueError`.
+- Taking an even root of a negative number will raise a `ValueError`.
+
+### Memory Management
+
+The `Calculator` class maintains its own memory, starting at 0. Each operation updates the memory value and returns it.
