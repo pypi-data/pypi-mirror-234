@@ -1,0 +1,26 @@
+checks:
+  bcache_enabled:
+    property: hotsos.core.plugins.storage.bcache.BcacheBase.bcache_enabled
+  has_invalid_bdev_config:
+    config:
+      handler: hotsos.core.plugins.storage.bcache.BDevsConfig
+      assertions:
+        not:
+          - key: sequential_cutoff
+            ops: [[eq, '0.0k']]
+          - key: cache_mode
+            ops: [[eq, 'writethrough [writeback] writearound none']]
+          - key: writeback_percent
+            ops: [[ge, 10]]
+conclusions:
+  invalid-bdev-config:
+    decision:
+      - bcache_enabled
+      - has_invalid_bdev_config
+    raises:
+      type: BcacheWarning
+      message: >-
+        One or more of the following bcache bdev config assertions failed:
+        {assertions}
+      format-dict:
+        assertions: '@checks.has_invalid_bdev_config.requires.assertion_results'
