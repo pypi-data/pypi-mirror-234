@@ -1,0 +1,119 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-json
+      - id: check-toml
+      - id: check-vcs-permalinks
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix, lf]
+      - id: trailing-whitespace
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.0.292"
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+  - repo: local
+    hooks:
+      - id: check-dependabot
+        name: check implementations for dependabot registration
+        language: python
+        pass_filenames: false
+        entry: .pre-commit-hooks/check-dependabot
+        additional_dependencies: [pyyaml]
+      - id: check-lintsonschema
+        name: check lintsonschema for drift
+        language: python
+        pass_filenames: false
+        entry: .pre-commit-hooks/check-lintsonschema-schema
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
+    hooks:
+      - name: black (python implementations & bowtie internals)
+        id: black
+        args: ["--line-length", "79"]
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v3.0.3"
+    hooks:
+      - name: prettier (javascript implementations & bowtie internals)
+        exclude: frontend/pnpm-lock.yaml
+        id: prettier
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.50.0
+    hooks:
+      - name: eslint
+        id: eslint
+        files: ^frontend/.*\.[jt]sx?$
+        types: [file]
+        args: [--fix]
+        additional_dependencies:
+          - eslint@8.50.0
+          - eslint-plugin-react@7.33.2
+          - eslint-plugin-react-hooks@4.6.0
+          - "@typescript-eslint/eslint-plugin@6.6.0"
+          - "@typescript-eslint/parser@6.7.3"
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: "v1.0"
+    hooks:
+      - name: cargo fmt rust-jsonschema
+        id: fmt
+        args:
+          [
+            "--manifest-path",
+            "implementations/rust-jsonschema/Cargo.toml",
+            "--",
+          ]
+      - name: cargo fmt rust-boon
+        id: fmt
+        args: ["--manifest-path", "implementations/rust-boon/Cargo.toml", "--"]
+  - repo: https://github.com/syntaqx/git-hooks
+    rev: v0.0.18
+    hooks:
+      - name: go fmt (golang implementations)
+        id: go-fmt
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: "3.0.0"
+    hooks:
+      - name: rubocop (ruby implementations)
+        id: rubocop
+        args: ["--auto-correct"]
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v0.18.2
+    hooks:
+      - name: stylua (lua implementations)
+        id: stylua
+        exclude: .*/json.lua
+        args: ["--config-path", "implementations/lua-jsonschema/stylua.toml"]
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v16.0.6
+    hooks:
+      - name: clang-format (c/c++/c#/java implementations)
+        id: clang-format
+        types_or: [c++, c, c#, java, objective-c]
+  - repo: https://github.com/dustinsand/pre-commit-jvm
+    rev: v0.9.0
+    hooks:
+      - name: ktlint (java/kotlin implementations)
+        id: ktlint
+        args: [--format]
+      - name: detekt (java/kotlin implementations)
+        id: detekt
+        args: ["--build-upon-default-config"]
+      - name: pmd (java implementations)
+        id: pmd
+        args:
+          [
+            "-R",
+            "implementations/.java-implementations-pmd-ruleset.xml",
+            "-d",
+            "implementations",
+          ]

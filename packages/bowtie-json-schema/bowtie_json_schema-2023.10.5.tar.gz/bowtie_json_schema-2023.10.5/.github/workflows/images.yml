@@ -1,0 +1,98 @@
+name: Bowtie Images
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "implementations/**"
+      - ".github/workflows/images.yml"
+  push:
+    branches-ignore:
+      - "wip*"
+    paths:
+      - "implementations/**"
+      - ".github/workflows/images.yml"
+    tags:
+      - "v*"
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.images-matrix.outputs.images }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: images-matrix
+        run: |
+          python3 -c '
+          from pathlib import Path
+          import json
+          paths = [
+              str(path.name)
+              for path in Path("implementations").iterdir()
+              if path.is_dir()
+          ]
+          print(f"images={json.dumps(paths)}")
+          ' >> $GITHUB_OUTPUT
+
+  build:
+    needs: list
+    runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.list.outputs.images) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            impl:
+              - 'implementations/${{ matrix.image }}/**'
+
+      - name: Install qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+
+      - name: Build
+        id: build_image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          context: implementations/${{ matrix.image }}
+          containerfiles: |
+            implementations/${{ matrix.image }}/Dockerfile
+          image: ${{ matrix.image }}
+          tags: latest ${{ github.sha }}
+          archs: amd64, arm64
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+
+      - name: Set DOCKER_HOST to find the image
+        run: echo "DOCKER_HOST=unix://$(podman info --format '{{.Host.RemoteSocket.Path}}')" >> $GITHUB_ENV
+
+      - name: Install Bowtie
+        uses: ./
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+
+      - name: Smoke Test
+        run: bowtie smoke -i "localhost/${{ steps.build_image.outputs.image-with-tag }}"
+        if: steps.changes.outputs.impl == 'true' || (github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags'))
+
+      - name: Publish
+        id: push
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build_image.outputs.image }}
+          tags: ${{ steps.build_image.outputs.tags }}
+          registry: ghcr.io/${{ github.repository_owner }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')

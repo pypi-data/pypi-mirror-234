@@ -1,0 +1,63 @@
+name: Test Suite Report
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  schedule:
+    # Daily at 2:15
+    - cron: "15 2 * * *"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - draft2020-12
+          - draft2019-09
+          - draft7
+          - draft6
+          - draft4
+          - draft3
+
+    steps:
+      # Ha ha, without me, reports sometimes claim they're running out of disk
+      # space... See e.g. https://github.com/actions/runner-images/issues/2840
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY"
+
+      # FIXME: we can skip checking out if we are able to list all images in
+      #        the image repository
+      - uses: actions/checkout@v4
+
+      - name: Install Bowtie
+        uses: ./
+
+      - name: Generate the Report
+        run: |
+          bowtie suite $(find implementations/ -mindepth 1 -maxdepth 1 -type d | sed 's/implementations\//-i /') https://github.com/json-schema-org/JSON-Schema-Test-Suite/tree/main/tests/${{ matrix.version }} | tee ${{ matrix.version }}.json | bowtie badges badges
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: report
+          path: |
+            ${{ matrix.version }}.json
+            badges/
+
+  deploy-frontend:
+    needs: test
+    uses: ./.github/workflows/deploy-frontend.yml
+    with:
+      report_artifact_in_scope: true

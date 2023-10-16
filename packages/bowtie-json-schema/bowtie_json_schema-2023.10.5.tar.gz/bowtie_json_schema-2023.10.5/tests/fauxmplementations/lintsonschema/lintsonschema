@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""
+A bowtie runner which validates the requests and responses, before responding.
+"""
+from dataclasses import dataclass
+from pathlib import Path
+import io
+import json
+import os
+import sys
+
+from jsonschema_specifications import REGISTRY as SPECIFICATIONS
+from referencing import Registry, Resource
+import jsonschema.validators
+
+SCHEMA_PATH = Path(os.environ.get("BOWTIE_SCHEMA", "/io-schema.json"))
+SCHEMA = json.loads(SCHEMA_PATH.read_text())
+SCHEMA_RESOURCE = Resource.from_contents(SCHEMA)
+
+METASCHEMA_ID = SPECIFICATIONS[SCHEMA["$schema"]].id()
+CURRENT_DIALECT = Resource.from_contents(
+    {
+        "$schema": METASCHEMA_ID,
+        "$id": "urn:current-dialect",
+        "$ref": METASCHEMA_ID,
+    },
+)
+REGISTRY = [SCHEMA_RESOURCE, CURRENT_DIALECT] @ Registry()
+
+Validator = jsonschema.validators.validator_for(SCHEMA)
+VALIDATORS = {}
+for command in SCHEMA["$defs"]["command"]["$defs"]:
+    uri = f"https://bowtie.report/io-schema/{command}/"
+    VALIDATORS[command] = dict(
+        request=Validator({"$ref": uri}, registry=REGISTRY),
+        response=Validator({"$ref": f"{uri}response/"}, registry=REGISTRY),
+    )
+
+
+@dataclass
+class Runner:
+    _started: bool = False
+    _stdout: io.TextIOWrapper = sys.stdout
+    _stderr: io.TextIOWrapper = sys.stderr
+
+    def run(self, stdin=sys.stdin):
+        for line in stdin:
+            each = json.loads(line)
+            cmd = each["cmd"]
+            for error in VALIDATORS[cmd]["request"].iter_errors(each):
+                self._stderr.write(error.message)
+                self._stderr.write("\n")
+            del each["cmd"]
+            response = getattr(self, f"cmd_{cmd}")(**each)
+            for error in VALIDATORS[cmd]["response"].iter_errors(response):
+                self._stderr.write(error.message)
+                self._stderr.write("\n")
+            self._stdout.write(f"{json.dumps(response)}\n")
+            self._stdout.flush()
+
+    def cmd_start(self, version):
+        assert version == 1
+
+        self._started = True
+        return dict(
+            ready=True,
+            version=1,
+            implementation=dict(
+                language="python",
+                name="lintsonschema",
+                homepage="https://github.com/bowtie-json-schema/bowtie/",
+                issues="https://github.com/bowtie-json-schema/bowtie/issues",
+                dialects=[
+                    "https://json-schema.org/draft/2020-12/schema",
+                    "https://json-schema.org/draft/2019-09/schema",
+                    "http://json-schema.org/draft-07/schema#",
+                    "http://json-schema.org/draft-06/schema#",
+                    "http://json-schema.org/draft-04/schema#",
+                    "http://json-schema.org/draft-03/schema#",
+                ],
+            ),
+        )
+
+    def cmd_dialect(self, dialect):
+        assert self._started, "Not started!"
+        return dict(ok=True)
+
+    def cmd_run(self, case, seq):
+        assert self._started, "Not started!"
+
+        results = [
+            {"valid": test.get("valid", True)} for test in case["tests"]
+        ]
+        return dict(seq=seq, results=results)
+
+    def cmd_stop(self):
+        assert self._started, "Not started!"
+
+        sys.exit(0)
+
+
+Runner().run()
