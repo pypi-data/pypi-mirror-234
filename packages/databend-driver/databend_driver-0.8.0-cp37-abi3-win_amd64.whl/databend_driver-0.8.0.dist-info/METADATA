@@ -1,0 +1,74 @@
+Metadata-Version: 2.1
+Name: databend-driver
+Version: 0.8.0
+Classifier: Programming Language :: Rust
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Requires-Dist: pdoc ; extra == 'docs'
+Requires-Dist: behave ; extra == 'test'
+Requires-Dist: black ; extra == 'lint'
+Requires-Dist: flake8 ; extra == 'lint'
+Provides-Extra: docs
+Provides-Extra: test
+Provides-Extra: lint
+Summary: Databend Driver Python Binding
+Author: Databend Authors <opensource@datafuselabs.com>
+Author-email: Databend Authors <opensource@datafuselabs.com>
+License: Apache-2.0
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown; charset=UTF-8; variant=GFM
+Project-URL: Repository, https://github.com/datafuselabs/bendsql
+
+## databend-driver
+
+### Build
+
+```shell
+cd bindings/python
+maturin develop
+```
+
+## Usage
+
+```python
+import databend_driver
+import asyncio
+async def main():
+	s = databend_driver.AsyncDatabendDriver('databend+http://root:root@localhost:8000/?sslmode=disable')
+	await s.exec("CREATE TABLE if not exists test_upload (x Int32,y VARCHAR)")
+
+asyncio.run(main())
+```
+
+## Development
+
+Setup virtualenv:
+
+```shell
+python -m venv venv
+```
+
+Activate venv:
+
+```shell
+source venv/bin/activate
+````
+
+Install `maturin`:
+
+```shell
+pip install maturin[patchelf]
+```
+
+Build bindings:
+
+```shell
+maturin develop
+```
+
+Run some tests:
+
+```shell
+maturin develop -E test
+behave tests
+```
