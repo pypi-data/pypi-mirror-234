@@ -1,0 +1,37 @@
+#Pipeline steps to be executed
+pipeline:
+  #Name should satisfy regular expression ^[a-zA-Z0-9](-*[a-zA-Z0-9]){0,62}
+  - name: "data-prep"
+    job_suffix: "S"
+    code: "run_notebook_wrapper.py"
+    #Once the process is done
+    #sagemaker output data will gets downloaded here
+    output_path: "s3://data-apps-test-srinivas/data-apps-testing/data/<job_id>/data-prep"
+    params:
+      --notebook-path: "notebooks/data_prep.ipynb"
+  - name: "train"
+    job_suffix: "T"
+    code: "run_notebook_wrapper.py"
+    #location of input data to be passed for processing it
+    #can be relative to repository or absolute path or s3 location
+    input_path: "s3://data-apps-test-srinivas/data-apps-testing/data/<job_id>/data-prep"
+    #Once the process is done
+    #sagemaker output data will gets uploaded here
+    output_path: "s3://data-apps-test-srinivas/data-apps-testing/data/<job_id>/train"
+    params:
+      --notebook-path: "notebooks/train.ipynb"
+      --train-id: "1"
+  - name: "validation"
+    job_suffix: "V"
+    code: "run_notebook_wrapper.py"
+    output_path: &output_path "s3://data-apps-test-srinivas/data-apps-testing/data/<job_id>/validation"
+    params:
+      --notebook-path: "notebooks/validation.ipynb"
+      --validation-output-path: *output_path
+
+#Folders to exclude while compresing source code for sagemaker job
+exclude_folders:
+  - "data"
+#Files to exclude while compressing source code for sagemaker job
+exclude_files:
+  - "*.gitignore"

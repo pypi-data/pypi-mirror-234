@@ -1,0 +1,16 @@
+#Pipeline steps to be executed
+pipeline:
+  #Name should satisfy regular expression ^[a-zA-Z0-9](-*[a-zA-Z0-9]){0,62}
+  - name: "prediction"
+    job_suffix: "P"
+    code: "run_notebook_wrapper.py"
+    output_path: "s3://data-apps-test-srinivas/data-apps-testing/data/<job_id>/predictions"
+    params:
+      --notebook-path: "notebooks/prediction.ipynb"
+
+#Folders to exclude while compresing source code for sagemaker job
+exclude_folders:
+  - "data"
+#Files to exclude while compressing source code for sagemaker job
+exclude_files:
+  - "*.gitignore"
