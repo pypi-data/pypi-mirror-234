@@ -1,0 +1,137 @@
+Metadata-Version: 2.1
+Name: schwab_api2
+Version: 0.2.8
+Summary: Unofficial Schwab API wrapper in Python 3.
+Home-page: https://github.com/MaxxRK/schwab-api2
+Download-URL: https://github.com/MaxxRK/schwab-api2/releases/tag/V_028
+Author: MaxxRK
+Author-email: maxxrk@pm.me
+License: MIT
+Keywords: schwab,python3,api,unofficial,schwab-api,schwab charles api
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Schwab API
+
+**This is not an official API or even a stable recreation of a Charles Schwab API. Functionality may change with any updates made by Schwab. As of April 2023, this API continues to work as expected.**
+
+This package enables buying and selling securities programmatically on Charles Schwab. Currently, we use a headless browser to automate logging in in order to get authorization cookies. Account info and stock positions are pulled through requests. Orders are placed with playwright. This is a regression from the original api from itsjafer, but is necessary for now. During orders the api gets a new authorization key multiple times and I am not sure how to do this with requests.
+
+
+## Contribution
+
+I would absolutely love contributions; as someone new to open source, I'd appreciate help in setting up a reliable system for PRs as well :)
+
+## Getting Started
+
+### Installing
+
+Install using pypi and then download and install the playwright binaries:
+
+```
+pip install schwab-api
+python -m playwright install
+```
+
+### Create a TOTP Authentication Token
+
+In order to login to Schwab without having to go through SMS verification everytime, we can create an authentication token (TOTP) and attach that to our account.
+
+Alternatively, you can do this programmatically:
+
+```
+from schwab_api2 import generate_totp
+
+symantec_id, totp_secret = generate_totp()
+
+print("Your symantec ID is: " + symantec_id)
+print("Your TOTP secret is: " + totp_secret)
+```
+
+For the TOTP Secret:
+
+1. Download Duo Mobile, Google Authenticator, or any other authenticator of your choice and create an entry using the TOTP secret. You will be prompted to generate a code everytime you log in to Schwab and will need an authenticator app to do so.
+2. **Keep this TOTP secret handy** as you'll need to pass it to this API in order to login.
+
+For the Symantec ID:
+
+1. Log in to Schwab and go to your [security center](https://client.schwab.com/clientapps/access/securityCenter#/main/epass). 
+1. Under two-step verification, select "Always at login", and then select "Security Token". 
+1. **Enter the symantec ID here that you generated using the code above**.
+
+### Quickstart
+
+Here's some code that logs in, gets all account holdings, and makes a stock purchase:
+```
+from schwab_api2 import Schwab
+import pprint
+
+# Change these variables
+username = "username"
+password = "password"
+totp_secret = "ABCVWXYZ1234567890"
+
+# Create the schwab instance
+api = Schwab(
+    headless=False, 
+    browserType="firefox"
+)
+
+# Login using playwright
+print("Logging into Schwab")
+logged_in = api.login(
+    username=username,
+    password=password,
+    totp_secret=totp_secret # Get this by generating TOTP at https://itsjafer.com/#/schwab
+)
+
+# Get information about all accounts holdings
+print("Getting account holdings information")
+account_info = api.get_account_info()
+pprint.pprint(account_info)
+accounts = str(account_info.keys())
+print("The following account numbers were found: " + accounts)
+
+
+# Place a dry run trade for each account
+print("Placing a dry run trade for INTC stock")
+
+
+messages, success = api.trade(
+    ticker="OXLC", 
+    action="Buy", #or Sell
+    qty=1,
+    order_type="Limit",
+    account_id=accounts[0],# Replace with your account number
+    price=5.00, # Required for limit orders
+    dry_run=True # If dry_run=True, we won't place the order, we'll just verify it.
+)
+print("The order verification was " + "successful" if success else "unsuccessful")
+print("The order verification produced the following messages: ")
+pprint.pprint(messages)
+
+api.close_session()
+```
+
+## Features
+
+* Buying and Selling tickers
+* Multiple individual account support
+* MFA and TOTP authentication
+* Account and Position Information
+* Headless playwright implementation
+
+## TODO
+* Add Cancel Orders
+* Add Options
+* Give me Ideas!
+
