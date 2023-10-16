@@ -1,0 +1,11 @@
+from _typeshed import Incomplete
+
+ATTR_DATA: str
+ATTR_MESSAGE: str
+ATTR_TARGET: str
+ATTR_TITLE: str
+DOMAIN: str
+LOGGER: Incomplete
+SERVICE_NOTIFY: str
+SERVICE_PERSISTENT_NOTIFICATION: str
+NOTIFY_SERVICE_SCHEMA: Incomplete
