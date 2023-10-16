@@ -1,0 +1,32 @@
+name: Test
+on: [push]
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+        redis-version: ["6", '7']
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install -r requirements.txt
+
+      - run: pip install mypy pytest pytest-asyncio pytest-cov redis types-redis
+
+      - run: mypy .
+
+      - run: docker run -d -p 6379:6379 redis:${{ matrix.redis-version}}
+      - run: pytest --cov=sharded_queue .
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
