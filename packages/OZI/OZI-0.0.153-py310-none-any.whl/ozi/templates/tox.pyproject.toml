@@ -1,0 +1,29 @@
+{#- OZI 0.1
+# ozi/templates/tox.pyproject.toml
+# Part of the OZI Project, under the Apache License v2.0 with LLVM Exceptions.
+# See LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+-#}
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+skipsdist = True
+envlist = {{ ozi.py_security|wheel_repr }}-toml,{{ ozi.py_bugfix2|wheel_repr }},{{ ozi.py_bugfix1|wheel_repr }}
+
+[gh]
+python =
+   {{ ozi.py_bugfix1 }} = {{ ozi.py_bugfix1|wheel_repr }}
+   {{ ozi.py_bugfix2 }} = {{ ozi.py_bugfix2|wheel_repr }}
+   {{ ozi.py_security }} = {{ ozi.py_security|wheel_repr }}-toml
+
+[testenv]
+package = wheel
+deps =
+   pip-tools
+   meson >= 1.1.0
+   setuptools_scm[toml]>=6.2
+   toml: tomli >= 2.0.0
+commands =
+   meson setup build-{envname} -Ddev=enabled --reconfigure
+   meson test --maxfail=1 -C build-{envname} {posargs}
+"""
