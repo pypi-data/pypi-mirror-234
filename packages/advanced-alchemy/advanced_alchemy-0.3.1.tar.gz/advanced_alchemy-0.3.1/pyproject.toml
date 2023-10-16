@@ -1,0 +1,338 @@
+[project]
+authors = [
+  {name = "Cody Fincher", email = "cody.fincher@gmail.com"},
+  {name = "Peter Schutt", email = "peter.github@proton.me"},
+  {name = "Janek Nouvertné", email = "j.a.nouvertne@posteo.de"},
+  {name = "Jacob Coffee", email = "jacob@z7x.org"},
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python",
+  "Topic :: Software Development",
+  "Typing :: Typed",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "Topic :: Database",
+  "Topic :: Database :: Database Engines/Servers",
+]
+dependencies = [
+  "sqlalchemy>=2.0.20",
+  "alembic>=1.12.0",
+  "typing_extensions",
+]
+description = "Ready-to-go SQLAlchemy concoctions."
+keywords = [
+  "sqlalchemy",
+  "alembic",
+  "litestar",
+  "sanic",
+  "fastapi",
+]
+license = {text = "MIT"}
+name = "advanced_alchemy"
+readme = "README.md"
+requires-python = ">=3.8"
+version = "0.3.1"
+
+[project.urls]
+Changelog = "https://docs.advanced-alchemy.jolt.rs/latest/changelog"
+Discord = "https://discord.gg/XpFNTjjtTK"
+Documentation = "https://docs.advanced-alchemy.jolt.rs/latest/"
+Funding = "https://github.com/sponsors/jolt-org"
+Homepage = "https://docs.advanced-alchemy.jolt.rs/latest/"
+Issue = "https://github.com/jolt-org/advanced-alchemy/issues/"
+Source = "https://github.com/jolt-org/advanced-alchemy"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pdm.dev-dependencies]
+dev = [
+  "asyncmy>=0.2.8",
+  "asyncpg>=0.28.0",
+  "oracledb>=1.4.0",
+  "redis>=5.0.0",
+  "duckdb-engine>=0.9.2",
+  "aiosqlite>=0.19.0",
+  "psycopg[pool,binary]>=3.1.10",
+  "pytest-xdist>=3.3.1",
+  "sqlalchemy-spanner>=1.6.2",
+  "litestar>=2.0.1",
+  "fastapi>=0.103.1",
+  "msgspec>=0.18.2",
+  "orjson>=3.9.7",
+  "pyodbc>=4.0.39",
+]
+docs = [
+  "sphinx>=7.1.2",
+  "sphinx-autobuild>=2021.3.14",
+  "sphinx-copybutton>=0.5.2",
+  "shibuya>=2023.9.3",
+  "sphinx-click>=5.0.1",
+  "sphinx-toolbox>=3.5.0",
+  "blacken-docs>=1.16.0",
+  "sphinx-design>=0.5.0",
+]
+extensions = [
+  "litestar[cli]>=2.0.0",
+  "fastapi>=0.101.0",
+  "sanic[ext]>=23.6.0",
+  "sanic-testing>=23.6.0",
+  "socketify>=0.0.27",
+  "msgspec>=0.18.2",
+]
+linting = [
+  "pre-commit>=3.4.0",
+  "black>=23.7.0",
+  "mypy>=1.5.1",
+  "ruff>=0.0.287",
+  "asyncpg-stubs",
+  "types-pytest-lazy-fixture",
+  "types-click",
+  "types-pyyaml",
+]
+test = [
+  "pytest>=7.4.1",
+  "pytest-xdist>=3.3.1",
+  "anyio<4.0.0",
+  "pytest-lazy-fixture>=0.6.3",
+  "pytest-asyncio>=0.21.1",
+  "pytest-mock>=3.11.1",
+  "time-machine>=2.12.0",
+  "httpx>=0.24.1",
+  "pytz",
+]
+
+[tool.pytest.ini_options]
+addopts = "-m='not integration' --dist=loadgroup"
+asyncio_mode = "auto"
+
+markers = [
+  "integration: SQLAlchemy integration tests",
+  "asyncmy: SQLAlchemy MySQL (asyncmy) Tests",
+  "asyncpg: SQLAlchemy Postgres (asyncpg) Tests",
+  "psycopg_async: SQLAlchemy Postgres (psycopg async) Tests",
+  "psycopg_sync: SQLAlchemy Postgres (psycopg sync) Tests",
+  "aiosqlite: SQLAlchemy SQLite (aiosqlite) Tests",
+  "sqlite: SQLAlchemy SQLite (sqlite) Tests",
+  "oracledb: SQLAlchemy Oracle (oracledb) Tests",
+  "spanner: SQLAlchemy Google Cloud Spanner (sqlalchemy-spanner) Tests",
+  "duckdb: SQLAlchemy DuckDB (duckdb-engine) Tests",
+  "mssql: SQLAlchemy Microsoft SQL Server (pyodbc) Tests",
+]
+
+filterwarnings = [
+  "ignore::DeprecationWarning:pkg_resources.*",
+  "ignore::DeprecationWarning:google.rpc",
+  "ignore::DeprecationWarning:google.gcloud",
+  "ignore::DeprecationWarning:google.iam",
+  "ignore::DeprecationWarning:google",
+]
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+ignore = [
+  "A003", # flake8-builtins - class attribute {name} is shadowing a python builtin
+  "B010", # flake8-bugbear - do not call setattr with a constant attribute value
+  "D100", # pydocstyle - missing docstring in public module
+  "D101", # pydocstyle - missing docstring in public class
+  "D102", # pydocstyle - missing docstring in public method
+  "D103", # pydocstyle - missing docstring in public function
+  "D104", # pydocstyle - missing docstring in public package
+  "D105", # pydocstyle - missing docstring in magic method
+  "D106", # pydocstyle - missing docstring in public nested class
+  "D107", # pydocstyle - missing docstring in __init__
+  "D202", # pydocstyle - no blank lines allowed after function docstring
+  "D205", # pydocstyle - 1 blank line required between summary line and description
+  "D415", # pydocstyle - first line should end with a period, question mark, or exclamation point
+  "E501", # pycodestyle line too long, handled by black
+  "PLW2901", # pylint - for loop variable overwritten by assignment target
+  "RUF012", # Ruff-specific rule - annotated with classvar
+  "ANN401",
+  "ANN102",
+  "ANN101",
+  "FBT",
+  "PLR0913", # too many arguments
+  "PT",
+  "TD",
+  "ARG002", # ignore for now; investigate
+  "PERF203", # ignore for now; investigate
+]
+line-length = 120
+select = ["ALL"]
+src = ["advanced_alchemy", "tests"]
+target-version = "py38"
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.mccabe]
+max-complexity = 12
+
+[tool.ruff.pep8-naming]
+classmethod-decorators = [
+  "sqlalchemy.ext.declarative.declared_attr",
+  "sqlalchemy.orm.declared_attr.directive",
+  "sqlalchemy.orm.declared_attr",
+]
+
+[tool.ruff.per-file-ignores]
+"tests/**/*.*" = [
+  "A",
+  "ARG",
+  "B",
+  "BLE",
+  "C901",
+  "D",
+  "DTZ",
+  "EM",
+  "FBT",
+  "G",
+  "N",
+  "PGH",
+  "PIE",
+  "PLR",
+  "PLW",
+  "PTH",
+  "RSE",
+  "S",
+  "S101",
+  "SIM",
+  "TCH",
+  "TRY",
+  "UP006",
+  "SLF001",
+]
+
+[tool.ruff.isort]
+known-first-party = ["advanced_alchemy", "tests"]
+
+[tool.mypy]
+disallow_any_generics = false
+disallow_untyped_decorators = true
+implicit_reexport = false
+show_error_codes = true
+strict = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+disable_error_code = "attr-defined"
+disallow_untyped_decorators = false
+module = "tests.*"
+
+[[tool.mypy.overrides]]
+disallow_untyped_decorators = false
+module = "advanced_alchemy.extensions.litestar.cli"
+
+[[tool.mypy.overrides]]
+module = "advanced_alchemy.alembic.templates.*.env"
+warn_unreachable = false
+
+[[tool.mypy.overrides]]
+disable_error_code = "no-untyped-call"
+disallow_untyped_decorators = false
+module = "advanced_alchemy.extensions.sanic"
+warn_unused_ignores = false
+
+[tool.unasyncd]
+add_editors_note = true
+ruff_fix = true
+transform_docstrings = true
+
+[tool.unasyncd.files]
+"advanced_alchemy/repository/_async.py" = "advanced_alchemy/repository/_sync.py"
+"advanced_alchemy/service/_async.py" = "advanced_alchemy/service/_sync.py"
+
+[tool.unasyncd.per_file_add_replacements."advanced_alchemy/repository/_async.py"]
+SQLAlchemyAsyncRepository = "SQLAlchemySyncRepository"
+"sqlalchemy.ext.asyncio.AsyncSession" = "sqlalchemy.orm.Session"
+
+[tool.unasyncd.per_file_add_replacements."advanced_alchemy/service/_async.py"]
+SQLAlchemyAsyncRepository = "SQLAlchemySyncRepository"
+SQLAlchemyAsyncRepositoryReadService = "SQLAlchemySyncRepositoryReadService"
+SQLAlchemyAsyncRepositoryService = "SQLAlchemySyncRepositoryService"
+"advanced_alchemy.repository.SQLAlchemyAsyncRepository" = "advanced_alchemy.repository.SQLAlchemySyncRepository"
+"sqlalchemy.ext.asyncio.AsyncSession" = "sqlalchemy.orm.Session"
+
+[tool.codespell]
+ignore-words-list = "selectin"
+skip = 'pdm.lock, examples/us_state_lookup.json'
+
+[tool.git-cliff.changelog]
+body = """
+{% if version %}\
+    `Release [v{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }} <https://github.com/jolt-org/advanced-alchemy/releases/tag/v{{ version | trim_start_matches(pat="v") }}>`_
+    ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    * `See All commits in v{{ version | trim_start_matches(pat="v") }} <https://github.com/jolt-org/advanced-alchemy/commits/v{{ version | trim_start_matches(pat="v") }}>`_
+{% else %}\
+    [unreleased]
+    ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+{% endif %}\
+{% if previous %}\
+    {% if previous.commit_id %}
+        `{{ previous.commit_id | truncate(length=7, end="") }} <https://github.com/jolt-org/advanced-alchemy/commit/{{ previous.commit_id }}>`_ ... \
+            `{{ commit_id | truncate(length=7, end="") }} <https://github.com/jolt-org/advanced-alchemy/commit/{{ commit_id }}>`_ \
+            | `See diff for {{ version | trim_start_matches(pat="v") }} <https://github.com/jolt-org/advanced-alchemy/compare/{{ previous.commit_id }}...{{ commit_id }}>`_
+    {% endif %}\
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+    {{ group | upper_first }}
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    {% for commit in commits %}
+        * (`{{ commit.id | truncate(length=7, end="") }} <https://github.com/jolt-org/advanced-alchemy/commit/{{ commit.id }}>`_) {% if commit.breaking %}[**breaking**] {% endif %} - {{ commit.message | upper_first }} ({{ commit.author.name  }})\
+          {% for footer in commit.footers -%}
+            , {{ footer.token }}{{ footer.separator }}{{ footer.value }}\
+          {% endfor %}\
+    {% endfor %}
+{% endfor %}\n
+"""
+footer = """
+Advanced Alchemy Changelog
+"""
+header = """
+=========
+Changelog
+=========\n
+All commits to this project will be documented in this file.\n
+"""
+trim = true
+
+[tool.git-cliff.git]
+commit_parsers = [
+  {message = "^feat", group = "Features"},
+  {message = "^fix", group = "Bug Fixes"},
+  {message = "^doc", group = "Documentation"},
+  {message = "^perf", group = "Performance"},
+  {message = "^refactor", group = "Refactor"},
+  {message = "^style", group = "Styling"},
+  {message = "^test", group = "Testing"},
+  {message = "^chore\\(release\\): prepare for", skip = true},
+  {message = "^chore", group = "Miscellaneous Tasks"},
+  {body = ".*security", group = "Security"},
+]
+conventional_commits = true
+filter_commits = false
+filter_unconventional = true
+ignore_tags = ""
+protect_breaking_commits = false
+skip_tags = "v0.1.0-beta.1"
+sort_commits = "oldest"
+split_commits = false
+tag_pattern = "v[0-9]*"
+topo_order = false
