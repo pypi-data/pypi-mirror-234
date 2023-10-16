@@ -1,0 +1,213 @@
+# ============================================================================
+# Config file for  Variant Calling
+#
+# ==========================================[ Sections for the users ]========
+#
+# One of input_directory, input_pattern and input_samples must be provided
+# If input_directory provided, use it otherwise if input_pattern provided,
+# use it, otherwise use input_samples.
+# ============================================================================
+#
+# Mandatory fields
+input_directory: 
+input_readtag: _R[12]_
+input_pattern: '*fastq.gz'
+annotation_file:
+reference_file:
+
+apptainers:
+    sequana_tools: "https://zenodo.org/record/7963917/files/sequana_tools_0.15.1.img"
+    graphviz: "https://zenodo.org/record/7928262/files/graphviz_7.0.5.img"
+
+
+# you may add ID, PF, SM, PU, LB read tags
+#
+add_read_group:
+    #PU: Illumina
+    options: ''
+
+
+
+##############################################################################
+# samtools_depth
+#
+# :Parameters:
+#
+# - max_depth: by default max depth is 20,000 but can be changed here
+samtools_depth:
+    max_depth: 20000
+
+
+##############################################################################
+# BWA - Mapping
+#
+# :Parameters:
+#
+# - reference_file: the name of the reference file.
+# - index_algorithm: the BWA index algorithm (is or bwtsw).
+#     is:	IS linear-time algorithm for constructing suffix array. It requires 
+#           5.37N memory where N is the size of the database. IS is moderately fast, but 
+#           does not work with database larger than 2GB. IS is the default algorithm due 
+#           to its simplicity. The current codes for IS algorithm are reimplemented by Yuta Mori.
+#     bwtsw	Algorithm implemented in BWT-SW. This method works with the whole human genome, 
+#           but it does not work with database smaller than 10MB and it is usually slower than IS.
+# - options: any options recognised by BWA MEM tool.
+# - threads: number of threads to be used.
+# - tmp_directory: temporary directory
+#
+bwa_mem:
+    index_algorithm: is
+    options: -T 30
+    threads: 4
+    tmp_directory: ./tmp/
+
+##############################################################################
+# SnpEff - Annotate variants detected
+#
+# :Parameters:
+#
+# - do: if unchecked, this rule is ignored.
+# - reference: genbank file.
+# - options: any options recognised by snpEff.
+#
+# Requires the annotation file
+#
+#   Results filter options:
+#	    -no-downstream: Do not show DOWNSTREAM changes
+#	    -no-intergenic: Do not show INTERGENIC changes
+#	    -no-intron: Do not show INTRON changes
+#	    -no-upstream: Do not show UPSTREAM changes
+#	    -no-utr: Do not show 5_PRIME_UTR or 3_PRIME_UTR changes
+#
+snpeff:
+    do: true
+    build_options: # -noCheckCds -noCheckProtein
+    options: -no-downstream -no-upstream 
+
+##############################################################################
+# Freebayes - Variant caller
+#
+# :Parameters:
+#
+# - ploidy: set the ploidy of your samples.
+# - options: any options recognised by freebayes.
+#
+freebayes:
+    ploidy: 1
+    options: --legacy-gls
+
+##############################################################################
+# Joint Freebayes - Variant caller
+#
+# :Parameters:
+#
+# - options: any options recognised by freebayes.
+# - Note that ploidy is the one from the 'freebayes' section
+joint_freebayes:
+    do: false
+    options: ''
+
+##############################################################################
+# Sambamba - Marks or removes duplicates
+#
+# :Parameters:
+#
+# - do: if unchecked, this rule is ignored.
+# - remove_duplicates: boolean if you want remove or not duplicated reads.
+# - tmp_directory: set the temporary directory.
+#
+sambamba_markdup:
+    do: true
+    remove_duplicates: false
+    tmp_directory: ./tmp/
+    options:
+
+##############################################################################
+# Filter reads with a mapping score lower than an integer 
+#
+# :Parameters:
+#
+# - do: if unchecked, this rule is ignored.
+# - threshold: mapping score threshold (between 0 and 60).
+#
+sambamba_filter:
+    do: true
+    threshold: 30
+    options:
+
+##############################################################################
+# Sequana coverage - Analyse the coverage of the mapping 
+#
+# :Parameters:
+#
+# - do: if unchecked, this rule is ignored.
+# - mixture_models: number of gaussian predicted.
+# - circular: if your genome is circular.
+# - window_size: window size to compute the running median.
+# - low_threshold: threshold to detect low coverage regions.
+# - high_threshold: threshold to detect high coverage regions.
+# - gc_window_size: window size to compute GC content.
+#
+sequana_coverage:
+    do: true
+    circular: true
+    window_size: 3001
+    chunksize: 5000000
+    double_threshold: 0.5
+    gc_window_size: 201
+    high_threshold: 4.0
+    low_threshold: -4.0
+    mixture_models: 2
+    genbank_file: # filled automatically at setup but deprecated
+
+##############################################################################
+# Filter VCF
+#
+# :Parameters:
+#
+# - freebayes_score: threshold for minimum freebayes quality score.
+# - frequency: threshold for minimum alternative allele frequency.
+# - min_depth: threshold for minimum coverage depth.
+# - forward_depth: threshold for minimum coverage depth of forward strand.
+# - reverse_depth: threshold for minimum coverage depth of reverse strand.
+# - strand_ratio: threshold for minimum strand ratio between 0 and 0.5.
+#
+freebayes_vcf_filter:
+    freebayes_score: 20
+    frequency: 0.1
+    min_depth: 10
+    forward_depth: 3
+    reverse_depth: 3
+    strand_ratio: 0.2
+
+##############################################################################
+# Filter Joint VCF
+#
+# :Parameters:
+#
+# - freebayes_score: threshold for minimum freebayes score.
+# - frequency: threshold for minimum alternative allele frequency.
+# - min_depth: threshold for minimum coverage depth.
+#
+joint_freebayes_vcf_filter:
+    freebayes_score: 200
+    frequency: 0.8
+    min_depth: 20
+
+
+###########################################################################
+#   MultiQC aggregates results from bioinformatics analyses across many
+#   samples into a single report.
+#
+# :Parameters:
+#
+# - options: any options recognised by multiqc
+# - output-directory: Create report in the specified output directory
+# - config_file: by default, we use sequana RNA-seq multiqc_config file. 
+#       If you want your own multiqc, fill this entry
+multiqc:
+    options: -p -f
+    modules: snpeff sequana_coverage
+    input_directory: .
+    config_file: multiqc_config.yaml
+

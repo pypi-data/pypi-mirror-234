@@ -1,0 +1,611 @@
+#
+#  This file is part of Sequana software
+#
+#  Copyright (c) 2016-2021 - Sequana Development Team
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  website: https://github.com/sequana/sequana
+#  documentation: http://sequana.readthedocs.io
+#
+##############################################################################
+"""
+Author: Dimitri Desvillechabrol, Thomas Cokelaer
+Affiliation: Institut Pasteur
+Aim: Variant calling
+Data: paired end or single reads
+Run: snakemake -s variant_calling.rules
+"""
+import os
+import shutil
+import json
+
+import pandas as pd
+
+import sequana
+from sequana_pipetools import snaketools as sm
+from sequana_pipetools.snaketools import PipelineManager
+
+
+# This must be defined before the include
+configfile: "config.yaml"
+
+# A convenient manager
+manager = PipelineManager("variant_calling", config)
+
+
+
+# for development when testing sequana-wrappers. DO NOT change
+sequana_wrapper_branch = "main"
+
+# ================================================= some sanity checks
+# if there are more than one sample lets do a joint calling with all samples
+if len(manager.samples) == 1:
+    config["joint_freebayes"]["do"] = False
+
+
+# ================================================== Define outputs
+expected_output = []
+
+
+others = []
+if config['joint_freebayes']['do']:
+    others += ["joint_calling/variant_calling.html"]
+
+
+if config["snpeff"]['do'] or config["sequana_coverage"]["do"]:
+    others += ["multiqc/multiqc_report.html"]
+
+rule all:
+    input:
+        ".sequana/rulegraph.svg",
+        "outputs/stats.csv",
+        others
+
+
+reference_file  = config["reference_file"]
+annotation_file = config["annotation_file"]
+new_reference = f"reference/{os.path.basename(reference_file)}"
+
+
+# ========================================================= snpeff
+# Add locus in FASTA file for snpEff
+if config["snpeff"]["do"]:
+
+    rule snpeff_add_locus_in_fasta:
+        input:
+            config["reference_file"],
+            config["annotation_file"]
+        output:
+            new_reference
+        params:
+            options=config["snpeff"]["build_options"]
+        log:
+            "common_logs/snpeff_add_locus_in_fasta.log"
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/snpeff_add_locus_in_fasta"
+
+# Copy the reference index if it exists
+elif not os.path.isfile(reference_file + ".fai"):
+    rule copy:
+        input:
+            src=reference_file
+        output:
+            src=new_reference
+        shell:
+            """
+            cp {input.src} {output.src}
+            """
+else:
+    new_reference = reference_file
+
+
+# ========================================================= BWA
+# The pipeline can be started with sorted BAM files
+#
+if not config["input_pattern"].endswith("bam"):
+
+    # ========================================================= bwa indexing
+    rule bwa_index:
+        input:
+            reference=new_reference
+        output:
+            bwa_bwt=new_reference + ".bwt",
+            fai=new_reference + ".fai"
+        log:
+            "reference/build.log"
+        params:
+            options=config['bwa_mem'].get('index_options', ""),
+            index_algorithm=config['bwa_mem'].get('index_algorithm', "is")
+        container:
+            config['apptainers']['sequana_tools']
+        threads: 2
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/bwa/build"
+
+    # ========================================================= bwa mapping
+    rule bwa:
+        input:
+            fastq=manager.getrawdata(),
+            bwa_bwt=new_reference + ".bwt",
+            fai=new_reference + ".fai",
+            reference=new_reference
+        output:
+            sorted="{sample}/bwa/{sample}.sorted.bam"
+        log:
+            "{sample}/bwa/{sample}.log"
+        params:
+            options=config["bwa_mem"]["options"],
+            tmp_directory=config["bwa_mem"]["tmp_directory"]
+        container:
+            config['apptainers']['sequana_tools']
+        threads: 2
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/bwa/align"
+
+
+# ========================================================= add read group
+#
+rule add_read_group:
+    input:
+        manager.getrawdata() if config["input_pattern"].endswith(".bam") 
+            else "{sample}/bwa/{sample}.sorted.bam"
+    output:
+        "{sample}/add_read_group/{sample}.sorted.bam"
+    log:
+        "{sample}/add_read_group/{sample}.log"
+    params:
+        options=config["add_read_group"]["options"],
+        SM="{sample}"
+    container:
+        config['apptainers']['sequana_tools']
+    wrapper:
+        f"{sequana_wrapper_branch}/wrappers/add_read_group"
+
+
+
+# ============================================= Mark duplicates with sambamba markdup
+if config["sambamba_markdup"]["do"]:
+
+    rule sambamba_markdup:
+        input:
+            "{sample}/add_read_group/{sample}.sorted.bam"
+        output:
+            "{sample}/sambamba_markdup/{sample}.sorted.bam"
+        log: "{sample}/sambamba_markdup.log",
+        params:
+            options=config["sambamba_markdup"]["options"],
+            tmp_directory=config["sambamba_markdup"]["tmp_directory"],
+            remove_duplicates=config["sambamba_markdup"]["remove_duplicates"]
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/sambamba_markdup"
+
+    __sambamba_filter__input = "{sample}/sambamba_markdup/{sample}.sorted.bam"
+    __freebayes__input       = "{sample}/sambamba_markdup/{sample}.sorted.bam"
+    __samtools_depth__input  = "{sample}/sambamba_markdup/{sample}.sorted.bam"
+else:
+    __sambamba_filter__input  = "{sample}/add_read_group/{sample}.sorted.bam"
+    __samtools_depth__input   = "{sample}/add_read_group/{sample}.sorted.bam"
+    __freebayes__input        = "{sample}/add_read_group/{sample}.sorted.bam"
+
+# ============================================== bam quality filter with sambamba
+if config["sambamba_filter"]["do"]:
+
+    rule sambamba_filter:
+        input:
+            __sambamba_filter__input
+        output:
+            "{sample}/sambamba_filter/{sample}.filter.sorted.bam"
+        log:
+            "{sample}/sambamba_filter/{sample}_sambamba_filter.log",
+        params:
+            threshold=config["sambamba_filter"]["threshold"],
+            options=config["sambamba_filter"]["options"]
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/sambamba_filter"
+
+    __freebayes__input = "{sample}/sambamba_filter/{sample}.filter.sorted.bam"
+    __samtools_depth__input = [
+        "{sample}/sambamba_filter/{sample}.filter.sorted.bam",
+    ]
+
+
+# ========================================================= sequana_coverage analysis
+if config["sequana_coverage"]["do"]:
+
+    rule bedtools_depth:
+        input:
+            __samtools_depth__input
+        output:
+            "{sample}/bedtools_depth/{sample}.bed"
+        log:
+            "{sample}/bedtools_depth/{sample}.log"
+        container:
+            config['apptainers']['sequana_tools']
+        shell:
+            """
+            bedtools genomecov -d -ibam {input} > {output}
+            """
+
+    rule samtools_depth:
+        input:
+            __samtools_depth__input
+        output:
+            "{sample}/samtools_depth/{sample}.bed"
+        log:
+            "{sample}/samtools_depth/{sample}.log"
+        params:
+            # change -m to higher value would you have a large coverage
+            options="-m " + str(config['samtools_depth'].get("max_depth", 20000))
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/samtools_depth"
+
+
+    rule double_bed:
+        input:
+            bed1="{sample}/samtools_depth/{sample}.bed",
+            bed2="{sample}/bedtools_depth/{sample}.bed"
+        output:
+            "{sample}/double_bed/{sample}.bed"
+        run:
+            with open(input.bed1) as fin1, open(input.bed2) as fin2, open(output[0], "w") as fout:
+                for line1, line2 in zip(fin1, fin2):
+                    name1, pos1, count1 = line1.split()
+                    name2, pos2, count2 = line2.split()
+                    assert name1==name2
+                    assert pos1==pos2
+                    fout.write(f"{name1}\t{pos1}\t{count1}\t{count2}\n")
+
+
+
+    def get_sequana_coverage_input(config):
+        input_file = {
+            "bed": "{sample}/double_bed/{sample}.bed",
+            "fasta": reference_file
+        }
+        return input_file
+
+    rule sequana_coverage:
+        input:
+            **get_sequana_coverage_input(config)
+        output:
+            "{sample}/sequana_coverage/sequana_coverage.html"
+        params:
+            circular=config["sequana_coverage"]["circular"],
+            window_size=config["sequana_coverage"]["window_size"],
+            chunksize=config["sequana_coverage"]["chunksize"],
+            double_threshold=config["sequana_coverage"]["double_threshold"],
+            gc_window_size=config["sequana_coverage"]["gc_window_size"],
+            high_threshold=config["sequana_coverage"]["high_threshold"],
+            low_threshold=config["sequana_coverage"]["low_threshold"],
+            mixture_models=config["sequana_coverage"]["mixture_models"],
+            gbk=annotation_file if config["snpeff"]["do"] else None
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/sequana_coverage"
+
+    expected_output += expand("{sample}/sequana_coverage/sequana_coverage.html",
+             sample=manager.samples)
+
+
+# ========================================================= freebayes
+
+# Variant calling with Freebayes
+# bai file is setup in freebayes rule for pipeline summary
+
+rule freebayes:
+    input:
+        bam = __freebayes__input,
+        ref= new_reference
+    output:
+        "{sample}/freebayes/{sample}.raw.vcf"
+    log:
+        "{sample}/freebayes/{sample}_freebayes.log"
+    params:
+        ploidy=config["freebayes"]["ploidy"],
+        options=config["freebayes"]["options"]
+    container:
+        config['apptainers']['sequana_tools']
+    wrapper:
+        f"{sequana_wrapper_branch}/wrappers/freebayes"
+
+
+# =========================================================== annotation snpeff
+# Annotate detected variants with snpEff
+if config["snpeff"]["do"]:
+
+    rule snpeff:
+        input:
+            vcf = "{sample}/freebayes/{sample}.raw.vcf",
+            ann = annotation_file
+        output:
+            html="{sample}/snpeff/{sample}.snpeff.html",
+            csv="{sample}/snpeff/{sample}.snpeff.csv",
+            vcf="{sample}/snpeff/{sample}.ann.vcf"
+        log:
+            "{sample}/snpeff/{sample}_snpeff.log"
+        params:
+            options=config["snpeff"]["options"]
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/snpeff"
+
+
+    __freebayes_vcf_filter__input = "{sample}/snpeff/{sample}.ann.vcf"
+    expected_output += expand("{sample}/snpeff/{sample}.ann.vcf", sample=manager.samples)
+else:
+    __freebayes_vcf_filter__input = "{sample}/freebayes/{sample}.raw.vcf"
+
+expected_output += expand("{sample}/freebayes/{sample}.raw.vcf", sample=manager.samples)
+
+
+# ================================================================== Freebayes filter
+#
+#
+rule freebayes_vcf_filter:
+    input:
+        __freebayes_vcf_filter__input
+    output:
+        vcf="{sample}/freebayes_vcf_filter/{sample}.filter.vcf",
+        csv="{sample}/freebayes_vcf_filter/{sample}.filter.csv",
+        html="{sample}/variant_calling.html"
+    params:
+        filter_dict=config["freebayes_vcf_filter"]
+    container:
+        config['apptainers']['sequana_tools']
+    wrapper:
+        f"{sequana_wrapper_branch}/wrappers/freebayes_vcf_filter"
+
+
+rule vcf2bcf:
+    input:
+        vcf_filter="{sample}/freebayes_vcf_filter/{sample}.filter.vcf"
+    output:
+        bcf_filter="{sample}/freebayes_vcf_filter/{sample}.filter.bcf"
+    container:
+        config['apptainers']['sequana_tools']
+    shell:
+        """
+        bgzip -c {input.vcf_filter} > {input.vcf_filter}.gz
+        tabix {input.vcf_filter}.gz
+        bcftools view {input.vcf_filter}.gz -O b -o {output.bcf_filter}
+        """
+
+expected_output += expand("{sample}/freebayes_vcf_filter/{sample}.filter.bcf", sample=manager.samples)
+
+# ========================================= Joint variant calling with freebayes
+#
+#
+if config["joint_freebayes"]["do"]:
+
+    rule joint_freebayes:
+        input:
+            bam=expand(__freebayes__input, sample=manager.samples),
+            ref=new_reference
+        output:
+            "joint_calling/joint_calling.raw.vcf"
+        log:
+            "joint_calling/joint_calling.log"
+        params:
+            ploidy=config["freebayes"]["ploidy"],
+            options=config["joint_freebayes"]["options"]
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/freebayes"
+
+    # ============================================= snpeff
+    if config["snpeff"]["do"]:
+
+        rule snpeff_joint:
+            input:
+                vcf = "joint_calling/joint_calling.raw.vcf",
+                ann = annotation_file
+            output:
+                html="joint_calling/snpeff.html",
+                csv="joint_calling/joint_calling.csv",
+                vcf="joint_calling/joint_calling.ann.vcf"
+            log:
+                "joint_calling/snpeff.log"
+            params:
+                options=config["snpeff"]["options"]
+            container:
+                config['apptainers']['sequana_tools']
+            wrapper:
+                f"{sequana_wrapper_branch}/wrappers/snpeff"
+
+        expected_output+=["joint_calling/joint_calling.ann.vcf"]
+        expected_output+=["joint_calling/snpeff.html"]
+    else:
+        expected_output+=["joint_calling/joint_calling.raw.vcf"]
+
+    # ============================================= freebayes vcf filter
+    #
+    def get_joint_freebayes_vcf_filter_input():
+        if config["snpeff"]["do"]:
+            return "joint_calling/joint_calling.ann.vcf"
+        else:
+            return "joint_calling/joint_calling.raw.vcf"
+
+    rule joint_freebayes_vcf_filter:
+        input:
+            get_joint_freebayes_vcf_filter_input
+        output:
+            vcf="joint_calling/joint_calling.filter.vcf",
+            csv="joint_calling/joint_calling.filter.csv",
+            html="joint_calling/variant_calling.html"
+        params:
+            filter_dict=config["freebayes_vcf_filter"],
+            report_dir="joint_calling"
+        container:
+            config['apptainers']['sequana_tools']
+        wrapper:
+            f"{sequana_wrapper_branch}/wrappers/freebayes_vcf_filter"
+    expected_output+=["joint_calling/variant_calling.html"]
+
+    rule vcf2bcf_joint:
+        input:
+            vcf="joint_calling/joint_calling.filter.vcf"
+        output:
+            bcf="joint_calling/joint_calling.filter.bcf"
+        container:
+            config['apptainers']['sequana_tools']
+        shell:
+            """
+            bgzip -c {input.vcf_filter} > {input.vcf_filter}.gz
+            tabix {input.vcf_filter}.gz
+            bcftools view {input.vcf}.gz -O b -o {output.bcf}
+            """
+    expected_output += ["joint_calling/joint_calling.filter.bcf"]
+
+
+
+# ================================================================= some stats for HTML report
+rule stats:
+    input:
+        raw = expand("{sample}/freebayes/{sample}.raw.vcf", sample=manager.samples),
+        filter = expand("{sample}/freebayes_vcf_filter/{sample}.filter.vcf", sample=manager.samples)
+    output:
+        "outputs/stats.csv"
+    run:
+        samples = []
+        raw_counts = []
+        filter_counts = []
+
+        for raw, filter in zip(sorted(input.raw), sorted(input.filter)):
+            sample = raw.split("/")[0]
+            with open(raw, "r") as fin:
+                C = 0
+                for line in fin.readlines():
+                    if not line.startswith("#"):
+                        C +=1
+            raw_counts.append(C)
+            with open(filter, "r") as fin:
+                C = 0
+                for line in fin.readlines():
+                    if not line.startswith("#"):
+                        C +=1
+            filter_counts.append(C)
+            samples.append(sample)
+        df = pd.DataFrame({'name': samples, 'raw': raw_counts, 'filter': filter_counts})
+        os.makedirs("outputs", exist_ok=True)
+        df.to_csv(output[0], index=False)
+
+
+# ======================================================================================== multiqc
+#
+if config["snpeff"]['do'] or config["sequana_coverage"]["do"]:
+    rule multiqc:
+        input:
+            expected_output
+        output:
+           "multiqc/multiqc_report.html"
+        params:
+            options=config["multiqc"]["options"],
+            input_directory=config['multiqc']['input_directory'],
+            config_file=config['multiqc']['config_file'],
+            modules=config['multiqc']['modules']
+        log:
+            "multiqc/multiqc.log"
+        wrapper:
+           f"{sequana_wrapper_branch}/wrappers/multiqc"
+
+
+# ======================================================================================== rulegraph
+sequana_rulegraph_mapper = {}
+if config["joint_freebayes"]["do"]:
+    sequana_rulegraph_mapper["joint_freebayes"] = "../joint_calling/variant_calling.html"
+
+
+
+# ========================================================== rulegraph
+rule rulegraph:
+    input: str(manager.snakefile)
+    output:
+        svg = "rulegraph/rulegraph.dot"
+    params:
+        mapper = {"multiqc": "../multiqc/multiqc_report.html"},
+        configname = "config.yaml"
+    wrapper:
+        f"{sequana_wrapper_branch}/wrappers/rulegraph"
+
+
+rule dot2svg:
+    input:
+        "rulegraph/rulegraph.dot"
+    output:
+        ".sequana/rulegraph.svg"
+    container:
+        config['apptainers']['graphviz']
+    shell:
+        """dot -Tsvg {input} -o {output}"""
+
+
+localrules: rulegraph, multiqc, stats
+
+# =========================================================================== success
+#
+onsuccess:
+    from sequana.utils import config as conf
+    from sequana.utils.datatables_js import DataTable
+    from sequana.modules_report.summary import SummaryModule
+    from sequana.modules_report.summary import SummaryModule2
+    from sequana import logger
+    logger.setLevel("INFO")
+
+
+    try:
+        # with some options, multiqc is not created
+        manager.clean_multiqc("multiqc/multiqc_report.html")
+        intro = """<h2>Overview</h2>
+            This pipeline calls variants on a set of samples. Individual reports are available
+            as well as a <a href="multiqc/multiqc_report.html">multiqc report</a>."""
+    except:
+        intro = """<h2>Overview</h2>
+            This pipeline calls variants on a set of samples. Please see individual reports for details."""
+
+
+    intro += "<h2>Individual Reports</h2>"
+    intro += "<p> Each individual reports can be accessed via the links here below. The number of variants found in each sample in shown in the following table where raw accounts for all variants without any filtering. The 'filter' columns applied a filtering as described in the individual report page. </p>"
+
+    df = pd.read_csv("outputs/stats.csv")
+    df['links'] = [f"{x}/variant_calling.html" for x in df['name']]
+    dt = DataTable(df, "stats")
+    dt.datatable.datatable_options = {'pageLength': len(manager.samples),
+                                       'dom': 'Bfrtip',
+                                       'buttons': ['copy', 'csv']}
+    dt.datatable.set_links_to_column("links", "name")
+    intro +=  dt.create_javascript_function() +  dt.create_datatable()
+
+
+    if config["joint_freebayes"]["do"]:
+        intro += "<h2>Joint calling Report</h2>"
+        intro += """Joint calling was requested. A HTML report is available: <a href="joint_calling/variant_calling.html">here</a>"""
+
+    data = {"name": "variant_calling",
+            "rulegraph": ".sequana/rulegraph.svg",
+            }
+
+    conf.output_dir = os.path.abspath(".")
+    s = SummaryModule2(data, intro=intro, workflow=True)
+
+
+    manager.teardown(extra_files_to_remove=["snpEff.config"],
+            extra_dirs_to_remove=["tmp", "common_logs"])
+    shell("chmod -R g+w .")
+
+onerror:
+    from sequana_pipetools.errors import PipeError
+    p = PipeError("variant_calling")
+    p.status()
+
+

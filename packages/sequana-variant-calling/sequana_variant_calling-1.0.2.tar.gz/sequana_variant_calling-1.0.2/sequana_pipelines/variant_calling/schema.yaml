@@ -1,0 +1,184 @@
+# Schema validator for the variant_calling pipeline
+# author: Thomas Cokelaer
+
+type: map
+mapping:
+    "input_directory":
+        type: str
+        required: True
+    "input_readtag":
+        type: str
+        required: True
+    "input_pattern":
+        type: str
+        required: True
+    "annotation_file":
+        type: str
+        required: False
+    "reference_file":
+        type: str
+        required: True
+
+    "apptainers":
+        type: any
+
+    "bwa_mem":
+        type: map
+        mapping:
+            "index_algorithm":
+                type: str
+            "options":
+                type: str
+            "threads":
+                type: int
+                required: True
+                range: { min: 1 }
+            "tmp_directory":
+                type: str
+
+    "sequencing":
+        type: map
+        mapping:
+          "platform":
+            type: str
+          "instrument":
+            type: str
+          "flowcell":
+            type: str
+
+
+    "multiqc":
+        type: map
+        mapping:
+            "modules":
+              type: str
+            "options":
+                type: str
+            "config_file":
+                type: str
+            "input_directory":
+                type: str
+
+    "snpeff":
+        type: map
+        mapping:
+            "do":
+                type: bool
+            "build_options":
+                type: str
+            "options":
+                type: str
+
+    "sambamba_markdup":
+        type: map
+        mapping:
+            "do":
+                type: bool
+            "remove_duplicates":
+                type: bool
+            "tmp_directory":
+                type: str
+            "options":
+                type: str
+
+    "sambamba_filter":
+        type: map
+        mapping:
+            "do":
+                type: bool
+            "threshold":
+                type: int
+                range: { min: 0 }
+            "options":
+                type: str
+
+    "freebayes":
+        type: map
+        mapping:
+            "options":
+                type: str
+            "ploidy":
+                type: int
+                range: { min: 1 }
+    "joint_freebayes":
+        type: map
+        mapping:
+            "options":
+                type: str
+            "do":
+                type: bool
+
+    "sequana_coverage":
+        type: map
+        mapping:
+            "do":
+                type: bool
+                default: False
+                required: True
+            "circular":
+                type: bool
+                default: True
+                required: True
+            "double_threshold":
+                type: float
+                range: { min: 0, max: 1}
+                required: False
+                default: 0.5
+            "high_threshold":
+                type: float
+                range: { min: 2 }
+            "low_threshold":
+                type: float
+                range: { max: -2 }
+            "mixture_models":
+                type: int
+                required: True
+                range: { min: 1, max: 3 }
+            "chunksize":
+                type: int
+                required: False
+                default: 5000000
+            "window_size":
+                default: 20001
+                type: int
+                range: { min: 3 }
+            "gc_window_size":
+                type: int
+                range: { min: 2}
+            "genbank_file":
+              type: str
+
+
+    "freebayes_vcf_filter":
+        type: map
+        mapping:
+          "freebayes_score":
+            type: int
+          "frequency":
+            type: float
+          "min_depth":
+            type: int
+          "forward_depth":
+            type: int
+          "reverse_depth":
+            type: int
+          "strand_ratio":
+            type: float
+
+    "joint_freebayes_vcf_filter":
+        type: map
+        mapping:
+          "freebayes_score":
+              type: int
+          "frequency": 
+              type: float
+          "min_depth": 
+              type: int
+
+
+    "add_read_group":
+        type: map
+        mapping:
+            "options":
+                type: str
+
