@@ -1,0 +1,205 @@
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "pip>=22.3.1", "wheel>=0.38.4"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool]
+
+[tool.autopep8]
+max_line_length = 120
+ignore = "E203,E501,W503,E402"
+in-place = true
+recursive = true
+aggressive = 3
+exclude = "pylav/_city_dump.py"
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+force-exclude = '''
+    /(
+        pylav\/vendor
+    )/
+    '''
+
+[tool.isort]
+profile = "black"
+line_length = 120
+py_version = 311
+known_third_party = [
+    "aiofile",
+    "aiohttp",
+    "aiohttp_client_cache",
+    "aiopath",
+    "apscheduler",
+    "apsw",
+    "asyncpg",
+    "asyncspotify",
+    "asyncstdlib",
+    "brotli",
+    "cached_property",
+    "cashews",
+    "dacite",
+    "dateutil",
+    "deepdiff",
+    "discord",
+    "expiringdict",
+    "humanize",
+    "importlib_metadata",
+    "iso8601",
+    "netaddr",
+    "numpy",
+    "orjson",
+    "packaging",
+    "piccolo",
+    "platformdirs",
+    "psutil",
+    "pytz",
+    "red_commons",
+    "redis",
+    "rich",
+    "tabulate",
+    "typing_extensions",
+    "ujson",
+    "uvloop",
+    "watchfiles",
+    "yaml"
+]
+known_local_folder = [
+    "pylav"
+]
+
+[tool.interrogate]
+ignore-init-method = true
+ignore-init-module = false
+ignore-magic = false
+ignore-semiprivate = false
+ignore-private = false
+ignore-property-decorators = false
+ignore-module = false
+ignore-nested-functions = false
+ignore-nested-classes = true
+ignore-setters = false
+fail-under = 95
+exclude = ["docs", "build", "pylav/vendor", "pylav/utils/vendor"]
+ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
+# possible values: 0 (minimal output), 1 (-v), 2 (-vv)
+verbose = 0
+quiet = false
+whitelist-regex = []
+color = true
+omit-covered-files = false
+
+
+[tool.poetry]
+name = "Py-Lav"
+version = "1.13.2"
+description = " A Lavalink WebSocket & API wrapper for discord.py"
+authors = ["Draper <27962761+Drapersniper@users.noreply.github.com>"]
+readme = "README.md"
+packages = [{include = "pylav"}]
+license = "AGPL-3.0-or-later"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+repository = "https://github.com/PyLav/PyLav"
+documentation = "https://pylav.readthedocs.io/en/latest/"
+include = [
+    "CHANGELOG.md",
+    "LICENSE",
+    "**/LICENSE.*",
+]
+exclude = [
+    "**/__pycache__",
+    "build",
+    "dist",
+    "docs",
+]
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+pip = "^23.2.1"
+wheel = "^0.41.2"
+APScheduler = "^3.10.4"
+Brotli = "^1.1.0"
+PyYAML = "^6.0.1"
+aiohttp-client-cache = "^0.9.1"
+aiopath = "^0.6.11"
+asyncpg = "^0.28.0"
+asyncspotify = "^0.12.1"
+asyncstdlib = "^3.10.9"
+cached-property = "^1.5.2"
+cashews = {extras = ["dill", "redis"], version = "^6.3.0"}
+dacite = "^1.8.1"
+deepdiff6 = "^6.2.0"
+expiringdict = "^1.2.2"
+humanize = "^4.8.0"
+importlib-metadata = "^6.8.0"
+iso8601 = "^2.1.0"
+mutagen = "^1.47.0"
+netaddr = "^0.9.0"
+numpy = "^1.26.0"
+piccolo = {extras = ["all"], version = "^0.121.0"}
+redis = "^5.0.1"
+tabulate = {extras = ["widechars"], version = "^0.9.0"}
+ujson = "^5.8.0"
+watchfiles = "^0.20.0"
+
+# Dependencies pre-installed with Red, only required if using PyLav on a Non-Red bot
+Red-Commons = { version = "*", optional = true}
+aiohttp = {extras = ["speedups"], version = "*", optional = true}
+apsw = { version = "*", optional = true}
+orjson = { version = "*", optional = true}
+packaging = { version = "*", optional = true}
+platformdirs = { version = "*", optional = true}
+psutil =  { version = "*", optional = true}
+python-dateutil = { version = "*", optional = true}
+pytz = { version = "*", optional = true}
+rich = { version = "*", optional = true}
+typing-extensions = { version = "*", optional = true}
+rapidfuzz = { version = "*", optional = true}
+uvloop = { version = "*", markers = "sys_platform != 'win32' and platform_python_implementation == 'CPython'", optional = true}
+
+# Dependency for the docs
+Red-DiscordBot = {version = ">=3.5", optional = true}
+furo = { version = "^2023.9.10", optional = true}
+olefile = { version = "^0.46", optional = true}
+sphinx_rtd_theme = { version = "^1.3.0", optional = true}
+sphinx-copybutton = { version = "^0.5.2", optional = true}
+sphinx-inline-tabs = { version = "^2023.4.21", optional = true}
+sphinx-issues = { version = "^3.0.1", optional = true}
+sphinx-removed-in = { version = "^0.2.1", optional = true}
+
+
+[tool.poetry.extras]
+redis = ["redis"]
+all = ["redis"]
+nored = ["Red-Commons","aiohttp","apsw","importlib-metadata","orjson","packaging","platformdirs","psutil","python-dateutil","pytz","rich","typing-extensions", "uvloop", "rapidfuzz"]
+all-nored = ["Red-Commons","aiohttp","apsw","importlib-metadata","orjson","orjson","packaging","platformdirs","psutil","python-dateutil","pytz","redis","rich","typing-extensions", "uvloop", "rapidfuzz"]
+docs = ["Red-DiscordBot", "sphinx_rtd_theme", "furo", "olefile", "sphinx-copybutton", "sphinx-inline-tabs", "sphinx-issues", "sphinx-removed-in"]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/PyLav/PyLav/issues"
+
+[tool.poetry-dynamic-versioning]
+enable = false
+vcs = "git"
+bump = true
+style = "semver"
+dirty = false
+
+[tool.poetry-dynamic-versioning.substitution]
+files = []
+patterns = []
