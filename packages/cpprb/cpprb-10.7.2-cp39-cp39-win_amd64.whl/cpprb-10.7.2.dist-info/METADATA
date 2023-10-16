@@ -1,0 +1,521 @@
+Metadata-Version: 2.1
+Name: cpprb
+Version: 10.7.2
+Summary: ReplayBuffer for Reinforcement Learning written by C++ and Cython
+Home-page: https://ymd_h.gitlab.io/cpprb/
+Author: Yamada Hiroyuki
+License: UNKNOWN
+Project-URL: Source Code, https://gitlab.com/ymd_h/cpprb
+Project-URL: Mirror, https://github.com/ymd-h/cpprb
+Project-URL: Change Log, https://ymd_h.gitlab.io/cpprb/changelog/
+Project-URL: Bug Report & QA, https://github.com/ymd-h/cpprb/discussions
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Software Development :: Libraries
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy
+Provides-Extra: all
+Requires-Dist: matplotlib ; extra == 'all'
+Requires-Dist: pyvirtualdisplay ; extra == 'all'
+Requires-Dist: sphinx ; extra == 'all'
+Requires-Dist: sphinx-rtd-theme ; extra == 'all'
+Requires-Dist: sphinx-automodapi ; extra == 'all'
+Requires-Dist: coverage ; extra == 'all'
+Requires-Dist: cython ; extra == 'all'
+Requires-Dist: scipy ; extra == 'all'
+Requires-Dist: twine ; extra == 'all'
+Requires-Dist: unittest-xml-reporting ; extra == 'all'
+Requires-Dist: ray ; extra == 'all'
+Provides-Extra: api
+Requires-Dist: sphinx ; extra == 'api'
+Requires-Dist: sphinx-rtd-theme ; extra == 'api'
+Requires-Dist: sphinx-automodapi ; extra == 'api'
+Provides-Extra: dev
+Requires-Dist: coverage ; extra == 'dev'
+Requires-Dist: cython ; extra == 'dev'
+Requires-Dist: scipy ; extra == 'dev'
+Requires-Dist: twine ; extra == 'dev'
+Requires-Dist: unittest-xml-reporting ; extra == 'dev'
+Requires-Dist: ray ; extra == 'dev'
+Provides-Extra: gym
+Requires-Dist: matplotlib ; extra == 'gym'
+Requires-Dist: pyvirtualdisplay ; extra == 'gym'
+
+![img](https://img.shields.io/gitlab/pipeline/ymd_h/cpprb.svg)
+![img](https://img.shields.io/pypi/v/cpprb.svg)
+![img](https://img.shields.io/pypi/l/cpprb.svg)
+![img](https://img.shields.io/pypi/status/cpprb.svg)
+[![img](https://gitlab.com/ymd_h/cpprb/badges/master/coverage.svg)](https://ymd_h.gitlab.io/cpprb/coverage/)
+
+[![img](https://img.shields.io/pypi/dd/cpprb.svg)](https://pypi.org/project/cpprb/)
+[![img](https://img.shields.io/pypi/dw/cpprb.svg)](https://pypi.org/project/cpprb/)
+[![img](https://img.shields.io/pypi/dm/cpprb.svg)](https://pypi.org/project/cpprb/)
+
+![img](https://ymd_h.gitlab.io/cpprb/images/favicon.png)
+
+
+# Overview
+
+cpprb is a python ([CPython](https://github.com/python/cpython/tree/master/Python)) module providing replay buffer classes for
+reinforcement learning.
+
+Major target users are researchers and library developers.
+
+You can build your own reinforcement learning algorithms together with
+your favorite deep learning library (e.g. [TensorFlow](https://www.tensorflow.org/), [PyTorch](https://pytorch.org/)).
+
+cpprb forcuses speed, flexibility, and memory efficiency.
+
+By utilizing [Cython](https://cython.org/), complicated calculations (e.g. segment tree for
+prioritized experience replay) are offloaded onto C++.
+(The name cpprb comes from "C++ Replay Buffer".)
+
+In terms of API, initially cpprb referred to [OpenAI Baselines](https://github.com/openai/baselines)'
+implementation. The current version of cpprb has much more
+flexibility. Any [NumPy](https://numpy.org/) compatible types of any numbers of values can
+be stored (as long as memory capacity is sufficient). For example, you
+can store the next action and the next next observation, too.
+
+
+# Installation
+
+cpprb requires following softwares before installation.
+
+-   C++17 compiler (for installation from source)
+    -   [GCC](https://gcc.gnu.org/) (maybe 7.2 and newer)
+    -   [Visual Studio](https://visualstudio.microsoft.com/) (2017 Enterprise is fine)
+-   Python 3
+-   pip
+
+Additionally, here are user's good feedbacks for installation at [Ubuntu](https://gitlab.com/ymd_h/cpprb/issues/73).
+(Thanks!)
+
+
+## Install from [PyPI](https://pypi.org/) (Recommended)
+
+The following command installs cpprb together with other dependencies.
+
+    pip install cpprb
+
+Depending on your environment, you might need `sudo` or `--user` flag
+for installation.
+
+On supported platflorms (Linux x86-64, Windows amd64, and macOS
+x86<sub>64</sub>), binary packages hosted on PyPI can be used, so that you don't
+need C++ compiler. On the other platforms, such as 32bit or
+arm-architectured Linux and Windows, you cannot install from binary,
+and you need to compile by yourself. Please be patient, we plan to
+support wider platforms in future.
+
+If you have any troubles to install from binary, you can fall back to
+source installation by passing `--no-binary` option to the above pip
+command. (In order to avoid NumPy source installation, it is better to
+install NumPy beforehand.)
+
+    pip install numpy
+    pip install --no-binary cpprb
+
+
+## Install from source code
+
+First, download source code manually or clone the repository;
+
+    git clone https://gitlab.com/ymd_h/cpprb.git
+
+Then you can install in the same way;
+
+    cd cpprb
+    pip install .
+
+For this installation, you need to convert extended Python (.pyx) to
+C++ (.cpp) during installation, it takes longer time than installation
+from PyPI.
+
+
+# Usage
+
+
+## Basic Usage
+
+Basic usage is following step;
+
+1.  Create replay buffer (`ReplayBuffer.__init__`)
+2.  Add transitions (`ReplayBuffer.add`)
+    1.  Reset at episode end (`ReplayBuffer.on_episode_end`)
+3.  Sample transitions (`ReplayBuffer.sample`)
+
+
+## Example Code
+
+Here is a simple example for storing standard environment (aka. `obs`,
+`act`, `rew`, `next_obs`, and `done`).
+
+    from cpprb import ReplayBuffer
+    
+    buffer_size = 256
+    obs_shape = 3
+    act_dim = 1
+    rb = ReplayBuffer(buffer_size,
+    		  env_dict ={"obs": {"shape": obs_shape},
+    			     "act": {"shape": act_dim},
+    			     "rew": {},
+    			     "next_obs": {"shape": obs_shape},
+    			     "done": {}})
+    
+    obs = np.ones(shape=(obs_shape))
+    act = np.ones(shape=(act_dim))
+    rew = 0
+    next_obs = np.ones(shape=(obs_shape))
+    done = 0
+    
+    for i in range(500):
+        rb.add(obs=obs,act=act,rew=rew,next_obs=next_obs,done=done)
+    
+        if done:
+    	# Together with resetting environment, call ReplayBuffer.on_episode_end()
+    	rb.on_episode_end()
+    
+    batch_size = 32
+    sample = rb.sample(batch_size)
+    # sample is a dictionary whose keys are 'obs', 'act', 'rew', 'next_obs', and 'done'
+
+
+## Construction Parameters
+
+(See also [API reference](https://ymd_h.gitlab.io/cpprb/api/api/cpprb.ReplayBuffer.html))
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Name</th>
+<th scope="col" class="org-left">Type</th>
+<th scope="col" class="org-left">Optional</th>
+<th scope="col" class="org-left">Discription</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td class="org-left"><code>size</code></td>
+<td class="org-left"><code>int</code></td>
+<td class="org-left">No</td>
+<td class="org-left">Buffer size</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>env_dict</code></td>
+<td class="org-left"><code>dict</code></td>
+<td class="org-left">Yes (but unusable)</td>
+<td class="org-left">Environment definition (See <a href="https://ymd_h.gitlab.io/cpprb/features/flexible_environment/">here</a>)</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>next_of</code></td>
+<td class="org-left"><code>str</code> or array-like of <code>str</code></td>
+<td class="org-left">Yes</td>
+<td class="org-left">Memory compression (See <a href="https://ymd_h.gitlab.io/cpprb/features/memory_compression/">here</a>)</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>stack_compress</code></td>
+<td class="org-left"><code>str</code> or array-like of <code>str</code></td>
+<td class="org-left">Yes</td>
+<td class="org-left">Memory compression (See <a href="https://ymd_h.gitlab.io/cpprb/features/memory_compression/">here</a>)</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>default_dtype</code></td>
+<td class="org-left"><code>numpy.dtype</code></td>
+<td class="org-left">Yes</td>
+<td class="org-left">Fall back data type</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>Nstep</code></td>
+<td class="org-left"><code>dict</code></td>
+<td class="org-left">Yes</td>
+<td class="org-left">Nstep configuration (See <a href="https://ymd_h.gitlab.io/cpprb/features/nstep/">here</a>)</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><code>mmap_prefix</code></td>
+<td class="org-left"><code>str</code></td>
+<td class="org-left">Yes</td>
+<td class="org-left">mmap file prefix (See <a href="https://ymd_h.gitlab.io/cpprb/features/mmap/">here</a>)</td>
+</tr>
+</tbody>
+</table>
+
+
+## Notes
+
+Flexible environment values are defined by `env_dict` when buffer
+creation. The detail is described at [document](https://ymd_h.gitlab.io/cpprb/features/flexible_environment/).
+
+Since stored values have flexible name, you have to pass to
+`ReplayBuffer.add` member by keyword.
+
+
+# Features
+
+cpprb provides buffer classes for building following algorithms.
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Algorithms</th>
+<th scope="col" class="org-left">cpprb class</th>
+<th scope="col" class="org-left">Paper</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td class="org-left">Experience Replay</td>
+<td class="org-left"><code>ReplayBuffer</code></td>
+<td class="org-left"><a href="https://link.springer.com/article/10.1007/BF00992699">L. J. Lin</a></td>
+</tr>
+
+
+<tr>
+<td class="org-left"><a href="https://ymd_h.gitlab.io/cpprb/features/per/">Prioritized Experience Replay</a></td>
+<td class="org-left"><code>PrioritizedReplayBuffer</code></td>
+<td class="org-left"><a href="https://arxiv.org/abs/1511.05952">T. Schaul et. al.</a></td>
+</tr>
+
+
+<tr>
+<td class="org-left"><a href="https://ymd_h.gitlab.io/cpprb/features/nstep/">Multi-step (Nstep) Learning</a></td>
+<td class="org-left"><code>ReplayBuffer</code>, <code>PrioritizedReplayBuffer</code></td>
+<td class="org-left">&#xa0;</td>
+</tr>
+
+
+<tr>
+<td class="org-left"><a href="https://ymd_h.gitlab.io/cpprb/features/ape-x/">Multiprocess Learning (Ape-X)</a></td>
+<td class="org-left"><code>MPReplayBuffer</code> <code>MPPrioritizedReplayBuffer</code></td>
+<td class="org-left"><a href="https://arxiv.org/abs/1803.00933">D. Horgan et. al.</a></td>
+</tr>
+
+
+<tr>
+<td class="org-left"><a href="https://ymd_h.gitlab.io/cpprb/features/laber/">Large Batch Experience Replay (LaBER)</a></td>
+<td class="org-left"><code>LaBERmean</code>, <code>LaBERlazy</code>, <code>LaBERmax</code></td>
+<td class="org-left"><a href="https://dblp.org/db/journals/corr/corr2110.html#journals/corr/abs-2110-01528">T. Lahire et al.</a></td>
+</tr>
+
+
+<tr>
+<td class="org-left"><a href="https://ymd_h.gitlab.io/cpprb/features/rer/">Reverse Experience Replay (RER)</a></td>
+<td class="org-left"><code>ReverseReplayBuffer</code></td>
+<td class="org-left"><a href="https://arxiv.org/abs/1910.08780">E. Rotinov</a></td>
+</tr>
+
+
+<tr>
+<td class="org-left"><a href="https://ymd_h.gitlab.io/cpprb/features/her/">Hindsight Experience Replay (HER)</a></td>
+<td class="org-left"><code>HindsightReplayBuffer</code></td>
+<td class="org-left"><a href="https://arxiv.org/abs/1707.01495">M. Andrychowicz et al.</a></td>
+</tr>
+</tbody>
+</table>
+
+cpprb features and its usage are described at following pages:
+
+-   [Flexible Environment](https://ymd_h.gitlab.io/cpprb/features/flexible_environment/)
+-   [Multi-step add](https://ymd_h.gitlab.io/cpprb/features/multistep_add/)
+-   [Prioritized Experience Replay](https://ymd_h.gitlab.io/cpprb/features/per/)
+-   [Nstep Experience Replay](https://ymd_h.gitlab.io/cpprb/features/nstep/)
+-   [Memory Compression](https://ymd_h.gitlab.io/cpprb/features/memory_compression/)
+-   [Map Large Data on File](https://ymd_h.gitlab.io/cpprb/features/mmap/)
+-   [Multiprocess Learning (Ape-X)](https://ymd_h.gitlab.io/cpprb/features/ape-x/)
+-   [Save/Load Transitions](https://ymd_h.gitlab.io/cpprb/features/save_load_transitions/)
+
+
+# Design
+
+
+## Column-oriented and Flexible
+
+One of the most distinctive design of cpprb is column-oriented
+flexibly defined transitions. As far as we know, other replay buffer
+implementations adopt row-oriented flexible transitions (aka. array of
+transition class) or column-oriented non-flexible transitions.
+
+In deep reinforcement learning, sampled batch is divided into
+variables (i.e. `obs`, `act`, etc.). If the sampled batch is
+row-oriented, users (or library) need to convert it into
+column-oriented one. (See [doc](https://ymd_h.gitlab.io/cpprb/features/flexible_environment/), too)
+
+
+## Batch Insertion
+
+cpprb can accept addition of multiple transitions simultaneously. This
+design is convenient when batch transitions are moved from local
+buffers to a global buffer. Moreover it is more efficient because of
+not only removing pure-Python `for` loop but also suppressing
+unnecessary priority updates for PER. (See [doc](https://ymd_h.gitlab.io/cpprb/features/multistep_add/), too)
+
+
+## Minimum Dependency
+
+We try to minimize dependency. Only NumPy is required during its
+execution. Small dependency is always preferable to avoid dependency
+hell.
+
+
+# Contributing to cpprb
+
+Any contribution are very welcome!
+
+
+## Making Community Larger
+
+Bigger commumity makes development more active and improve cpprb.
+
+-   Star [GitLab repository](https://gitlab.com/ymd_h/cpprb) (and/or [GitHub Mirror](https://github.com/ymd-h/cpprb))
+-   Publish your code using cpprb
+-   Share this repository to your friend and/or followers.
+
+
+## Q & A at Forum
+
+When you have any problems or requests, you can check [Discussions on
+GitHub.com](https://github.com/ymd-h/cpprb/discussions). If you still cannot find any information, you can post
+your own.
+
+We keep [issues on GitLab.com](https://gitlab.com/ymd_h/cpprb/issues) and users are still allowed to open
+issues, however, we mainly use the place as development issue tracker.
+
+
+## Merge Request (Pull Request)
+
+cpprb follows local rules:
+
+-   Branch Name
+    -   "HotFix<sub>\*</sub>\*\*" for bug fix
+    -   "Feature<sub>\*</sub>\*\*" for new feature implementation
+-   docstring
+    -   Must for external API
+    -   [Numpy Style](https://numpydoc.readthedocs.io/en/latest/format.html)
+-   Unit Test
+    -   Put test code under "test/" directory
+    -   Can test by `python -m unittest <Your Test Code>` command
+    -   Continuous Integration on GitLab CI configured by `.gitlab-ci.yaml`
+-   Open an issue and associate it to Merge Request
+
+Step by step instruction for beginners is described at [here](https://ymd_h.gitlab.io/cpprb/contributing/merge_request).
+
+
+# Links
+
+
+## cpprb sites
+
+-   [Project Site](https://ymd_h.gitlab.io/cpprb/)
+    -   [Class Reference](https://ymd_h.gitlab.io/cpprb/api/)
+    -   [Unit Test Coverage](https://ymd_h.gitlab.io/cpprb/coverage/)
+-   [Main Repository](https://gitlab.com/ymd_h/cpprb)
+-   [GitHub Mirror](https://github.com/ymd-h/cpprb)
+-   [cpprb on PyPI](https://pypi.org/project/cpprb/)
+
+
+## cpprb users' repositories
+
+-   **[keiohta/TF2RL](https://github.com/keiohta/tf2rl):** TensorFlow2.x Reinforcement Learning
+
+
+## Example usage at Kaggle competition
+
+-   [Ape-X DQN-LAP: SafeGuard & RewardRedesign](https://www.kaggle.com/ymdhryk/ape-x-dqn-lap-safeguard-rewardredesign) | [Hungry Geese](https://www.kaggle.com/c/hungry-geese)
+
+
+## Japanese Documents
+
+-   [【強化学習】cpprb で Experience Replay を簡単に！| Qiita](https://qiita.com/ymd_h/items/505c607c40cf3e42d080)
+-   [【強化学習】Ape-X の高速な実装を簡単に！| Qiita](https://qiita.com/ymd_h/items/ac9e3f1315d56a1b2718)
+-   [【強化学習】自作ライブラリでDQN | Qiita](https://qiita.com/ymd_h/items/21071d7778cfb3cd596a)
+-   [【強化学習】Ape-Xの高速化を実現 | Zenn](https://zenn.dev/ymd_h/articles/03edcaa47a3b1c)
+-   [【強化学習】cpprb に遷移のファイル保存機能を追加 | Zenn](https://zenn.dev/ymd_h/articles/e65fed3b7991c9)
+
+
+# License
+
+cpprb is available under MIT license.
+
+    MIT License
+    
+    Copyright (c) 2019 Yamada Hiroyuki
+    
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+# Citation
+
+We would be very happy if you cite cpprb in your papers.
+
+    @misc{Yamada_cpprb_2019,
+    author = {Yamada, Hiroyuki},
+    month = {1},
+    title = {{cpprb}},
+    url = {https://gitlab.com/ymd_h/cpprb},
+    year = {2019}
+    }
+
+-   3rd Party Papers citing cpprb
+    -   [E. Aitygulov and A. I. Panov, "Transfer Learning with Demonstration Forgetting for Robotic Manipulator", Proc. Comp. Sci. 186 (2021), 374-380, https://doi.org/10.1016/j.procs.2021.04.159](https://www.sciencedirect.com/science/article/pii/S187705092100990X)
+    -   [T. Kitamura and R. Yonetani, "ShinRL: A Library for Evaluating RL Algorithms from Theoretical and Practical Perspectives", NeurIPS Deep RL Workshop (2021)](https://nips.cc/Conferences/2021/Schedule?showEvent=21848) ([arXiv](https://arxiv.org/abs/2112.04123), [code](https://github.com/omron-sinicx/ShinRL))
+
+
+
