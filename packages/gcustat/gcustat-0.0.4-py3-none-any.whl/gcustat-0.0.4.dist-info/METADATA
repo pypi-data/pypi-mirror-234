@@ -1,0 +1,142 @@
+Metadata-Version: 2.1
+Name: gcustat
+Version: 0.0.4
+Summary: An utility to monitor Enflame GCU card status and usage
+Home-page: https://www.enflame-tech.com/
+Author: xinmin.peng
+Author-email: xinmin.peng@enflame-tech.com
+License: MIT
+Keywords: enflame gcu monitoring gcustat
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: System :: Monitoring
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: six (>=1.7)
+Requires-Dist: blessed (>=1.17.1)
+
+# `gcustat`
+
+一个能够简洁的显示燧原GCU设备状态的命令行工具；
+
+之前使用GPU时习惯了使用工具 [`gpustat`](https://github.com/wookayin/gpustat) 查看GPU状态，使用燧原的GCU设备之后发现并没有类似的工具，于是仿照  [`gpustat`](https://github.com/wookayin/gpustat) 自己写了一个；
+显示效果如下图：
+
+ <img src="https://user-images.githubusercontent.com/50796589/147898619-79ada678-6709-48f2-bdb5-9366f0db2ee0.png" width="80%" height="80%" alt="gcustat png" align=center />
+
+主要解决命令 `efsmi -- 和 efsmi --dmon` 的两个缺点：
+
+* efsmi --，显示的信息总是特别长，笔记本单屏显示不下；
+* efsmi --dmon，同一芯片每次展示不在屏幕的同一位置，观察该芯片的变化较困难；
+
+## 依赖说明
+
+python版本要求：`python>=3.6`；
+
+基础软件方面依赖说明：
+目前仅在配置了8张T20卡，及 EFSMI V1.20.0版本上进行了测试，功能正常；所以在其他设备上难免会有问题，欢迎反馈问题；有任何优化建议也欢迎反馈；
+
+## 安装说明
+ 
+从源码进行安装：
+
+```
+python3.6 setup.py install
+```
+或通过命令生产whl安装包，然后分发该whl包进行安装
+```
+python3.6 setup.py bdist_wheel
+```
+
+## 使用说明
+
+使用如下命令单次获取当前GCU设备信息：
+
+```shell
+gcustat
+```
+
+使用如下命令动态刷新当前GCU设备信息，默认每5秒刷新一次：
+
+```
+gcustat --watch
+```
+
+可选参数如下：
+
+```
+usage: gcustat [-h] [--json] [-i [INTERVAL]] [--no-header] [--no-title]
+               [--no-cache] [--force-color] [--no-color]
+               [--show-busid] [--show-power] [--compact] [--debug] [-v]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  
+  --json                将所有结果输出为JSON格式；
+  
+  -i [INTERVAL], --interval [INTERVAL], --watch [INTERVAL]
+                        动态刷新模式；INTERVAL为刷新间隔，单位：秒；默认每2秒刷新一次；
+  
+  --no-header           是否隐藏 header 信息；header 信息包含机器名称、当前时间、版本号；默认展示 header 信息，配置该参数后 header 信息不再展示；
+  
+  --no-title            是否隐藏 title 信息；title 信息为对当前设备状态值各字段的说明；默认展示 title 信息，配置该参数后 title 信息不再展示；
+  
+  --show-busid          是否展示加速卡的BUSID信息，默认不展示；
+  
+  --show-power          是否展示加速卡的功率信息，默认不展示；
+  
+  --compact             是否采用紧凑模式展示信息，默认为不采用；紧凑模式下会去掉空白行及其他无意义的行，适用于加速卡较多，显示器较小，屏幕显示不下的情况；
+  
+  --no-cache            是否缓存第一次获取到的GCU静态信息，只更新GCU卡的动态信息，默认为采用；
+
+  --force-color, --color
+                        强制带颜色方式显示GCU状态信息
+
+  --no-color            禁止带颜色方式显示GCU状态信息
+
+  --debug               Debug模式时允许在程序出错的情况下打印更多的调试信息；
+  
+  -v, --version         show program's version number and exit
+```
+
+#### 常规模式与紧凑模式对比
+
+| `gcustat --watch` | `gcustat --watch --compact` |
+| :-: | :-: |
+| ![](./docs/normal.png) | ![](./docs/compact.png) |
+
+#### 另外：
+
+比较遗憾的是，本项目也不具有显示每个设备上运行了哪些进程的功能；
+
+## 显示内容说明
+
+```
+machine_name  Sun Oct  8 14:16:24 2023
+[ID] 名字  |  温度°C,  占用率 % | 已用内存 /   总内存 MB |
+[0] [T20] |30.8°C,  0.0 % |    0 / 32768 MB |
+[1] [T20] |30.7°C,  0.0 % |    0 / 32768 MB |
+[2] [T20] |30.5°C,  0.0 % |    0 / 32768 MB |
+[3] [T20] |30.2°C,  0.0 % |    0 / 32768 MB |
+[4] [T20] |32.2°C,  0.0 % |    0 / 32768 MB |
+[5] [T20] |32.0°C,  0.0 % |    0 / 32768 MB |
+[6] [T20] |33.2°C,  0.0 % |    0 / 32768 MB |
+[7] [T20] |32.2°C,  0.0 % |    0 / 32768 MB |
+```
+
+* header：第1行为header，可以使用参数 `--no-header` 不展示该信息；展示的信息从左到右依次为机器名称、当前时间、软件 `efsmi` 的版本；
+
+* title：第2行为title，可以使用参数 `--no-title` 不展示该信息；title是对后面展示的信息的各字段的说明；
+
+## Reference
+
+[`gpustat`](https://github.com/wookayin/gpustat)
+
+## License
+
+[MIT License](./LICENSE)
+
+
