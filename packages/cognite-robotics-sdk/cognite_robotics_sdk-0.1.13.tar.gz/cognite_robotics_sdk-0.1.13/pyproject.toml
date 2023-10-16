@@ -1,0 +1,63 @@
+[tool.poetry]
+authors = ["Cognite Robotics <robotics-team@cognite.com>"]
+description = "Cognite Robotics SDK"
+name = "cognite-robotics-sdk"
+packages = [
+    { include = "cognite_robotics", from = "." },
+    { include = "protos", from = "cognite_robotics" },
+]
+readme = "README.md"
+version = "0.1.13"
+
+[tool.poetry.dependencies]
+aiofiles = "^23.1.0"
+cognite-sdk = "^6.0.0"
+grpcio = "^1.58.0"
+protobuf = "^4.23.0"
+pydantic = "2.3.0"
+python = "^3.8"
+python-dotenv = "^0.21.1"
+tenacity = "^8.2.2"
+
+[tool.poetry.dev-dependencies]
+black = "23.9.1"
+datamodel-code-generator = "0.22.0"
+mypy = "1.5.1"
+pre-commit = "3.3.3"
+pytest = "7.4.2"
+pytest-asyncio = "0.21.1"
+types-aiofiles = "23.2.0.0"
+types-requests = "2.31.0.3"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+
+[tool.black]
+include = '\.py$'
+line-length = 140
+target_version = ['py38']
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    "cognite_robotics/protos/",
+    "cognite_robotics/rest/models.py",
+]
+fixable = ["A", "D", "E", "F", "I", "ICN", "RUF", "S", "T20", "TID", "W"]
+ignore = ["D407", "S104"]
+line-length = 140
+select = ["A", "D", "E", "F", "I", "ICN", "RUF", "S", "T20", "TID", "W"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+target-version = "py39"
+
+[tool.ruff.per-file-ignores]
+"examples/*" = ["T201"]
+"tests/*" = ["S101", "T201"]
+
+[tool.ruff.isort]
+known-third-party = ["alembic"]
