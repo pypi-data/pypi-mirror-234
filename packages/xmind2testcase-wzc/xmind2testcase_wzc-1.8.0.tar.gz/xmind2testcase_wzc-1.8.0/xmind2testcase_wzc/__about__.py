@@ -1,0 +1,9 @@
+__title__ = 'xmind2testcase_wzc'
+__description__ = 'xmind2testcase_wzc基于Python实现，提供了一个高效测试用例设计的解决方案！'
+__keywords__ = 'xmind2testcase_wzc, testcase, test, testing, xmind, 思维导图, XMind思维导图',
+__url__ = ''
+__author__ = 'Devin'
+__author_email__ = ''
+__version__ = '1.8.0'
+__license__ = 'MIT'
+__cake__ = u'\u2728 \U0001f370 \u2728'
