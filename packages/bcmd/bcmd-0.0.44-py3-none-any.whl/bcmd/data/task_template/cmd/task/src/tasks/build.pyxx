@@ -1,0 +1,76 @@
+import re
+from typing import Final
+
+import typer
+from beni import bexecute, bfile, bpath, btask, bzip
+from beni.bfunc import syncCall
+
+from common.define import NAME, PROGRAM_PATH, PROJECT_PATH
+
+app: Final = btask.app
+
+
+@app.command('build')
+@syncCall
+async def build(
+    isPyarmor: bool = typer.Option(False, '--pyarmor', help='使用 pyarmor 混淆代码'),
+):
+    '项目打包'
+    pyinstaller = PROGRAM_PATH / 'venv/Scripts/pyinstaller.exe'
+    version = await getProgramVersion()
+    zipFile = PROJECT_PATH / f'{NAME}.{version}.zip'
+    with bpath.useTempPath(True) as tempPath, bpath.useTempPath(True) as outputPath:
+        await bexecute.run(
+            pyinstaller,
+            PROGRAM_PATH / 'src/main.py',
+            f'--distpath', outputPath,
+            f'--workpath', tempPath / 'build',
+            f'--specpath', tempPath,
+            f'--name', NAME,
+        )
+        bpath.copy(
+            PROJECT_PATH / 'config.ini',
+            outputPath / 'config.ini',
+        )
+
+        # 使用 pyarmor 混淆代码
+        # 注意：pyinstaller 6.0 版本后，pyarmor 最新版本 8.3.10 无法正常混淆代码
+        if isPyarmor:
+            with bpath.changePath(PROGRAM_PATH / 'src'):
+                try:
+                    pyarmor = PROGRAM_PATH / 'venv/Scripts/pyarmor.exe'
+                    await bexecute.run(
+                        pyarmor,
+                        'gen',
+                        '-O', tempPath / 'pyarmor',
+                        '--pack', outputPath / NAME / f'{NAME}.exe',
+                        'common', 'tasks',
+                    )
+                finally:
+                    bpath.remove(PROGRAM_PATH / 'src/.pyarmor')
+
+        await bfile.makeFiles(_files, outputPath)
+        with bpath.useTempFile() as tempFile:
+            bzip.zipFolder(tempFile, outputPath)
+            bpath.copy(tempFile, zipFile)
+
+
+async def getProgramVersion():
+    defineFile = PROGRAM_PATH / 'src/common/define.py'
+    content = await bfile.readText(defineFile)
+    ary: list[str] = re.findall(r"VERSION = '(.*)'", content)
+    btask.check(len(ary) == 1, '版本号获取失败')
+    return ary[0]
+
+
+_files = rf'''
+>>> hello.bat
+@echo off
+{NAME}\{NAME}.exe hello
+pause
+
+>>> sub.bat
+@echo off
+{NAME}\{NAME}.exe sub haha
+pause
+'''
