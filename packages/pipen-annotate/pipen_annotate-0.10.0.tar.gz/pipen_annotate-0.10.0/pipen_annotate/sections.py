@@ -1,0 +1,505 @@
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import Any, List, Mapping, MutableMapping
+
+import re
+import warnings
+from copy import deepcopy
+
+from diot import Diot, OrderedDiot
+from pipen.defaults import ProcInputType
+
+from .utils import (
+    FORMAT_INDENT,
+    dedent,
+    end_of_sentence,
+    cleanup_empty_lines,
+)
+
+ITEM_LINE_REGEX = re.compile(
+    r"^(?P<name>[^\s]+)\s*(?:\((?P<attrs>.+?)\))?:(?P<help>.+)?$"
+)
+ITEM_ATTR_REGEX = re.compile(r"^(?P<name>[\w-]+)(?:\s*[:=]\s*(?P<value>.+))?$")
+
+
+class MalFormattedAnnotationError(Exception):
+    """Raised when the annotation is malformatted"""
+
+
+class UnknownAnnotationItemWarning(Warning):
+    """Raised when the annotation item is unknown"""
+
+
+class Mixin:
+
+    def _set_meta(self, key: str, value: Any) -> None:
+        self.__diot__[f"_{key}"] = value
+
+    def _get_meta(self, key: str) -> Any:
+        return self.__diot__.get(f"_{key}")
+
+    def __iadd__(self, other: str) -> str:
+        return f"{self}{other}"
+
+
+class ItemAttrs(Mixin, OrderedDiot):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("diot_nest", False)
+        super().__init__(*args, **kwargs)
+        self._set_meta("origin", [])
+
+    def __str__(self) -> str:
+        out = []
+        for key in self._get_meta("origin"):
+            value = self[key]
+            if value is True:
+                out.append(key)
+            else:
+                out.append(f"{key}={value}")
+        return ";".join(out)
+
+
+class ItemTerm(Mixin, Diot):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("diot_nest", False)
+        super().__init__(*args, **kwargs)
+        self._set_meta("raw_help", [])
+        self._set_meta("prefix", None)
+
+    def __str__(self) -> str:
+        out = self._get_meta("prefix") or ""
+        out += self.name
+        if self.attrs._get_meta("origin"):
+            out += f" ({self.attrs})"
+        out += ":"
+
+        raw_help = self._get_meta("raw_help")
+        if raw_help:
+            out += " " + raw_help[0]
+
+        for line in raw_help[1:]:
+            out += f"\n{FORMAT_INDENT}{line}"
+
+        if self.terms:
+            out += f"\n{self.terms}"
+
+        return out
+
+
+class ItemTerms(Mixin, OrderedDiot):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("diot_nest", False)
+        super().__init__(*args, **kwargs)
+        self._set_meta("name", None)
+        self._set_meta("level", 0)
+
+    def __str__(self) -> str:
+        name = self._get_meta("name")
+        out = []
+        level = self._get_meta("level")
+        if name:
+            out.append(f"{FORMAT_INDENT * level}{name}:")
+
+        for term in self.values():
+            out.extend(
+                (f"{FORMAT_INDENT * (level + 1)}{line}")
+                for line in str(term).splitlines()
+            )
+        return "\n".join(out)
+
+
+class SummaryParsed(Mixin, Diot):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("diot_nest", False)
+        super().__init__(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.short}\n\n{self.long}"
+
+
+class TextLines(list):
+
+    def __str__(self) -> str:  # pragma: no cover
+        return "\n".join(self)
+
+    # For jinja2/Liquid to work
+    def splitlines(self):
+        return cleanup_empty_lines(self)
+
+
+class TextParsed(Mixin, Diot):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("diot_nest", False)
+        super().__init__(*args, **kwargs)
+
+    def __str__(self) -> str:
+        name = self._get_meta("name")
+        out = f"{name}:\n" if name else ""
+        out += "\n".join(f"{FORMAT_INDENT}{line}" for line in self.lines)
+        return out
+
+
+def _parse_terms(
+    lines: List[str],
+    prefix: str | None = None,
+    level: int = 0,
+    name: str | None = None,
+) -> ItemTerms:
+    """Parse a list of lines as terms.
+    """
+    terms = ItemTerms()
+    terms._set_meta("name", name)
+    terms._set_meta("level", level)
+    lines = dedent(lines)
+    sublines = []
+    item = None
+    just_matched = False
+    help_continuing = False
+    for line in lines:
+        if prefix:
+            matched = ITEM_LINE_REGEX.match(line[len(prefix):])
+        else:
+            matched = ITEM_LINE_REGEX.match(line)
+
+        lstripped_line = line.lstrip()
+        if matched:
+            if item:
+                # See if we have sub-terms
+                item.terms = _parse_terms(sublines, "- ", level + 1)
+                sublines.clear()
+
+            # Create a new item
+            name = matched.group("name")
+            attrs = matched.group("attrs")
+            help = matched.group("help")
+            terms[name] = ItemTerm(
+                name=name,
+                attrs=ItemAttrs(),
+                terms=ItemTerms(),
+                help="",
+            )
+            terms[name]._set_meta("prefix", prefix)
+
+            if attrs:
+                for attr in attrs.split(";"):
+                    attr = attr.strip()
+                    attr_matched = ITEM_ATTR_REGEX.match(attr)
+                    if not attr_matched:
+                        raise MalFormattedAnnotationError(
+                            f"\nInvalid item attribute: {attr}"
+                            "\nExpecting: <name>[:=]<value>"
+                            f"\nFull attributes: {attrs}"
+                        )
+                    attr_name = attr_matched.group("name")
+                    attr_value = attr_matched.group("value")
+                    terms[name].attrs._get_meta("origin").append(attr_name)
+                    terms[name].attrs[attr_name] = (
+                        True if attr_value is None else attr_value
+                    )
+
+            if help is not None:
+                terms[name].help = help.strip()
+                terms[name]._get_meta("raw_help").append(terms[name].help)
+                if terms[name].help == "|":
+                    help_continuing = True
+
+            item = terms[name]
+            just_matched = True
+        elif item is None:
+            raise MalFormattedAnnotationError(
+                f"\nInvalid item line: {line}"
+                "\nExpecting: <name>[ (<attrs>)]: <help>"
+            )
+        elif just_matched and not lstripped_line.startswith("- "):
+            if help_continuing and item.help == "|":
+                sep = item.help = ""
+            else:
+                sep = (
+                    "\n"
+                    if help_continuing
+                    or end_of_sentence(item.help)
+                    or lstripped_line.startswith(">>>")
+                    or (
+                        item.help
+                        and item.help.splitlines()[-1].startswith(">>>")
+                    )
+                    else " "
+                )
+            item._get_meta("raw_help").append(lstripped_line)
+            item.help = f"{item.help}{sep}{lstripped_line}"
+        elif lstripped_line.startswith("- "):
+            sublines.append(line)
+            just_matched = False
+            help_continuing = False
+        else:
+            sublines.append(line)
+
+    if item:
+        # See if we have sub-terms
+        item.terms = _parse_terms(sublines, prefix="- ", level=level + 1)
+
+    return terms
+
+
+def _parse_one_output(out: str) -> List[str] | None:
+    """Parse one output item, such as `out:file:<outfile>`"""
+    parts = out.split(":")
+    if not parts[0].isidentifier():
+        return None
+    if len(parts) < 3:
+        return [parts[0], ProcInputType.VAR, parts[1]]
+    return parts
+
+
+def _update_attrs_with_cls(
+    parsed: Diot,
+    envs: dict | None,
+    prev_key: str | None = None,
+) -> None:
+    """Update the attrs of parsed terms with the class envs."""
+    envs = envs or {}
+    for key, value in envs.items():
+        whole_key = f"{prev_key}.{key}" if prev_key else key
+
+        if key not in parsed:
+            parsed[key] = ItemTerm(
+                name=key,
+                attrs=ItemAttrs(),
+                terms=ItemTerms(),
+                help="",
+            )
+
+        if (
+            parsed[key].attrs.get("ns", False)
+            or parsed[key].attrs.get("namespace", False)
+            or parsed[key].attrs.get("action", "") in ("ns", "namespace")
+            or (isinstance(value, dict) and parsed[key].terms)
+        ):
+            parsed[key].attrs.setdefault("ns", True)
+            _update_attrs_with_cls(
+                parsed[key].terms,
+                value,
+                prev_key=whole_key,
+            )
+            # continue
+
+        if "default" not in parsed[key].attrs:
+            parsed[key].attrs["default"] = value
+
+
+def _update_terms(base: Mapping, other: Mapping) -> None:
+    """Update the terms of base with the other terms."""
+    base = deepcopy(base)
+    for key, value in other.items():
+        if key not in base:
+            base[key] = value
+        else:
+            if value.help:
+                base[key].help = value.help
+            base[key].attrs.update(value.attrs)
+            _update_terms(base[key].terms, value.terms)
+
+    return base
+
+
+class Section(ABC):
+
+    def __init__(self, cls, name) -> None:
+        self.name = name
+        self._cls = cls
+        self._lines: List[str] = []
+
+    def consume(self, line: str) -> None:
+        self._lines.append(line)
+
+    @abstractmethod
+    def parse(self) -> Diot:  # pragma: no cover
+        pass
+
+    @classmethod
+    def update_parsed(
+        cls,
+        base: str | List[str] | MutableMapping,
+        other: str | List[str] | MutableMapping,
+    ) -> str | List[str] | MutableMapping:
+        """Update the parsed result with the other result."""
+        if isinstance(other, str):  # pragma: no cover
+            return other
+        if isinstance(other, list):
+            return base + other
+
+        base = deepcopy(base)
+        base.update(other)
+        return base
+
+
+class SectionSummary(Mixin, Section):
+
+    def parse(self) -> Diot:
+        """Parse the summary section."""
+        lines = self._lines
+        if lines:
+            if lines[0] and lines[0][0] in (" ", "\t"):
+                lines = dedent(self._lines)
+            else:
+                lines = [lines[0]] + dedent(lines[1:])
+
+        short = long = ""
+        for i, line in enumerate(lines):
+            if not line:
+                long = "\n".join(lines[i + 1:])
+                break
+            short += line + " "
+
+        return SummaryParsed(short=short.rstrip(), long=long)
+
+    @classmethod
+    def update_parsed(
+        cls,
+        base: str | List[str] | MutableMapping,
+        other: str | List[str] | MutableMapping,
+    ) -> str | List[str] | MutableMapping:
+        """Update the parsed result with the other result."""
+        base = deepcopy(base)
+        if other.short:
+            base.short = other.short
+        if other.long:
+            base.long = other.long
+        return base
+
+
+class SectionItems(Mixin, Section):
+
+    def parse(self) -> Diot:
+        try:
+            return _parse_terms(self._lines, name=self.name)
+        except MalFormattedAnnotationError as e:
+            raise MalFormattedAnnotationError(
+                f"[{self._cls.__name__}/{self.name}] {e}"
+            ) from None
+
+    @classmethod
+    def update_parsed(
+        cls,
+        base: str | List[str] | MutableMapping,
+        other: str | List[str] | MutableMapping,
+    ) -> str | List[str] | MutableMapping:
+        """Update the parsed result with the other result."""
+        return _update_terms(base, other)
+
+
+class SectionInput(SectionItems):
+
+    def parse(self) -> Diot:
+        parsed = super().parse()
+        input_keys = self._cls.input
+
+        if isinstance(input_keys, str):
+            input_keys = [
+                input_key.strip() for input_key in input_keys.split(",")
+            ]
+
+        input_key_names = set()
+        for input_key_type in input_keys or []:
+            if ":" not in input_key_type:
+                input_key_type = f"{input_key_type}:{ProcInputType.VAR}"
+
+            input_key, input_type = input_key_type.split(":", 1)
+            input_key_names.add(input_key)
+            if input_key not in parsed:
+                parsed[input_key] = ItemTerm(
+                    name=input_key,
+                    attrs=ItemAttrs(itype=input_type),
+                    terms=ItemTerms(),
+                    help="",
+                )
+            else:
+                parsed[input_key].attrs["itype"] = input_type
+
+            parsed[input_key].attrs["nargs"] = "+"
+            if input_type in (ProcInputType.FILES, ProcInputType.DIRS):
+                parsed[input_key].attrs["action"] = "append"
+            else:
+                parsed[input_key].attrs["action"] = "extend"
+
+        if set(parsed) - input_key_names:
+            warnings.warn(
+                f"[{self._cls.__name__}] Unknown input keys "
+                f"{set(parsed) - input_key_names}",
+                UnknownAnnotationItemWarning,
+            )
+
+        return parsed
+
+
+class SectionOutput(SectionItems):
+
+    def parse(self) -> Diot:
+        output = self._cls.output
+        if not output:
+            out = ItemTerms()
+            out._set_meta("name", self.name)
+            return out
+
+        parsed = super().parse()
+
+        if not isinstance(output, (list, tuple)):
+            output = [out.strip() for out in output.split(",")]
+
+        out_names = set()
+        for out in output:
+            parts = _parse_one_output(out)
+            if not parts:
+                continue
+
+            out_names.add(parts[0])
+            if parts[0] not in parsed:
+                parsed[parts[0]] = ItemTerm(
+                    name=parts[0],
+                    attrs=ItemAttrs(otype=parts[1], default=parts[2]),
+                    terms=ItemTerms(),
+                    help="",
+                )
+            else:
+                parsed[parts[0]].attrs["otype"] = parts[1]
+                parsed[parts[0]].attrs["default"] = parts[2]
+
+        if set(parsed) - out_names:
+            warnings.warn(
+                f"[{self._cls.__name__}] Unknown output keys "
+                f"{set(parsed) - out_names}",
+                UnknownAnnotationItemWarning,
+            )
+
+        return parsed
+
+
+class SectionEnvs(SectionItems):
+
+    def parse(self) -> Diot:
+        parsed = super().parse()
+        _update_attrs_with_cls(parsed, self._cls.envs)
+        return parsed
+
+
+class SectionProcGroupArgs(SectionItems):
+
+    def parse(self) -> Diot:
+        parsed = super().parse()
+        _update_attrs_with_cls(parsed, self._cls.DEFAULTS)
+        return parsed
+
+
+class SectionText(Section):
+
+    def parse(self) -> Diot:
+        lines = dedent(self._lines)
+        lines = cleanup_empty_lines(lines)
+        out = TextParsed(lines=TextLines(lines))
+        out._set_meta("name", self.name)
+        return out
