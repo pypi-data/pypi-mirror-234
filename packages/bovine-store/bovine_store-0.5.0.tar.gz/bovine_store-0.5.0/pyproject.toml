@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "bovine-store"
+version = "0.5.0"
+description = "Store for ActivityPub activities, actors and objects"
+authors = ["Helge <helge.krueger@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bovine_store"}]
+repository = "https://codeberg.org/bovine/bovine"
+documentation = "https://bovine-store.readthedocs.io/en/latest/"
+include = ["CHANGES.md"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+tortoise-orm = {extras = ["asyncpg"], version = "^0.20.0"}
+bovine = "^0.5.0"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+ruff = "^0.0.261"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.1"
+pytest-asyncio = "^0.20.3"
+
+[tool.poertry.group.doc]
+optional = true
+
+
+[tool.poetry.group.doc.dependencies]
+sphinx = "^6.1.3"
+sphinx-rtd-theme = "^1.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode="auto"
+log_cli= 1
+log_cli_level="info"
+filterwarnings = [
+    'ignore:.*Werkzeug:DeprecationWarning',
+]
+
+[tool.ruff.per-file-ignores]
+"bovine_store/fedi/test_authorize.py" = ["E501"]
