@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "pyretries"
+version = "0.2.4"
+description = "A Python retry package based on strategies"
+authors = ["Ben Mezger <me@benmezger.nl>"]
+readme = "README.md"
+packages = [{include = "pyretries"}]
+homepage = "https://benmezger.github.io/pyretries"
+repository = "https://github.com/benmezger/pyretries"
+documentation = "https://benmezger.github.io/pyretries"
+keywords = ["retry", "python"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.2"
+black = "^23.9.1"
+isort = "^5.12.0"
+flake8 = "^6.1.0"
+pyright = "^1.1.329"
+pytest-asyncio = "^0.21.1"
+pytest-cov = "^4.1.0"
+mkdocs = "^1.5.3"
+mkdocstrings = {version = "^0.23.0", extras = ["python"]}
+mkdocs-material = "^9.4.4"
+freezegun = "^1.2.2"
+taskipy = "^1.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report xml"
+testpaths = [
+    "tests",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    "@(abc\\.)?abstractproperty",
+    ]
+
+[tool.taskipy.tasks]
+fmt = "isort --profile=black . && black ."
+test = "pytest -vv ."
+check_fmt = "black --check . && isort --profile=black --check ."
+check_types = "pyright ."
+check_lint = "flake8 && task check_fmt && task check_types"
+check = "task check_fmt && task check_types && task test"
