@@ -1,0 +1,138 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "solara"
+authors = [{name = "Maarten A. Breddels", email = "maartenbreddels@gmail.com"}]
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+dynamic = ["version", "description"]
+packages = [
+    { include = "solara" }
+]
+dependencies = [
+    "reacton>=1.7.1",
+    "ipywidgets",
+    "cachetools",
+    "filelock",
+    "markdown",
+    "pymdown-extensions",
+    "humanize",
+    "ipyvuetify>=1.8.10",
+    "ipyvue>=1.9.0",
+    "jinja2",
+    "MarkupSafe",
+    "click>=7.1.0",
+    "rich_click",
+    "uvicorn",
+    "websockets",
+    "starlette",
+    "jupyter_client>=7.0.0",
+    "watchdog",
+    "requests",
+    "nbformat",
+    "ipykernel",
+]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"prefix" = "prefix"
+
+[tool.hatch.version]
+path = "solara/__init__.py"
+
+# we ignore build/ but on the website we add solara/website/build
+# when using SSG
+[tool.hatch.build]
+ignore-vcs = true
+
+[project.optional-dependencies]
+extra = [
+    "pygments",
+    "numpy",
+    "pillow",
+    "pygments",
+    "pygments==2.10; python_version < '3.7'",
+]
+dev = [
+    "codespell",
+    "python-dotenv",
+    "flake8",
+    "bqplot",
+    "bqplot-image-gl",
+    "vaex-core",
+    "vaex-hdf5",
+    "vaex-jupyter",
+    "black",
+    "mypy",
+    "mdit-py-plugins",
+    "plotly",
+    "types-requests",
+    "types-markdown",
+    "types-PyYAML",
+    "pytest",
+    "pytest-mock",
+    "pytest-cov",
+    "pytest-timeout",
+    "pre-commit",
+    "bump2version",
+    "dask[dataframe]; python_version < '3.7'",
+    "playwright; python_version > '3.6'",
+    "pytest-playwright; python_version > '3.6'",
+]
+assets = [
+    "solara-assets==1.21.0"
+]
+flask = [
+    "flask",
+    "flask-sock",
+]
+documentation = [
+    "numpy",
+    "bqplot",
+    "altair",
+    "ipycanvas",
+    "ipyleaflet",
+    "matplotlib",
+    "vega_datasets",
+    "plotly",
+    "vaex-core",
+    "vaex-hdf5",
+]
+pytest = [
+    "pytest",
+    "playwright; python_version > '3.6'",
+    "pytest-playwright; python_version > '3.6'",
+    "voila",
+    "jupyterlab",
+    "pillow",
+    "pixelmatch",
+]
+
+[project.urls]
+Home = "https://www.github.com/widgetti/solara"
+
+[project.scripts]
+solara = "solara.__main__:main"
+
+[project.entry-points.pytest11]
+solara = "solara.test.pytest_plugin"
+
+[tool.black]
+line-length = 160
+
+[tool.ruff]
+line-length = 160
+
+[tool.isort]
+profile = "black"
+
+
+[tool.pytest.ini_options]
+addopts = "--disable-warnings --ignore=tests/integration/app_widget.py  --ignore=tests/unit/solara_test_apps"
+timeout = 180
+
+
+[tool.codespell]
+skip='equis-in-vidi.md,substiterat-vati.md,.*,solara/website/build,*.svg,highlight-dark.css,packages/**/dist/*,node_modules,packages/assets,package*.json,tsconfig.tsbuildinfo'
