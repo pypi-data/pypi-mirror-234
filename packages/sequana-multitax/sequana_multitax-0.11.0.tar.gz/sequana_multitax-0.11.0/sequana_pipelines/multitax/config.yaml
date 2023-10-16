@@ -1,0 +1,71 @@
+# Config file for multitax pipeline
+# ==========================================[ Sections for the users ]========
+#
+# One of input_directory, input_pattern and input_samples must be provided
+# If input_directory provided, use it otherwise if input_pattern provided,
+# use it, otherwise use input_samples.
+# ============================================================================
+
+
+input_directory: 
+input_readtag: _R[12]_
+input_pattern: "*fastq.gz"
+
+apptainers:
+  sequana_tools: "https://zenodo.org/record/7963917/files/sequana_tools_0.15.1.img"
+  graphviz: "https://zenodo.org/record/7928262/files/graphviz_7.0.5.img"
+
+
+##############################################################################
+# sequana_taxonomy
+#
+# :Parameters:
+#
+# - databases: list of kraken databases to be used
+sequana_taxonomy:
+    databases:
+        - 
+    level: INFO
+    confidence: 0
+    store_unclassified: true
+    options: ""
+    threads: 4
+
+
+##############################################################################
+# sblast
+#
+# :Parameters:
+#
+# - database: expect the BLASTDB environment variable to be define
+blast:
+    do: false
+    nreads: 1000
+    database: nt 
+
+summary_plot:
+    kind: barh
+    width: 1
+    yticks_fontsize: 11
+    linewidth: 2
+    max_labels: 50
+    edgecolor: "black"
+
+summary_plot_db:
+    kind: barh
+    width: 1
+    yticks_fontsize: 11
+    linewidth: 2
+    colormap: hot_r
+    colors: 
+    max_labels: 50
+    edgecolor: "black"
+    alpha: 0.8
+
+multiqc:
+    input_directory: .
+    options: -p -f
+    modules: sequana_kraken
+    config_file: ""
+
+

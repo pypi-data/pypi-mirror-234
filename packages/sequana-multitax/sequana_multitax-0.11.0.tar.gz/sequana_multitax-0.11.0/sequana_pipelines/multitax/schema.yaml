@@ -1,0 +1,120 @@
+# Schema validator for the quality_control
+# author: Thomas Cokelaer
+
+type: map
+mapping:
+    "input_directory":
+        type: str
+        required: False
+    "input_readtag":
+        type: str
+        required: False
+    "input_pattern":
+        type: str
+        required: False
+
+    "apptainers":
+      type: any
+
+    "sequana_taxonomy":
+        type: map
+        mapping:
+            "databases":
+                type: any
+                required: True
+            "level":
+                type: str
+                enum: [INFO, DEBUG, ERROR, WARNING, CRITICAL]
+            "confidence":
+                type: float
+                range: { min: 0, max: 1}
+            "options":
+                 type: str
+            "store_unclassified":
+                type: bool
+            "threads":
+              type: int
+              range: { min: 1 }
+
+
+    "blast":
+        type: map
+        mapping:
+          "do":
+            type: bool
+          "nreads":
+            type: int
+          "database":
+            type: str
+
+
+    "multiqc":
+        type: map
+        mapping:
+            "options":
+                type: str
+            "modules":
+                type: str
+            "config_file":
+                type: str
+            "input_directory":
+                type: str
+
+
+
+    "dendogram":
+        type: map
+        mapping:
+            "sample_file":
+                type: str
+                required: False
+
+    "summary_plot":
+        type: map
+        mapping:
+            "kind":
+                type: str
+                enum: [bar, barh]
+            "width":
+                type: float
+                range: { min: 0, max: 1}
+            "yticks_fontsize":
+                type: int
+            "linewidth":
+                type: int
+                range: { min: 0}
+            "edgecolor":
+                type: str
+            "max_labels":
+                type: int
+                range: { min: 0, max: 100}
+
+
+    "summary_plot_db":
+        type: map
+        mapping:
+            "kind":
+                type: str
+                enum: [bar, barh]
+            "width":
+                type: float
+                range: { min: 0, max: 1}
+            "yticks_fontsize":
+                type: int
+            "edgecolor":
+                type: str
+            "linewidth":
+                type: int
+                range: { min: 0}
+            "max_labels":
+                type: int
+                range: { min: 0, max: 100}
+            "colormap":
+                type: str
+            "colors":
+                type: any
+            "alpha":
+                type: float
+                range: { min: 0, max: 1}
+
+
