@@ -1,0 +1,11 @@
+class ColorCode:
+    """ ANSI color codes """
+    BLACK = "\033[0;30m"
+    GRAY = "\033[1;90m"
+    RED = "\033[0;91m"
+    GREEN = "\033[0;92m"
+    YELLOW = "\033[1;93m"
+    BLUE = "\033[0;94m"
+    MAGENTA = "\033[0;95m"
+    CYAN = "\033[0;96m"
+    END = "\033[0m"
