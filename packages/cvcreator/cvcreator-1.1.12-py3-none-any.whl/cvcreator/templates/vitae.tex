@@ -1,0 +1,181 @@
+\documentclass[english,a4paper,\VAR{meta.font_size}pt]{article}
+\usepackage[utf8]{inputenc}   % write in utf-8
+\usepackage[norsk]{babel}     % ÆØÅ support
+\usepackage[T1]{fontenc}      % extended symbol set
+\usepackage[margin=3cm,a4paper]{geometry}
+\usepackage{graphicx}         % pictures
+\usepackage{amssymb}          % math symbols
+\usepackage{hyperref}         % make URL links
+
+% Format hyperlinks
+\hypersetup {
+  colorlinks=true,
+  linkcolor=[rgb]{0,0.5,0.5},
+  urlcolor=blue,
+}
+
+% add footer image
+\usepackage{fancyhdr}
+\renewcommand{\headrulewidth}{0pt} % because fancyhdr usually makes a topline
+\cfoot{\vspace{0.2cm}\includegraphics[width=5cm]{\VAR{meta.footer_image}}}
+\pagestyle{fancy} % activate fancyhdr!
+
+% define some colors
+\usepackage{xcolor}
+\definecolor{xalblue}{rgb}{0.1719,0.3516,0.6250}
+\definecolor{xaldark}{rgb}{0.1290,0.2566,0.4688}
+\definecolor{lightgray}{gray}{0.8}
+
+% standard columns
+\usepackage{array}
+\newcolumntype{L}{>{\raggedleft}p{0.16\textwidth}}
+\newcolumntype{R}{p{0.74\textwidth}}
+
+% manipulate section headers
+\usepackage{titlesec}
+\titlespacing*{\section}{0cm}{0.2cm}{0cm} % space for {header}{left}{above}{below}
+\setlength{\parindent}{0pt}   % don't start paragraph with indent
+\setlength{\parskip}{0cm}   % space between paragraphs
+\renewcommand*{\familydefault}{\sfdefault}  % better font choice
+\titleformat{\section}{\large\bfseries\color{xalblue}}{\thesection}{0pt}{}[\vspace{-0.3cm}\rule{\textwidth}{0.5pt}]
+
+\newcommand\divbar{{\ \textcolor{xalblue}{\bf|}\ }}
+
+\begin{document}
+
+\vspace*{-2cm}
+
+\begin{tabular}{lp{6cm}}
+  \begin{footnotesize}
+  \hspace{-0.5cm}
+
+  % personal information
+  \begin{tabular}{r@{\ \ }l}
+\BLOCK{if email}      \includegraphics[width=0.3cm]{\VAR{meta.email_image}}       & \VAR{email}               \\ \BLOCK{endif}
+\BLOCK{if phone}      \includegraphics[width=0.3cm]{\VAR{meta.phone_image}}       & \VAR{phone}               \\ \BLOCK{endif}
+\BLOCK{if github}     \includegraphics[width=0.3cm]{\VAR{meta.github_image}}      & \href{\VAR{github}}{\VAR{github | replace("https://", "")}}  \\ \BLOCK{endif}
+\BLOCK{if website}    \includegraphics[width=0.3cm]{\VAR{meta.website_image}}     & \href{\VAR{website}}{\VAR{website | replace("https://", "")}} \\ \BLOCK{endif}
+\BLOCK{if birth}      \includegraphics[width=0.3cm]{\VAR{meta.birth_image}}       &
+    \VAR{"%02d"|format(birth.day)}-\VAR{"%02d"|format(birth.month)}-\VAR{birth.year}\\ \BLOCK{endif}
+\BLOCK{if address}    \includegraphics[width=0.3cm]{\VAR{meta.address_image}}     & \VAR{address}, \VAR{post} \\ \BLOCK{endif}
+\BLOCK{if nationality}\includegraphics[width=0.3cm]{\VAR{meta.nationality_image}} & \VAR{nationality}         \\ \BLOCK{endif}
+  \end{tabular}
+  \end{footnotesize} &
+
+  % XAL logo
+  \vspace{-1.4cm}
+  \hspace{3cm}
+  \includegraphics[width=6cm]{\VAR{meta.logo_image}}
+\end{tabular}
+
+\vspace{2cm}
+
+\noindent{\LARGE \bfseries \color{xaldark} Curriculum Vitae for \VAR{name}}
+
+\vspace{0.8cm}
+
+\BLOCK{if summary}
+  \VAR{summary}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if work}
+  \section*{Professional experience}
+  \begin{tabular}{LR}
+    \BLOCK{for s in work}
+    \VAR{s.start} \BLOCK{if s.end}-- \VAR{s.end}\BLOCK{endif} & \VAR{s.description} \\
+    \BLOCK{endfor}
+  \end{tabular}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if education}
+  \section*{Education}
+  \begin{tabular}{LR}
+    \BLOCK{for s in education}
+      \BLOCK{if s.start}\VAR{s.start} -- \VAR{s.end}\BLOCK{else}\VAR{s.end}\BLOCK{endif} &
+      \BLOCK{if s.degree}{\bf \VAR{s.degree} in \BLOCK{if s.specialization}\VAR{s.specialization}\BLOCK{else}\VAR{s.topic}\BLOCK{endif}}\
+        \BLOCK{else}\VAR{s.specialization} -- \VAR{s.description}\BLOCK{endif} \
+      \BLOCK{if s.department or s.university or s.country} at \VAR{[s.department, s.university, s.country]|select()|join(", ")}.\BLOCK{endif} \
+      \BLOCK{if s.thesis_title}Thesis title: ``\VAR{s.thesis_title}''.\BLOCK{endif} \
+      \BLOCK{if s.degree}\VAR{s.description}\BLOCK{endif} \\
+    \BLOCK{endfor}
+  \end{tabular}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if technical_skill}
+  \section*{Technical skills}{
+  \begin{tabular}{LR}
+    \BLOCK{for s in technical_skill}
+    \VAR{s.title} & \VAR{s.values|join(", ")} \\
+    \BLOCK{endfor}
+  \end{tabular}}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if language_skill}
+  \section*{Languages}
+  \begin{tabular}{LR}
+    \BLOCK{for s in language_skill}
+    \VAR{s.language} & \VAR{s.proficiency} \\
+    \BLOCK{endfor}
+  \end{tabular}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if personal_skill}
+  \section*{Personal skills}
+  \begin{tabular}{LR}
+    \BLOCK{for s in personal_skill}
+    \VAR{s.title} & \VAR{s.description} \\
+    \BLOCK{endfor}
+  \end{tabular}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if hobby}
+  \section*{Some interests and hobbies}
+  \begin{tabular}{LR}
+    \BLOCK{for s in hobby}
+    \VAR{s.title} & \VAR{s.values|join(", ")} \\
+    \BLOCK{endfor}
+  \end{tabular}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if project}
+  \section*{Extended description of selected projects}
+  \BLOCK{for s in project}
+  \begin{tabular}{@{}LR}
+                      Activity    & \VAR{s.activity}    \\
+\BLOCK{if s.period}   Period      & \VAR{s.period}      \\ \BLOCK{endif}
+\BLOCK{if s.role}     Role        & \VAR{s.role}        \\ \BLOCK{endif}
+\BLOCK{if s.staffing} Staffing    & \VAR{s.staffing}    \\ \BLOCK{endif}
+\BLOCK{if s.volume}   Volume      & \VAR{s.volume}      \\ \BLOCK{endif}
+                      Description & \VAR{s.description} \\
+\BLOCK{if s.tools}    Tools       & \VAR{s.tools}       \\ \BLOCK{endif}
+\BLOCK{if s.url}      URL         & \VAR{s.url}         \\ \BLOCK{endif}
+  \rule{\textwidth}{0.1pt}
+  \end{tabular}
+  \BLOCK{endfor}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\BLOCK{if publication}
+  \section*{Publications}
+  \BLOCK{for s in publication}
+  \begin{tabular}{@{}LR}
+    Title   & {\it \VAR{s.title}} \\
+    Journal & \VAR{s.journal}     \\
+    DOI     & \url{\VAR{s.doi}}   \\
+    Authors & \VAR{s.authors}     \\
+\BLOCK{if s.year}Year    & \VAR{s.year} \\\BLOCK{endif}
+\BLOCK{if s.summary}Summary & \VAR{s.summary} \\\BLOCK{endif}
+  \rule{\textwidth}{0.1pt}
+  \end{tabular}
+  \BLOCK{endfor}
+  \vspace{0.5cm}
+\BLOCK{endif}
+
+\end{document}
