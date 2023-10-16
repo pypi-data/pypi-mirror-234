@@ -1,0 +1,2 @@
+from .basics import CircularPermutationMelody, InvertMelody, ReverseMelody, SelectRangeMelody, ReverseMelodyWithoutRhythm
+from .continuation import ContinuationWhenSameNote
