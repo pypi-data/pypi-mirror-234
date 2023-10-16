@@ -1,0 +1,32 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+# es7s/core
+# (c) 2023 A. Shavykin <0.delameter@gmail.com>
+#-------------------------------------------------------------------------------
+# [g]it [mc]diff wrapper for manual file select
+
+__get_msg() {
+  local fmtlabel='\x1b[7m'
+  local fmtprompt='\x1b[27m'
+  printf "${fmtlabel}[%3d/%3d]${fmtprompt} %b" $GIT_DIFF_PATH_COUNTER $GIT_DIFF_PATH_TOTAL "$*"
+}
+__fail() { printf "\r" && __get_msg "$*" && echo && exit 0 ; }
+__die() { echo Aborted && exit 1 ; }
+
+declare old=${2:-}
+declare new=${5:-}
+#echo "$1"
+[[ ! -f "$old" ]] && __fail "\x1b[2mNot found\x1b[22m: \x1b[2m${old@Q}\x1b[22m"
+[[ ! -f "$new" ]] && __fail "\x1b[2mNot found\x1b[22m: \x1b[2m${new@Q}\x1b[22m"
+
+target="\x1b[1m${1@Q}\x1b[22m"
+
+if ! grep -Iq . "$1" &>/dev/null ; then
+    __fail "Skipped binary file $target"
+fi
+
+read -n 1 -sr -p "$(__get_msg "     Open $target"?) (y/N/q): " yn
+[[ $yn =~ [Qq] ]] && __die Aborted
+[[ $yn =~ [Yy] ]] || __fail "  Skipped $target"$'\x1b[K'
+
+mcdiff "$@"
