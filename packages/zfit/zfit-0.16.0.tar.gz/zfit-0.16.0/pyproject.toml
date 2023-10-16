@@ -1,0 +1,50 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "setuptools_scm[toml]>=3.4",
+    "setuptools_scm_git_archive",
+    "wheel"
+]
+
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-Wd -ra -q"
+testpaths = [
+    "tests",
+]
+markers = [
+    "plots: create and safe plots",
+]
+console_output_style = "progress"
+collect_ignore = "setup.py"
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+omit = [
+    # omit anything in a .local directory anywhere
+    ".tox/*",
+    "*/test*",
+    "*minimizers/interface.py",
+    "*/core/testing.py",
+]
+
+[tool.coverage.report]
+# fails in CI? not known config?
+## Regexes for lines to exclude from consideration
+#exclude_also = [
+#    # Don't complain if tests don't hit defensive assertion code:
+#    "raise AssertionError",
+#    "raise NotImplementedError",
+#    # Don't complain if non-runnable code isn't run:
+#    "if __name__ == .__main__.:",
+#    # Don't complain about abstract methods, they aren't run:
+#    "@(abc\\.)?abstractmethod",
+#]
+
+ignore_errors = true
+
+[tool.coverage.html]
+directory = "coverage_html_report"
