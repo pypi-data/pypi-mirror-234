@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+<meta charset="utf-8" />
+<title>${title}</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="HandheldFriendly" content="true"/>
+<meta name="MobileOptimized" content="320"/>
+<link rel="stylesheet" href="${config.domain['kcwebstatic']}/element-ui/2.4.11/lib/theme-chalk/index.css"/>
+<link rel="stylesheet" href="${config.domain['kcwebstatic']}/font/font-awesome-4.7.0/css/font-awesome.min.css"/>
+<link rel="stylesheet" href="/css/default.css"/>
+<script src="${config.domain['kcwebstatic']}/other/polyfill.min.js"></script>
+<script src="${config.domain['kcwebstatic']}/vue/2.6.10/vue.min.js"></script>
+<script src="${config.domain['kcwebstatic']}/element-ui/2.4.11/lib/index.js"></script>
+<script src="/js/function.js"></script>
+<style>
+*{padding:0px;margin:0px}
+.el-header, .el-footer {background-color: #B3C0D1;line-height: 60px;padding:0px;}
+.kcw-side-scroll::-webkit-scrollbar{width:0px}
+</style>
+</head>
+<body>
+<div id="app">
+    <div :style="'padding-top:'+(winheight/5)+'px;text-align:center'">
+        <img src="${imgsrc}" alt="" style="width:300px">
+        <div style="font-size:24px;padding-top:50px">
+            <el-tooltip class="item" effect="dark" content="返回上一级" placement="top-start">
+                <el-button @click="backs()" icon="el-icon-arrow-left" circle></el-button>
+            </el-tooltip>
+            ${content}</div>
+    </div>
+    
+</div>
+</body>
+<script>
+var VU=new Vue({
+        el: '#app',
+        data:{
+            winheight:document.documentElement.clientHeight,winwidth:document.documentElement.clientWidth,
+        },
+        mounted:function(){
+            self=this
+            window.onresize = function(){
+                self.winheight=document.documentElement.clientHeight
+                self.winwidth=document.documentElement.clientWidth
+            }
+        },
+        methods: {
+            backs:function(){
+                window.history.go(-1);
+            }
+        }
+});
+</script>
+</html>
