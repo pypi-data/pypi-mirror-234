@@ -1,0 +1,1 @@
+from salure_helpers.monday.extract_monday import ExtractMonday
