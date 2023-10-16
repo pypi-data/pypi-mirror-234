@@ -1,0 +1,73 @@
+Metadata-Version: 2.1
+Name: qurix-sample-package
+Version: 0.5.0
+Summary: qurix Package Template for Python
+Home-page: https://github.com/qurixtechnology/qurix-sample-package
+Author: qurix Technology
+Keywords: python
+Requires-Python: >=3.10, <4
+Description-Content-Type: text/markdown
+Provides-Extra: dev
+Requires-Dist: pytest ==7.3.1 ; extra == 'dev'
+Requires-Dist: flake8 ==6.0.0 ; extra == 'dev'
+Requires-Dist: pytest-flake8 ==1.1.1 ; extra == 'dev'
+Requires-Dist: pytest-cov ==4.0.0 ; extra == 'dev'
+Requires-Dist: wheel ==0.40.0 ; extra == 'dev'
+Requires-Dist: twine ==4.0.2 ; extra == 'dev'
+Requires-Dist: typer ==0.9.0 ; extra == 'dev'
+
+# Python package template
+
+Template for Python packages for qurix Technology.
+
+## Structure
+
+A normal Python package will start with the namespace `qurix` as in this sample package. A sample structure is as follows:
+
+```text
+.
+├── LICENCE
+├── Makefile
+├── README.md
+├── qurix
+│   └── <domain>
+│       └── <module-organization-level>
+│           ├── __init__.py
+│           ├── __version__.py
+│           └── <module>
+├── requirements.txt
+├── setup.py
+└── tests
+    ├── __init__.py
+    └── test_module.py
+```
+
+## Versioning and release
+
+Package versions will be identified according to [semantic versioning](https://semver.org/lang/en). The release process will deploy in both [Test PyPI](https://test.pypi.org/) and [PyPI](https://pypi.org/).
+
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'base', 'gitGraph': {'rotateCommitLabel': true}} }%%
+gitGraph
+    commit
+    branch staging
+    branch feat/some-feature
+    checkout feat/some-feature
+    commit
+    commit
+    checkout staging
+    merge feat/some-feature id: "Rel. Test PyPI 0" tag: "v0.1.0rc0"
+    checkout main
+    merge staging id: "Rel. PyPI 0" tag: "v0.1.0"
+    branch fix/some-fix
+    checkout fix/some-fix
+    commit
+    checkout staging
+    merge fix/some-fix id: "Rel. Test PyPI 1" tag: "v0.1.1rc0"
+    checkout main
+    merge staging id: "Rel. PyPI 1" tag: "v0.1.1"
+```
+
+## Deployment
+
+Automatic deployments via Github Actions. See `.github/worfklows/`
