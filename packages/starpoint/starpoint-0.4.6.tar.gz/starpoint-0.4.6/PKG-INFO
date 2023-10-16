@@ -1,0 +1,65 @@
+Metadata-Version: 2.1
+Name: starpoint
+Version: 0.4.6
+Summary: SDK for Starpoint DB
+Project-URL: Homepage, https://github.com/starpoint-ai/sdk
+Project-URL: Bug Tracker, https://github.com/starpoint-ai/sdk/issues
+Author-email: pointable <package-maintainers@pointable.ai>
+License-File: LICENSE
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.7
+Requires-Dist: more-itertools~=10.1
+Requires-Dist: openai~=0.27
+Requires-Dist: pandas~=2.0
+Requires-Dist: requests~=2.31
+Requires-Dist: validators~=0.21
+Provides-Extra: dev
+Requires-Dist: pip-tools~=6.14; extra == 'dev'
+Requires-Dist: pre-commit~=3.3; extra == 'dev'
+Requires-Dist: pytest-cov~=4.1; extra == 'dev'
+Requires-Dist: pytest~=7.3; extra == 'dev'
+Description-Content-Type: text/markdown
+
+# Starpoint AI SDK
+
+## Installation
+
+`pip install starpoint`
+
+## Quickstart
+
+After you have a API key and a collection created on your starpoint account
+
+```python
+from starpoint.db import Client
+
+client = Client(api_key="YOUR_API_KEY_HERE")
+
+documents = [
+  {
+    "embedding": [0.1, 0.2, 0.3, 0.4, 0.5],
+    "metadata": {
+      "label1": "0",
+      "label2": "1",
+    }
+  },
+]
+
+// Instead of collection_name you can also use collection_id="COLLECTION_ID"
+client.insert(documents=documents, collection_name="COLLECTION_NAME")
+
+```
+
+## Contributing
+
+Make sure you have installed dev requirements
+```
+pip install -r dev-requirements.txt
+```
+
+Unit tests should be passing. You can run them via
+```
+pytest ./tests
+```
