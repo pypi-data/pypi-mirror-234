@@ -1,0 +1,3 @@
+DEF JNIUS_PLATFORM = 'linux'
+
+DEF JNIUS_CYTHON_3 = True
