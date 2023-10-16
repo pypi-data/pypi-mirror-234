@@ -1,0 +1,34 @@
+{% extends 'ui/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block script %}
+    {{ block.super }}
+    <script src="{% static "js/filter.js" %}" defer type="text/javascript"></script>
+{% endblock %}
+
+{% block content %}
+    <div id="list" class="columns">
+        <div class="column p-0">
+            {% include 'ui/partials/header.html' %}
+            <div class="columns py-0">
+                <div class="column is-12 py-0">
+                    {% block messages %}{% endblock %}
+                </div>
+            </div>
+            <div style="margin-left: -8px; margin-right: 8px">
+                <div class="columns is-multiline pl-1 mb-5" style="max-width: 100%">
+                    {% for obj in page %}
+                        <div class="column is-{{ column_width }} mb-0 pr-0 pb-1 pt-0">
+                            <div class="box p-2 pb-4 mb-1" style="word-break: break-word; height: 100%; border: solid #ccc 1px">
+                                {% block object_data %}
+                                    {{ obj }}
+                                {% endblock %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

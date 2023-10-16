@@ -1,0 +1,41 @@
+{% extends 'ui/layout.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block script %}
+    {{ block.super }}
+    <script src="{% static "js/filter.js" %}" defer type="text/javascript"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="columns">
+        <div class="column p-0">
+            {% include 'ui/partials/header.html' %}
+            <div class="columns py-0">
+                <div class="column is-12 py-0">
+                    {% block messages %}{% endblock %}
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        {% block table_header_row %}
+                            <tr>
+                                {% block table_header %}{% endblock %}
+                            </tr>
+                        {% endblock %}
+                    </thead>
+                    <tbody>
+                        {% for obj in page %}
+                            {% block table_data_row %}
+                                <tr>
+                                    {% block table_data %}{% endblock %}
+                                </tr>
+                            {% endblock %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

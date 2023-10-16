@@ -1,0 +1,154 @@
+<!doctype html>
+{% load static %}
+{% load i18n %}
+{% load cache %}
+
+<html lang="en">
+<head>
+    {% block head %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% block favicon %}
+            <link rel="icon" type="image/svg" href="{% static 'icons/accrete.svg' %}"/>
+        {% endblock %}
+        {% block bulma %}
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        {% endblock %}
+        {% block style %}
+            <link rel="stylesheet" type="text/css" href="{% static "css/accrete.css" %}">
+            <link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}">
+        {% endblock %}
+        {% block htmx %}
+            <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+            <script src="https://unpkg.com/hyperscript.org@0.9.11"></script>
+        {% endblock %}
+        {% block script %}
+            <script src="{% static "js/navbar.js" %}" defer type="text/javascript"></script>
+            <script src="{% static "js/utils.js" %}" defer type="text/javascript"></script>
+        {% endblock %}
+    {% endblock %}
+    {% block title_tag %}
+        <title>{% block title %}{{ title }}{% endblock %}</title>
+    {% endblock %}
+</head>
+
+<body id="body" {% block body_attrs %}hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'{% endblock %}>
+    <nav id="navbar" class="navbar is-success is-info is-fixed-top" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            {% block navbar_brand %}
+                {% if request.tenant %}
+                    <p class="navbar-item is-unselectable">
+                        {{ request.tenant.name }}
+                    </p>
+                {% endif %}
+                {% block navbar_brand_inside %}{% endblock %}
+                <a id="navbar-burger" role="button" class="navbar-burger accrete-burger"
+                   aria-label="menu" aria-expanded="false">
+                    {# Display hamburger menu on mobile #}
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            {% endblock %}
+        </div>
+
+        <div class="navbar-menu is-fixed-top accrete-burger">
+            <div class="navbar-start">
+                {% block navbar_start %}
+                {% endblock %}
+            </div>
+
+            <div class="navbar-end">
+                <div class="navbar-item has-dropdown accrete-navbar-menu">
+                    {% block navbar_end %}
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-columns columns m-0 is-mobile">
+        {% block main_columns %}
+            <div class="side-panel column is-3-widescreen is-2-fullhd is-hidden-touch is-hidden-desktop-only is-hidden-widescreen-only" style="height: 100%">
+                <nav class="panel is-shadowless pb-5">
+                    {% if list_pagination %}
+                        <div class="panel-block">
+                            {% include 'ui/partials/pagination_list.html' %}
+                        </div>
+                    {% endif %}
+                    {% if detail_pagination %}
+                        <div class="panel-block">
+                            {% include 'ui/partials/pagination_detail.html' %}
+                        </div>
+                    {% endif %}
+                    <div id="panel-actions">
+                        {% block side_panel_items %}{% if actions and actions_template %}{% include actions_template with all=True %}{% endif %}{% endblock %}
+                    </div>
+                    {% if filter_terms %}
+                        <div class="panel-list px-3 has-text-centered">
+                            <span>{% translate 'Filter' %}</span>
+                        </div>
+                        <div class="panel-block" style="position: sticky">
+                            <button id="reset-filter-button"
+                                    class="button is-fullwidth mr-1">{% translate 'Reset' %}
+                            </button>
+                            <button id="apply-filter-button"
+                                    class="button is-fullwidth ml-1">{% translate 'Filter' %}
+                            </button>
+                        </div>
+                        <div id="filter-panel">
+                            {% cache 500 filter_panel request.path request.GET request.tenant %}
+                                {% include 'ui/partials/filter.html' %}
+                            {% endcache %}
+                        </div>
+                    {% endif %}
+                </nav>
+            </div>
+
+
+            <div id="content" class="column content-column p-0" style="height: 100%; overflow-y: auto">
+                {% block content %}{% endblock %}
+            </div>
+        {% endblock %}
+    </div>
+
+    {% if filter_terms %}
+        <div id="filter-modal" class="modal">
+            <div class="modal-background filter-modal-close"></div>
+            <div class="modal-card" style="height: 100%">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">
+                        {% block search_modal_title %}{% translate 'Filter' %}{% endblock %}</p>
+                    <button class="delete filter-modal-close" aria-label="close"></button>
+                </header>
+                <section id="modal-content" class="modal-card-body">
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-fullwidth mr-1"
+                            onclick="resetFilter()">{% translate 'Reset' %}</button>
+                    <button id="applyFilterFromModalButton"
+                            class="button is-fullwidth is-success ml-1">{% translate 'Filter' %}</button>
+                </footer>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if actions %}
+        <div id="action-modal" class="modal">
+            <div class="modal-background action-modal-close"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">
+                        {% block action_modal_title %}{% translate 'Actions' %}{% endblock %}</p>
+                    <button class="delete action-modal-close" aria-label="close"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div id="modal-actions">
+                        {% block action_modal_body %}{% if actions_template %}{% include actions_template with all=True %}{% endif %}{% endblock %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    {% endif %}
+    <div id="form-modal" class="modal"></div>
+</body>

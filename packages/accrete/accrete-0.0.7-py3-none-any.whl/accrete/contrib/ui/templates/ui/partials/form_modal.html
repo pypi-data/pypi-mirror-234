@@ -1,0 +1,19 @@
+{% load i18n %}
+
+<div id="form-modal" class="modal {% block modal_class %}{% endblock %}">
+    <div class="modal-background" hx-get="{% url 'ui:form_modal' %}" hx-swap="outerHTML" hx-target="#form-modal"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">{% block modal_title %}{% endblock %}</p>
+            <button class="delete" aria-label="close" hx-get="{% url 'ui:form_modal' %}" hx-swap="outerHTML" hx-target="#form-modal"></button>
+        </header>
+        <section class="modal-card-body">
+            {% include 'ui/partials/form_errors.html' %}
+            {% block modal_content %}{% endblock %}
+        </section>
+        <footer class="modal-card-foot">
+            <input class="button is-success" type="submit" form="{{ form_id }}" value="{% translate 'Save' %}">
+            <button class="button" hx-get="{% url 'ui:form_modal' %}" hx-swap="outerHTML" hx-target="#form-modal">{% translate 'Discard' %}</button>
+        </footer>
+    </div>
+</div>

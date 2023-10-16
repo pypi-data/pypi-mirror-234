@@ -1,0 +1,23 @@
+{% if form.non_field_errors or form.save_error or form.errors and show_field_errors %}
+    <div class="columns py-0">
+        <div class="column is-12">
+            <div class="notification is-danger is-light">
+                <p>{{ form.non_field_errors }}</p>
+                {% if form.save_error %}
+                    <p>{{ form.save_error|safe }}</p>
+                    <p>Error ID: {{ form.save_error_id }}</p>
+                {% endif %}
+                {% if show_field_errors %}
+                    {% for f in form %}
+                        {% if f.errors %}
+                            <label class="label has-text-danger">
+                                <span class="is-underlined">{{ f.label_tag }}</span>
+                                <span class="is-size-7">{{ f.errors }}</span>
+                            </label>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}
