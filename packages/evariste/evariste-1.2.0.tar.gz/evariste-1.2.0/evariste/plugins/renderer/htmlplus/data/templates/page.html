@@ -1,0 +1,106 @@
+{% macro render_tree(tree) -%}
+  <ul>
+    {%- for item in tree.values()|sort -%}
+      {%- if item.is_dir() %}
+        <li class="directory {% if item.config['renderer.htmlplus']['checked']|yesno %} open {% else %} closed {% endif %}"
+            id="directory-{{ item.from_source|labelize }}"
+            >
+            <div class="readme">
+              <a href="#" onclick="toggle_openclosed('directory-{{ item.from_source|labelize }}'); return false;" class="title">
+                {%- if item.is_root() and local.setup['title'] -%}
+                  {{ local.setup['title'] }}
+                {%- else -%}
+                  {{ item.relativename }}
+                {%- endif -%}
+              </a>
+              {{- render_readme(item) -}}
+            </div>
+                {{- render_tree(item) -}}
+        </li>
+      {%- else -%}
+        <li class="file {% if not item.report.success %}failed{% endif %}">
+          <span class="tooltip">
+            <a
+              href="#"
+              onclick="toggle_visibility('log-{{ item.from_source|labelize }}'); return false;"
+            >
+              <img
+                {%- if item.report.success %}
+                  src="static/dialog-ok-apply.png"
+                  alt="Successful compilation"
+                {%- else %}
+                  src="static/dialog-error.png"
+                  alt="Compilation error"
+                {%- endif %}
+                width=18 height=18
+              >
+            </a>
+            <span class="tooltiptext">
+              {%- if item.report.success -%}
+                Successful compilation.
+              {%- else -%}
+                Compilation error.
+              {%- endif -%}
+              <br/>Click to toggle log.
+            </span>
+          </span>
+          {% for target in item.report.targets|sort -%}
+            {{ render_file(target) }}{% if not loop.last %}, {% endif %}
+          {%- endfor -%}
+
+          {%- if item.report.targets %} ({% endif -%}
+          {{- render_file(sourcepath(item)) -}}
+          {%- if item.report.targets %}){% endif %}
+
+          <div class="readme">
+            {{- render_readme(item) -}}
+          </div>
+
+          <div class="log" id="log-{{ item.from_source|labelize }}">
+            {%- if
+              item.report.log != "" and
+              (
+                local.setup['display_log'] == "yes"
+                or
+                (not item.report.success and local.setup['display_log'] == "errors")
+              )
+            -%}
+            <pre><code>
+              {{- item.report.log|escape -}}
+            </code></pre>
+            {%- else -%}
+            <em>Log is empty</em>
+            {%- endif -%}
+          </div>
+        </li>
+      {%- endif %}
+    {%- endfor %}
+  </ul>
+{%- endmacro %}
+
+<!DOCTYPE html>
+<html {% if "lang" in templatevar %}lang = "{{ lang }}"{% endif %}>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" type="text/css" href="static/tree.css" media="screen">
+    <script src="static/tree.js"></script>
+    {%- if "title" in templatevar %}
+    <title>{{ templatevar.title }}</title>
+    {% endif -%}
+    {%- if "favicon" in templatevar %}
+    <link rel="shortcut icon" href="{{ templatevar.favicon }}">
+    {% endif -%}
+    {{ templatevar.head -}}
+  </head>
+  <body>
+    {%- if templatevar.header -%}
+        {{- templatevar.header -}}
+    {%- endif -%}
+    <div class="tree">
+      {{- render_tree(tree) -}}
+    </div>
+    {%- if templatevar.footer -%}
+        {{- templatevar.footer -}}
+    {%- endif -%}
+  </body>
+</html>

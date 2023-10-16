@@ -1,0 +1,55 @@
+[setup]
+
+source = repository
+plugins =
+    vcs.git
+    renderer.htmlplus renderer.text renderer.html.file.image renderer.html.readme.mdwn renderer.html.readme.rst
+    action.command action.autocommand action.make
+
+[logging.stdlib]
+format = %%(asctime)s %%(message)s
+
+[renderer.htmlplus]
+destfile = index.html
+destdir = html
+href_prefix = html/
+templatedirs = templates
+template = page.html
+staticdir = static
+
+[renderer.htmlplus.templatevar]
+title = Example of Évariste html renderer
+
+[action.autocommand]
+strace=true
+
+[action.autocommand.latex]
+extensions = tex
+targets = {basename}.pdf
+command = pdflatex {basename}
+
+[action.autocommand.opendocument]
+priority = 1
+mimetypes = application/vnd.oasis.opendocument.*
+extensions = fods fodt
+command = libreoffice --headless --convert-to pdf {filename}
+targets = {basename}.pdf
+
+[action.autocommand.xcf]
+command = echo "\
+      (define (convert-xcf-to-png filename outfile) \
+         (let* \
+            ( \
+               (image (car (gimp-file-load RUN-NONINTERACTIVE filename filename))) \
+               (drawable (car (gimp-image-merge-visible-layers image CLIP-TO-IMAGE))) \
+            ) \
+            (file-png-save RUN-NONINTERACTIVE image drawable outfile outfile 0 9 0 0 0 0 0) \
+         ) \
+      ) \
+      (convert-xcf-to-png \"{filename}\" \"{basename}.png\") \
+      (gimp-quit 0)" | \
+      gimp -i -b -
+targets = {basename}.png
+
+[tree]
+enable = false
