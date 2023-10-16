@@ -1,0 +1,60 @@
+import sys
+
+__all__ = ["Generic", "get_args", "get_origin", "is_generic"]
+
+if sys.version_info > (3, 11):
+    from typing import Union, _GenericAlias, _SpecialForm, _SpecialGenericAlias
+    from types import UnionType
+
+    Generic = Union[_GenericAlias, _SpecialGenericAlias, _SpecialForm, UnionType]
+elif sys.version_info > (3, 9):
+    from typing import Union, _GenericAlias, _SpecialForm, _SpecialGenericAlias
+
+    Generic = Union[_GenericAlias, _SpecialGenericAlias, _SpecialForm]
+elif sys.version_info > (3, 7):
+    from typing import Union, _GenericAlias, _SpecialForm
+
+    Generic = Union[_GenericAlias, _SpecialForm]
+else:
+    from typing import GenericMeta as Generic
+    from typing import *
+
+    setattr(Generic, "__args__", (Generic,))
+
+
+if sys.version_info > (3, 8):
+    from typing import get_args, get_origin
+
+    def is_generic(generic: Generic):
+        return isinstance(generic, get_args(Generic))
+
+else:
+    from typing import List, Sequence, Set, Tuple
+
+    generic_mappings = {
+        List: list,
+        Set: set,
+        Sequence: List,
+        Tuple: tuple,
+    }
+
+    def is_generic(generic: Generic):
+        origin = getattr(generic, "__origin__", None)
+        if origin is Union:
+            return True
+
+        return isinstance(generic, get_args(Generic))
+
+    def get_args(generic: Generic):
+        return getattr(generic, "__args__", ())
+
+    def get_origin(generic: Generic):
+        origin = getattr(generic, "__origin__", None)
+        if origin in generic_mappings:
+            return generic_mappings[origin]
+
+        if origin is None and is_generic(generic) and hasattr(generic, "mro"):
+            for parent in generic.mro()[1:]:
+                return parent
+
+        return origin
