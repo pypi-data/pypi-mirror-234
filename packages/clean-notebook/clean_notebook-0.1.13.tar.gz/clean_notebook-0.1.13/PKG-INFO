@@ -1,0 +1,54 @@
+Metadata-Version: 2.1
+Name: clean-notebook
+Version: 0.1.13
+Summary: A simple package to clean Jupyter notebooks
+Project-URL: Homepage, https://github.com/hoxbro/clean_notebook
+Project-URL: Source, https://github.com/hoxbro/clean_notebook
+Author: Simon Hansen
+Maintainer: Simon Hansen
+License-Expression: MIT
+License-File: LICENSE.txt
+Keywords: clean,jupyter,notebook
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.8
+Provides-Extra: dev
+Requires-Dist: black; extra == 'dev'
+Requires-Dist: hatch; extra == 'dev'
+Requires-Dist: mypy; extra == 'dev'
+Requires-Dist: pre-commit; extra == 'dev'
+Requires-Dist: pytest; extra == 'dev'
+Requires-Dist: ruff; extra == 'dev'
+Description-Content-Type: text/markdown
+
+# Clean up notebook
+
+A simple command to clean up your Jupyter notebooks.
+
+## Usage
+
+If you want to run this tool in a CLI, [pipx](https://pypa.github.io/pipx/) is advised.
+
+```bash
+pipx install clean-notebook
+```
+
+To use `clean-notebook` with [pre-commit](https://pre-commit.com/), add this to your `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/hoxbro/clean_notebook
+  rev: "" # Use the sha / tag you want to point at
+  hooks:
+    - id: clean-notebook
+```
+
+## Configuration
+
+To clean a notebook run the command `clean-notebook example.ipynb` or if you want to do it for multiple files `clean-notebook example1.ipynb example2.ipynb`.
+
+The following arguments are supported `--dry-run` to not overwrite the file and `--keep-empty` to keep empty cells. If you want not to delete a specific metadata key, the `-i`/`--ignore` argument can be used. If more keys should be ignored: `clean-notebook . -i tags -i slideshow`.
