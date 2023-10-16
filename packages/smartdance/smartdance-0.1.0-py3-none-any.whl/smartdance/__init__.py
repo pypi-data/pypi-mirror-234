@@ -1,0 +1,1 @@
+from .smartdance import dance
