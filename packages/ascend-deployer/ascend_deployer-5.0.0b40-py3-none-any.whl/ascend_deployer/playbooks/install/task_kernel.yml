@@ -1,0 +1,41 @@
+- name: check kernel headers
+  shell: rpm -q kernel-headers | grep {{ ansible_kernel }} | wc -l
+  register: kh_cnt
+  changed_when: false
+
+- name: install kernel headers yum
+  shell: |
+    yum clean all &>/dev/null
+    yum makecache --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo &>/dev/null
+    yum install --skip-broken -y kernel-headers-{{ ansible_kernel }} --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo
+  register: kernel_headers_result
+  environment:
+    LD_LIBRARY_PATH: ""
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: kh_cnt.stdout == "0"
+
+- name: check kernel devel
+  shell: rpm -q kernel-devel | grep {{ ansible_kernel }} | wc -l
+  register: kd_cnt
+  changed_when: false
+
+- name: install kernel devel yum
+  shell: |
+    yum makecache --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo &>/dev/null
+    yum install --skip-broken -y kernel-devel-{{ ansible_kernel }} --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo
+  register: kernel_devel_result
+  environment:
+    LD_LIBRARY_PATH: ""
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: kd_cnt.stdout == "0"
+
+- name: message
+  debug:
+    var: kernel_headers_result,kernel_devel_result
+  when: kernel_headers_result.changed or kernel_devel_result.changed

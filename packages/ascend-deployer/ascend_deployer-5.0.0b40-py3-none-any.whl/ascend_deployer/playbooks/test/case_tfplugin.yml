@@ -1,0 +1,22 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'tfplugin':'OK'})}}"
+
+- name: test if tfplugin installed
+  find:
+    paths:
+      - "{{ ascend_install_path }}/tfplugin"
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "ascend_tfplugin_install.info"
+  register: tfplugin
+
+- name: message
+  debug:
+    msg:
+    - "tfplugin not installed, please install first"
+  when: tfplugin.matched == 0
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'tfplugin':'not installed'})}}"
+  when: tfplugin.matched == 0

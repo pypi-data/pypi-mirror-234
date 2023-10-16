@@ -1,0 +1,53 @@
+# 检查harbor协议
+- name: access harbor url by https protocol
+  uri:
+    url: 'https://{{ HARBOR_SERVER }}/c/login'
+    return_content: true
+    validate_certs: false
+  register: https_resp
+  failed_when: false
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+
+- name: set fact HARBOR_HTTP false
+  set_fact:
+    end_check: true
+    HARBOR_HTTP: false
+    cacheable: yes
+  when: '"Not Found" in https_resp.msg'
+
+- name: set fact HARBOR_HTTP true
+  set_fact:
+    HARBOR_HTTP: true
+    cacheable: yes
+  when: 'end_check is not defined and "wrong version number" in https_resp.msg'
+
+- name: access harbor url by http protocol
+  uri:
+    url: 'http://{{ HARBOR_SERVER }}/c/login'
+    return_content: true
+    validate_certs: false
+  register: http_resp
+  failed_when: false
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: 'end_check is not defined'
+
+- name: set fact HARBOR_HTTP false
+  set_fact:
+    end_check: true
+    HARBOR_HTTP: false
+    cacheable: yes
+  when: 'end_check is not defined and "The plain HTTP request was sent to HTTPS port" in http_resp.msg'
+
+- name: set fact HARBOR_HTTP true
+  set_fact:
+    HARBOR_HTTP: true
+    cacheable: yes
+  when: 'end_check is not defined and "Not Found" in http_resp.msg'

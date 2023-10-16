@@ -1,0 +1,39 @@
+# 使用dpkg作为包管理器
+- name: install k8s
+  shell: dpkg --force-all -i {{ k8s_pkg_dir }}/{{ ansible_architecture }}/*.deb
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+    DEBIAN_PRIORITY: critical
+  when: not use_rpm_command
+
+# 使用rpm作为包管理器
+- name: install k8s
+  shell: rpm -iUv {{ k8s_pkg_dir }}/{{ ansible_architecture }}/*.rpm --nodeps --force
+  when: use_rpm_command
+
+- name: modify kubeadm.conf file
+  shell: |
+    cat {{ KUBEADM_CONFIG_FILE }} | grep 'cgroup-driver' || sed -i 's/KUBELET_KUBECONFIG_ARGS=/KUBELET_KUBECONFIG_ARGS=--cgroup-driver=systemd /' {{ KUBEADM_CONFIG_FILE }}
+  when:
+    - os_name|lower == 'ubuntu'
+
+- name: create /etc/default/kubelet
+  shell: echo 'KUBELET_EXTRA_ARGS=--node-ip=::' > /etc/default/kubelet && chmod 644 /etc/default/kubelet
+  when: working_on_ipv6 and not use_rpm_command
+
+- name: create /etc/sysconfig/kubelet
+  shell: echo 'KUBELET_EXTRA_ARGS=--node-ip=::' > /etc/sysconfig/kubelet && chmod 644 /etc/sysconfig/kubelet
+  when: working_on_ipv6 and use_rpm_command
+
+- name: enable kubelet
+  systemd:
+    name: "kubelet"
+    enabled: true
+    state: started
+    daemon_reload: yes
+
+- name: "restart kubelet"
+  systemd:
+    name: "kubelet"
+    enabled: true
+    state: restarted

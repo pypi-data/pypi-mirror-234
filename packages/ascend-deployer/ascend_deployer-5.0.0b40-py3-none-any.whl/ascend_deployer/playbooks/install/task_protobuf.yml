@@ -1,0 +1,26 @@
+- name: create build directory
+  file:
+    path: "{{ build_dir }}"
+    state: directory
+    mode: 0750
+    recurse: yes
+
+- name: install protobuf-python-3.13.0 unarchive
+  unarchive:
+    src: "{{ resources_dir }}/sources/protobuf-python-3.13.0.tar.gz"
+    dest: "{{ build_dir }}"
+    copy: no
+    extra_opts:
+    - --no-same-owner
+
+- name: install protobuf-python-3.13.0 configure
+  shell: ./configure --prefix=/usr/local
+  args:
+    chdir: "{{ build_dir }}/protobuf-3.13.0"
+
+- name: install protobuf-python-3.13.0 make
+  shell: "make -C {{ build_dir }}/protobuf-3.13.0 -j20"
+  ignore_errors: yes
+
+- name: install protobuf-python-3.13.0 make install
+  shell: "make -C {{ build_dir }}/protobuf-3.13.0 install"

@@ -1,0 +1,16 @@
+- hosts: '{{ hosts_name }}'
+  tasks:
+    - name: install ief
+      import_tasks: task_ief.yml
+      when: ansible_user_uid == 0
+
+    - name: message
+      debug:
+        msg:
+        - "[ASCEND]not support installing ief by non-root user, please switch to root user"
+      when: ansible_user_uid != 0
+
+    - name: fail if not root
+      fail:
+        msg: "[ASCEND]can not install with non-root"
+      when: "'ief' in ansible_run_tags and ansible_user_uid != 0"

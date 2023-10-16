@@ -1,0 +1,29 @@
+- name: find nnae patch package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*nnae.*{{ ansible_architecture }}.run"
+  register: nnae
+
+- name: rollback nnae
+  shell: "bash {{ nnae.files[0].path }} --rollback"
+  register: nnae_result
+  when: nnae.matched > 0
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find nnae package, nnae rollback skipped"
+  when: nnae.matched == 0
+
+- name: fail if this rollback
+  fail:
+    msg: "[ASCEND]failed to rollback nnae"
+  when: "'nnae' in ansible_run_tags and nnae.matched == 0"
+
+- name: message
+  debug:
+    var: nnae_result
+  when: nnae_result.changed

@@ -1,0 +1,141 @@
+- name: get nexus ip
+  shell: env | grep SSH_CONNECTION | awk '{print $3}'
+  register: nexus_ip
+  delegate_to: localhost
+  run_once: true
+
+- name: set nexus_url fact on ipv6
+  set_fact:
+    nexus_url: "http://[{{nexus_ip.stdout}}]:58081"
+    cacheable: true
+  when: working_on_ipv6
+
+- name: set nexus_url fact on ipv4
+  set_fact:
+    nexus_url: "http://{{nexus_ip.stdout}}:58081"
+    cacheable: true
+  when: not working_on_ipv6
+
+- name: clean nexus dir
+  file:
+    state: absent
+    path: ~/nexus
+
+- name: copy nexus_config.json
+  copy:
+    src: "{{inventory_dir}}/scripts/nexus_config.json"
+    dest: ~/nexus/
+    force: yes
+
+- name: get nexus config
+  shell: cat ~/nexus/nexus_config.json
+  register: nexus_config
+
+- name: set nexus_data fact
+  set_fact:
+    nexus_data: "{{nexus_config.stdout|from_json}}"
+    cacheable: yes
+
+- name: set nexus codename fact
+  set_fact:
+    nexus_codename: "{{nexus_data.codename.get(os_and_arch)}}"
+    cacheable: yes
+  when: os_and_arch in nexus_data.deb_os
+
+- name: touch sources config file for deb
+  shell: echo "deb {{nexus_url}}/repository/{{os_and_arch}}/ {{nexus_codename}} main" > ~/nexus/sources.list
+  when: os_and_arch in nexus_data.deb_os
+
+- name: touch sources config file for rpm
+  shell: |
+    cat <<EOF >~/nexus/sources.repo
+    [nexus]
+    name = {{os_and_arch}}
+    baseurl = {{nexus_url}}/repository/{{os_and_arch}}/
+    gpgcheck=0
+    enabled=1
+    EOF
+  when: os_and_arch in nexus_data.rpm_os
+
+- name: copy pkg_info.json
+  copy:
+    src: "{{inventory_dir}}/downloader/config/{{os_and_arch}}/pkg_info.json"
+    dest: ~/nexus/
+    force: yes
+
+- name: get pkg info
+  shell: cat ~/nexus/pkg_info.json
+  register: pkg_info
+
+- name: set json_data fact
+  set_fact:
+    json_data: "{{pkg_info.stdout | from_json}}"
+    cacheable: yes
+
+- name: set sys_pkgs_list fact
+  set_fact:
+    sys_pkgs_list: "{{json_data|map(attribute='name') | list}}"
+    cacheable: yes
+
+- name: set docker pkg for common OS
+  set_fact:
+    docker_pkgs_list: "{{nexus_data.common_docker}}"
+    cacheable: yes
+  when: "'EulerOS' not in os_and_arch"
+
+- name: set docker pkg for EulerOS OS
+  set_fact:
+    docker_pkgs_list: "{{nexus_data.euler_docker}}"
+    cacheable: yes
+  when: "'EulerOS' in os_and_arch"
+
+- name: set sys_pkgs_without_docker_list fact
+  set_fact:
+    sys_pkgs_without_docker_list: "{{sys_pkgs_list | difference(docker_pkgs_list)}}"
+    cacheable: yes
+
+- name: set sys_pkgs fact
+  set_fact:
+    sys_pkgs: "{{sys_pkgs_without_docker_list | join(' ')}}"
+    cacheable: yes
+
+- name: set docker_pkgs fact
+  set_fact:
+    docker_pkgs: "{{docker_pkgs_list | join(' ')}}"
+    cacheable: yes
+
+- name: install system packages
+  include_tasks: "task_sys_{{ansible_pkg_mgr}}.yml"
+
+- name: get cmake version
+  shell: cmake --version | awk -F" " '{print $3;exit}'
+  register: cmake_ver
+
+- name: install cmake3.20.5 for BCLinux Tlinux and CentOS 7.6
+  import_tasks: task_cmake.yml
+  when:
+    - "'BCLinux' in os_and_arch or 'CentOS_7.6' in os_and_arch or 'Tlinux' in os_and_arch"
+    - cmake_ver.stdout == '' or cmake_ver.stdout is version("3.20.5", "<")
+
+- name: find protobuf
+  find:
+    paths: /usr/local/lib
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "libprotobuf.so.*"
+  register: libprotobuf
+
+- name: install protobuf 3.13.0
+  import_tasks: task_protobuf.yml
+  when: libprotobuf.matched == 0
+
+- name: check docker status
+  shell: docker ps
+  register: docker_status
+  failed_when: false
+
+- name: restart docker
+  shell: "systemctl restart docker"
+  when: docker_status.rc != 0
+  failed_when: false

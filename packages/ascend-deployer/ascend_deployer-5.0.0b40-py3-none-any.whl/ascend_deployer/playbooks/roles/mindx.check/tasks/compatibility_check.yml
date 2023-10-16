@@ -1,0 +1,10 @@
+- name: check compatibility for specified host
+  shell: "{{ ansible_playbook_python }} {{ script_path}} {{ fact_path_dir }} {{ inventory_hostname }} {{ check_tags }}"
+  delegate_to: localhost
+  failed_when: false
+  register: check_result
+
+- name: check result
+  fail:
+    msg:  "{{ check_result.stdout }}"
+  when: check_result.rc != 0

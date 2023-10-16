@@ -1,0 +1,14 @@
+- name: include vars
+  include_vars: ../defaults/main.yml
+
+- name: include vars
+  include_tasks: create_user.yaml
+
+- name: label dl master
+  shell: |
+    kubectl label --overwrite node {{ NODE_NAME }} masterselector=dls-master-node
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""

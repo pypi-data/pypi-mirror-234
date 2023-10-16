@@ -1,0 +1,30 @@
+- hosts: '{{ hosts_name }}'
+  tasks:
+    - name: check mindspore
+      shell: python3 -m pip list | grep mindspore
+      environment:
+        PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+        LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+      failed_when: false
+      changed_when: false
+      register: mindspore_version
+
+    - name: message
+      debug: var=mindspore_version
+      when: mindspore_version.stdout != ""
+
+    - name: message
+      debug:
+        msg:
+          - "mindspore is already installed, mindspore install skipped"
+      when: mindspore_version.stdout != ""
+
+    - name: get cmake version
+      shell: cmake --version | awk -F" " '{print $3;exit}'
+      register: cmake_ver
+      when: mindspore_version.stdout == ''
+
+    - name: install mindspore if not import
+      include_tasks: task_mindspore.yml
+      when:
+        - mindspore_version.stdout == ''

@@ -1,0 +1,210 @@
+- name: include vars
+  include_vars: ../os_map.yml
+
+- name: find driver upgrade tool
+  find:
+    path: /usr/local/Ascend/driver
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "upgrade-tool"
+  register: up_tool
+
+- set_fact: normalize910_dir={{ scene_dict['normalize910'] }}
+
+- set_fact: normalize310p_dir={{ scene_dict['normalize310p'] }}
+
+- set_fact: train_dir={{ scene_dict['train'] }}
+
+- name: stat normalize910_dir
+  stat:
+    path: "{{ normalize910_dir[0] }}"
+  register: normalize910_dir_stat
+
+- name: stat normalize310p_dir
+  stat:
+    path: "{{ normalize310p_dir[0] }}"
+  register: normalize310p_dir_stat
+
+- name: get npu scene
+  import_tasks: task_get_npu_scene.yml
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find npu card, please check!"
+  failed_when: true
+  when: ansible_local.npu_info.scene == "" and npu_scene == ""
+
+- set_fact: run_dir={{ scene_dict[npu_scene] }}
+
+- name: stat run_dir
+  stat:
+    path: "{{ run_dir[0] }}"
+  register: run_dir_stat
+
+- name: stat train_dir
+  stat:
+    path: "{{ train_dir[0] }}"
+  register: train_dir_stat
+
+- name: find driver package linux only zip first
+  find:
+    paths: "{{ train_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*npu-driver.*linux.*{{ ansible_architecture[:3] }}.*.run"
+  register: trainpro_pkg
+  when: (not run_dir_stat.stat.exists and train_dir_stat.stat.exists) and ansible_local.npu_info.scene == 'train'
+
+- set_fact: driver_pro_run={{trainpro_pkg.files[0].path}}
+  when: 
+    - ansible_local.npu_info.scene == 'train'
+    - (not run_dir_stat.stat.exists and train_dir_stat.stat.exists) and trainpro_pkg.matched > 0
+
+- name: find driver package linux only zip second
+  find:
+    paths: "{{ run_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*npu-driver.*linux.*{{ ansible_architecture[:3] }}.*.run"
+  register: driver_pkg
+  when: run_dir_stat.stat.exists
+
+- set_fact: driver_run={{driver_pkg.files[0].path}}
+  when: run_dir_stat.stat.exists and driver_pkg.matched > 0
+
+- name: find normalize910 driver package
+  find:
+    paths: "{{ normalize910_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*npu-driver.*linux.*{{ ansible_architecture[:3] }}.*.run"
+  register: driver_pkg
+  when: ansible_local.npu_info.scene == 'train' and normalize910_dir_stat.stat.exists
+
+- set_fact: driver_run={{driver_pkg.files[0].path}}
+  when: ansible_local.npu_info.scene == 'train' and normalize910_dir_stat.stat.exists and driver_pkg.matched > 0
+
+- name: find normalize310p driver package
+  find:
+    paths: "{{ normalize310p_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*npu-driver.*linux.*{{ ansible_architecture[:3] }}.*.run"
+  register: driver_pkg
+  when: (ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo')  and normalize310p_dir_stat.stat.exists
+
+- set_fact: driver_run={{driver_pkg.files[0].path}}
+  when: (ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo') and normalize310p_dir_stat.stat.exists and driver_pkg.matched > 0
+
+- name: find driver package specific_os only zip
+  find:
+    paths: "{{ run_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "npu-driver.*{{ ansible_distribution.lower() }}{{ os_version }}.*{{ ansible_architecture }}.run"
+  register: driver_pkg
+  when: run_dir_stat.stat.exists
+
+- set_fact: driver_run={{driver_pkg.files[0].path}}
+  when: run_dir_stat.stat.exists and driver_pkg.matched > 0
+
+- name: find driver package linux
+  find:
+    paths: "{{ run_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "{{ ansible_local.npu_info.product }}.*driver.*linux.*{{ ansible_architecture }}.run"
+  register: driver_pkg
+  when: run_dir_stat.stat.exists
+
+- set_fact: driver_run={{driver_pkg.files[0].path}}
+  when: run_dir_stat.stat.exists and driver_pkg.matched > 0
+
+- name: find driver package specific_os
+  find:
+    paths: "{{ run_dir }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "{{ ansible_local.npu_info.product }}.*driver.*{{ ansible_distribution.lower() }}{{ os_version }}.*{{ ansible_architecture }}.run"
+  register: driver_pkg
+  when: run_dir_stat.stat.exists
+
+- set_fact: driver_run={{driver_pkg.files[0].path}}
+  when: run_dir_stat.stat.exists and driver_pkg.matched > 0
+
+- name: upgrade driver
+  shell: "bash {{driver_run|default(driver_pro_run)}} --nox11 --upgrade --quiet"
+  register: driver_up_result
+  failed_when: driver_up_result.rc != 0 and driver_up_result.rc != 2
+  when: (driver_run is defined and driver_run|length > 0 or driver_pro_run is defined and driver_pro_run|length > 0) and (up_tool.matched > 0)
+
+- name: upgrade driver failed
+  fail:
+    msg: "upgrade driver failed!"
+  when: driver_up_result.changed and 'boot needed for installation/upgrade' not in driver_up_result.stdout and 'takes effect immediately' not in driver_up_result.stdout
+
+- name: set need_reboot fact
+  set_fact:
+    need_reboot: "{{'1' if 'Reboot' in driver_up_result.stdout or 'reboot' in driver_up_result.stdout else '0'}}"
+    cacheable: yes
+  when: driver_up_result.changed
+
+- name: install driver
+  shell: "bash {{driver_run|default(driver_pro_run)}} --nox11 --full --quiet --install-for-all"
+  environment:
+    PATH: /opt/rh/devtoolset-8/root/usr/bin/:/usr/sbin/:/sbin:{{ ansible_env.PATH }}
+  register: driver_result
+  failed_when: driver_result.rc != 0 and driver_result.rc != 2
+  when: (driver_run is defined and driver_run|length > 0 or driver_pro_run is defined and driver_pro_run|length > 0) and (up_tool.matched == 0)
+
+- name: install driver failed
+  fail:
+    msg: "install driver failed!"
+  when: driver_result.changed and 'boot needed for installation/upgrade' not in driver_result.stdout and 'takes effect immediately' not in driver_result.stdout
+
+- name: set need_reboot fact
+  set_fact:
+    need_reboot: "{{'1' if 'Reboot' in driver_result.stdout or 'reboot' in driver_result.stdout else '0'}}"
+    cacheable: yes
+  when: driver_result.changed
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]you need to reboot for the driver to take effect"
+  when: need_reboot is defined and need_reboot == '1'
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]Driver install successfully! the new version takes effect immediately."
+  when: need_reboot is defined and need_reboot == '0'
+
+- name: fail if this install
+  fail:
+    msg: "[ASCEND]failed to install driver"
+  when: "'driver' in ansible_run_tags and driver_run is undefined and driver_pro_run is undefined"
+
+- name: message
+  debug:
+    var: driver_result
+  when: driver_result.changed
+
+- name: message
+  debug:
+    var: driver_up_result
+  when: driver_up_result.changed
+
+- name: service host_sys_init start
+  shell: service host_sys_init start
+  failed_when: false
+  when: (driver_result.changed) or (driver_up_result.changed)

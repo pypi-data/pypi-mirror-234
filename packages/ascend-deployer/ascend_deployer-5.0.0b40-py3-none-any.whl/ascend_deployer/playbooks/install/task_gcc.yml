@@ -1,0 +1,77 @@
+- name: create build directory
+  file:
+    path: "{{ build_dir }}"
+    state: directory
+    mode: 0750
+    recurse: yes
+
+- name: install gcc 7.3.0 unarchive
+  unarchive:
+    src: "{{ resources_dir }}/sources/gcc-7.3.0.tar.gz"
+    dest: "{{ build_dir }}"
+    copy: no
+    extra_opts:
+    - --no-same-owner
+
+- name: install gcc 7.3.0 copy mpfr
+  copy:
+    src: "{{ resources_dir }}/sources/mpfr-3.1.4.tar.bz2"
+    dest: "{{ build_dir }}/gcc-7.3.0"
+    remote_src: yes
+
+- name: install gcc 7.3.0 copy mpc
+  copy:
+    src: "{{ resources_dir }}/sources/mpc-1.0.3.tar.gz"
+    dest: "{{ build_dir }}/gcc-7.3.0"
+    remote_src: yes
+
+- name: install gcc 7.3.0 copy gmp
+  copy:
+    src: "{{ resources_dir }}/sources/gmp-6.1.0.tar.bz2"
+    dest: "{{ build_dir }}/gcc-7.3.0"
+    remote_src: yes
+
+- name: install gcc 7.3.0 copy isl
+  copy:
+    src: "{{ resources_dir }}/sources/isl-0.16.1.tar.bz2"
+    dest: "{{ build_dir }}/gcc-7.3.0"
+    remote_src: yes
+
+- name: set MINDSTUDIO_JDK
+  shell: sed -i "246s/tar -xf "${ar}"/tar --no-same-owner -xf "${ar}"/" contrib/download_prerequisites
+  args:
+    chdir: "{{ build_dir }}/gcc-7.3.0"
+
+- name: install gcc 7.3.0 download_prerequisites
+  shell: ./contrib/download_prerequisites
+  args:
+    chdir: "{{ build_dir }}/gcc-7.3.0"
+
+- name: install gcc 7.3.0 check makefile exist
+  stat:
+    path: "{{ build_dir }}/gcc-7.3.0/Makefile"
+  register: makefile_stat
+
+- name: install gcc 7.3.0 make distclean
+  shell: "make -C {{ build_dir }}/gcc-7.3.0 distclean"
+  when: makefile_stat.stat.exists
+
+- name: install gcc 7.3.0 configure
+  shell: "./configure --enable-languages=c,c++ --disable-multilib --with-system-zlib --prefix={{ local_path }}/gcc7.3.0 --disable-stage1-checking --disable-libgcj"
+  args:
+    chdir: "{{ build_dir }}/gcc-7.3.0"
+  register: configure_result
+
+- name: install gcc 7.3.0 check libstdc++.so exist
+  shell: "find {{ build_dir }}/gcc-7.3.0 -name libstdc++.so | wc -l"
+  register: cxx
+
+- name: install gcc 7.3.0 make
+  shell: "make -C {{ build_dir }}/gcc-7.3.0 -j20"
+  register: make_result
+  when: "'0' in cxx.stdout"
+  ignore_errors: yes
+
+- name: install gcc 7.3.0 make install
+  shell: "make -C {{ build_dir }}/gcc-7.3.0 install"
+  when: "'0' in cxx.stdout"

@@ -1,0 +1,81 @@
+- name: check index status
+  shell: |
+    timeout=0
+    while true;do
+        if [ $(docker logs nexus | grep 'Finished .* {{os_and_arch}}' | wc -l) -eq 1 ];then
+            break
+        else
+            sleep 1
+            ((++timeout))
+            if [ $timeout -eq 120 ];then
+                echo "install sys_pkgs failed" && exit 1
+            fi
+        fi
+    done
+  delegate_to: localhost
+
+- name: install kernel headers devel
+  include_tasks: task_kernel.yml
+  when: "'EulerOS' in os_and_arch"
+
+- name: install kernel headers devel force for euler
+  include_tasks: task_kernel_euleros.yml
+  when: "'EulerOS' in os_and_arch"
+
+- name: install system packages
+  shell: |
+    yum clean all &>/dev/null
+    yum makecache --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo &>/dev/null
+    yum install --skip-broken -y {{sys_pkgs}} --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo
+  register: sys_result
+  environment:
+    LD_LIBRARY_PATH: ""
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: "'CentOS_7.6' not in os_and_arch"
+
+- name: message
+  debug: var=sys_result
+  when:
+    - "'CentOS_7.6' not in os_and_arch"
+    - sys_result.changed
+
+- name: check if Docker is installed
+  shell: command -v docker | wc -l
+  register: docker_status
+  when: "'CentOS_7.6' not in os_and_arch"
+
+- name: install Docker when Docker is not installed
+  shell: |
+    yum install -y --skip-broken {{docker_pkgs}} --disablerepo="*" --enablerepo=nexus -c ~/nexus/sources.repo
+  register: docker_result
+  environment:
+    LD_LIBRARY_PATH: ""
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - "'CentOS_7.6' not in os_and_arch"
+    - docker_status.stdout == "0"
+
+- name: message
+  debug: var=docker_result
+  when:
+    - "'CentOS_7.6' not in os_and_arch"
+    - docker_result.changed
+
+- name: dnf install system packages
+  shell: |
+    rpm -ivh --force --nodeps --replacepkgs {{ resources_dir }}/{{ os_and_arch }}/*.rpm
+    rpm -ivh --force --nodeps --replacepkgs {{ resources_dir }}/{{ os_and_arch }}/docker/*.rpm
+  register: sys_result
+  when: "'CentOS_7.6' in os_and_arch"
+
+- name: message
+  debug: var=sys_result
+  when:
+    - "'CentOS_7.6' in os_and_arch"
+    - sys_result.changed

@@ -1,0 +1,176 @@
+- name: include vars
+  include_vars: ../defaults/main.yml
+
+#在远端创建mindxdl镜像目录
+- name: create mindxdl images directory on remote
+  file:
+    path: "{{mindxdl_images_dir}}/{{ansible_architecture}}"
+    state: directory
+    mode: 0750
+  when:
+    - not use_harbor
+
+- name: list ascend-operator images
+  shell: "ls {{mindxdl_images_dir}}/{{ansible_architecture}} | grep {{ASCEND_OPERATOR}}"
+  delegate_to: localhost
+  delegate_facts: true
+  register: ascend_operator_images
+  when:
+    - not use_harbor
+
+# 复制ascend-operator镜像到master and other master
+- name: copy ascend-operator images to other master
+  copy:
+    src: "{{mindxdl_images_dir}}/{{ansible_architecture}}/{{item}}"
+    dest: "{{mindxdl_images_dir}}/{{ansible_architecture}}/"
+    mode: 0640
+    owner: "{{ansible_user_id}}"
+    group: "{{ansible_user_id}}"
+  loop: "{{ascend_operator_images.stdout_lines}}"
+  when:
+    - not use_harbor
+
+# 在控制节点加载ascend_operator镜像
+- name: load ascend_operator images
+  shell: "{{import_cmd}} {{mindxdl_images_dir}}/{{ansible_architecture}}/{{item}}"
+  loop: "{{ascend_operator_images.stdout_lines}}"
+  when:
+    - not use_harbor
+
+
+- name: list ascend_operator yaml
+  delegate_to: "{{ groups['master'][0] }}"
+  run_once: true
+  shell: "ls {{mindxdl_yaml_dir}} | grep {{ASCEND_OPERATOR}} | grep -v 'without'"
+  register: yaml_file
+  when:
+    - inventory_hostname in groups['master'][0]
+
+- name: modify ascend_operator yaml
+  shell: |
+    sed -i 's/image: /image: {{ HARBOR_SERVER }}\/{{ HARBOR_MINDX_PROJECT }}\//' {{ mindxdl_yaml_dir }}/{{ item }};
+    sed -i 's/imagePullPolicy: Never/imagePullPolicy: IfNotPresent/' {{ mindxdl_yaml_dir }}/{{ item }};
+    sed -i '/      serviceAccountName: ascend/a\        - name: {{MINDX_DL_SECRET_FOR_HARBOR}}' {{ mindxdl_yaml_dir }}/{{ item }};
+    sed -i '/      serviceAccountName: ascend/a\      imagePullSecrets:' {{ mindxdl_yaml_dir }}/{{ item }};
+  loop: "{{ yaml_file.stdout_lines }}"
+  when:
+    - use_harbor
+    - inventory_hostname in groups['master'][0]
+
+- name: get ascend_operator image name when use harbor
+  delegate_to: localhost
+  run_once: true
+  shell:
+    cmd:
+      cd {{mindxdl_yaml_dir}};
+      cat $(find . -name "{{ ASCEND_OPERATOR }}*.yaml" -type f  | grep -v "without" | head -n 1) | grep 'image:' | awk '{print $2}'
+  register: image_name
+  when:
+    - do_upgrade is defined
+    - use_harbor
+
+- name: set fact ascend_operator image name
+  delegate_to: localhost
+  run_once: true
+  set_fact:
+    ascend_operator_image_name: "{{ image_name['stdout_lines'] | unique  }}"
+    cacheable: yes
+  when:
+    - do_upgrade is defined
+    - use_harbor
+    - image_name is defined and STDOUT_LINES_KEY in image_name and image_name[STDOUT_LINES_KEY] | length > 0
+
+- name: pull ascend_operator image
+  shell:
+    cmd:
+      "{{pull_cmd}} {{ item }}"
+  loop: "{{ ascend_operator_image_name }}"
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - do_upgrade is defined
+    - use_harbor
+    - HARBOR_SERVER in item
+
+- name: create log directories
+  file:
+    path: /var/log/mindx-dl
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+
+- name: create log directories for "{{DL_USR}}"
+  file:
+    path: "/var/log/mindx-dl/ascend-operator"
+    state: directory
+    owner: "{{DL_USR}}"
+    group: "{{DL_GRP}}"
+    mode: 0750
+
+- name: create mindx-dl image pull secret
+  shell: |
+    kubectl create namespace mindx-dl >/dev/null 2>&1 || echo 0;
+    kubectl create secret generic {{ MINDX_DL_SECRET_FOR_HARBOR }} --from-file=.dockerconfigjson=/root/.docker/config.json --type=kubernetes.io/dockerconfigjson -n mindx-dl >/dev/null 2>&1 || echo 0;
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  ignore_errors: true
+  when:
+    - use_harbor
+    - inventory_hostname in groups['master'][0]
+
+#清理default空间下的ascend-operator信息
+- name: clear default namespace ascend-operator component
+  shell:
+    cmd:
+      kubectl delete clusterrolebinding ascend-operator-rolebinding || true;
+      kubectl delete sa ascend-operator || true;
+      kubectl delete clusterrole pods-ascend-operator-role || true;
+      kubectl delete deploy ascend-operator || true;
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - inventory_hostname in groups['master'][0]
+
+
+#部署ascend-operator应用
+- name: apply ascend-operator component
+  shell:
+    cmd:
+      kubectl apply -f {{mindxdl_yaml_dir}}/{{ item }}
+  loop: "{{ yaml_file.stdout_lines }}"
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - inventory_hostname in groups['master'][0]
+
+
+# 检查并更新ascend-operator应用
+- name: upgrade ascend-operator component
+  shell:
+    cmd:
+      ascend-operator_info="$(kubectl get pods -n {{ MINDXDL_NAMESPACE }} -o wide 2>/dev/null | grep 'ascend-operator-' )";
+      ascend-operator_status=$(echo "$ascend-operator_info" | grep "ascend-operator-.*Running" | wc -l);
+      if [ $ascend-operator_status = 0 ]; then exit 0; fi;
+      for i in $(seq $ascend-operator_status);do eval "$(echo "$ascend-operator_info" | awk '{print "kubectl delete pod -n {{ MINDXDL_NAMESPACE }} "$1}')" || true; done
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - do_upgrade is defined
+    - inventory_hostname in groups['master'][0]

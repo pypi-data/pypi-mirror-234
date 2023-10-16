@@ -1,0 +1,21 @@
+- hosts: '{{ hosts_name }}'
+  tasks:
+    - name: message
+      debug:
+        msg:
+          - "not support installing sys_pkg by non-root user, please switch to root user"
+      delegate_to: localhost
+      run_once: true
+      when: ansible_user_uid != 0
+
+    - name: restart docker
+      shell: systemctl daemon-reload && systemctl restart docker
+      delegate_to: localhost
+      run_once: true
+      when: ansible_user_uid == 0
+
+    - name: create nexus repository
+      shell: python3 {{inventory_dir}}/scripts/nexus.py
+      delegate_to: localhost
+      run_once: true
+      when: ansible_user_uid == 0

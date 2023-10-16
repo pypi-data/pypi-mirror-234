@@ -1,0 +1,44 @@
+- name: check nerdctl exist
+  shell: nerdctl --version 2>/dev/null | wc -l
+  register: nerdctl_status
+  changed_when: false
+
+- name: set nerdctl_installed
+  set_fact:
+    nerdctl_installed: "{{ nerdctl_status.stdout != '0' }}"
+  changed_when: false
+
+- name: message
+  debug:
+    msg: "nerdctl is already installed. The script won't install nerdctl."
+  when: nerdctl_installed
+  changed_when: false
+
+- name: message
+  debug:
+    msg: "************************start install nerdctl**************************"
+  when: not nerdctl_installed
+
+- name: create tool directory
+  file:
+    path: "{{ tool_dir }}"
+    state: directory
+    mode: 0750
+  when:
+    - inventory_hostname != "localhost"
+    - not nerdctl_installed
+
+- name: unarchive docker software on remote
+  ansible.builtin.unarchive:
+    src: "{{ tool_dir }}/{{ nerdctl_pkg_name }}"
+    dest: "{{ tool_dir }}"
+    remote_src: no
+  when: not nerdctl_installed
+
+- name: copy nerdctl to /usr/bin/
+  copy:
+    src: "{{ tool_dir }}/nerdctl"
+    dest: "/usr/bin/nerdctl"
+    mode: 0750
+    remote_src: yes
+  when: not nerdctl_installed

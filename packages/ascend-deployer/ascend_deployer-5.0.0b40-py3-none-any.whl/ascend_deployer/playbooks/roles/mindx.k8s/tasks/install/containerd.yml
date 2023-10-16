@@ -1,0 +1,21 @@
+- name: generate config for containerd
+  shell: containerd config default > /etc/containerd/config.toml
+  register: config_result
+
+
+- name: change config 
+  shell:
+    cmd: 
+      sed -i "s#registry.k8s.io/pause:3.6#registry.k8s.io/pause:3.8#g" /etc/containerd/config.toml;
+      sed -i "s#SystemdCgroup = false#SystemdCgroup = true#g" /etc/containerd/config.toml;
+  register: fix_result
+
+
+- name: init docker and containerd
+  shell:
+    cmd:
+      systemctl enable --now containerd.service;
+      systemctl start docker.service;
+      systemctl enable docker.service && systemctl enable docker.socket;
+      systemctl daemon-reload && systemctl restart containerd;
+  register: enable_result

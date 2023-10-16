@@ -1,0 +1,109 @@
+- name: find nnae script
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*nnae.*{{ ansible_architecture }}.sh"
+  register: nnae
+
+- name: find nnae run package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*nnae.*{{ ansible_architecture }}.run"
+  register: nnae_run
+
+- name: get nnae version
+  shell: echo $(basename {{nnae_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: nnae_version
+  when: nnae_run.matched > 0
+
+- name: set log_path for root
+  set_fact:
+    log_path: /var/log/ascend_seclog/
+  when: ansible_user_uid == 0
+
+- name: set log_path for non-root
+  set_fact:
+    log_path: ~/var/log/ascend_seclog/
+  when: ansible_user_uid != 0
+
+- name: install nnae
+  shell: "echo y | bash {{ nnae.files[0].path }} {{ log_path }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnae_result
+  when:
+    - nnae.matched > 0
+  failed_when: "nnae_result.rc != 0 and 'already installed' not in nnae_result.stdout"
+
+- name: message
+  debug:
+    var: nnae_result
+  when: nnae_result.changed
+
+- name: check ascend cann install info
+  stat:
+    path: "{{ cann_info_path }}/ascend_cann_install.info"
+  register: install_info
+
+- name: set install_path enable
+  set_fact:
+    ins_path_cmd: "--install-path={{ install_path }}"
+  when: not install_info.stat.exists
+
+- name: set install_path disable
+  set_fact:
+    ins_path_cmd: ""
+  when: install_info.stat.exists or ansible_user_uid != 0
+
+- name: check nnae exists
+  shell: ls {{ ascend_install_path }}/nnae/*/ascend_nnae_install.info 2>/dev/null | wc -l
+  register: nnae_status
+
+- name: install nnae
+  shell: "echo y | bash {{ nnae_run.files[0].path }} --nox11 {{ cann_install_params }} {{ ins_path_cmd }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnae_result
+  when:
+    - nnae.matched == 0 and nnae_run.matched > 0 and nnae_status.stdout == '0'
+  failed_when: "nnae_result.rc != 0 and 'already installed' not in nnae_result.stdout"
+
+- name: message
+  debug:
+    var: nnae_result
+  when: nnae.matched == 0 and nnae_result.changed and nnae_status.stdout == '0'
+
+- name: upgrade nnae
+  shell: "echo y | bash {{ nnae_run.files[0].path }} --nox11 --upgrade"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnae_result
+  when:
+    - nnae.matched == 0 and nnae_run.matched > 0 and nnae_status.stdout != '0'
+  failed_when: "nnae_result.rc != 0 and 'already installed' not in nnae_result.stdout"
+
+- name: message
+  debug:
+    var: nnae_result
+  when: nnae.matched == 0 and nnae_result.changed and nnae_status.stdout != '0'
+
+- name: fail if this install
+  fail:
+    msg: "[ASCEND]failed to install nnae"
+  when:
+    - "'nnae' in ansible_run_tags"
+    - nnae.matched == 0
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find nnae package, nnae install skipped"
+  when: nnae_run.matched == 0

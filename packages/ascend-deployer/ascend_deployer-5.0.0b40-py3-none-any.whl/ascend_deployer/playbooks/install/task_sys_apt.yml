@@ -1,0 +1,67 @@
+- name: copy gpg public key
+  copy:
+    src: "{{inventory_dir}}/resources/nexus/nexus_pub.asc"
+    dest: /etc/apt/trusted.gpg.d/
+    force: yes
+    mode: 0644
+  when:
+    - ansible_pkg_mgr != 'apt'
+
+- name: apt install system packages
+  shell: |
+    export DEBIAN_FRONTEND=noninteractive && export DEBIAN_PRIORITY=critical
+    apt clean all
+    apt update -o Dir::Etc::sourcelist=/root/nexus/sources.list &>/dev/null
+    apt -f -y install
+    apt install -y {{sys_pkgs}} -o Dir::Etc::sourcelist=/root/nexus/sources.list
+  register: sys_result
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - ansible_pkg_mgr != 'apt'
+
+- name: message
+  debug:
+    var: sys_result
+  when: ansible_pkg_mgr != 'apt' and sys_result.changed
+
+- name: check if Docker is installed
+  shell: command -v docker | wc -l
+  register: docker_status
+  when:
+    - ansible_pkg_mgr != 'apt'
+
+- name: install Docker when Docker is not installed
+  shell: |
+    apt install -y {{docker_pkgs}} -o Dir::Etc::sourcelist=/root/nexus/sources.list
+  register: docker_result
+  environment:
+    LD_LIBRARY_PATH: ""
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: ansible_pkg_mgr != 'apt' and docker_status.stdout == "0"
+
+- name: message
+  debug: var=docker_result
+  when:
+    - ansible_pkg_mgr != 'apt'
+    - docker_result.changed
+
+- name: apt install system packages
+  shell: |
+    export DEBIAN_FRONTEND=noninteractive && export DEBIAN_PRIORITY=critical
+    dpkg --force-all -i {{ resources_dir }}/{{ os_and_arch }}/*.deb
+    dpkg --force-all -i {{ resources_dir }}/{{ os_and_arch }}/docker/*.deb
+  when:
+    - ansible_pkg_mgr == 'apt'
+  register: sys_result
+
+- name: message
+  debug:
+    var: sys_result
+  when: sys_result.changed or sys_result_linx.changed

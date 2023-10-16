@@ -1,0 +1,35 @@
+# 检查worker节点驱动情况
+- name: check if the driver is installed
+  shell: "npu-smi info 2>/dev/null || echo ''"
+  register: driver_status
+  changed_when: false
+  when:
+    - inventory_hostname in groups['worker']
+
+- name: check driver failed
+  fail:
+    msg: "please check that this node has the driver installed."
+  when:
+    - inventory_hostname in groups['worker']
+    - driver_status is defined and driver_status.stdout == ""
+
+# 检查训练的worker节点的device ip
+- name: check device type
+  shell: lspci | grep "Processing accelerators"
+  register: processing_accelerator
+  ignore_errors: yes
+  when:
+    - inventory_hostname in groups["worker"]
+    - driver_status is defined and driver_status.stdout != ""
+
+- name: get worker device IP info
+  shell:
+    cmd:
+      if [ $(ls /dev/davinci[0-9]* 2>/dev/null | wc -l) -eq 0 ]; then echo "no davinci device"; exit 0; fi;
+      for i in $(ls /dev/davinci[0-9]*); do dev_id=$(echo $i | grep -Po "[0-9]{1}");exists=$(hccn_tool -i $dev_id -ip -g 2>/dev/null | grep ipaddr | wc -l);if [ $exists -eq 0 ]; then echo "$i has no device IP"; exit 0; fi; done;
+      echo  "{{ match }}";
+  register: device_ip_info
+  when:
+    - inventory_hostname in groups["worker"]
+    - driver_status is defined and driver_status.stdout != ""
+    - "processing_accelerator is defined and 'Device d801' in processing_accelerator.stdout"

@@ -1,0 +1,110 @@
+- name: find nnrt script
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*nnrt.*{{ ansible_architecture }}.sh"
+  register: nnrt
+
+- name: find nnrt run package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*nnrt.*{{ ansible_architecture }}.run"
+  register: nnrt_run
+
+- name: get nnrt version
+  shell: echo $(basename {{nnrt_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: nnrt_version
+  when: nnrt_run.matched > 0
+
+- name: set log_path for root
+  set_fact:
+    log_path: /var/log/ascend_seclog/
+  when: ansible_user_uid == 0
+
+- name: set log_path for non-root
+  set_fact:
+    log_path: ~/var/log/ascend_seclog/
+  when: ansible_user_uid != 0
+
+- name: install nnrt
+  shell: "echo y | bash {{ nnrt.files[0].path }} {{ log_path }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnrt_result
+  when:
+    - nnrt.matched > 0
+  failed_when: "nnrt_result.rc != 0 and 'already installed' not in nnrt_result.stdout"
+
+- name: message
+  debug:
+    var: nnrt_result
+  when: nnrt_result.changed
+
+- name: check ascend cann install info
+  stat:
+    path: "{{ cann_info_path }}/ascend_cann_install.info"
+  register: install_info
+
+- name: set install_path enable
+  set_fact:
+    ins_path_cmd: "--install-path={{ install_path }}"
+  when: not install_info.stat.exists
+
+- name: set install_path disable
+  set_fact:
+    ins_path_cmd: ""
+  when: install_info.stat.exists or ansible_user_uid != 0
+
+- name: check nnrt exists
+  shell: ls {{ ascend_install_path }}/nnrt/*/*/ascend_nnrt_install.info 2>/dev/null | wc -l
+  register: nnrt_status
+
+- name: install nnrt
+  shell: "echo y | bash {{ nnrt_run.files[0].path }} --nox11 {{ cann_install_params }} {{ ins_path_cmd }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnrt_result
+  when:
+    - nnrt.matched == 0 and nnrt_run.matched > 0 and nnrt_status.stdout == '0'
+  failed_when: "nnrt_result.rc != 0 and 'already installed' not in nnrt_result.stdout"
+
+- name: message
+  debug:
+    var: nnrt_result
+  when: nnrt.matched == 0 and nnrt_result.changed and nnrt_status.stdout == '0'
+
+- name: upgrade nnrt
+  shell: "echo y | bash {{ nnrt_run.files[0].path }} --nox11 --upgrade"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnrt_result
+  when:
+   - nnrt.matched == 0 and nnrt_run.matched > 0 and nnrt_status.stdout != '0'
+  failed_when: "nnrt_result.rc != 0 and 'already installed' not in nnrt_result.stdout"
+
+- name: message
+  debug:
+    var: nnrt_result
+  when: nnrt.matched == 0 and nnrt_result.changed and nnrt_status.stdout != '0'
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find nnrt package, nnrt install skipped"
+  when: nnrt_run.matched == 0
+
+- name: fail if this install
+  fail:
+    msg: "[ASCEND]failed to install nnrt"
+  when:
+    - "'nnrt' in ansible_run_tags"
+    - nnrt_run.matched == 0
+

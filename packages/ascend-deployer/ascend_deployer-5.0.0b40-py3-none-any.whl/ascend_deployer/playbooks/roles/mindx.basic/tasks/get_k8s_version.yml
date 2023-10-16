@@ -1,0 +1,45 @@
+- name: stat k8s version file
+  stat:
+    path: "{{resource_dir}}/k8s/version.json"
+  register: version_stat
+
+- name: tips
+  debug:
+    msg: "mef has no support for k8s 1.25.3, will install k8s 1.19.16 if needed"
+  when:
+    - ( 'mef' in ansible_run_tags )
+    - version_stat.stat.exists
+
+- name: set k8s version
+  ansible.builtin.lineinfile:
+    path: "{{resource_dir}}/k8s/version.json"
+    regexp: "^  \"version\": \"1.25.3\""
+    line: "  \"version\": \"1.19.16\""
+  when:
+    - ( 'mef' in ansible_run_tags )
+    - version_stat.stat.exists
+
+- name: judge using old k8s version
+  set_fact:
+    use_old_k8s_version: true
+  when: not version_stat.stat.exists
+
+- name: get version
+  shell: cat "{{resource_dir}}/k8s/version.json"
+  register: resource_version
+  when: version_stat.stat.exists
+
+- name: set the json data to variable as fact
+  set_fact:
+    k8s_version_json: "{{ resource_version.stdout | from_json }}"
+  when: version_stat.stat.exists
+
+- name: judge using old k8s version
+  set_fact:
+    use_old_k8s_version: "{{ k8s_version_json.version == '' or k8s_version_json.version == '1.19.16' }}"
+  when: version_stat.stat.exists
+
+- name: set command
+  set_fact:
+    pull_cmd: "{{ 'docker pull' if use_old_k8s_version else 'nerdctl -n k8s.io pull --insecure-registry' }}"
+    import_cmd: "{{ 'docker load -i' if use_old_k8s_version else 'nerdctl -n k8s.io load --all-platforms -i' }}"

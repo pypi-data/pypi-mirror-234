@@ -1,0 +1,71 @@
+- name: make directory for smartkit
+  command: mkdir -p smartkit
+
+- name: make directory for tmp_file
+  command: mkdir -p {{tmp_file_path}}
+
+- name: copy script to remote hosts
+  copy:
+    src: "{{ playbook_dir }}/facts/app_info.fact.j2"
+    dest: "{{ tmp_file_path }}/app_info.fact.j2"
+    mode: 0700
+    force: yes
+
+- name: set local python interpreter
+  set_fact:
+    discovered_interpreter_python: "{{hostvars[item]['discovered_interpreter_python']}}"
+  with_items: "{{groups['all']}}"
+  run_once: true
+  when: discovered_interpreter_python is undefined
+
+- name: python3 the scripts
+  command: "{{ discovered_interpreter_python }} {{ tmp_file_path }}/app_info.fact.j2"
+  register: packages_result
+
+- name: remove the app info file
+  ansible.builtin.file:
+    path: "{{ tmp_file_path }}/app_info.fact.j2"
+    state: absent
+
+- name: get the result
+  command: cat smartkit/display.json
+  register: app_info
+
+- set_fact:
+    app_info_result: "{{ app_info.stdout|from_json }}"
+
+- set_fact:
+    packages_dict: "{{packages_dict|default({})|combine({item:{'packages':hostvars[item]['app_info_result']['result']|default('')}})}}"
+  delegate_to: localhost
+  run_once: true
+  with_items: "{{ groups['master'] +  groups['worker'] }}"
+  ignore_errors: true
+  when: hostvars[item].app_info_result is defined
+
+- name: output package file
+  copy:
+    content: "{{ packages_dict }}"
+    dest:  "{{ tmp_file_path }}/packages_dict.json"
+    mode: 0700
+    force: yes
+  delegate_to: localhost
+  run_once: true
+  when: packages_dict is defined
+
+- name: get the formatted result
+  shell: "{{ ansible_playbook_python }} {{playbook_dir}}/roles/mindx.rep/tasks/ls_format.py {{ tmp_file_path }}/packages_dict.json"
+  register: package_list
+  delegate_to: localhost
+  run_once: true
+  when: packages_dict is defined
+
+- name: show the result
+  debug:
+    msg: "[ASCEND]{{package_list.stdout|default('')}}"
+  run_once: true
+  when: only_package and packages_dict is defined
+
+- include_tasks: ./hccn_rep.yaml
+  vars:
+    - hccn_result: []
+  when: not only_package

@@ -1,0 +1,43 @@
+- name: check if k8s cluster exist
+  shell: kubectl get nodes||true
+  register: cluster_set
+
+- name: collect k8s info
+  command: "{{ ansible_playbook_python }} {{playbook_dir}}/roles/mindx.rep/tasks/k8s_rep.py {{tmp_file_path}} {{SCENE_NUM|default('1')}}"
+  when: cluster_set.stdout != ''
+
+- name: remove the former report
+  ansible.builtin.file:
+    path: "{{report_output_path}}"
+    state: absent
+
+- name: create the dir if not exist
+  command: mkdir -p {{report_output_path}}
+  
+- name: merge all json
+  command: "{{ ansible_playbook_python }} {{playbook_dir}}/roles/mindx.rep/tasks/output_json.py {{tmp_file_path}} {{report_output_path}}"
+  
+- name: remove the tmp file
+  ansible.builtin.file:
+    path: "{{ tmp_file_path }}"
+    state: absent
+
+- name: convert json to csv - read
+  shell: cat  "{{ report_output_path }}/report.json"
+  register: report_json
+  when: output_format == 'csv'
+
+- name: convert json to csv - write
+  set_fact:
+    report_json_data: "{{ report_json.stdout|from_json }}"
+  when: output_format == 'csv'
+
+- name: output to csv
+  command: "{{ ansible_playbook_python }}  {{playbook_dir}}/roles/mindx.rep/tasks/json_to_csv.py {{report_output_path}}/report.json"
+  when: output_format == 'csv'
+
+- name: print the error
+  debug:
+    msg: "[ASCEND][ERROR] install error at {{missing_host}},please check the log"
+  when: missing_host is defined
+
