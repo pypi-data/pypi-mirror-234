@@ -1,0 +1,35 @@
+{% extends "base_template/base.html" %}
+{% load dj_translation %}
+
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr class="fw-bold fs-6 text-gray-800">
+                        <th>title</th>
+                        <th>description</th>
+                        <th>created at</th>
+                        <th>updated at</th>
+
+                    </tr>
+                    </thead>
+                    <tbody>
+
+                    {% for translation in object_list %}
+                        <tr>
+                            <td>{{ translation.title | translate }}</td>
+                            <td>{{ translation.description | translate | safe}}</td>
+                            <td>{{ translation.created_at }}</td>
+                            <td>{{ translation.updated_at }}</td>
+                        </tr>
+                    {% empty %}
+                        <li>No articles yet.</li>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
