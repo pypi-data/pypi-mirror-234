@@ -1,0 +1,104 @@
+Metadata-Version: 2.1
+Name: misspy
+Version: 2023.10.3
+Summary: High-performance Misskey API framework
+Home-page: https://misspy.xyz/
+Keywords: misskey,misskey-api,misskey-bot
+Author: sonyakun
+Author-email: contact@sonyakun.xyz
+Requires-Python: >=3.8,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Provides-Extra: dev
+Provides-Extra: speedups
+Requires-Dist: attrdictionary (>=1.0.0,<2.0.0)
+Requires-Dist: httpx (>=0.25.0,<0.26.0)
+Requires-Dist: misspy-fast-core (>=1.0.0,<2.0.0) ; extra == "speedups"
+Requires-Dist: poethepoet (>=0.22.1,<0.25.0) ; extra == "dev"
+Requires-Dist: requests (>=2.31.0,<3.0.0)
+Requires-Dist: websockets (>=11.0.3,<12.0.0)
+Project-URL: Changelog, https://misspy.xyz/History/
+Project-URL: Documentation, https://docs.misspy.xyz/
+Project-URL: Repository, https://github.com/misspy-development/misspy
+Description-Content-Type: text/markdown
+
+# misspy
+![Supported Python Version](https://img.shields.io/pypi/pyversions/misspy?style=flat-square) [![PyPI version](https://badge.fury.io/py/misspy.svg?style=flat-square)](https://badge.fury.io/py/misspy) [![PyPI Downloads](https://img.shields.io/pypi/dm/misspy.svg?style=flat-square)](https://badge.fury.io/py/misspy) 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black) 
+[![Misskey-API](https://img.shields.io/badge/Misskey-555555.svg?logo=Misskey&style=flat-square)](https://misskey-hub.net)
+
+Misskey API library for Python with StreamingAPI support.
+
+# supported software
+Misskey forks not listed below are supported only in the latest version **__provided they are API compatible__**.
+* [misskey](https://github.com/misskey-dev/misskey)
+* [misskey (misskey.io)](https://github.com/misskeyIO/misskey)
+* [firefish (calckey)](https://codeberg.org/firefish/firefish) (Some APIs may not be compatible with some APIs due to missing documentation regarding firefish API specifications.)
+
+
+## supported misskey versions
+This library is developed based on the API specification for Misskey v13 or later, so v12 and earlier are not supported (but you may still be able to use this library).
+
+
+# example
+**Other examples can be found in the examples directory.**
+
+## send note
+```python
+import misspy
+
+mi = misspy.Bot(address, i=token)
+```
+
+## Output notes text to the console
+```python
+import misspy
+from misspy.ext import MiAuth
+from misspy.hook import hook
+
+bot = misspy.Bot("misskey.io", i=token)
+
+async def on_ready():
+    bot.connect("localTimeline")
+    print("running")
+
+async def on_note(message):
+    print("------------")
+    print(message.text)
+    print("------------")
+
+
+hook.add("note", on_note)
+hook.add("ready", on_ready)
+bot.run()
+```
+
+## MiAuth
+```python
+from misspy.ext import MiAuth
+
+mia = MiAuth("misskey.io")
+print(mia.generate_url("example app"))
+while True:
+    input("enter to continue...")
+    try:
+        token = mia.check()
+        break
+    except misspy.MiAuthFailed:
+        pass
+print(token)
+```
+
+
+# docs
+Documentation can be found at:
+https://docs.misspy.xyz/
+
