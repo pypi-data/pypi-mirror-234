@@ -1,0 +1,393 @@
+Metadata-Version: 2.1
+Name: stonefish
+Version: 0.3.26
+Summary: Python code protection
+Author-email: Nico Schlömer <nico.schloemer@gmail.com>
+Project-URL: Homepage, https://github.com/stonefish-dev/stonefish
+Project-URL: Issues, https://github.com/stonefish-dev/stonefish/issues
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: Other/Proprietary License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Utilities
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Requires-Dist: x21 (>=0.4.25,<0.5.0)
+Requires-Dist: libcst
+Requires-Dist: python-license-manager
+Requires-Dist: rich
+Requires-Dist: rich-argparse
+Requires-Dist: setuptools
+Requires-Dist: tomli-w
+Requires-Dist: x21 >=0.4.25
+Requires-Dist: tomli ; python_version < "3.11"
+Requires-Dist: importlib-metadata ; python_version < "3.8"
+Requires-Dist: astunparse ; python_version < "3.9"
+
+# Stonefish
+
+Industry-grade Python code protection.
+
+### Quickstart
+
+#### Protecting Python packages
+
+If you have a Python _package_ that you'd like to build with Stonefish, make
+sure it follows [PEP 517](https://peps.python.org/pep-0517/) and contains
+at least a minimal `pyproject.toml`. There, simply replace the your build system
+(e.g., `setuptools`) with `stonefish`:
+
+```toml
+[build-system]
+# requires = ["setuptools"]
+# build-backend = "setuptools.build_meta"
+requires = ["stonefish"]
+build-backend = "stonefish.build_meta"
+
+# ...
+# more project metadata if you follow PEP 621
+# <https://peps.python.org/pep-0621/>
+# (recommended)
+# ...
+```
+
+Done! Your project builds are now protected with Stonefish. Try it out with
+
+```
+pip install .
+```
+
+or
+
+```
+(pip install build)
+python -m build . --wheel
+```
+
+#### Protecting standalone Python scripts
+
+If you'd like to project just a single Python file, you
+can use the `stonefish` command-line utility, e.g.,
+
+```
+stonefish /path/to/file.py
+```
+
+#### How Stonefish protects your code
+
+Python packages ship their code to all users, and there are different ways for
+every user to retrieve it. Unless built with _Stonefish_. Some examples:
+
+###### Just opening the source files
+
+After installation, users will find the package code in, e.g.,
+`~/.local/lib/python3.11/site-packages/numpy`. (The path is different for
+different operation systems.)
+
+When building with _Stonefish_, though, a source code like
+
+```
+├── pyproject.toml
+└── stonefish_example
+    └── __init__.py
+```
+
+is installed as
+
+```
+├── _agg
+│   ├── __init__.dat
+│   ├── __init__.py
+│   └── __pycache__
+│       └── __init__.cpython-311.pyc
+├── __init__.py
+└── __pycache__
+    └── __init__.cpython-311.pyc
+```
+
+where all program logic is encrypted in the binary `__init__.dat`. The actual
+source code remains protected.
+
+###### [inspect — Inspect live objects](https://docs.python.org/3/library/inspect.html)
+
+```python
+import stonefish_example
+import inspect
+
+print(inspect.getsource(stonefish_example.solve))
+```
+
+<table>
+<tr>
+<td> Without Stonefish </td> <td> With Stonefish </td>
+</tr>
+<tr>
+<td>
+
+```
+def solve():
+    magic = 42
+    return 2 * magic - 1
+```
+
+</td>
+<td>
+
+```
+[...]
+OSError: could not get source code
+```
+
+</td>
+</tr>
+</table>
+
+###### [Dill](https://pypi.org/project/dill/)
+
+```ipython
+import stonefish_example
+from dill.source import getsource
+
+print(getsource(stonefish_example.solve))
+```
+
+<table>
+<tr>
+<td> Without Stonefish </td> <td> With Stonefish </td>
+</tr>
+<tr>
+<td>
+
+```
+def solve():
+    magic = 42
+    return 2 * magic - 1
+```
+
+</td>
+<td>
+
+```
+[...]
+IndexError: list index out of range
+```
+
+</td>
+</tr>
+</table>
+
+###### [IPython's `??`](https://ipython.org/)
+
+```ipython
+In [1]: import stonefish_example
+
+In [2]: stonefish_example.solve??
+```
+
+<table>
+<tr>
+<td> Without Stonefish </td> <td> With Stonefish </td>
+</tr>
+<tr>
+<td>
+
+```
+Signature: stonefish_example.solve()
+Docstring: <no docstring>
+Source:
+def solve():
+    magic = 42
+    return 2 * magic - 1
+File:      ~/path/to/file.py
+Type:      function
+```
+
+</td>
+<td>
+
+```
+Signature: stonefish_example.solve(*args, **kwargs)
+Docstring: <no docstring>
+File:      Dynamically generated function.
+           No source code available.
+Type:      function
+```
+
+</td>
+</tr>
+</table>
+
+###### [dis — Disassembler for Python bytecode](https://docs.python.org/3/library/dis.html)
+
+```python
+import stonefish_example
+import dis
+
+dis.dis(stonefish_example.solve)
+```
+
+<table>
+<tr>
+<td> Without Stonefish </td> <td> With Stonefish </td>
+</tr>
+<tr>
+<td>
+
+```
+1        0 RESUME                0
+
+2        2 LOAD_CONST            1 (42)
+         4 STORE_FAST            0 (magic)
+
+3        6 LOAD_CONST            2 (2)
+         8 LOAD_FAST             0 (magic)
+        10 BINARY_OP             5 (*)
+        14 LOAD_CONST            3 (1)
+        16 BINARY_OP            10 (-)
+        20 RETURN_VALUE
+```
+
+</td>
+<td>
+
+```
+         0 COPY_FREE_VARS        1
+
+3        2 RESUME                0
+         4 PUSH_NULL
+         6 LOAD_DEREF            2 (f)
+         8 LOAD_FAST             0 (args)
+        10 BUILD_MAP             0
+        12 LOAD_FAST             1 (kwargs)
+        14 DICT_MERGE            1
+        16 CALL_FUNCTION_EX      1
+        18 RETURN_VALUE
+```
+
+</td>
+</tr>
+</table>
+
+###### [xdis](https://github.com/rocky/python-xdis)
+
+```python
+import stonefish_example
+import xdis.std as dis
+
+dis.dis(stonefish_example.solve)
+```
+
+<table>
+<tr>
+<td> Without Stonefish </td> <td> With Stonefish </td>
+</tr>
+<tr>
+<td>
+
+```
+2:     0 LOAD_CONST           (42)
+       2 STORE_FAST           (magic)
+
+3:     4 LOAD_CONST           (2)
+       6 LOAD_FAST            (magic)
+       8 BINARY_MULTIPLY
+      10 LOAD_CONST           (1)
+      12 BINARY_SUBTRACT
+      14 RETURN_VALUE
+```
+
+</td>
+<td>
+
+```
+3:     0 LOAD_DEREF           (f)
+       2 LOAD_FAST            (args)
+       4 BUILD_MAP            0
+       6 LOAD_FAST            (kwargs)
+       8 DICT_MERGE           1
+      10 CALL_FUNCTION_EX     (keyword and positional arguments)
+      12 RETURN_VALUE
+```
+
+</td>
+</tr>
+</table>
+
+###### [decompyle3](https://github.com/rocky/python-decompile3), [uncompyle6](https://github.com/rocky/python-uncompyle6/) etc.
+
+Those tools are meant to recreated Python code from `.pyc` files.
+Since _Stonefish_ moves the actual code into an encrypted
+
+```
+decompyle3  ~/path/to/__init__.cpython-38.pyc
+```
+
+<table>
+<tr>
+<td> Without Stonefish </td> <td> With Stonefish </td>
+</tr>
+<tr>
+<td>
+
+```
+def solve():
+    magic = 42
+    return 2 * magic - 1
+```
+
+</td>
+<td>
+
+```
+from ._agg import _Qcbq7 as solve
+```
+
+</td>
+</tr>
+</table>
+
+### Limitations
+
+- Stonefish renames class/function names, so you cannot rely on the
+  `__name__` attribute in your code.
+
+- Users must add `*.dat` files to their package data, e.g.,
+
+  ```toml
+  [tool.setuptools.package-data]
+  "*" = ["*.dat"]
+  ```
+
+  in `pyproject.toml`. This is because the encrypted code must be shipped with
+  the package.
+
+- Local imports must be relative, i.e., `from . import x` instead of `import x`
+  if `x/`/`x.py` is an internal folder or directory. This is recommended
+  anyway.
+
+- Stonefish will put all data files in a flat directory structure. That's why it
+  cannot yet handle files that are read from two different Python paths, e.g.,
+
+  ```
+  ./data.dat
+
+  ./a.py
+      Path(__file__).parent / "data.dat"
+
+  ./b/b.py
+      Path(__file__).parent / .. / "data.dat"
+  ```
+
+- Stonefish discards private (underscored) names from the API. If you want your
+  users to use these variables or functions, you'll have to rename them.
+
+- Stonefish cannot yet handle relative `*` imports, e.g.,
+  ```python
+  from .utils import *
+  ```
