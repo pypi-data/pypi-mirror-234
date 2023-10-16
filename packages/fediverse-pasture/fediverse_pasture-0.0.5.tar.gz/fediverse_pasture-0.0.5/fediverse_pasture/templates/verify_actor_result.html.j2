@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Actor Verification Result</title>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+
+<body>
+    <main>
+        <h1>Actor Verification Result</h1>
+        <form action="/" method="POST">
+            <label for="actor_uri">Actor URI to verify</label>
+            <input type="text" name="actor_uri" id="actor_uri" value="{{actor_uri}}" />
+            <input type="submit" value="Verify" />
+        </form>
+
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>GET Actor</th>
+                <th>POST Inbox</th>
+            </tr>
+
+            {% for actor, value in result.items() %}
+            {% if value["warning"] %}<tr class="warning"> {% else %}
+            <tr>{% endif %}
+                <td>{{actor}}</td>
+                <td>{% if value["get_actor"] %} X {% endif %}</td>
+                <td>{% if value["post_inbox"] %} X {% endif %}</td>
+            </tr>
+            {% endfor %}
+
+        </table>
+
+        {% if has_warnings %}
+
+        <h2>Warnings</h2>
+        <ul>
+            {% for warning in warnings %}
+            <li>{{warning}}</li>
+            {% endfor %}
+        </ul>
+
+        {% endif %}
+
+        <h2>Processing log</h2>
+
+        <pre>{{messages}}</pre>
+    </main>
+</body>
+
+</html>
