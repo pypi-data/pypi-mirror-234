@@ -1,0 +1,129 @@
+Metadata-Version: 2.1
+Name: reduct-py
+Version: 1.7.1
+Summary: ReductStore Client SDK for Python
+Author: Ciaran Moyne
+Author-email: Alexey Timin <atimin@gmail.com>
+Maintainer-email: Alexey Timin <atimin@gmail.com>
+License: MIT License
+        
+        Copyright (c) 2022 Alexey Timin
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: ReductStore, https://www.reduct.store
+Project-URL: Documentation, https://py.reduct.store/
+Project-URL: Source, https://github.com/reductstore/reduct-py
+Project-URL: Changelog, https://github.com/reductstore/reduct-py/blob/main/CHANGELOG.md
+Project-URL: Twitter, https://twitter.com/ReductStore
+Project-URL: Blog, https://dev.to/reductstore
+Keywords: sdk,reductstore,api client,database,time series database
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Framework :: aiohttp
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Database :: Front-Ends
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohttp ~=3.8
+Requires-Dist: pydantic ~=2.4
+Requires-Dist: deprecation ~=2.1
+Provides-Extra: docs
+Requires-Dist: mkdocs ~=1.5 ; extra == 'docs'
+Requires-Dist: mkdocs-material ~=9.4 ; extra == 'docs'
+Requires-Dist: plantuml-markdown ~=3.9 ; extra == 'docs'
+Requires-Dist: mkdocs-same-dir ~=0.1 ; extra == 'docs'
+Requires-Dist: mkdocstrings[python] ~=0.23 ; extra == 'docs'
+Provides-Extra: format
+Requires-Dist: black ~=23.9 ; extra == 'format'
+Provides-Extra: lint
+Requires-Dist: pylint ~=2.17 ; extra == 'lint'
+Provides-Extra: test
+Requires-Dist: pytest ~=7.4 ; extra == 'test'
+Requires-Dist: pytest-mock ~=3.11 ; extra == 'test'
+Requires-Dist: pytest-asyncio ~=0.21 ; extra == 'test'
+Requires-Dist: requests ~=2.31 ; extra == 'test'
+
+# ReductStore Client SDK for Python
+
+[![PyPI](https://img.shields.io/pypi/v/reduct-py)](https://pypi.org/project/reduct-py/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/reduct-py)](https://pypi.org/project/reduct-py/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/reductstore/reduct-py/ci.yml?branch=main)](https://github.com/reductstore/reduct-py/actions)
+
+This package provides an asynchronous HTTP client for interacting with the [ReductStore](https://www.reduct.store) service.
+
+## Features
+
+* Supports the [ReductStore HTTP API v1.7](https://docs.reduct.store/http-api)
+* Bucket management
+* API Token management
+* Write, read and query data
+* Labels
+* Batching records for read and write operations
+* Subscription on new data
+
+## Install
+
+To install this package, run the following command:
+
+```
+pip install reduct-py
+```
+
+## Example
+
+Here is an example of how to use this package to create a bucket, write data to it, and read data from it:
+
+```python
+import time
+import asyncio
+from reduct import Client, Bucket
+
+async def main():
+    # Create a client for interacting with a ReductStore service
+    client = Client("http://localhost:8383")
+
+    # Create a bucket and store a reference to it in the `bucket` variable
+    bucket: Bucket = await client.create_bucket("my-bucket", exist_ok=True)
+
+    # Write data to the bucket
+    ts = time.time_ns() / 1000
+    await bucket.write("entry-1", b"Hey!!", ts)
+
+    # Read data from the bucket
+    async with bucket.read("entry-1", ts) as record:
+        data = await record.read_all()
+        print(data)
+
+# Run the main function
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+```
+
+For more examples, see the [Quick Start](https://py.reduct.store/en/latest/docs/quick-start/).
+
+## References
+
+* [Documentation](https://py.reduct.store/)
+* [ReductStore HTTP API](https://docs.reduct.store/http-api)
