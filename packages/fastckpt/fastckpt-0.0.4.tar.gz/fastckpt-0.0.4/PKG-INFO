@@ -1,0 +1,86 @@
+Metadata-Version: 2.1
+Name: fastckpt
+Version: 0.0.4
+Summary: A fast gradient checkpointing strategy for training with memory-efficient attention (e.g., FlashAttention).
+Project-URL: Homepage, https://github.com/RulinShao/fast-ckpt
+Project-URL: Bug Tracker, https://github.com/RulinShao/fast-ckpt/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohttp
+Requires-Dist: fastapi
+Requires-Dist: httpx
+Requires-Dist: markdown2[all]
+Requires-Dist: nh3
+Requires-Dist: numpy
+Requires-Dist: prompt_toolkit>=3.0.0
+Requires-Dist: pydantic<2,>=1
+Requires-Dist: requests
+Requires-Dist: rich>=10.0.0
+Requires-Dist: shortuuid
+Requires-Dist: tiktoken
+Requires-Dist: uvicorn
+Provides-Extra: model-worker
+Requires-Dist: accelerate>=0.21; extra == "model-worker"
+Requires-Dist: peft; extra == "model-worker"
+Requires-Dist: sentencepiece; extra == "model-worker"
+Requires-Dist: torch; extra == "model-worker"
+Requires-Dist: transformers>=4.31.0; extra == "model-worker"
+Requires-Dist: protobuf; extra == "model-worker"
+Provides-Extra: webui
+Requires-Dist: gradio; extra == "webui"
+Provides-Extra: train
+Requires-Dist: einops; extra == "train"
+Requires-Dist: flash-attn>=2.0; extra == "train"
+Requires-Dist: wandb; extra == "train"
+Provides-Extra: llm-judge
+Requires-Dist: openai; extra == "llm-judge"
+Requires-Dist: anthropic>=0.3; extra == "llm-judge"
+Requires-Dist: ray; extra == "llm-judge"
+Provides-Extra: dev
+Requires-Dist: black==23.3.0; extra == "dev"
+Requires-Dist: pylint==2.8.2; extra == "dev"
+
+# FastCkpt: accelerate your LLM training in one line!
+
+Fast gradient checkpoint is designed for accelerate the training with memory-efficient attention like FlashAttention and LightSeq. FastCkpt has monkey patch for both rematerialization-aware checkpointing and FlashAttention, so you can patch both in only one line!
+
+Paper: https://arxiv.org/pdf/2310.03294.pdf
+
+## News
+- [2023/10] FastCkpt now supports LlamaModel in Huggingface!
+
+## Install
+```bash
+pip install fastckpt
+```
+
+## Usage
+FastCkpt now supports HF training pipeline. 
+
+### Use FaskCkpt and FlashAttention
+To use `fasckpt` with `flash_attn`, import and run `replace_hf_ckpt_with_fast_ckpt` *before* importing `transformers`
+```python
+# add monkey patch for fastckpt
+from fastckpt.llama_flash_attn_ckpt_monkey_patch import replace_hf_ckpt_with_fast_ckpt
+replace_llama_attn_with_flash_attn()
+
+# import transformers and other packages
+import transformers
+...
+```
+
+### Use FlashAttention only
+To only replace the `LlamaAttention` with `flash_attn` without chaning the checkpointing strategy, import and run `replace_llama_attn_with_flash_attn`
+
+```python
+# add monkey patch for fastckpt
+from fastckpt.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
+replace_llama_attn_with_flash_attn()
+
+# import transformers and other packages
+import transformers
+...
+```
