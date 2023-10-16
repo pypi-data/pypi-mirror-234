@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>多用户聊天无昵称</title>
+</head>
+<body>
+<p></p>
+<div id="chat_room">
+    <p>服务器ip及端口：<input type="text" id="addr" value="ws://127.0.0.1:5000/"></p>
+    <button onclick="login()">登录</button>
+    <p>请输入聊天内容：<input type="text" id="msg">
+        <button id="send" onclick="send()">发送</button>
+    </p>
+    <div id="chat_content"></div>
+</div>
+</body>
+<script type="application/javascript">
+    function login() {
+        let addr = document.getElementById('addr').value;
+        ws = new WebSocket(addr + 'websocket');
+        ws.onmessage = function (MessageEvent) {
+            let time = new Date();
+            let t = time.toLocaleString();
+            let p = document.createElement("p");
+            p.innerText = "(" + t + ")" + MessageEvent.data;
+            document.getElementById('chat_content').appendChild(p);
+        };
+    }
+
+    function send() {
+        let msg = document.getElementById('msg').value;
+        ws.send(msg);
+    }
+</script>
+</html>

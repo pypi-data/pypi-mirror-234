@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>Awesome-pyecharts</title>
+    <script type="text/javascript" src="./echarts.min.js"></script>
+</head>
+<body>
+<div id="chartCanvas" style="width:1000px; height:600px;background: #eeeeee"></div>
+<div>
+    <input type="text" id="txt"/>
+    <input type="button" id="connect" value="连接" onclick="openConn()"/>
+    <input type="button" id="btn" value="提交" disabled="disabled" onclick="sendMsg(null);"/>
+    <input type="button" id="close" value="关闭连接" disabled="disabled" onclick="closeConn();"/>
+</div>
+<div id="content"></div>
+<div id="state"></div>
+<script>
+    chart = echarts.init(document.getElementById('chartCanvas'), 'white', {renderer: 'canvas'}); // 此处设置会被pyecharts覆盖
+    let url = "ws://127.0.0.1:{{port}}/"  // 长连接端口，长连接实现在YkEchartsTools.js中
+
+    // 给data变量添加监听数值变化监听，当数值改变时，更新echarts图表中的数据
+    Object.defineProperty(window, 'data', {  // 定义data对象，必须位于echarts_define.js之前
+        get: function () {
+            return this._data;  // YkData的data属性的值
+        },
+        set: function (newValue) {
+            this._data = newValue;  // 将YkData的data属性设置为newValue
+            window.option = generate_option(); // option在echarts_define.js中定义
+            chart.setOption(window.option);
+        }
+    })
+</script>
+<script src="./echarts_define.js">
+    // echarts_define.js可以从echarts官网复制js文件内容，只要复制的js文件中有option变量，则YkEchartsTools.js会自动渲染
+    // echarts为该option设置。
+    // 如果需要动态更新echarts数据，则需要option中的数据从名为data的变量中引用，然后使用qt.YkWindow中的echarts_update_data等方法
+    // 更新或设置数据。
+    // echarts_define.js中，需要将option提取为generate_option方法的定义，例如：
+    // option = generate_option()
+    // function generate_option(){
+    // return {
+    // 这里写echarts中option的定义代码
+    // }
+    // }
+    // 这是因为，当全局的data变量数据改变时，浏览器端会自动调用generate_option()方法刷新option的值，并将刷新后的结果设置到echarts上。</script>
+
+<script src="./YkEchartsTools.js"></script>
+<script type="text/javascript">
+    function setChartSize() {
+        // 使echarts图表可以自适应浏览器窗口，官方https://echarts.apache.org/handbook/zh/concepts/chart-size给的代码不能随窗口
+        // 缩放，而只有div被改变时才改变图表大小
+        // 获取窗口的宽度和高度，不包括滚动条
+        let w = document.documentElement.clientWidth;
+        let h = document.documentElement.clientHeight;
+        let div = document.getElementById("chartCanvas");
+
+        // chart尺寸设置为浏览器窗口大小的95%
+        h = Math.floor(h * 0.97);
+        w = Math.floor(w * 0.99);
+        div.style.height = `${h}px`;
+        div.style.width = `${w}px`;
+        setTimeout(function () {
+            window.onresize = function () {
+                chart.resize();  // 可以给resize()方法传参使chart大小与div大小不同
+            }
+        }, 200)
+    }
+
+
+    window.addEventListener("resize", setChartSize)
+</script>
+</body>
+</html>
