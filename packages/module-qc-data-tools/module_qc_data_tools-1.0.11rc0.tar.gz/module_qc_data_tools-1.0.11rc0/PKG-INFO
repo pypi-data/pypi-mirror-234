@@ -1,0 +1,117 @@
+Metadata-Version: 2.1
+Name: module_qc_data_tools
+Version: 1.0.11rc0
+Summary: Module qc data tools
+Project-URL: Homepage, https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools
+Project-URL: Bug Tracker, https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools/-/issues
+Project-URL: Source, https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools
+Author-email: Jay Chan <jay.chan@cern.ch>
+Maintainer-email: Giordon Stark <gstark@cern.ch>
+License: Copyright (c) 2018 The Python Packaging Authority
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+License-File: LICENSE
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.6
+Requires-Dist: jsonschema
+Requires-Dist: numpy
+Requires-Dist: tabulate
+Description-Content-Type: text/markdown
+
+# module QC data tools v1.0.11rc0
+
+This project contains the modules needed to write/read the data files used in
+the module QC flow. This project is to be added as a submodule in other
+projects.
+
+## Installation
+
+Note that please use the latest python version. Python3.7 is the minimum
+requirement for developers.
+
+### via clone
+
+First clone the project:
+
+```
+git clone https://gitlab.cern.ch/atlas-itk/pixel/module/module-qc-data-tools.git
+```
+
+Upon a successful checkout, `cd` to the new `module-qc-data-tools` directory and
+run the following to install the necessary software:
+
+```verbatim
+$ python -m venv venv
+$ source venv/bin/activate
+$ python -m pip install --upgrade pip
+$ python -m pip install -e .
+```
+
+### via pip
+
+```
+python -m venv venv
+source venv/bin/activate
+python -m pip install -U pip module-qc-data-tools==1.0.11rc0
+```
+
+## Developer
+
+### versioning
+
+In case you need to tag the version of the code, you need to have either `hatch`
+or `pipx` installed.
+
+1. Activate python environment, e.g. `source venv/bin/activate`.
+2. Run `python -m pip install hatch` or `python -m pip install pipx`.
+
+You can bump the version via:
+
+```
+pipx run hatch run tag x.y.z
+# or
+hatch run tag x.y.z
+```
+
+where `x.y.z` is the new version to use. This should be run from the default
+branch (`main` / `master`) as this will create a commit and tag, and push for
+you. So make sure you have the ability to push directly to the default branch.
+
+Release candidates can be bumped as e.g.:
+
+```
+hatch run tag x.y.zrc0
+```
+
+### pre-commit
+
+Install pre-commit to avoid CI failure. Once pre-commit is installed, a git hook
+script will be run to identify simple issues before submission to code review.
+
+Instruction for installing pre-commit in a python environment:
+
+1. Activate python environment, e.g. `source venv/bin/activate`.
+2. Run `python -m pip install pre-commit`.
+3. Run `pre-commit install` to install the hooks in `.pre-commit-config.yaml`.
+
+After installing pre-commit, `.pre-commit-config.yaml` will be run every time
+`git commit` is done. Redo `git add` and `git commit`, if the pre-commit script
+changes any files.
