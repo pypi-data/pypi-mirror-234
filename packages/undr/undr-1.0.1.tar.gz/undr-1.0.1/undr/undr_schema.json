@@ -1,0 +1,44 @@
+{
+    "$schema": "https://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/neuromorphicsystems/undr/main/undr/undr_schema.json",
+    "title": "undr configuration",
+    "description": "A configuration file for the UNDR package",
+    "type": "object",
+    "properties": {
+        "directory": {
+            "description": "Path of the download directory, relative to the parent of the configuration file",
+            "type": "string"
+        },
+        "datasets": {
+            "description": "List of remote dataset servers",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "The dataset name, used as directory name",
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_\\-.]+$"
+                    },
+                    "url": {
+                        "description": "The remote server URL",
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "mode": {
+                        "description": "The download strategy",
+                        "type": "string",
+                        "enum": ["disabled", "remote", "local", "raw"]
+                    },
+                    "timeout": {
+                        "description": "Socket timeout for server requests",
+                        "type": "number",
+                        "minimum": 0.0
+                    }
+                },
+                "required": ["name", "url", "mode"]
+            }
+        }
+    },
+    "required": ["directory", "datasets"]
+}
