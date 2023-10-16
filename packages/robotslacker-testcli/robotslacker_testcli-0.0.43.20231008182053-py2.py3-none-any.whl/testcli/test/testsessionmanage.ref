@@ -1,0 +1,96 @@
+SQL> _start testsessionmanage.sql
+SQL> _connect /mem
+Database connected.
+SQL> _session show;
+Saved sessions:
++--------+---------+---------------+-----------+----------+--------------+
+|   ##   | Session | Sesssion Name | User Name | Password |     URL      |
++--------+---------+---------------+-----------+----------+--------------+
+|      1 | Current | None          | sa        | ******   | jdbc:h2:mem: |
++--------+---------+---------------+-----------+----------+--------------+
+Total 1 saved sesssions.
+SQL>
+SQL> create table aaa (id int);
+0 row affected.
+SQL> insert into aaa values(10);
+1 row affected.
+SQL> select * from aaa;
++--------+----+
+|   ##   | ID |
++--------+----+
+|      1 | 10 |
++--------+----+
+1 row selected.
+SQL>
+SQL> _session save session1;
+Session saved successful.
+SQL>
+SQL> _connect /mem
+Database connected.
+SQL> create table aaa (id int);
+0 row affected.
+SQL> insert into aaa values(20);
+1 row affected.
+SQL> select * from aaa;
++--------+----+
+|   ##   | ID |
++--------+----+
+|      1 | 20 |
++--------+----+
+1 row selected.
+SQL>
+SQL> _session save session2;
+Session saved successful.
+SQL>
+SQL> _session show;
+Saved sessions:
++--------+------------+---------------+-----------+----------+--------------+
+|   ##   |  Session   | Sesssion Name | User Name | Password |     URL      |
++--------+------------+---------------+-----------+----------+--------------+
+|      1 | Connection | session1      | sa        | ******   | jdbc:h2:mem: |
+|      2 | Connection | session2      | sa        | ******   | jdbc:h2:mem: |
+|      3 | Current    | session2      | sa        | ******   | jdbc:h2:mem: |
++--------+------------+---------------+-----------+----------+--------------+
+Total 3 saved sesssions.
+SQL>
+SQL> _session restore session1;
+Session restored successful.
+SQL> select * from aaa;
++--------+----+
+|   ##   | ID |
++--------+----+
+|      1 | 10 |
++--------+----+
+1 row selected.
+SQL> _session restore session2;
+Session restored successful.
+SQL> select * from aaa;
++--------+----+
+|   ##   | ID |
++--------+----+
+|      1 | 20 |
++--------+----+
+1 row selected.
+SQL>
+SQL> _session release session1;
+Session release successful.
+SQL> _session release session2;
+Session release successful.
+SQL>
+SQL> _session show;
+Saved sessions:
++--------+---------+---------------+-----------+----------+--------------+
+|   ##   | Session | Sesssion Name | User Name | Password |     URL      |
++--------+---------+---------------+-----------+----------+--------------+
+|      1 | Current | None          | sa        | ******   | jdbc:h2:mem: |
++--------+---------+---------------+-----------+----------+--------------+
+Total 1 saved sesssions.
+SQL> select * from aaa;
++--------+----+
+|   ##   | ID |
++--------+----+
+|      1 | 20 |
++--------+----+
+1 row selected.
+SQL> _exit
+Disconnected.

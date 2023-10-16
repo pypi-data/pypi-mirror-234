@@ -1,0 +1,41 @@
+SQL> _start testsqlsanity.sql
+SQL> _connect /mem
+Database connected.
+SQL> create table aaa (id int);
+0 row affected.
+SQL> insert into aaa values(10);
+1 row affected.
+SQL> insert into aaa values(6);
+1 row affected.
+SQL> -- [Hint] Order
+SQL> select * from aaa;
++--------+----+
+|   ##   | ID |
++--------+----+
+|      1 |  6 |
+|      2 | 10 |
++--------+----+
+2 rows selected.
+SQL> drop table xxx;
+Table "XXX" not found; SQL statement:
+drop table xxx [42102-200]
+SQL> delete from aaa where id =6;
+1 row affected.
+SQL>
+SQL> select 1 from dual;
++--------+---+
+|   ##   | 1 |
++--------+---+
+|      1 | 1 |
++--------+---+
+1 row selected.
+SQL>
+SQL> -- 正确的Assert语句
+SQL> _Assert {% 3==3 %};
+Assert successful.
+SQL> -- 错误的Assert语句
+SQL> _Assert {% 1==2 %};
+Assert fail.
+SQL>
+SQL> _exit 3
+Disconnected with [3].
