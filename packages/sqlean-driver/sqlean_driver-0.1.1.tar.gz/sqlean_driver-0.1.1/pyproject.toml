@@ -1,0 +1,269 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [
+  "hatch-vcs",
+  "hatchling",
+]
+
+[project]
+name = "sqlean-driver"
+description = "SQLAlchemy dialect for the sqlean.py SQLite wrapper"
+readme = "README.md"
+keywords = [
+]
+license = "MIT"
+maintainers = [{ name = "Edgar Ramírez Mondragón", email = "edgarrm358@gmail.com" }]
+authors = [{ name = "Edgar Ramírez Mondragón", email = "edgarrm358@gmail.com" }]
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: SQL",
+  "Topic :: Database",
+  "Topic :: Software Development",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+]
+dynamic = [
+  "version",
+]
+dependencies = [
+  "sqlalchemy>=1.4",
+  "sqlean-py>=0.21.5.1",
+]
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+[project.urls]
+Changelog = "https://github.com/edgarrmondragon/sqlean-driver/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/edgarrmondragon/sqlean-driver#readme"
+Issues = "https://github.com/edgarrmondragon/sqlean-driver/issues"
+Source = "https://github.com/edgarrmondragon/sqlean-driver"
+[project.entry-points."sqlalchemy.dialects"]
+"sqlite.sqlean" = "sqlean_driver:SQLeanDialect"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.envs.test]
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+  "pytest-github-actions-annotate-failures",
+  "sqlalchemy=={matrix:sqlalchemy:2}.*",
+]
+matrix-name-format = "{variable}_{value}"
+[tool.hatch.envs.test.env-vars]
+SQLALCHEMY_WARN_20 = "1"
+[tool.hatch.envs.test.overrides]
+env.GITHUB_ACTIONS.dev-mode = { value = false, if = ["true"] }
+
+[[tool.hatch.envs.test.overrides.matrix.sqlalchemy.env-vars]]
+key = "PIP_ONLY_BINARY"
+value = ":all:"
+if = ["2"]
+platform = ["macos"]
+
+[tool.hatch.envs.test.scripts]
+run = "pytest {args:tests}"
+cov = "coverage run -m pytest {args:tests}"
+
+[[tool.hatch.envs.test.matrix]]
+sqlalchemy = ["1", "2"]
+python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.coverage]
+dependencies = [
+  "coverage[toml]>=6.5",
+]
+[tool.hatch.envs.coverage.scripts]
+json = "coverage json"
+xml = "coverage xml"
+report = ["coverage combine --debug=pathmap", "coverage report --show-missing"]
+
+[tool.hatch.envs.typing]
+dependencies = ["mypy>=1.0.0", "pytest"]
+[tool.hatch.envs.typing.scripts]
+check = "mypy --strict --install-types --non-interactive {args:src/sqlean_driver tests}"
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = ["black>=23.1.0", "mypy>=1.0.0", "ruff>=0.0.243"]
+[tool.hatch.envs.lint.scripts]
+style = ["ruff check {args:.}", "black --check --diff {args:.}"]
+style-gh = ["ruff check {args:.} --format github", "black --check --diff {args:.}"]
+fmt = ["black {args:.}", "ruff --fix {args:.}", "style"]
+
+[tool.black]
+target-version = ["py38"]
+line-length = 100
+skip-string-normalization = true
+
+[tool.ruff]
+ignore = [
+  "ANN101",  # missing-type-self
+  "ANN102",  # missing-type-cls
+]
+line-length = 100
+preview = true
+select = [
+  "F",       # Pyflakes
+  "E",       # pycodestyle (error)
+  "E111",    # indentation-with-invalid-multiple
+  "E112",    # no-indented-bloc
+  "E113",    # unexpected-indentation
+  "E114",    # indentation-with-invalid-multiple-comment
+  "E115",    # no-indented-block-comment
+  "E116",    # unexpected-indentation-comment
+  "E117",    # over-indented
+  "E201",    # whitespace-after-open-bracket
+  "E202",    # whitespace-before-close-bracket
+  "E203",    # whitespace-before-punctuation
+  "E211",    # whitespace-before-parameters
+  "E221",    # multiple-spaces-before-operator
+  "E222",    # multiple-spaces-after-operator
+  "E223",    # tab-before-operator
+  "E224",    # tab-after-operator
+  "E225",    # missing-whitespace-around-operator
+  "E226",    # missing-whitespace-around-arithmetic-operator
+  "E227",    # missing-whitespace-around-bitwise-or-shift-operator
+  "E228",    # missing-whitespace-around-modulo-operator
+  "E231",    # missing-whitespace
+  "E241",    # multiple-spaces-after-comma
+  "E242",    # tab-after-comma
+  "E251",    # unexpected-spaces-around-keyword-parameter-equals
+  "E252",    # missing-whitespace-around-parameter-equals
+  "E261",    # too-few-spaces-before-inline-comment
+  "E262",    # no-space-after-inline-comment
+  "E265",    # no-space-after-block-comment
+  "E266",    # multiple-leading-hashes-for-block-comment
+  "E271",    # multiple-spaces-after-keyword
+  "E272",    # multiple-spaces-before-keyword
+  "E273",    # tab-after-keyword
+  "E274",    # tab-before-keyword
+  "E275",    # missing-whitespace-after-keyword
+  "W",       # pycodestyle (warning)
+  "C90",     # mccabe
+  "I",       # isort
+  "N",       # pep8-naming
+  "D",       # pydocstyle
+  "UP",      # pyupgrade
+  "YTT",     # flake8-2020
+  "ANN",     # flake8-annotations
+  "S",       # bandit
+  "BLE",     # flake8-blind-except
+  "FBT",     # flake8-boolean-trap
+  "B",       # flake8-bugbear
+  "A",       # flake8-builtins
+  "COM",     # flake8-commas
+  "C4",      # flake8-comprehensions
+  "DTZ",     # flake8-datetimez
+  "T10",     # flake8-debugger
+  "EM",      # flake8-errmsg
+  "FA",      # flake8-future-annotations
+  "ISC",     # flake8-implicit-str-concat
+  "ICN",     # flake8-import-conventions
+  "G",       # flake8-logging-format
+  "INP",     # flake8-no-pep420
+  "PIE",     # flake8-pie
+  "T20",     # flake8-print
+  "PT",      # flake8-pytest-style
+  "Q",       # flake8-quotes
+  "RSE",     # flake8-raise
+  "RET",     # flake8-return
+  "SLF",     # flake8-self
+  "SLOT",    # flake8-slots
+  "SIM",     # flake8-simplify
+  "TID",     # flake8-tidy-imports
+  "TCH",     # flake8-type-checking
+  "ARG",     # flake8-unused-arguments
+  "PTH",     # flake8-use-pathlib
+  "TD",      # flake8-todos
+  "FIX",     # flake8-fixme
+  "ERA",     # flake8-eradicate
+  "PD",      # pandas-vet
+  "PGH",     # pygrep-hooks
+  "PLC",     # pylint
+  "PLC1901", # compare-to-empty-string
+  "PLE",     # pylint
+  "PLR",     # pylint
+  "PLR6301", # no-self-use
+  "PLW",     # pylint
+  "PLW1641", # eq-without-hash
+  "PLW3201", # bad-dunder-method-name
+  "TRY",     # tryceratops
+  "FLY",     # flynt
+  "PERF",    # perflint
+  "FURB113", # repeated-append
+  "FURB131", # delete-full-slice
+  "FURB132", # check-and-remove-from-set
+  "RUF",     # Ruff-specific rules
+]
+target-version = "py38"
+
+[tool.ruff.isort]
+known-first-party = ["sqlean_driver"]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.flake8-import-conventions]
+banned-from = ["typing"]
+
+[tool.ruff.flake8-import-conventions.extend-aliases]
+typing = "t"
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252", "ANN201"]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+addopts = ["-vv", "-W error"]
+
+[tool.coverage.paths]
+package = [
+  "src/sqlean_driver/",
+  "*/site-packages/sqlean_driver/",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["sqlean_driver", "tests"]
+parallel = true
+relative_files = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov", "if __name__ == .__main__.:",
+  "if t.TYPE_CHECKING:",
+]
+
+[tool.mypy]
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = [
+  "sqlean.*",
+]
