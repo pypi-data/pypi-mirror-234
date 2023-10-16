@@ -1,0 +1,24 @@
+# Query responses
+EXPECTED_CREATE_OR_UPDATE_AGENT_RESPONSE_FIELD = "createOrUpdateAgent"
+EXPECTED_DELETE_AGENT_RESPONSE_FIELD = "deleteAgent"
+
+# Available platform types
+AWS = "AWS"
+GCP = "GCP"
+
+# Available agent types
+DATA_STORE_AGENT = "DATA_STORE_AGENT"
+REMOTE_AGENT = "REMOTE_AGENT"
+
+# Available authentication types
+GCP_JSON_SERVICE_ACCOUNT_KEY = "GCP_JSON_SERVICE_ACCOUNT_KEY"
+GCP_WORKLOAD_IDENTITY_FEDERATION = "GCP_WORKLOAD_IDENTITY_FEDERATION"
+AWS_VPCE = "AWS_VPCE"
+AWS_ASSUMABLE_ROLE = "AWS_ASSUMABLE_ROLE"
+
+# Available storage types
+GCS = "GCS"
+S3 = "S3"
+
+# Available wrapper types
+TERRAFORM = "TERRAFORM"
