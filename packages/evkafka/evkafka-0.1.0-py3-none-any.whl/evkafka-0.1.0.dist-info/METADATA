@@ -1,0 +1,62 @@
+Metadata-Version: 2.1
+Name: evkafka
+Version: 0.1.0
+Summary: EVKafka framework. Handle kafka events easy
+Author-email: Aleksey Katichev <theleharo@gmail.com>
+Project-URL: Homepage, https://github.com/theleharo/evkafka
+Project-URL: Bug Tracker, https://github.com/theleharo/evkafka/issues
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Unix
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Typing :: Typed
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiokafka >=0.8.1
+
+# evkafka
+
+**EVKafka** is a small framework for building event driven microservices.
+
+## Installation
+
+     $ pip install evkafka
+
+## Basic usage
+```python
+from evkafka.app import EVKafkaApp
+
+config = {
+    "bootstrap_servers": "kafka:9092",
+    "group_id": "test",
+}
+
+app = EVKafkaApp(config=config, topics="topic")
+
+
+@app.event('FooEvent')
+def foo_handler(event: dict) -> None:
+    print(event)
+
+
+if __name__ == "__main__":
+    app.run()
+```
+
+More details can be found in the [documentation](https://evkafka.readthedocs.io/)
+
+
+## Status
+
+The framework is in alpha.
+
+## License
+
+This project is licensed under the terms of the  MIT license.
