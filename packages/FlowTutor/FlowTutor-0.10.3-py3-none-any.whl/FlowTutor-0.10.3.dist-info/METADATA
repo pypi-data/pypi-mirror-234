@@ -1,0 +1,123 @@
+Metadata-Version: 2.1
+Name: FlowTutor
+Version: 0.10.3
+Summary: A graphical programming environment using flowcharts.
+Author-email: Thomas Rößl <e11775192@student.tuwien.ac.at>
+Project-URL: documentation, https://github.com/thomasroessl/FlowTutor/wiki
+Project-URL: source, https://github.com/thomasroessl/FlowTutor
+Project-URL: changelog, https://github.com/thomasroessl/FlowTutor/releases
+Classifier: Development Status :: 3 - Alpha
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Education
+Classifier: Topic :: Software Development
+Classifier: Intended Audience :: Education
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: appdirs >=1.4
+Requires-Dist: blinker >=1.6
+Requires-Dist: dearpygui >=1.10
+Requires-Dist: Shapely >=2.0
+Requires-Dist: dependency-injector >=4.41
+Requires-Dist: pygdbmi >=0.11
+Requires-Dist: urllib3 >=1.26
+Requires-Dist: Jinja2 >=3.1
+Provides-Extra: deployment
+Requires-Dist: pynsist >=2.8 ; extra == 'deployment'
+Requires-Dist: twine >=4.0 ; extra == 'deployment'
+Requires-Dist: build >=1.0 ; extra == 'deployment'
+Provides-Extra: testing
+Requires-Dist: pytest >=7.4 ; extra == 'testing'
+Requires-Dist: pytest-cov >=4.1 ; extra == 'testing'
+Requires-Dist: mypy >=1.5 ; extra == 'testing'
+Requires-Dist: flake8 >=6.1 ; extra == 'testing'
+Requires-Dist: tox >=4.11 ; extra == 'testing'
+
+<h1 align="center">
+    <img src="https://raw.githubusercontent.com/thomasroessl/FlowTutor/master/logo.png" alt="flowtutor-logo" style="max-width=512px;max-height:141px;"/>
+</h1>
+
+<h4 align="center">
+    A graphical programming environment using flowcharts.
+</h4>
+
+<h1></h1>
+
+<p align="center">
+  <a href=""><img src="https://img.shields.io/pypi/pyversions/flowtutor" alt="Python versions"></a>
+  <a href="https://pypi.org/project/flowtutor/"><img src="https://img.shields.io/pypi/v/flowtutor" alt="PYPI"></a>
+  <a href="https://cd.roessl.org/job/FlowTutor/"><img src="https://cd.roessl.org/job/FlowTutor/badge/icon" alt="Jenkins"></a>
+</p>
+
+## Prerequisites
+
+The following programs have to be available on the system for FlowTutor to be able to run:
+
+- [Python] >= 3.9
+- [GCC] - C-Compiler
+- [GDB] - Debugger
+
+## Documentation
+
+An overview of FlowTutors functionality can be found in the projects [Wiki]
+
+## Running the Python project from source
+
+1. Create a virtual environment:
+    ```sh
+    python -m venv venv
+    ```
+
+2. Activate the virtual environment:
+    ```sh
+    source venv/bin/activate
+    ```
+
+3. Install the FlowTutor package:
+    ```sh
+    python -m pip install .
+    ```
+
+6. Run FlowTutor:
+    ```sh
+    flowtutor
+    ```
+
+## Running on macOS
+
+> **Warning** 
+> As of June 2023 there exists a bug in MacOS/GDB, that prevents the debugging functionality of FlowTutor from functioning correctly.
+
+Flowtutor uses GDB for its debugging functionality.
+Modern Darwin kernels (used in macOS) restrict the capability to assume control over another process, which GDB needs to debug the program.
+To give the correct permissions to GDB it needs to be [code signed].
+
+### 1. Create a certificate
+Run the script `macos-setup-codesign.sh` from the `gdb-codesign` folder.
+This sets up a certificate in the System Keychain and trusts the certificate for code signing.
+
+### 2. Sign and entitle the gdb binary
+Execute the following command with `gdb-entitlement.xml` from the `gdb-codesign` folder:
+```sh
+codesign --entitlements gdb-entitlement.xml -fs gdb-cert $(which gdb)
+```
+
+### 3. Reboot
+This refreshes the system's certificates and code-signing data.
+
+## Windows Installer Packages
+
+The application is packaged with Pynsist for easier distribution on Windows.
+
+
+[Python]: <https://www.python.org/>
+[GCC]: <https://gcc.gnu.org/>
+[GDB]: <https://www.sourceware.org/gdb/>
+[code signed]: <https://sourceware.org/gdb/wiki/PermissionsDarwin>
+[Wiki]: <https://github.com/thomasroessl/FlowTutor/wiki>
