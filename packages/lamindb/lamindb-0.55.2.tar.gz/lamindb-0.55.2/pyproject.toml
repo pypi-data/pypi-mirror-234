@@ -1,0 +1,87 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "lamindb"
+requires-python = ">=3.8"
+authors = [{name = "Lamin Labs", email = "open-source@lamin.ai"}]
+readme = "README.md"
+dynamic = ["version", "description"]
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    # Lamin PINNED packages
+    "lnschema_core==0.50.0",
+    "lamindb_setup==0.54.3",
+    "lamin_utils==0.11.4",
+    # others
+    "rapidfuzz",
+    "pyarrow",
+    "typing_extensions!=4.6.0",
+    "python-dateutil",
+    "anndata>=0.9.1,<=0.10.1",  # we're using anndata internals
+    "fsspec",
+    "pandas",
+    "graphviz",
+]
+
+[project.urls]
+Home = "https://github.com/laminlabs/lamindb"
+
+[project.optional-dependencies]
+bionty = [
+    "lnschema_bionty==0.31.2",
+]
+postgres = [
+    "psycopg2-binary",
+    "lamin_vault",  # only used for secrets management
+]
+aws = [
+    "botocore==1.31.17",  # for aiobotocore inside s3fs, to fix deps resolution
+    "urllib3<2", # for botocore
+    "boto3==1.28.17", # to avoid conflicts arising due to the pin on botocore
+    "aiobotocore==2.5.4",
+    "fsspec[s3]==2023.9.0"
+]
+gcp = [
+    "fsspec[gs]==2023.9.0"
+]
+jupyter = [
+    "nbproject==0.9.2",  # keep pinning
+    "nbstripout",
+    "nbconvert",
+]
+zarr = [
+    "zarr>=2.16.0",
+]
+fcs = [
+    "readfcs>=1.1.7",
+]
+erdiagram = [
+    "django-schema-graph",
+]
+dev = [
+    # suppress warning
+    "pandas<2",
+    # basic test
+    "pre-commit",
+    "nox",
+    "laminci>=0.3",
+    "pytest>=6.0",
+    "coverage",
+    "pytest-cov",
+    # others
+    "nbproject_test>=0.3.0",
+    # biology
+    "faker-biology",
+]
+
+[project.scripts]
+lamin = "lamindb_setup.__main__:main"
+
+[tool.black]
+preview = true
