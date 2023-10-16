@@ -1,0 +1,37 @@
+apt-get update
+
+sudo apt-get install -y make build-essential libssl-dev zlib1g-dev libbz2-dev \
+  libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev libncursesw5-dev \
+  xz-utils tk-dev libffi-dev liblzma-dev python-openssl git
+
+curl https://pyenv.run | bash
+pyenv install 3.11.6
+cd src/rdbunit
+# The following will set the version to be used when in that dir and below!
+pyenv local 3.11.6
+pip install pipenv
+
+# Create a pipenv environment for the pyenv version of Python
+pipenv --python $(pyenv which python)
+
+# Activate the shell
+pipenv shell
+
+# Install package's developer dependencies
+pipenv install --dev
+
+# Distribute - release`
+Update version in pyproject.toml
+# Ensure virtualenv is active (a)
+# In top level directory:
+rm -f dist/* && python -m build
+
+# Upload version to PyPi
+# Distribution upload
+twine upload dist/*
+
+# Through ~/.pypirc:
+[pypi]
+  username = __token__
+  password = pypi-AgEIcHlwaS5vcmcCJDRjZDEwMDA0LTE5NWEtNGZmNC1hNmI3LWYzMzE3NGNlZTEwMgACKlszLCJkN2Q3YmZmMi02YzA0LTQ3NTYtYjdlNS1iMjIwOGUyYWU4ODYiXQAABiC2PtBrwbdY7OVwIO3INmHy6X6vjt2V4_VEvhKFpeTB0w
+
