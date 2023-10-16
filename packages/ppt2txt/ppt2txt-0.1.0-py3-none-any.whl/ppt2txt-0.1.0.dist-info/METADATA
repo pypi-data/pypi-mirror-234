@@ -1,0 +1,84 @@
+Metadata-Version: 2.1
+Name: ppt2txt
+Version: 0.1.0
+Summary: A pure python based utility to extract text from PPT files.
+Author: Mattia Mancassola
+License: MIT License
+        
+        Copyright (c) 2023 Mattia Mancassola
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Homepage, https://github.com/mett29/ppt2txt
+Keywords: python,ppt,binary,extract,parse
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Development Status :: 4 - Beta
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: olefile ==0.46
+
+# ppt2txt
+
+A pure python based utility to extract text from PPT files.
+
+The code is based on the official documentation for MS-PPT files available at [https://msopenspecs.azureedge.net/files/MS-PPT/%5bMS-PPT%5d.pdf](https://msopenspecs.azureedge.net/files/MS-PPT/%5bMS-PPT%5d.pdf).
+
+## How to install?
+
+```bash
+pip install ppt2txt
+```
+
+## How to run?
+
+- From command line:
+```bash
+ppt2txt file.ppt -o output_dir
+```
+
+- From python:
+```python
+import ppt2txt
+
+# extract content
+parsed_ppt_dict = ppt2txt.process("file.ppt") 
+```
+
+## Output
+
+`parsed_ppt_dict` is a dictionary with the following structure:
+
+```json
+{
+    "filename": "file.ppt",
+    "slides": 4,
+    "content": {
+        "0": "Text from the first record",
+        "1": "Text from the second record"
+    }
+}
+```
+
+where:
+- `filename` is the name of the input file
+- `slides` is the number of slides
+- `content` is a dictionary containing an element for each record of type text found in the document
