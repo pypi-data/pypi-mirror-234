@@ -1,0 +1,65 @@
+[tool.poetry]
+name = "netmeasure"
+version = "1.3.4"
+description = "Measure Internet connection quality."
+authors = [
+    "James Stewart <james@amorphitec.io>",
+    "Stuart Dines <me@stuartdines.com>",
+    "James Johnson <jamesaj2323@gmail.com>"
+]
+maintainers = [
+    "James Stewart <james@amorphitec.io>",
+]
+packages = [
+    { include = "netmeasure" },
+]
+repository = "https://github.com/amorphitec/netmeasure"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8, <4"
+validators = "^0.20"
+speedtest-cli = "^2.1"
+requests = "^2.28"
+scapy = "^2.5"
+beautifulsoup4 = "^4.11.2"
+exitstatus = "^2.3.0"
+halo = "^0.0.31"
+click = "^8.1.3"
+rich = "^13.3.2"
+yt-dlp = "^2023.9.24"
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2"
+flake8 = "^3.7"
+isort = "^4.3"
+pytest-cov = "^4.0"
+black = "^23.1"
+bandit = "^1.6.2"
+tox = "^4.4.6"
+
+[tool.poetry.scripts]
+netmeasure = "netmeasure.cli:cli"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+isolated_build = true
+skipsdist = true
+envlist = py38,py39,py310,py311
+
+[gh-actions]
+python =
+    3.8: py38
+    3.9: py39
+    3.10: py310
+    3.11: py311
+
+[testenv]
+allowlist_externals = poetry
+commands =
+    poetry install -v
+    poetry run pytest --cov
+"""
+[build-system]
+requires = ["poetry>=1.3"]
+build-backend = "poetry.masonry.api"
