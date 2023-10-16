@@ -1,0 +1,46 @@
+name: Upload pypi package release
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - created
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Cancel Previous Runs
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+        if: startsWith(github.event.ref, 'refs/heads/main')
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: ".python-version"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          pipenv run init_dev
+      - name: Build
+        run: |
+          make build
+      - name: Publish to Test PyPI
+        if: startsWith(github.event.ref, 'refs/heads/main')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+      - name: Publish a Python distribution to PyPI
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@release/v1
