@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{cookiecutter.project_slug_pypi}}"
+authors = [
+    {name = "{{cookiecutter.full_name}}", email = "{{cookiecutter.email}}"},
+]
+description = "{{cookiecutter.project_short_description}}"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["version", "dependencies"]
+
+[project.urls]
+repository = "https://github.com/{{cookiecutter.github_username}}/{{cookiecutter.project_slug}}"
+
+[project.scripts]
+{{cookiecutter.project_slug_entrypoint}} = "{{cookiecutter.project_slug_underscore}}.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["{{cookiecutter.project_slug_underscore}}*"]
+
+[tool.setuptools_scm]
+write_to = "{{cookiecutter.project_slug_underscore}}/version.py"
+version_scheme = "post-release"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements-prod.txt"]}
