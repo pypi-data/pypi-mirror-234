@@ -1,0 +1,242 @@
+# Faostat Python Package 
+
+Tools to read data from Faostat API.
+Warning: Versions 1.x.x still have the functions get_areas, get_years, get_items and get_elements, for backward compatibility, but they are deprecated and will be removed from version 2.x.x.
+
+# Features
+
+* Read Faostat data and metadata as list of tuples or as pandas dataframe.
+* MIT license.
+
+
+# Documentation
+
+
+## Getting started:
+
+Requires Python 3.6+
+
+```bash
+pip install faostat
+```
+
+It is available also from [Anaconda.org][conda].
+
+
+## Read the list of available datasets:
+
+### As a list of tuples:
+
+```python
+faostat.list_datasets(https_proxy=None)
+```
+
+Read the available datsets and return a list of tuples.
+The first element of the list contains the header line.
+*https_proxy* is supposed to be used only if you need to use a proxy
+for https and should be a list like: `[username, password, url:port]`.
+More information on the available datasets can be found in the official [Faostat website][faoweb].
+
+Example:
+```python
+>>> ld = faostat.list_datasets()
+>>> ld[0]
+('code', 'label', 'date_update', 'note_update', 'release_current', 'state_current', 'year_current', 'release_next', 'state_next', 'year_next')
+>>> ld[1:4]
+[('QCL', 'Crops and livestock products', '2022-02-17', 'minor revision', '2021-12-21 / 2022-02-17', 'final', '2020', '2022-12', 'final', '2020'),
+ ('QI', 'Production Indices', '2021-03-18', '', '2021-03-18', 'final', '2019', '2022-04', 'final', '2020'),
+ ('QV', 'Value of Agricultural Production', '2021-03-18', 'minor revision', '2021-03-18', 'final', '2020', '2022-04', 'final', '2019')]
+```
+
+### As a pandas dataframe:
+
+```python
+faostat.list_datasets_df(https_proxy=None)
+```
+
+It reads the available datasets and returns a pandas dataframe.
+The first element of the list contains the header line.
+
+*https_proxy* is supposed to be used only if you need to use a proxy
+for https and should be a list like: `[username, password, url:port]`.
+
+More information on the available datasets can be found in the official [Faostat website][faoweb].
+
+Example:
+```python
+>>> df = faostat.list_datasets_df()
+>>> df
+   code                              label  ... state_next year_next
+0   QCL       Crops and livestock products  ...      final      2020
+1    QI                 Production Indices  ...      final      2020
+2    QV   Value of Agricultural Production  ...      final      2019
+3    FS  Suite of Food Security Indicators  ...      final      2021
+4   SCL        Supply Utilization Accounts  ...      final      2020
+..  ...                                ...  ...        ...       ...
+70   FA           Food Aid Shipments (WFP)  ...                     
+71   RM                          Machinery  ...                     
+72   RY                  Machinery Archive  ...                     
+73   RA                Fertilizers archive  ...                     
+74   PA       Producer Prices (old series)  ...                     
+```
+
+
+## Check parameters for a given dataset:
+Frequently you will need just a subset of a dataset, for instance only one year or country.
+You will therefore use the following functions.
+
+*https_proxy* is supposed to be used only if you need to use a proxy
+for https and should be a list like: `[username, password, url:port]`.
+
+### To retrieve the available parameters for a given dataset:
+
+```python
+faostat.list_pars(code, https_proxy=None)
+```
+
+Given the code of a dataset, it reads the parameters and returns them as a list.
+
+Example:
+```python
+>>> a = faostat.list_pars('QCL')
+>>> a
+['area', 'element', 'item', 'year']
+```
+
+### To retrieve the available values of a parameter for a given dataset:
+
+```python
+faostat.get_par(code, par, https_proxy=None)
+```
+
+Given the code of a dataset and a parameter, it reads the values and returns a dictionary `{label: code}`.
+
+Example:
+```python
+>> import faostat
+>>> y = faostat.get_par('QCL', 'area')
+>>> y
+{'Afghanistan': '2',
+ 'Albania': '3',
+ 'Algeria': '4',
+ 'Angola': '7', 
+ etc.}
+```
+
+## Read data from a dataset:
+
+### As a list of tuples:
+
+```python
+faostat.get_data(code, pars={}, show_flags=False, null_values=False, https_proxy=None)
+```
+
+Given the code of a Faostat dataset, it returns the data as a list of tuples.
+
+*pars* is optional, but recommended to avoid Timeout Error due to too large query.
+
+To download only a subset of the dataset, you need to pass *pars={key: value, ...}*:
+* key can be one or more of the parameters obtained with list_pars();
+* value can be a number, a string or a list, from the codes obtained with get_par().
+
+Set *show_flags=True* if you want to download also the data flags.
+
+Set *null_values=True* if you want to download also the null data.
+
+*https_proxy* is supposed to be used only if you need to use a proxy
+for https and should be a list like: `[username, password, url:port]`.
+
+Example:
+```python
+>>> data = faostat.get_data('QCL',pars={'element':[2312, 2313],'item':'221'})
+>>> data[40:44]
+[('QCL', 'Crops and livestock products', '2', 'Afghanistan', '5312', 'Area harvested', '221', 'Almonds, with shell', '2014', '2014', 'ha', 13703.0),
+ ('QCL', 'Crops and livestock products', '2', 'Afghanistan', '5312', 'Area harvested', '221', 'Almonds, with shell', '2015', '2015', 'ha', 14676.0),
+ ('QCL', 'Crops and livestock products', '2', 'Afghanistan', '5312', 'Area harvested', '221', 'Almonds, with shell', '2016', '2016', 'ha', 19481.0),
+ ('QCL', 'Crops and livestock products', '2', 'Afghanistan', '5312', 'Area harvested', '221', 'Almonds, with shell', '2017', '2017', 'ha', 19793.0)]
+```
+
+### As a pandas dataframe:
+
+```python
+faostat.get_data_df(code, pars={}, show_flags=False, null_values=False, https_proxy=None)
+```
+
+Given the code of a Faostat dataset, it returns the data as a pandas dataframe.
+
+*pars* is optional, but recommended to avoid Timeout Error due to too large query.
+
+To download only a subset of the dataset, you need to pass *pars={key: value, ...}*:
+* key can be one or more of the parameters obtained with list_pars();
+* value can be a number, a string or a list, from the codes obtained with get_par().
+
+Set *show_flags=True* if you want to download also the data flags.
+
+Set *null_values=True* if you want to download also the null data.
+
+*https_proxy* is supposed to be used only if you need to use a proxy
+for https and should be a list like: `[username, password, url:port]`.
+
+Example:
+```python
+>>> data_df = faostat.get_data_df('QCL',pars={'element':[2312, 2313],'item':'221'})
+>>> data_df
+     Domain Code                        Domain  ... Unit     Value
+0            QCL  Crops and livestock products  ...   ha       0.0
+1            QCL  Crops and livestock products  ...   ha    5900.0
+2            QCL  Crops and livestock products  ...   ha    6000.0
+3            QCL  Crops and livestock products  ...   ha    6000.0
+4            QCL  Crops and livestock products  ...   ha    6000.0
+         ...                           ...  ...  ...       ...
+4038         QCL  Crops and livestock products  ...   ha  392722.0
+4039         QCL  Crops and livestock products  ...   ha  418436.0
+4040         QCL  Crops and livestock products  ...   ha  423949.0
+4041         QCL  Crops and livestock products  ...   ha  453034.0
+4042         QCL  Crops and livestock products  ...   ha  425302.0
+```
+
+
+## Bug reports and feature requests:
+
+Please [open an issue][issue] or send a message to noemi.cazzaniga [at] polimi.it.
+
+
+## Disclaimer:
+
+Download and usage of Faostat data is subject to FAO's general [terms and conditions][pol].
+
+
+## Data sources:
+
+* Faostat database: [online catalog][faoweb].
+
+
+## References:
+
+* Python package [pandas][pd]: Python Data Analysis Library.
+* Python package [eurostat][es]: Tools to read data from Eurostat.
+
+
+## History:
+
+### version 0.1.1 (2022):
+
+* First official release.
+
+### version 1.0.1 (Oct 2023):
+
+* Implemented all the parameters.
+* Prevented list_datasets to show the datasets that are not accessible (update_date=None).
+
+### version 1.0.2 (Oct 2023):
+
+* Bug fix: build.
+
+
+
+[faoweb]: https://www.fao.org/faostat/en/#data
+[pol]: https://www.fao.org/contact-us/terms/en/
+[issue]: https://bitbucket.org/noemicazzaniga/faostat/issues/new
+[pd]: https://pandas.pydata.org/
+[es]: https://pypi.org/project/eurostat/
+[conda]: https://anaconda.org/noemicazzaniga/faostat
