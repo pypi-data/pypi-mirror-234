@@ -1,0 +1,173 @@
+Metadata-Version: 2.1
+Name: markie
+Version: 0.0.1a3
+Summary: Small package for easily processing markdown files
+License: MIT License
+        
+        Copyright (c) 2023 James Finnie-Ansley
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+Project-URL: repository, https://github.com/James-Ansley/markie
+Classifier: Development Status :: 1 - Planning
+Classifier: Topic :: Utilities
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: PyYAML ~=6.0.1
+Requires-Dist: markdown-it-py ~=2.2.0
+Requires-Dist: mdformat ~=0.7.17
+Requires-Dist: mdformat-footnote ~=0.1.1
+Requires-Dist: mdformat-frontmatter ~=2.0.1
+Requires-Dist: mdformat-tables ~=0.4.1
+Requires-Dist: mdit-py-plugins ~=0.3.5
+Requires-Dist: mdurl ~=0.1.2
+
+# Markie
+
+A small project for processing markdown files with metadata.
+
+## Install
+
+```
+pip install markie
+```
+
+> Note: This project is still in Alpha – significant changes are expected and
+> features are limited
+
+## Example
+
+```python
+from pprint import pprint
+
+from markie import Doc
+
+main_content = """
+---
+title: "Ducks: And how to Make Them Pay"
+year: 1894
+---
+
+# Ducks: And how to Make Them Pay
+
+By William Cook
+
+Author of "The Practical Poultry Breeder and Feeder";
+"The Horse: its keep and management";
+"Pheasants, Turkeys, and Geese: their management for pleasure and profit"
+""".strip()
+
+chapter_1 = """
+## Introduction
+
+Not so many years ago roast duck was a luxury only for the rich, unless it 
+might have been a few foreign birds sent into our markets, which could 
+usually be bought up at a very low price. 
+""".strip()
+
+doc = Doc.from_md(main_content)
+
+# content can be appended with .append, or prepended with .prepend
+doc.append(chapter_1)
+
+# Metadata can be retrieved and set
+doc.metadata["authors"] = ["William Cook"]
+
+# can be pretty printed to quickly glean the overall document structure
+pprint(doc)
+
+# Iterating over docs yields markdown-it tokens in order
+# pprint([*doc])
+
+# Docs are rendered to markdown
+with open(f"{doc.metadata['title']}.md", "w") as f:
+    f.write(doc.render())
+```
+
+The above would print:
+
+```text
+Doc(metadata={'authors': ['William Cook'],
+              'title': 'Ducks: And how to Make Them Pay',
+              'year': 1894},
+    preamble='',
+    sections=[Section(level=1,
+                      title='Ducks: And how to Make Them Pay',
+                      preamble='By William Cook\n'
+                               '\n'
+                               'Author of "The Practical Poultry Breeder and '
+                               'Feeder";\n'
+                               '"The Horse: its keep and management";\n'
+                               '"Pheasants, Turkeys, and Geese: their '
+                               'management for pleasure and profit"',
+                      subsections=[Section(level=2,
+                                           title='Introduction',
+                                           preamble='Not so many years ago '
+                                                    'roast duck was a luxury '
+                                                    'only for the rich, unless '
+                                                    'it\n'
+                                                    'might have been a few '
+                                                    'foreign birds sent into '
+                                                    'our markets, which could\n'
+                                                    'usually be bought up at a '
+                                                    'very low price.',
+                                           subsections=[])])])
+```
+
+And write the following to a file "Ducks: And how to Make Them Pay.md":
+
+```markdown
+---
+title: 'Ducks: And how to Make Them Pay'
+year: 1894
+authors:
+  - William Cook
+---
+
+# Ducks: And how to Make Them Pay
+
+By William Cook
+
+Author of "The Practical Poultry Breeder and Feeder";
+"The Horse: its keep and management";
+"Pheasants, Turkeys, and Geese: their management for pleasure and profit"
+
+## Introduction
+
+Not so many years ago roast duck was a luxury only for the rich, unless it
+might have been a few foreign birds sent into our markets, which could
+usually be bought up at a very low price.
+```
+
+## Notes for Developers
+
+### Tests
+
+Install the test requirements from `tests/requirements.txt`.
+
+These tests
+use [ApprovalTests](https://github.com/approvals/ApprovalTests.Python) and
+[pytest](https://docs.pytest.org/en/7.4.x/) with the
+[ApprovalTests pytest plugin](https://github.com/approvals/ApprovalTests.Python.PytestPlugin).
+To enable diff checking on PyCharm, see
+[their documentation](https://github.com/approvals/ApprovalTests.Python.PytestPlugin#tip-for-jetbrains-toolbox-and-pycharm-users)
+which describes how to set up a run configuration which uses PyCharm's built-in
+diff checker.
