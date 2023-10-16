@@ -1,0 +1,30 @@
+version: "1"
+name: "sample"
+pipeline:
+  alpha:
+    stage: 1
+    matrix:
+      job: [1,3,5]
+    work:
+      command:
+        - "echo"
+        - "Hello from $(whoami) on $(hostname) doing alpha job ${{ matrix.job }}"
+  beta:
+    stage: 2
+    matrix:
+      job:
+        range: [7,13,2] # start, stop, step
+    work:
+      command:
+        - "echo"
+        - "Hello from $(whoami) on $(hostname) doing beta job ${{ matrix.job }}"
+  gamma:
+    stage: 3
+    matrix:
+      denominator: [1,2,3]
+    work:
+      pipeline: "fraction"
+      function: "chime_frb_api.workflow.cli.sample.fraction"
+      parameters:
+        numerator: 5
+        denominator: ${{ matrix.denominator }}
