@@ -1,0 +1,29 @@
+# HF Argparser
+
+Standalone Argument Parser from HuggingFace Transformers.
+
+This is a standalone version of the argument parser used in the HuggingFace Transformers library. It is a simple wrapper around the `argparse` library that allows you to easily define your command-line arguments for your scripts using dataclasses.
+
+## Installation
+
+```bash
+pip install hf-argparser
+```
+
+## Usage
+
+```python
+from dataclasses import dataclass
+from hf_argparser import HfArgumentParser, HFArg
+```
+
+See the [Transformers documentation](https://huggingface.co/transformers/main_classes/trainer.html#trainingarguments) for more information on how to use the `HFArg` class.
+
+## Todo
+- [] Automate pulling new changes to `hf_argparser` from `transformers` repo.
+- [] Automate creating new releases on PyPi.
+- [] Add tests.
+- [] Improve README.
+
+## Acknowledgements
+- [HuggingFace Transformers :hugs:]("https://github.com/huggingface/transformers")
