@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=41", "setuptools-git-versioning<2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cellarium-ml"
+authors = [
+  { name="Yerdos Ordabayev", email="yordabay@broadinstitute.org" },
+  { name="Mehrtash Babadi", email="mehrtash@broadinstitute.org" },
+]
+description = "Machine learning library for single-cell data analysis"
+readme = "README.rst"
+requires-python = ">=3.10"
+license = {file = "LICENSE.md"}
+classifiers = [
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+  "anndata",
+  "boltons",
+  "braceexpand",
+  "google-cloud-storage",
+  "jsonargparse[signatures]",
+  "lightning>=2.0.9",
+  "pyro-ppl",
+  "torch>=2.0.0",
+  "transformers",
+]
+
+dynamic = ["version"]
+
+[project.optional-dependencies]
+lint = [
+    "black[jupyter]",
+    "ruff",
+]
+mypy = ["mypy"]
+test = [
+  "pytest",
+  "pytest-xdist",
+  "tensorboard",
+]
+docs = [
+  "Pillow",
+  "sphinx",
+  "sphinx_gallery",
+  "sphinx_rtd_theme",
+  "sphinx-autodoc-typehints",
+  "sphinx-copybutton",
+]
+dev = ["cellarium-ml[docs,lint,mypy,test]"]
+
+[project.urls]
+"Homepage" = "https://cellarium-ai.github.io/cellarium-ml"
+"Source Code" = "https://github.com/cellarium-ai/cellarium-ml"
+"Bug Tracker" = "https://github.com/cellarium-ai/cellarium-ml/issues"
+"Discussion Forum" = "https://github.com/cellarium-ai/cellarium-ml/discussions"
+
+[tool.setuptools.packages.find]
+include = ["cellarium.*"]
+
+[tool.setuptools.package-data]
+"cellarium.ml" = ["py.typed"]
+
+[tool.setuptools-git-versioning]
+enabled = true
+dev_template = "{tag}.post{ccount}"
+
+[tool.ruff]
+line-length = 120
+select = ["E", "F", "I", "W"]
+
+[tool.black]
+line-length = 120
+
+[tool.mypy]
+ignore_missing_imports = true
+explicit_package_bases = true
