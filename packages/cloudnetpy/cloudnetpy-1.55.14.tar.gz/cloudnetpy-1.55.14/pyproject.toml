@@ -1,0 +1,61 @@
+[project]
+name = "cloudnetpy"
+description = "Python package for Cloudnet processing"
+authors = [{name = "Simo Tukiainen"}]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "cloudnetpy_qc>=1.13.8",
+  "matplotlib",
+  "mwrpy>=0.4.3",
+  "netCDF4",
+  "requests",
+  "rpgpy>=0.14.5",
+  "scikit-image",
+  "scipy",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = [
+  "mypy",
+  "pylint",
+  "pytest",
+  "pytest-flakefinder",
+  "types-requests",
+]
+dev = ["pre-commit"]
+extras = ["voodoonet>=0.1.1"]
+
+[project.urls]
+Homepage = "https://github.com/actris-cloudnet/cloudnetpy"
+Documentation = "https://cloudnetpy.readthedocs.io"
+Repository = "https://github.com/actris-cloudnet/cloudnetpy"
+Changelog = "https://github.com/actris-cloudnet/cloudnetpy/blob/main/CHANGELOG.md"
+
+[tool.mypy]
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "mpl_toolkits.*", "netCDF4.*", "scipy.*", "skimage.*", "voodoonet.*"]
+ignore_missing_imports = true
+
+[tool.setuptools.dynamic]
+version = {attr = "cloudnetpy.version.__version__"}
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.tomlsort]
+trailing_comma_inline_array = true
+sort_inline_arrays = true
