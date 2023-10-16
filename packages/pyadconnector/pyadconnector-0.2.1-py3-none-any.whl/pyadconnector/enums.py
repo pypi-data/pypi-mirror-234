@@ -1,0 +1,10 @@
+from enum import IntEnum
+
+
+class AccountControlEnum(IntEnum):
+    ENABLED = 512
+    ENABLED_PWD_NO_EXPIRED = 66048
+    ENABLED_PWD_NO_REQUIRED = 544
+    DISABLED = 514
+    DISABLED_PWD_NO_EXPIRED = 66050
+    DISABLED_PWD_NO_REQUIRED = 546
