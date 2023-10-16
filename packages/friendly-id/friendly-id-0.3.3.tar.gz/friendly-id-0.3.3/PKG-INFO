@@ -1,0 +1,96 @@
+Metadata-Version: 2.1
+Name: friendly-id
+Version: 0.3.3
+Summary: friendly-id is a Python library to generate really unique and url friendly IDs based on UUID and base62
+Author-email: Junlin Zhou <jameszhou2108@hotmail.com>
+License: Copyright 2022 Junlin Zhou
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+        
+Project-URL: homepage, https://github.com/edwardzjl/friendly-id
+Project-URL: repository, https://github.com/edwardzjl/friendly-id
+Keywords: uuid,friendly-id
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.5
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: build
+Requires-Dist: build; extra == "build"
+Requires-Dist: twine; extra == "build"
+Provides-Extra: dev
+Requires-Dist: black; extra == "dev"
+Requires-Dist: bumpver; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: pip-tools; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+
+# Friendly Id
+
+> version 0.3.3
+
+[![test friendly-id](https://github.com/edwardzjl/friendly-id/actions/workflows/test.yml/badge.svg)](https://github.com/edwardzjl/friendly-id/actions/workflows/test.yml)
+
+Inspired by [FriendlyID](https://github.com/Devskiller/friendly-id)
+
+What is the FriendlyId library?
+--
+The FriendlyId library converts a given UUID (with 36 characters) to a URL-friendly ID (a "FriendlyId") which is based on Base62 (with a maximum of 22 characters), as in the example below:
+
+
+    UUID                                        Friendly ID
+
+    c3587ec5-0976-497f-8374-61e0c2ea3da5   ->   5wbwf6yUxVBcr48AMbz9cb
+    |                                           |                              
+    36 characters                               22 characters or less
+
+In addition, this library allows to:
+
+
+* convert from a FriendlyId back to the original UUID; and
+* create a new, random FriendlyId
+
+Why use a FriendlyId?
+--
+Universal Unique IDs (UUIDs) provide a non-sequential and unique identifier that can be generated separately from the source database. As a result, it is not possible to guess either the previous or next identifier. That's great, but, to achieve this level of security, a UUID is long (128 bits long) and looks ugly (36 alphanumeric characters including four hyphens which are added to make it easier to read the UUID), as in this example: `123e4567-e89b-12d3-a456-426655440000`.
+
+Such a format is:
+
+* difficult to read (especially if it is part of a URL)
+* difficult to remember
+* cannot be copied with just two mouse-clicks (you have to select manually the start and end positions)
+* can easily become broken across lines when it is copied, pasted, edited, or sent.
+
+FriendlyId library solves these problems by converting a given UUID using Base62 with alphanumeric characters in the range [0-9A-Za-z] into a FriendlyId which consists of a maximum of 22 characters (but in fact often contains fewer characters).
+
+Usage
+---
+
+Python Package
+----
+FriendlyId can be installed through PyPI:
+
+```bash
+python -m pip install friendly-id
+```
+
+Generate a FriendlyId
+```python
+from friendly_id import friendly_id
+
+id: str = friendly_id(),
+```
+
+Convert UUID to FriendlyId
+```python
+import uuid
+from friendly_id import encode
+
+uid = uuid.uuid4()
+id: str = encode(uid),
+```
