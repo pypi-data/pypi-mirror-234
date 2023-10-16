@@ -1,0 +1,66 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'mindspore':'ERROR'})}}"
+
+- name: check mindspore
+  shell: python3 -m pip list | grep mindspore
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  failed_when: false
+  changed_when: false
+  register: mindspore_version
+
+- name: message
+  debug: var=mindspore_version
+  when: mindspore_version.stdout != ""
+
+- name: message
+  debug:
+    msg:
+      - "mindspore not installed"
+  when: mindspore_version.stdout == ""
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'mindspore':'not installed'})}}"
+  when: mindspore_version.stdout == ""
+
+- name: test import mindspore ascend
+  shell: . {{ ascend_install_path }}/ascend-toolkit/set_env.sh && python3 -c "import mindspore as ms; print(ms.__version__)"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ascend_install_path }}/ascend-toolkit/latest/atc/ccec_compiler/bin/:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ local_path }}/gcc7.3.0/lib64:{{ ascend_install_path }}/ascend-toolkit/latest/acllib/lib64:{{ ascend_install_path }}/ascend-toolkit/latest/atc/lib64:{{ ascend_install_path }}/ascend-toolkit/latest/fwkacllib/lib64:{{ ascend_install_path }}/driver/lib64:{{ ascend_install_path }}/opp/op_impl/built-in/ai_core/tbe/op_tiling:{{ local_path }}/{{ python_version }}/lib/{{ python_version }}[:9]/site-packages/mindspore/lib:{{ ascend_install_path }}/ascend-toolkit/latest/opp/op_impl/built-in/ai_core/tbe/op_tiling:{{ansible_user_dir}}/Ascend/ascend-toolkit/latest/fwkacllib/lib64/plugin/opskernel"
+    TBE_IMPL_PATH: "{{ ascend_install_path }}/ascend-toolkit/latest/opp/op_impl/built-in/ai_core/tbe"
+    ASCEND_OPP_PATH: "{{ ascend_install_path }}/ascend-toolkit/latest/opp"
+    PYTHONPATH: "{{ ascend_install_path }}/ascend-toolkit/latest/opp/op_impl/built-in/ai_core/tbe:{{ ascend_install_path }}/ascend-toolkit/latest/fwkacllib/python/site-packages/"
+  register: mindspore_ascend_version
+  when:
+    - mindspore_version.stdout != ""
+    - ansible_local.npu_info.scene != ""
+
+- name: print mindspore ascend version
+  debug: var=mindspore_ascend_version
+  when: mindspore_ascend_version is defined
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'mindspore':'OK'})}}"
+  when: mindspore_ascend_version.rc is defined and mindspore_ascend_version.rc == 0
+
+- name: test import mindspore cpu
+  shell: python3 -c "import mindspore as ms; print(ms.__version__)"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: mindspore_cpu_version
+  when:
+    - mindspore_version.stdout != ""
+    - ansible_local.npu_info.scene == ""
+    - "'Ubuntu_18.04' in os_and_arch"
+
+- name: print mindspore cpu version
+  debug: var=mindspore_cpu_version
+  when: mindspore_cpu_version is not skipped
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'mindspore':'OK'})}}"
+  when: mindspore_cpu_version.rc is defined and mindspore_cpu_version.rc == 0
+

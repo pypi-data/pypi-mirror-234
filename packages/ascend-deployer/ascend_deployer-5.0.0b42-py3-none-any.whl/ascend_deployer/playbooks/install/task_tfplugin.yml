@@ -1,0 +1,109 @@
+- name: find tfplugin script
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*tfplugin.*{{ansible_architecture}}.sh"
+  register: tfplugin
+
+- name: find tfplugin run package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*tfplugin.*{{ansible_architecture}}.run"
+  register: tfplugin_run
+
+- name: get tfplugin version
+  shell: echo $(basename {{tfplugin_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: tfplugin_version
+  when: tfplugin_run.matched > 0
+
+- name: set log_path for root
+  set_fact:
+    log_path: /var/log/ascend_seclog/
+  when: ansible_user_uid == 0
+
+- name: set log_path for non-root
+  set_fact:
+    log_path: ~/var/log/ascend_seclog/
+  when: ansible_user_uid != 0
+
+- name: install tfplugin
+  shell: "echo y | bash {{ tfplugin.files[0].path }} {{ log_path }}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: tfplugin_result
+  when:
+    - tfplugin.matched > 0
+  failed_when: "tfplugin_result.rc !=0 and 'already installed' not in tfplugin_result.stdout"
+
+- name: message
+  debug:
+    var: tfplugin_result
+  when: tfplugin_result.changed
+
+- name: check ascend cann install info
+  stat:
+    path: "{{ cann_info_path }}/ascend_cann_install.info"
+  register: install_info
+
+- name: set install_path enable
+  set_fact:
+    ins_path_cmd: "--install-path={{ install_path }}"
+  when: not install_info.stat.exists
+
+- name: set install_path disable
+  set_fact:
+    ins_path_cmd: ""
+  when: install_info.stat.exists or ansible_user_uid != 0
+
+- name: check tfplugin exists
+  shell: ls {{ ascend_install_path }}/tfplugin/*/ascend_tfplugin_install.info 2>/dev/null | wc -l
+  register: tfplugin_status
+
+- name: install tfplugin
+  shell: "echo y | bash {{ tfplugin_run.files[0].path }} --nox11 {{ cann_install_params }} {{ ins_path_cmd }}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: tfplugin_result
+  when:
+    - tfplugin.matched == 0 and tfplugin_run.matched > 0 and tfplugin_status.stdout == '0'
+  failed_when: "tfplugin_result.rc !=0 and 'already installed' not in tfplugin_result.stdout"
+
+- name: message
+  debug:
+    var: tfplugin_result
+  when: tfplugin.matched == 0 and tfplugin_result.changed and tfplugin_status.stdout == '0'
+
+- name: upgrade tfplugin
+  shell: "echo y | bash {{ tfplugin_run.files[0].path }} --nox11 --upgrade"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: tfplugin_result
+  when:
+    - tfplugin.matched == 0 and tfplugin_run.matched > 0 and tfplugin_status.stdout != '0'
+  failed_when: "tfplugin_result.rc !=0 and 'already installed' not in tfplugin_result.stdout"
+
+- name: message
+  debug:
+    var: tfplugin_result
+  when: tfplugin.matched == 0 and tfplugin_result.changed and tfplugin_status.stdout != '0'
+
+- name: fail if not success
+  fail:
+    msg: "[ASCEND]failed to install tfplugin"
+  when:
+    - "'tfplugin' in ansible_run_tags"
+    - tfplugin_run.matched == 0
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find tfplugin package, tfplugin install skipped"
+  when: tfplugin_run.matched == 0

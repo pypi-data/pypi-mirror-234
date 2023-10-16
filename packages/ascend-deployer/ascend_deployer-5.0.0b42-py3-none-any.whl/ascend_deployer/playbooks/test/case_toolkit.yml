@@ -1,0 +1,39 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'toolkit':'OK'})}}"
+
+- name: test if toolkit installed
+  find:
+    paths:
+      - "{{ ascend_install_path }}/ascend-toolkit"
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "ascend_install.info"
+  register: toolkit
+
+- name: message
+  debug:
+    msg:
+    - "toolkit not installed, please install first"
+  when: toolkit.matched == 0
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'toolkit':'not installed'})}}"
+  when: toolkit.matched == 0
+
+- name: check if function well
+  shell: |
+    if [ -f {{ ascend_install_path }}/ascend-toolkit/set_env.sh ];then . {{ ascend_install_path }}/ascend-toolkit/set_env.sh;fi
+    python3 -c "import acl"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: toolkit
+  when: toolkit.matched > 0
+  failed_when: false
+  retries: 3
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'toolkit':'ERROR'})}}"
+  when: toolkit.rc is defined and toolkit.rc != 0
+

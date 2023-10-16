@@ -1,0 +1,109 @@
+---
+# dl基础操作
+- hosts:
+    - master
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/dl_common.yaml
+
+# 分发mindxdl安装包，并制作镜像
+- hosts:
+    - localhost
+    - master[0]
+    - other_build_image
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/distribute_soft_package.yaml
+    - include_tasks: roles/mindx.dl/tasks/build_collect_images.yaml
+
+- hosts:
+    - master
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/label_master.yaml
+
+- hosts:
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/label_worker.yaml
+
+- hosts:
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/docker-runtime.yaml
+      when:
+        - "DOCKER_RUNTIME_COMPONENT in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+    # 等待k8s集群正常，避免因为dockerruntime安装导致的无法使用kubectl
+    - name: wait until k8s ready
+      command: kubectl get nodes
+      register:
+        k8s_nodes
+      until: k8s_nodes.stdout != ''
+      retries: 10
+      delay: 30
+      environment:
+        http_proxy: ""
+        https_proxy: ""
+        HTTP_PROXY: ""
+        HTTPS_PROXY: ""
+
+- hosts:
+    - master
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/volcano.yaml
+      when:
+        - "VOLCANO_COMPONENT in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+
+- hosts:
+    - master
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/hccl.yaml
+      when:
+        - "HCCL_COMPONENT in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+
+- hosts:
+    - master
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/ascend-operator.yaml
+      when:
+        - "ASCEND_OPERATOR in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+
+- hosts:
+    - master
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/resilience-controller.yaml
+      when:
+        - "RESILIENCE_CONTROLLER in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+
+- hosts:
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: roles/mindx.dl/tasks/deviceplugin.yaml
+      when:
+        - "DEVICE_PLUGIN_COMPONENT in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+    - include_tasks: roles/mindx.dl/tasks/noded.yaml
+      when:
+       - "NODED_COMPONENT in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+    - include_tasks: roles/mindx.dl/tasks/npu-exporter.yaml
+      when:
+        - "NPU_EXPORTER_COMPONENT in (SCENES[SCENE_NUM] + EXTRA_COMPONENT.split(','))"
+

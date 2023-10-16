@@ -1,0 +1,26 @@
+- name: create build directory
+  file:
+    path: "{{ build_dir }}"
+    state: directory
+    mode: 0750
+    recurse: yes
+
+- name: install cmake-3.20.5 unarchive
+  unarchive:
+    src: "{{ resources_dir }}/sources/cmake-3.20.5.tar.gz"
+    dest: "{{ build_dir }}"
+    copy: no
+    extra_opts:
+    - --no-same-owner
+
+- name: install cmake-3.20.5 bootstrap
+  shell: ./bootstrap --parallel=4 --prefix=/usr/local
+  args:
+    chdir: "{{ build_dir }}/cmake-3.20.5"
+
+- name: install cmake-3.20.5 make
+  shell: "make -C {{ build_dir }}/cmake-3.20.5 -j20"
+  ignore_errors: yes
+
+- name: install cmake-3.20.5 make install
+  shell: "make -C {{ build_dir }}/cmake-3.20.5 install"

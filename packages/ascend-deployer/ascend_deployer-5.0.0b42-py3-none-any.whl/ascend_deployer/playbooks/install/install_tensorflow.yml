@@ -1,0 +1,98 @@
+- hosts: '{{ hosts_name }}'
+  tasks:
+    - name: try import tensorflow
+      shell: python3 -c "import tensorflow as tf; print(tf.__version__)"
+      environment:
+        PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+        LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ ascend_install_path }}/ascend-toolkit/latest/fwkacllib/lib64:{{ local_path }}/gcc7.3.0/lib64"
+      failed_when: false
+      changed_when: false
+      register: import_tensorflow
+
+    - name: message
+      debug: var=import_tensorflow
+      when: import_tensorflow.rc == 0
+
+    - name: message
+      debug:
+        msg:
+          - "tensorflow is already installed, tensorflow install skipped"
+      when: import_tensorflow.rc == 0
+
+    - name: stat gcc-7.3.0
+      stat:
+        path: "{{ local_path }}/gcc7.3.0"
+      register: gcc_stat
+      when: import_tensorflow.rc != 0
+
+    - name: install gcc 7.3 for centos 7.6 if not exist
+      import_tasks: task_gcc.yml
+      when:
+        - import_tensorflow.rc != 0
+        - not gcc_stat.stat.exists
+        - "'CentOS_7.6' in os_and_arch"
+
+    - name: find tensorflow 1.15.0 whl package
+      find:
+        paths: "{{ resources_dir }}/pylibs"
+        recurse: no
+        file_type: file
+        use_regex: yes
+        patterns: ".*tensorflow.*1.15.0.*{{ ansible_architecture }}.whl"
+      register: tf1_whl
+      when:
+        - import_tensorflow.rc != 0
+
+    - name: install tensorflow 1.15.0
+      include_tasks: task_tensorflow.yml
+      vars:
+        tensorflow_version: "1.15.0"
+      when:
+        - import_tensorflow.rc != 0
+        - tf1_whl.matched is defined and tf1_whl.matched > 0
+        - python_minor == "python3.7"
+
+    - name: message
+      debug:
+        msg:
+          - "[ASCEND]can not find tensorflow 1.15.0 whl package or python not compatible, install skipped"
+          - "please put the file in the directory: ascend-deployer/resources/pylibs/"
+      when:
+        - import_tensorflow.rc != 0
+        - (tf1_whl.matched is defined and tf1_whl.matched == 0) or python_minor != "python3.7"
+
+    - name: find tensorflow 2.6.5 whl package
+      find:
+        paths: "{{ resources_dir }}/pylibs"
+        recurse: no
+        file_type: file
+        use_regex: yes
+        patterns: ".*tensorflow.*2.6.5.*{{ ansible_architecture }}.whl"
+      register: tf2_whl
+      when:
+        - import_tensorflow.rc != 0
+
+    - name: install tensorflow 2.6.5
+      include_tasks: task_tensorflow.yml
+      vars:
+        tensorflow_version: "2.6.5"
+      when:
+        - import_tensorflow.rc != 0
+        - tf2_whl.matched is defined and tf2_whl.matched > 0
+
+    - name: message
+      debug:
+        msg:
+          - "[ASCEND]can not find tensorflow 2.6.5 whl package, install skipped"
+          - "please put the file in the directory: ascend-deployer/resources/pylibs/"
+      when:
+        - import_tensorflow.rc != 0
+        - tf2_whl.matched is defined and tf2_whl.matched == 0
+
+    - name: fail if exactly at this install
+      fail:
+        msg: "[ASCEND]failed to install tensorflow"
+      when:
+        - "'tensorflow' in ansible_run_tags"
+        - import_tensorflow.rc != 0
+        - (tf2_whl.matched is defined and tf2_whl.matched == 0) and (tf1_whl.matched is defined and tf1_whl.matched == 0)

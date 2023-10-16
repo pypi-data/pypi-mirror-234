@@ -1,0 +1,75 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'driver':'ERROR'})}}"
+
+- name: test if driver installed
+  find:
+    path: /usr/local/Ascend/driver
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "version.info"
+  register: driver
+
+- name: message
+  debug:
+    msg:
+      - "driver not installed"
+  when: driver.matched == 0
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'driver':'not installed'})}}"
+  when: driver.matched == 0
+
+- name: execute npu-smi info
+  shell: npu-smi info
+  environment:
+    PATH: /usr/local/{{ python_version }}/bin:/usr/local/Ascend/toolbox/latest/Ascend-DMI/bin:{{ ansible_env.PATH }}
+    LD_LIBRARY_PATH: /usr/local/{{ python_version }}/lib:/usr/local/Ascend/toolbox/latest/Ascend-DMI/lib64:/usr/local/dcmi:/usr/local/Ascend/nnae/latest/fwkacllib/lib64:/usr/local/Ascend/nnrt/latest/acllib/lib64
+  when: driver.matched > 0
+  register: smi_info
+
+- name: print npu-smi info
+  debug: var=smi_info
+  when: driver.matched > 0
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'driver':'OK'})}}"
+  when: smi_info.stdout is defined and smi_info.stdout != ''
+
+- name: get npu desc
+  set_fact:
+    tmp_npu_desc: "{{ '300i' if cus_npu_info == '300i-pro' else '300v'}}"
+  when:
+    - ansible_local.npu_info.product == "A300i"
+    - cus_npu_info is defined
+    - (cus_npu_info == "300i-pro") or (cus_npu_info == "300v-pro")
+
+- name: check type
+  shell: npu-smi info -m|grep -E '710|310P'|awk -F' ' '{print $1}'|xargs -L 1 npu-smi info -t product -i|grep -i {{ tmp_npu_desc }} | wc -l
+  register: npu_300vi_check_result_info
+  environment:
+    PATH: /usr/local/{{ python_version }}/bin:/usr/local/Ascend/toolbox/latest/Ascend-DMI/bin:{{ ansible_env.PATH }}
+    LD_LIBRARY_PATH: /usr/local/{{ python_version }}/lib:/usr/local/Ascend/toolbox/latest/Ascend-DMI/lib64:/usr/local/dcmi:/usr/local/Ascend/nnae/latest/fwkacllib/lib64:/usr/local/Ascend/nnrt/latest/acllib/lib64
+  when:
+    - ansible_user_uid == 0
+    - ansible_local.npu_info.product == "A300i"
+    - driver.matched > 0
+    - tmp_npu_desc is defined
+  ignore_errors: yes
+
+- name: set if not match
+  set_fact:
+    not_fit: true
+    test_dict: "{{test_dict|default({})|combine({'driver':'ERROR'})}}"
+  when:
+    - ansible_user_uid == 0
+    - ansible_local.npu_info.product == "A300i"
+    - driver.matched > 0
+    - tmp_npu_desc is defined
+    - npu_300vi_check_result_info is defined
+    - npu_300vi_check_result_info.stdout == "0"
+
+- name: display driver not match
+  debug:
+    msg:  "you are installing driver of {{ cus_npu_info }} on hardware of {{ '300v-pro' if cus_npu_info == '300i-pro' else '300i-pro' }}"
+  when: not_fit is defined

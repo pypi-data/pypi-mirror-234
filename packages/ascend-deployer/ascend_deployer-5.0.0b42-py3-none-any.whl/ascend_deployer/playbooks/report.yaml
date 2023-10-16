@@ -1,0 +1,20 @@
+- hosts:
+    - localhost
+    - master
+    - worker
+  gather_facts: true
+  vars_files:
+    - roles/mindx.rep/defaults/main.yml
+  tasks:
+    - include_tasks: roles/mindx.rep/tasks/packages_rep.yaml
+      when: (groups['master'] + groups['worker'])|length > 0 and ansible_play_batch|length > 0
+
+
+- hosts:
+    - localhost
+  gather_facts: true
+  vars_files:
+    - roles/mindx.rep/defaults/main.yml
+  tasks:
+    - include_tasks: roles/mindx.rep/tasks/local_rep.yaml
+      when: not only_package and (groups['master'] + groups['worker'])|length > 0 and ansible_play_batch|length > 0

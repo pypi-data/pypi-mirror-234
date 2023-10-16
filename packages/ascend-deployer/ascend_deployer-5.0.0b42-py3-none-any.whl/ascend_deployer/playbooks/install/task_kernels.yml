@@ -1,0 +1,252 @@
+- name: find kernels script for 310P
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*kernels-310p.*.sh"
+  register: kernels_310P
+
+- name: find kernels run package for 310P
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*kernels-310p.*.run"
+  register: kernels_310P_run
+
+- name: find kernels script for 910
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*kernels-910_.*.sh"
+  register: kernels_910
+
+- name: find kernels run package for 910
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*kernels-910_.*.run"
+  register: kernels_910_run
+
+- name: find kernels script for 910b
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*kernels-910b_.*.sh"
+  register: kernels_910b
+
+- name: find kernels run package for 910b
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*kernels-910b_.*.run"
+  register: kernels_910b_run
+
+- name: set log_path for root
+  set_fact:
+    log_path: /var/log/ascend_seclog/
+  when: ansible_user_uid == 0
+
+- name: set log_path for non-root
+  set_fact:
+    log_path: ~/var/log/ascend_seclog/
+  when: ansible_user_uid != 0
+
+- name: get kernels version for 310p
+  shell: echo $(basename {{kernels_310P_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: kernels_ver
+  when: kernels_310P_run.matched > 0 and (ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo')
+
+- name: set kernels_version fact for 310p
+  set_fact:
+    kernels_version: "{{kernels_ver.stdout}}"
+    cacheable: yes
+  when: kernels_310P_run.matched > 0 and (ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo')
+
+- name: get kernels version for 910
+  shell: echo $(basename {{kernels_910_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: kernels_ver
+  when: kernels_910_run.matched > 0 and ansible_local.npu_info.scene == 'train'
+
+- name: set kernels_version fact for 910
+  set_fact:
+    kernels_version: "{{kernels_ver.stdout}}"
+    cacheable: yes
+  when: kernels_910_run.matched > 0 and ansible_local.npu_info.scene == 'train'
+
+- name: get kernels version for 910b
+  shell: echo $(basename {{kernels_910b_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: kernels_ver
+  when: kernels_910b_run.matched > 0 and ansible_local.npu_info.scene == 'a910b'
+
+- name: set kernels_version fact for 910b
+  set_fact:
+    kernels_version: "{{kernels_ver.stdout}}"
+    cacheable: yes
+  when: kernels_910b_run.matched > 0 and ansible_local.npu_info.scene == 'a910b'
+
+- name: set kernels_version when can not find kernels
+  set_fact:
+    kernels_version: "NA"
+    cacheable: yes
+  when: kernels_910_run.matched == 0 and kernels_310P_run.matched == 0 and kernels_910b_run.matched == 0 or ansible_local.npu_info.scene == 'infer'
+
+- name: check if toolkit is installed
+  find:
+    paths: "{{ascend_install_path}}/ascend-toolkit/{{kernels_version}}"
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "ascend_toolkit_install.info"
+  register: toolkit_status
+
+- name: check if nnae is installed
+  find:
+    paths: "{{ascend_install_path}}/nnae/{{kernels_version}}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "ascend_nnae_install.info"
+  register: nnae_status
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]The nnae and toolkit packages are not installed, kernels install skipped"
+  when: kernels_version != 'NA' and toolkit_status.matched == 0 and nnae_status.matched == 0
+
+- name: message for no packages
+  debug:
+    msg:
+      - "[ASCEND]can not find kernels packages, kernels install skipped"
+  when: kernels_310P_run.matched == 0 and kernels_910_run.matched == 0 and kernels_910b_run.matched == 0 or ansible_local.npu_info.scene == 'infer'
+
+- name: check whether to fail for scene
+  fail:
+    msg: "end the task"
+  when: "'kernels' in ansible_run_tags and kernels_version != 'NA' and toolkit_status.matched == 0 and nnae_status.matched == 0"
+
+- name: check if should terminal
+  fail:
+    msg:
+      - "end the task_kernels"
+  when:
+    - "'kernels' in ansible_run_tags"
+    - kernels_310P_run.matched == 0 and (ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo') or kernels_910_run.matched == 0 and ansible_local.npu_info.scene == 'train' or kernels_910b_run.matched == 0 and ansible_local.npu_info.scene == 'a910b' or ansible_local.npu_info.scene == 'infer'
+
+- name: set kernels_type
+  set_fact:
+    kernels_type: "{{'toolkit' if toolkit_status.matched > 0 else 'nnae'}}"
+  when: kernels_version != 'NA'
+
+- name: install kernels using scripts for 310P
+  shell: "echo y | bash {{ kernels_310P.files[0].path }} {{ log_path }} {{ kernels_type }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: kernels_310P_result
+  when:
+    - kernels_310P.matched > 0
+    - toolkit_status.matched > 0 or nnae_status.matched > 0
+    - ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo'
+  failed_when: kernels_310P_result.rc != 0
+
+- name: message for 310P
+  debug:
+    var: kernels_310P_result
+  when: kernels_310P_result.changed
+
+- name: install kernels for 310P
+  shell: "echo y | bash {{ kernels_310P_run.files[0].path }} {{ cann_install_params }} --type={{ kernels_type }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: kernels_310P_run_result
+  when:
+    - kernels_310P_run.matched > 0 and kernels_310P.matched == 0
+    - toolkit_status.matched > 0 or nnae_status.matched > 0
+    - ansible_local.npu_info.scene == 'a300i' or ansible_local.npu_info.scene == 'a300iduo'
+  failed_when: kernels_310P_run_result.rc != 0
+
+- name: message for 310P
+  debug:
+    var: kernels_310P_run_result
+  when: kernels_310P_run_result.changed
+
+- name: install kernels using scripts for 910
+  shell: "echo y | bash {{ kernels_910.files[0].path }} {{ log_path }} {{ kernels_type }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: kernels_910_result
+  when:
+    - kernels_910.matched > 0
+    - toolkit_status.matched > 0 or nnae_status.matched > 0
+    - ansible_local.npu_info.scene == 'train'
+  failed_when: kernels_910_result.rc != 0
+
+- name: message for 910
+  debug:
+    var: kernels_910_result
+  when: kernels_910_result.changed and ansible_local.npu_info.scene == 'train'
+
+- name: install kernels for 910
+  shell: "echo y | bash {{ kernels_910_run.files[0].path }} {{ cann_install_params }} --type={{ kernels_type }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: kernels_910_run_result
+  when:
+    - kernels_910_run.matched > 0 and kernels_910.matched == 0
+    - toolkit_status.matched > 0 or nnae_status.matched > 0
+    - ansible_local.npu_info.scene == 'train'
+  failed_when: kernels_910_run_result.rc != 0
+
+- name: message for 910
+  debug:
+    var: kernels_910_run_result
+  when: kernels_910_run_result.changed and ansible_local.npu_info.scene == 'train'
+
+- name: install kernels using scripts for 910b
+  shell: "echo y | bash {{ kernels_910b.files[0].path }} {{ log_path }} {{ kernels_type }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: kernels_910b_result
+  when:
+    - kernels_910b.matched > 0
+    - toolkit_status.matched > 0 or nnae_status.matched > 0
+    - ansible_local.npu_info.scene == 'a910b'
+  failed_when: kernels_910b_result.rc != 0
+
+- name: message for 910b
+  debug:
+    var: kernels_910b_result
+  when: kernels_910b_result.changed and ansible_local.npu_info.scene == 'a910b'
+
+- name: install kernels for 910b
+  shell: "echo y | bash {{ kernels_910b_run.files[0].path }} {{ cann_install_params }} --type={{ kernels_type }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: kernels_910b_run_result
+  when:
+    - kernels_910b_run.matched > 0 and kernels_910.matched == 0
+    - toolkit_status.matched > 0 or nnae_status.matched > 0
+    - ansible_local.npu_info.scene == 'a910b'
+  failed_when: kernels_910b_run_result.rc != 0
+
+- name: message for 910b
+  debug:
+    var: kernels_910b_run_result
+  when: kernels_910b_run_result.changed and ansible_local.npu_info.scene == 'a910b'

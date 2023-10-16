@@ -1,0 +1,18 @@
+- name: install pytorch
+  shell: "python3 -m pip install {{ pytorch_whl.files[0].path }} --no-index --find-links {{ resources_dir }}/pylibs {{ pip_install_option }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ ascend_install_path }}/ascend-toolkit/latest/fwkacllib/lib64:{{ local_path }}/gcc7.3.0/lib64"
+
+- name: install torch_npu
+  shell: "python3 -m pip install {{ torch_npu_whl.files[0].path }} --no-index --find-links {{ resources_dir }}/pylibs {{ pip_install_option }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ ascend_install_path }}/ascend-toolkit/latest/fwkacllib/lib64:{{ local_path }}/gcc7.3.0/lib64"
+
+- name: install apex
+  shell: "python3 -m pip install {{ apex_whl.files[0].path }} --no-index --find-links {{ resources_dir }}/pylibs {{ pip_install_option }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ ascend_install_path }}/ascend-toolkit/latest/fwkacllib/lib64:{{ local_path }}/gcc7.3.0/lib64"
+  when: apex_whl.matched > 0

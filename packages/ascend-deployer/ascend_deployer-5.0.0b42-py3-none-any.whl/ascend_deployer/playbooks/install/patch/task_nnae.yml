@@ -1,0 +1,48 @@
+- name: find nnae patch package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*nnae.*{{ ansible_architecture }}.run"
+  register: nnae
+
+- name: check ascend cann install info
+  stat:
+    path: "{{ cann_info_path }}/ascend_cann_install.info"
+  register: install_info
+
+- name: set install_path enable
+  set_fact:
+    ins_path_cmd: "--install-path={{ ascend_install_path }}"
+  when: not install_info.stat.exists
+
+- name: set install_path disable
+  set_fact:
+    ins_path_cmd: ""
+  when: install_info.stat.exists or ansible_user_uid != 0
+
+- name: install nnae patch
+  shell: "echo y | bash {{ nnae.files[0].path }} --nox11 {{ cann_patch_install_params }} {{ ins_path_cmd }}"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ansible_env.PATH}}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnae_result
+  when: nnae.matched > 0
+  failed_when: "nnae_result.rc != 0 and 'already installed' not in nnae_result.stdout"
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find nnae patch package, nnae patch install skipped"
+  when: nnae.matched == 0
+
+- name: fail if this rollback
+  fail:
+    msg: "[ASCEND]failed to rollback nnae"
+  when: "'nnae' in ansible_run_tags and nnae.matched == 0"
+
+- name: message
+  debug:
+    var: nnae_result
+  when: nnae_result.changed

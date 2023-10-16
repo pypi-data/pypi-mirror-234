@@ -1,0 +1,28 @@
+- name: install system dependencies
+  import_playbook: ../install/install_sys_pkg.yml
+
+- name: install driver and firmware
+  import_playbook: ../install/install_npu.yml
+
+- name: gather fact info for dl
+  import_playbook: ../gather_facts.yaml
+
+- name: install basic packages
+  import_playbook: ../basic.yaml
+
+- name: basic check
+  import_playbook: ../check.yaml
+
+- name: install docker
+  import_playbook: ../docker.yaml
+
+- name: config harbor info
+  import_playbook: ../harbor.yaml
+  when:
+    - use_harbor
+
+- name: install k8s
+  import_playbook: ../k8s.yaml
+
+- name: install dl
+  import_playbook: ../mindxdl.yaml

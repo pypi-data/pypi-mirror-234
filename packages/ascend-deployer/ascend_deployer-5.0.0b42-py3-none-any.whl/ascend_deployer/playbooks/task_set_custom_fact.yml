@@ -1,0 +1,273 @@
+- name: include vars
+  include_vars: os_map.yml
+
+- name: get OS ID
+  shell: grep -oP "^ID=\"?\K\w+" /etc/os-release
+  changed_when: false
+  register: os_id
+
+- name: message
+  debug:
+    msg: "os {{ os_id.stdout}} is not supported"
+  failed_when: true
+  when: os_id.stdout not in os_dict
+
+- name: set os_name
+  set_fact:
+    os_name: "{{ os_dict[os_id.stdout] }}"
+    cacheable: yes
+  when: os_id.stdout in os_dict
+
+- name: get OS VERSION
+  shell: grep -oP "^VERSION_ID=\"?\K\w+\.?\w*" /etc/os-release
+  changed_when: false
+  register: os_ver
+
+- name: set os_version first
+  set_fact:
+    os_version: "{{ os_ver.stdout }}"
+    cacheable: yes
+
+- name: set os_version second
+  set_fact:
+    os_version: "{{ os_version_dict[os_id.stdout][os_ver.stdout] }}"
+    cacheable: yes
+  when: os_id.stdout in os_version_dict
+
+- name: get centos version
+  shell: cat /etc/centos-release|awk '{print $4}'|awk -v FS="." -v OFS="." '{print $1,$2}'
+  changed_when: false
+  register: os_ver
+  when: os_id.stdout == "centos"
+
+- name: set centos version
+  set_fact:
+    os_version: "{{ os_ver.stdout }}"
+    cacheable: yes
+  when: os_id.stdout == "centos"
+
+- name: get debian version
+  shell: cat /etc/debian_version
+  changed_when: false
+  register: os_ver
+  when: os_id.stdout == "debian"
+
+- name: set debian version
+  set_fact:
+    os_version: "{{ os_ver.stdout }}"
+    cacheable: yes
+  when: os_id.stdout == "debian"
+
+- name: get ubuntu version
+  shell: grep -oP "^PRETTY_NAME=\K.*" /etc/os-release|awk '{print $2}'
+  changed_when: false
+  register: ubuntu_ver
+  when: os_id.stdout == "ubuntu"
+
+- name: set ubuntu version
+  set_fact:
+    os_version: "{{ ubuntu_ver.stdout }}"
+    cacheable: yes
+  when: os_id.stdout == "ubuntu" and "18.04" in ubuntu_ver.stdout and ubuntu_ver.stdout != "18.04.1" and ubuntu_ver.stdout != "18.04.5"
+
+- name: get OS code name
+  shell: grep -oP "^VERSION=(.*?)\(\K[\w\.\ -]+" /etc/os-release | awk -F_ '{print $1}'
+  changed_when: false
+  register: os_codename
+  failed_when: false
+  ignore_errors: yes
+
+- name: set os code name
+  set_fact:
+    code_name: "{{ code_name_dict[os_id.stdout][os_codename.stdout] }}"
+    cacheable: yes
+  when: os_id.stdout in code_name_dict
+
+- name: get openEuler code name
+  shell: grep -oP "^VERSION=.*\KLTS[-\w]*" /etc/os-release
+  register: openEuler_codename
+  when: os_id.stdout == "openEuler"
+
+- name: set os code name for openEuler
+  set_fact:
+    code_name: "{{openEuler_codename.stdout}}"
+    cacheable: yes
+  when: os_id.stdout == "openEuler"
+
+- name: set os code name for kylin
+  set_fact:
+    code_name: "{{os_codename.stdout}}"
+    cacheable: yes
+  when: os_id.stdout == "kylin"
+
+- name: set euleros kernel flag
+  set_fact:
+    euleros_kernel_flag: "eulerosv2r{{code_name[1]}}.{{ansible_architecture}}"
+    cacheable: yes
+  when: os_name == "EulerOS"
+
+- name: get UOS_20SP1 code name
+  shell: grep -oP "^VERSION=\"?\K[\w\ ]+" /etc/os-release | awk '{print $2}'
+  changed_when: false
+  register: UOS_20
+  failed_when: false
+  ignore_errors: yes
+  when: os_id.stdout == "uos"
+
+- name: set os code name for UOS_20SP1
+  set_fact:
+    code_name: "SP1"
+    cacheable: yes
+  when:
+    - os_id.stdout == "uos"
+    - UOS_20.stdout == "SP1"
+
+- name: set os code name for UOS_20-1020e
+  set_fact:
+    code_name: "-1020e"
+    cacheable: yes
+  when:
+    - os_id.stdout == "uos"
+    - "'4.19.90-2106.3.0.0095.up2.uel20' in ansible_kernel"
+
+- name: set os code name for UOS_20-1021e
+  set_fact:
+    code_name: "-1021e"
+    cacheable: yes
+  when:
+    - os_id.stdout == "uos"
+    - "'4.19.90-2109.1.0.0108.up2.uel20' in ansible_kernel"
+
+- name: set os_and_arch
+  set_fact:
+    os_and_arch: "{{os_name}}_{{os_version}}{{code_name}}_{{ansible_architecture}}"
+    cacheable: yes
+
+- name: print current os
+  debug:
+    msg: "current os is {{ os_and_arch }}"
+
+- name: message
+  debug:
+    msg: "os {{os_and_arch}} is not supported"
+  failed_when: true
+  when: os_and_arch not in os_list
+
+- name: set resources_dir local
+  set_fact:
+    resources_dir: "{{ ascend_deployer_work_dir }}/resources"
+    cacheable: yes
+  when: ansible_connection == "local"
+
+- name: set resources_dir remote
+  set_fact:
+    resources_dir: "{{ ansible_user_dir }}/resources"
+    cacheable: yes
+  when: ansible_connection != "local"
+
+- name: set build_dir
+  set_fact:
+    build_dir: "{{ ansible_user_dir }}/build"
+    cacheable: yes
+
+- name: set default install path
+  set_fact:
+    install_path: /usr/local/Ascend
+    cacheable: yes
+  when: install_path is not defined
+
+- name: check if need prepare
+  local_action: stat path=prepare_{{os_and_arch}}.yml
+  register: optional_file
+
+- name: process prepare
+  include_tasks: "prepare_{{os_and_arch}}.yml"
+  when: optional_file.stat.exists
+
+- name: set cann dirs
+  set_fact:
+     cann_dirs:
+       - "{{ resources_dir }}/run_from_cann_zip"
+     cacheable: yes
+
+- name: set pip install option
+  set_fact:
+     pip_install_option: ""
+     cacheable: yes
+  when: ansible_user_uid == 0
+
+- name: set pip install option for non-root
+  set_fact:
+     pip_install_option: "--user"
+     cacheable: yes
+  when: ansible_user_uid != 0
+
+- name: set Ascend install path
+  set_fact:
+     ascend_install_path: "{{ install_path }}"
+     cacheable: yes
+  when: ansible_user_uid == 0
+
+- name: set Ascend install path for non-root
+  set_fact:
+     ascend_install_path: "{{ansible_user_dir}}/Ascend"
+     cacheable: yes
+  when: ansible_user_uid != 0
+
+- name: set local path
+  set_fact:
+     local_path: "/usr/local"
+     cacheable: yes
+  when: ansible_user_uid == 0
+
+- name: set local path for non-root
+  set_fact:
+     local_path: "{{ansible_user_dir}}/.local"
+     cacheable: yes
+  when: ansible_user_uid != 0
+
+- name: set cann info path
+  set_fact:
+     cann_info_path: "/etc/Ascend"
+     cacheable: yes
+  when: ansible_user_uid == 0
+
+- name: set cann info path for non-root
+  set_fact:
+     cann_info_path: "{{ansible_user_dir}}/Ascend"
+     cacheable: yes
+  when: ansible_user_uid != 0
+
+- name: set cann install params for root
+  set_fact:
+     cann_install_params: "--install --quiet --install-for-all"
+     cacheable: yes
+  when: ansible_user_uid == 0
+
+- name: set cann install params for non-root
+  set_fact:
+     cann_install_params: "--install --quiet"
+     cacheable: yes
+  when: ansible_user_uid != 0
+
+- name: set cann patch install params for non-root
+  set_fact:
+     cann_patch_install_params: "--install --quiet"
+     cacheable: yes
+
+- name: get connected ip
+  shell: env | grep SSH_CONNECTION | awk '{print $3}'
+  register: connected_ip_res
+  delegate_to: localhost
+  run_once: true
+
+- name: set default ipv6 tag to no
+  set_fact:
+     working_on_ipv6: no
+     cacheable: yes
+
+- name: set ipv6 tag when using ipv6
+  set_fact:
+     working_on_ipv6: yes
+     cacheable: true
+  when: connected_ip_res.stdout is search(".*:.*")

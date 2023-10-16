@@ -1,0 +1,44 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'firmware':'ERROR'})}}"
+
+- name: check firmware installed
+  find:
+    path: /usr/local/Ascend/firmware/
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "version.info"
+  register: firmware_ver
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'firmware':'not installed'})}}"
+  when: firmware_ver.matched == 0
+
+- name: test if driver installed
+  find:
+    path: /usr/local/Ascend/driver
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "upgrade-tool"
+  register: upgrade_tool
+
+- name: message
+  debug:
+    msg:
+    - "cannot find upgrade tools"
+  when: upgrade_tool.matched == 0
+
+- name: check firmware
+  shell: /usr/local/Ascend/driver/tools/upgrade-tool --device_index -1 --system_version
+  register: upgrade_tool_result
+  when: upgrade_tool.matched > 0
+
+- name: print upgrade tool output
+  debug: var=upgrade_tool_result
+  when: upgrade_tool.matched > 0
+
+- name: set the output
+  set_fact:
+    test_dict: "{{test_dict|default({})|combine({'firmware':'OK'})}}"
+  when: "upgrade_tool_result.stdout is defined and 'succeed' in upgrade_tool_result.stdout"

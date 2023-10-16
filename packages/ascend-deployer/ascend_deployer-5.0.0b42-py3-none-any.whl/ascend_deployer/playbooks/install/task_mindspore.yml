@@ -1,0 +1,55 @@
+- name: find Ascend mindspore wheel package
+  find:
+    paths: "{{ resources_dir }}/pylibs/Ascend/"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "mindspore.*{{ ansible_architecture }}.whl"
+  register: mindspore_whl_ascend
+  when:
+    - ansible_local.npu_info.scene != ""
+
+- name: install mindspore_ascend
+  shell: python3 -m pip install {{ mindspore_whl_ascend.files[0].path }} --no-index --find-links {{ resources_dir }}/pylibs {{ pip_install_option }}
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ local_path }}/gcc7.3.0/lib64:{{ local_path }}/gcc8.4.0/lib64"
+  when:
+    - mindspore_whl_ascend.matched is defined and mindspore_whl_ascend.matched > 0
+
+- name: find mindspore_cpu wheel package
+  find:
+    paths: "{{ resources_dir }}/pylibs/CPU/"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: "mindspore.*{{ ansible_architecture }}.whl"
+  register: mindspore_whl_cpu
+  when:
+    - ansible_local.npu_info.scene == ""
+
+- name: install mindspore_cpu
+  shell: python3 -m pip install {{ mindspore_whl_cpu.files[0].path }} --no-index --find-links {{ resources_dir }}/pylibs {{ pip_install_option }}
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib:{{ local_path }}/gcc7.3.0/lib64"
+  when:
+    - mindspore_whl_cpu.matched is defined and mindspore_whl_cpu.matched > 0
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]os: {{ os_and_arch }}, scene: {{ ansible_local.npu_info.scene }}, mindspore install skipped"
+      - "maybe you should check mindspore whl package in dir: ascend-deployer/resources/pylibs/Ascend(or CPU)/"
+  when:
+    - mindspore_whl_ascend.skipped is defined
+    - mindspore_whl_cpu.skipped is defined
+
+- name: fail if this install
+  fail:
+    msg: "[ASCEND]failed to install mindspore"
+  when:
+    - mindspore_whl_ascend.skipped is defined
+    - mindspore_whl_cpu.skipped is defined
+    - "'mindspore' in ansible_run_tags"
+

@@ -1,0 +1,27 @@
+- hosts: localhost
+  tasks:
+    - name: make tar package for remote
+      shell: tar -cf ~/resources.tar ../resources
+
+- hosts: '{{ hosts_name }}'
+  tasks:
+    - name: copy to remote hosts
+      copy:
+        src: ~/resources.tar
+        dest: ~/
+      when: ansible_connection != "local"
+
+    - name: clean remote resources
+      file:
+        state: absent
+        path: ~/resources
+      when: ansible_connection != "local"
+
+    - name: uncompress on remote
+      unarchive:
+        src: ~/resources.tar
+        dest: ~/
+        copy: no
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+      when: ansible_connection != "local"

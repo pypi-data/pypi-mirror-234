@@ -1,0 +1,38 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'nnrt':'OK'})}}"
+
+- name: test if nnrt installed
+  find:
+    paths:
+      - "{{ ascend_install_path }}/nnrt"
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "ascend_nnrt_install.info"
+  register: nnrt
+
+- name: message
+  debug:
+    msg:
+    - "nnrt not installed, please install first"
+  when: nnrt.matched == 0
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'nnrt':'not installed'})}}"
+  when: nnrt.matched == 0
+
+- name: check if function well
+  shell: |
+    if [ -f {{ ascend_install_path }}/nnrt/set_env.sh ];then . {{ ascend_install_path }}/nnrt/set_env.sh;fi
+    python3 -c "import acl"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnrt
+  when: nnrt.matched > 0
+  failed_when: false
+  retries: 3
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'nnrt':'ERROR'})}}"
+  when: nnrt.rc is defined and nnrt.rc != 0

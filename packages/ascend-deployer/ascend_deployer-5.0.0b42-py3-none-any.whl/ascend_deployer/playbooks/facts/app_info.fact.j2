@@ -1,0 +1,166 @@
+#!{{ ansible_python.executable }}
+#!/usr/bin/env python
+import json
+import os
+import platform
+import re
+
+
+def get_info_from_config(pkg_name, config_file='/etc/ascend_install.info'):
+    if not os.path.exists(config_file):
+        return None
+    if pkg_name not in ['driver', 'firmware']:
+        return None
+    info_dict = {"name": pkg_name, "install_arch": platform.machine()}
+    install_path_pattern = pkg_name + "_install_path"
+    install_path = ''
+    with open(config_file) as config_f:
+        for line in config_f:
+            if install_path_pattern in line.lower():
+                install_path = line.strip().split('=')[-1]
+                break
+    if not install_path or len(install_path) == 0:
+        return None
+    info_dict['install_path'] = install_path
+
+    pkg_version = ''
+    version_file = os.path.join(install_path, pkg_name, 'version.info')
+    with open(version_file) as version_f:
+        for line in version_f:
+            if 'Version' in line.strip():
+                pkg_version = line.strip().split('=')[-1]
+
+                break
+    info_dict['version'] = pkg_version
+    return info_dict
+
+
+def get_info_dict_list(pkg_name, target_paths, target_file):
+    info_dict_list = []
+    for target_path in target_paths:
+        install_config_file = os.path.join(target_path, target_file)
+        info_dict = {"name": pkg_name}
+        install_arch = platform.machine()
+        pkg_version = ''
+        install_path = target_path
+        with open(install_config_file) as config_f:
+            for line in config_f:
+                if line.lower().startswith('version'):
+                    pkg_version = line.strip().split('=')[-1]
+                if line.lower().startswith('arch'):
+                    install_arch = line.strip().split('=')[-1]
+                if line.lower().startswith('path'):
+                    install_path = line.strip().split('=')[-1]
+
+        info_dict['install_path'] = install_path
+        info_dict['install_arch'] = install_arch
+        info_dict['version'] = pkg_version
+        info_dict_list.append(info_dict)
+
+    return info_dict_list
+
+
+def getinfo_from_xml(file_path, root_path):
+    if not os.path.exists(file_path):
+        return {}
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+    archs = {'ARM': 'aarch64', 'x86': 'x86_64'}
+    info_dict = {}
+    for line in lines:
+        if 'OutterName' in line:
+            info_dict['name'] = re.findall('>(.*)<', line)[0]
+        if 'ProcessorArchitecture' in line:
+            arch = re.findall('>(.*)<', line)[0]
+            info_dict['install_arch'] = archs.get(arch, arch)
+        if 'Version' in line:
+            info_dict['version'] = re.findall('>(.*)<', line)[0]
+    info_dict['install_path'] = root_path
+    return info_dict
+
+
+def get_edge_install_info(pkg_name, root_path='/usr/local'):
+    info_dict_list = []
+    if pkg_name == 'atlasedge':
+        xml_file = os.path.join(root_path, 'AtlasEdge/version.xml')
+    elif pkg_name == 'ha':
+        xml_file = os.path.join(root_path, 'ha/version.xml')
+    else:
+        return info_dict_list
+    res = getinfo_from_xml(xml_file, root_path)
+    if res:
+        info_dict_list.append(res)
+    return info_dict_list
+
+
+def get_cann_info_from_config(pkg_name, root_path='/usr/local/Ascend'):
+    if os.getuid() != 0:
+        root_path = os.path.expanduser('~/Ascend')
+    if not os.path.exists(root_path):
+        return None
+    if pkg_name not in ['nnrt', 'toolkit', 'nnae', 'tfplugin', 'toolbox']:
+        return None
+    first_path = os.path.join(root_path, pkg_name, 'latest')
+    if pkg_name == 'toolkit':
+        first_path = os.path.join(root_path, 'ascend-toolkit', 'latest')
+    target_file = "ascend_" + pkg_name + "_install.info"
+    target_paths = set()
+    for top, dirs, nodirs in os.walk(first_path):
+        for file_name in nodirs:
+            if file_name == target_file:
+                target_paths.add(top)
+                break
+    return get_info_dict_list(pkg_name, target_paths, target_file)
+
+
+def get_basic_install_info(app):
+    try:
+        return get_info_from_config(app)
+    except:
+        return None
+
+
+def get_cann_install_info(cann):
+    try:
+        return get_cann_info_from_config(cann)
+    except:
+        return None
+
+
+def get_app_install_info():
+    app_install_info = []
+    basic_list = ['firmware', 'driver']
+    for app_name in basic_list:
+        app_info = get_basic_install_info(app_name)
+        if app_info:
+            app_install_info.append(app_info)
+
+    cann_list = ['nnrt', 'nnae', 'tfplugin', 'toolbox', 'toolkit']
+    for app_name in cann_list:
+        app_info = get_cann_install_info(app_name)
+        if app_info:
+            app_install_info.extend(app_info)
+
+    edge_list = ['atlasedge', 'ha']
+    for app_name in edge_list:
+        app_info = get_edge_install_info(app_name)
+        if app_name:
+            app_install_info.extend(app_info)
+
+    return app_install_info
+
+
+def main():
+    ret = {
+        "progress": "1.0",
+        "operation": "app display",
+        "result": []
+    }
+
+    result = get_app_install_info()
+    ret['result'] = result
+    with open('smartkit/display.json', 'w') as f:
+        json.dump(ret, f, indent=4)
+
+
+main()

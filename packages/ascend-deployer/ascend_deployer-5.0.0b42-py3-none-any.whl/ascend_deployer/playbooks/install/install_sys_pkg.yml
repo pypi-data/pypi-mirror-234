@@ -1,0 +1,17 @@
+- hosts: '{{ hosts_name }}'
+  tasks:
+    - name: install system packages
+      import_tasks: task_sys_pkg.yml
+      when: ansible_user_uid == 0
+
+    - name: message
+      debug:
+        msg:
+        - "[ASCEND]not support installing sys_pkg by non-root user, please switch to root user"
+      when: ansible_user_uid != 0
+
+    - name: fail if not root
+      fail:
+        msg: "[ASCEND]can not install with non-root"
+      when: "'sys_pkg' in ansible_run_tags and ansible_user_uid != 0"
+

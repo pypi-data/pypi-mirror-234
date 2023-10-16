@@ -1,0 +1,120 @@
+---
+- hosts:
+    - localhost
+    - master
+    - worker
+  become: yes
+  tasks:
+    - name: include vars
+      include_vars: os_map.yaml
+
+    - name: get OS ID
+      shell: grep -oP "^ID=\"?\K\w+" /etc/os-release
+      changed_when: false
+      register: os_id
+    
+    - name: message
+      debug:
+        msg: "os {{ os_id.stdout}} is not supported"
+      failed_when: true
+      when: os_id.stdout not in os_dict
+    
+    - name: set os_name
+      set_fact:
+        os_name: "{{ os_dict[os_id.stdout] }}"
+        cacheable: yes
+      when: os_id.stdout in os_dict
+
+    - name: get OS VERSION
+      shell: grep -oP "^VERSION_ID=\"?\K\w+\.?\w*" /etc/os-release
+      changed_when: false
+      register: os_ver
+    
+    - name: set os_version
+      set_fact:
+        os_version: "{{ os_ver.stdout }}"
+        cacheable: yes
+
+    - name: get OS code name
+      shell: grep -oP "^VERSION=(.*?)(\(|\s)\K[\w\.\ -]+" /etc/os-release | awk -F_ '{print $1}'
+      changed_when: false
+      register: os_codename
+      failed_when: false
+      ignore_errors: yes
+    
+    - name: set os code name for kylin
+      set_fact:
+        code_name: "{{os_codename.stdout}}"
+        cacheable: yes
+      when: os_id.stdout == "kylin"
+    
+    - name: set kylin version
+      set_fact:
+        os_version: "{{ os_ver.stdout }}{{code_name}}"
+        cacheable: yes
+      when: os_id.stdout == "kylin" and code_name != "Tercel"
+    
+    - name: get ubuntu version
+      shell: grep -oP "^PRETTY_NAME=\K.*" /etc/os-release|awk '{print $2}'
+      changed_when: false
+      register: ubuntu_ver
+      when: os_id.stdout == "ubuntu"
+    
+    - name: set ubuntu version
+      set_fact:
+        os_version: "{{ ubuntu_ver.stdout }}"
+        cacheable: yes
+      when: os_id.stdout == "ubuntu" and "18.04" in ubuntu_ver.stdout and ubuntu_ver.stdout != "18.04.1" and ubuntu_ver.stdout != "18.04.5"
+    
+    - name: get centos version
+      shell: cat /etc/centos-release|awk '{print $4}'|awk -v FS="." -v OFS="." '{print $1,$2}'
+      changed_when: false
+      register: os_ver
+      when: os_id.stdout == "centos"
+    
+    - name: set centos version
+      set_fact:
+        os_version: "{{ os_ver.stdout }}"
+        cacheable: yes
+      when: os_id.stdout == "centos"
+    
+    - name: get openEuler code name
+      shell: grep -oP "^VERSION=.*\KLTS[-\w]*" /etc/os-release
+      register: openEuler_codename
+      when: os_id.stdout == "openEuler"
+
+    - name: set os code name for openEuler
+      set_fact:
+        code_name: "{{openEuler_codename.stdout}}"
+        cacheable: yes
+      when: os_id.stdout == "openEuler"
+
+    - name: set os package dir name first
+      set_fact:
+        os_package_name: "{{ os_name }}_{{ os_version }}_{{ code_name }}"
+        cacheable: yes
+      when: os_id.stdout == "openEuler"
+
+    - name: set os package dir name second
+      set_fact:
+        os_package_name: "{{ os_name }}_{{ os_version }}"
+        cacheable: yes
+      when: os_id.stdout != "openEuler"
+    
+    - name: message
+      debug:
+        msg: "os {{os_package_name}} is not supported"
+      failed_when: true
+      when: os_package_name not in os_list
+
+    # 如果不是是用dpkg作为包管理器，输出一行command not found
+    - name: check package manager
+      shell: dpkg --help 2>&1 | wc -l
+      register: msg
+      changed_when: false
+
+    - name: set os package manager
+      set_fact:
+        use_rpm_command: "{{ msg.stdout | length == 1 }}"
+        cacheable: yes
+      changed_when: false

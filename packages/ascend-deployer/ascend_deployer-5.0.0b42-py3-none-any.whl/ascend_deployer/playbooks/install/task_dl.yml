@@ -1,0 +1,47 @@
+- name: gather fact info for dl
+  import_playbook: ../gather_facts.yaml
+
+- name: install basic packages
+  import_playbook: ../basic.yaml
+
+- name: basic check
+  import_playbook: ../check.yaml
+
+- name: check docker, containerd and nerdctl
+  import_playbook: ../docker.yaml
+
+- name: config harbor info
+  import_playbook: ../harbor.yaml
+  when:
+    - use_harbor
+
+- hosts:
+    - master
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: ../roles/mindx.dl/tasks/dl_common.yaml
+
+- hosts:
+    - localhost
+    - master[0]
+    - other_build_image
+  become: yes
+  tasks:
+    - include_tasks: ../roles/mindx.dl/tasks/distribute_soft_package.yaml
+    - include_tasks: ../roles/mindx.dl/tasks/build_collect_images.yaml
+
+- hosts:
+    - master
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: ../roles/mindx.dl/tasks/label_master.yaml
+
+- hosts:
+    - worker
+  gather_facts: false
+  become: yes
+  tasks:
+    - include_tasks: ../roles/mindx.dl/tasks/label_worker.yaml

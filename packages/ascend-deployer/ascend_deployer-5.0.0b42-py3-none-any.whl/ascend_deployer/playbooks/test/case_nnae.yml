@@ -1,0 +1,39 @@
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'nnae':'OK'})}}"
+
+- name: test if nnae installed
+  find:
+    paths:
+      - "{{ ascend_install_path }}/nnae"
+    recurse: yes
+    file_type: file
+    use_regex: yes
+    patterns: "ascend_nnae_install.info"
+  register: nnae
+
+- name: message
+  debug:
+    msg:
+    - "nnae not installed, please install first"
+  when: nnae.matched == 0
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'nnae':'not installed'})}}"
+  when: nnae.matched == 0
+
+- name: check if function well
+  shell: |
+    if [ -f {{ ascend_install_path }}/nnae/set_env.sh ];then . {{ ascend_install_path }}/nnae/set_env.sh;fi
+    python3 -c "import acl"
+  environment:
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+  register: nnae
+  when: nnae.matched > 0
+  failed_when: false
+  retries: 3
+
+- set_fact:
+    test_dict: "{{test_dict|default({})|combine({'nnae':'ERROR'})}}"
+  when: nnae.rc is defined and nnae.rc != 0
+

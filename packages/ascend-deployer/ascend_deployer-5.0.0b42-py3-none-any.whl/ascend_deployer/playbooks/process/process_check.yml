@@ -1,0 +1,12 @@
+- name: gather fact info
+  import_playbook: ../gather_npu_fact.yml
+  tags: always
+
+- hosts: all
+  vars:
+    script_path: "{{ playbook_dir }}/../../tools/check.py"
+    fact_path_dir: "{{ playbook_dir }}/../../facts_cache"
+    check_tags: "{{ ansible_run_tags | join(',') }}"
+  tasks:
+    - include_tasks: ../roles/mindx.check/tasks/compatibility_check.yml
+  tags: always

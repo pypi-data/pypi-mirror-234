@@ -1,0 +1,89 @@
+- name: update custom fact
+  include_tasks: ../../../task_set_custom_fact.yml
+
+- name: check driver exists
+  shell: npu-smi info ||true
+  register: raw_driver_info
+
+- name: get npu num id
+  shell: npu-smi info -l| grep 'NPU ID'| awk '{print $4}'
+  register: npu_ids
+  when: raw_driver_info.stdout != ''
+
+- name: get the driver info
+  copy:
+    src: ./get_npu_info.py
+    dest: "{{ ansible_env.HOME }}/"
+    mode: 0700
+    force: yes
+
+- name: execute the info script1
+  command: "{{ discovered_interpreter_python }} {{ansible_env.HOME}}/get_npu_info.py {{raw_driver_info.stdout_lines|default([])}}"
+  register: driver_info
+
+- name: gather driver facts
+  set_fact:
+    driver_dict: "{{driver_dict|default({})|combine({item:{'npu':hostvars[item]['driver_info']['stdout']|default('')}})}}"
+  delegate_to: localhost
+  run_once: true
+  with_items: "{{ groups['master'] +  groups['worker'] }}"
+  ignore_errors: true
+  when: hostvars[item].driver_info is defined
+
+- name: output driver file
+  copy:
+    content: "{{ driver_dict }}"
+    dest:  "{{ tmp_file_path }}/driver_dict.json"
+    mode: 0700
+    force: yes
+  delegate_to: localhost
+  run_once: true
+
+- name: check hccn tool exist
+  shell: command -v hccn_tool||true
+  register: hccn_tool
+
+- name: set default ipv6 flag
+  set_fact:
+    hccn_ipv6_flag: ""
+
+- name: set ipv6 flag
+  set_fact:
+    hccn_ipv6_flag: "-inet6"
+  when: working_on_ipv6
+
+- name: get raw hccn info
+  shell: "hccn_tool -i {{item}} -ip {{hccn_ipv6_flag}} -g&&hccn_tool -i {{item}} -net_health -g"
+  register: temp_hccn
+  ignore_errors: true
+  loop: "{{npu_ids.stdout_lines}}"
+  when: hccn_tool.stdout != ''
+
+- name: add hccn output
+  set_fact:
+    hccn_result: "{{ hccn_result + [item.stdout] }}"
+  loop: "{{ temp_hccn.results }}"
+  when: item.stdout is defined and item.stdout != '' and hccn_tool.stdout != ''
+
+- set_fact:
+    hccn_dict: "{{hccn_dict|default({})|combine({item:{'hccn':hostvars[item]['hccn_result']}})}}"
+  delegate_to: localhost
+  run_once: true
+  with_items: "{{ groups['master'] +  groups['worker'] }}"
+  ignore_errors: true
+  when: hostvars[item].hccn_result is defined
+
+- name: output hccn file
+  copy:
+    content: "{{ hccn_dict }}"
+    dest:  "{{ tmp_file_path }}/hccn_dict.json"
+    mode: 0700
+    force: yes
+  delegate_to: localhost
+  run_once: true
+  when: hccn_dict is defined
+
+- name: set error flag
+  set_fact:
+    missing_host: "{{(groups['master'] + groups['worker'])|difference(ansible_play_batch)}}"
+  when: (groups['master'] + groups['worker'])|difference(ansible_play_batch)|length >0

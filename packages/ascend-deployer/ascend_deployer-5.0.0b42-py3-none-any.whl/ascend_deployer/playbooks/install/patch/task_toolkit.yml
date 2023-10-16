@@ -1,0 +1,44 @@
+- name: check ascend cann install info
+  stat:
+    path: "{{ cann_info_path }}/ascend_cann_install.info"
+  register: install_info
+
+- name: set install_path enable
+  set_fact:
+    ins_path_cmd: "--install-path={{ ascend_install_path }}"
+  when: not install_info.stat.exists
+
+- name: set install_path disable
+  set_fact:
+    ins_path_cmd: ""
+  when: install_info.stat.exists or ansible_user_uid != 0
+
+- name: find toolkit patch package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*toolkit.*{{ ansible_architecture }}.run"
+  register: toolkit
+
+- name: install toolkit patch
+  shell: "echo y | bash {{ toolkit.files[0].path }} --nox11 {{ cann_patch_install_params }} {{ins_path_cmd}}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result
+  when: toolkit.matched > 0
+  failed_when: "toolkit_result.rc != 0 and 'already installed' not in toolkit_result.stdout"
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find toolkit patch package, toolkit patch install skipped"
+  when:
+    - toolkit.matched == 0
+
+- name: message
+  debug:
+    var: toolkit_result
+  when: toolkit_result.changed

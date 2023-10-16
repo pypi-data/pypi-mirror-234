@@ -1,0 +1,95 @@
+- name: check docker exists
+  shell: command -v docker | wc -l
+  register: docker_status
+
+- name: message
+  debug:
+    msg: "[ASCEND][WARNING] Docker is already installed on the system, and errors may occur when installing docker"
+  changed_when: true
+  when: docker_status.stdout != "0"
+
+- name: check docker config exists
+  shell: ls /etc/docker 2>/dev/null | wc -l
+  register: docker_exists
+
+- name: message
+  debug:
+    msg: "[WARNING] The configuration file directory for docker exists on the system"
+  changed_when: true
+  when: docker_exists.stdout != "0"
+
+- name: check os
+  fail:
+    msg: "Unsupported OS, OS is {{ os_package_name }}"
+  when:
+    - os_package_name not in os_support
+
+# 检查所有节点磁盘空间
+- name: copy check space shell to remote
+  copy:
+    src: "{{ ascend_deployer_work_dir }}/playbooks/roles/mindx.basic/files/space.sh"
+    dest: /root
+    mode: 0500
+    owner: root
+    group: root
+    force: yes
+    remote_src: no
+  when:
+    - inventory_hostname != "localhost"
+
+- name: execute space check
+  shell: bash /root/space.sh
+  register: image_space
+  changed_when: false
+  when:
+    - inventory_hostname != "localhost"
+
+- name: image space
+  fail:
+    msg: "the remaining space is less than {{ min_space }}G, please ensure that this node has enough space for the Docker image"
+  when:
+    - inventory_hostname != "localhost"
+    - "image_space.stdout == not_match"
+
+- name: clean space check shell
+  file:
+    path: /root/space.sh
+    state: absent
+  changed_when: false
+  ignore_errors: true
+  when:
+    - inventory_hostname != "localhost"
+
+# 如果不装k8s，检查所有节点K8s版本
+- name: check k8s version
+  shell:
+    cmd:
+      max_version="{{ max_k8s_version }}";
+      k8s_mid_version=$(echo $(kubelet --version 2>/dev/null || echo '') | awk '{print $2}' | sed  "s/v//" | awk -F"." '{print $2}');
+      if [ "$k8s_mid_version" = '' ]; then echo "{{ match }}"; else if [ $k8s_mid_version -gt $max_version ]; then echo "{{ not_match }}"; else echo "{{ match }}";fi; fi
+  register: k8s_version
+  changed_when: false
+  when:
+    - inventory_hostname in groups['master']
+
+- name: k8s version
+  fail:
+    msg: "node k8s version should be <= 1.{{ max_k8s_version }}"
+  when:
+    - inventory_hostname in groups['master']
+    - "k8s_version.stdout == not_match"
+
+- name: check master count
+  fail:
+    msg: "in inventory_file, the number of nodes configured under [master] must be odd, such as 1,3,5,7"
+  when:
+    - inventory_hostname in groups['master']
+    - groups['master'] | length % 2 == 0
+
+- name: check KUBE_VIP
+  fail:
+    msg: "in inventory_file, KUBE_VIP must be configured in the multi master scenario"
+  when:
+    - inventory_hostname in groups['master']
+    - groups['master'] | length % 2 == 0
+    - KUBE_VIP == ""

@@ -1,0 +1,185 @@
+- name: include vars
+  include_vars: ../defaults/main.yml
+
+- name: include vars
+  include_tasks: create_user.yaml
+
+- name: check device
+  shell: lspci | grep "Processing accelerators"
+  register: processing_accelerator
+  ignore_errors: yes
+
+- name: message
+  debug:
+    msg: "[ASCEND]can not find npu card, please check"
+  when: processing_accelerator.rc != 0
+
+- name: label node-role and selector on worker
+  shell: |
+    kubectl label --overwrite node {{ NODE_NAME }} node-role.kubernetes.io/worker=worker
+    kubectl label --overwrite node {{ NODE_NAME }} workerselector=dls-worker-node
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+
+- name: label ascend310
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator=huawei-Ascend310
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: "'Device d100' in processing_accelerator.stdout"
+
+- name: label ascend310P
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator=huawei-Ascend310P
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: "'Device d500' in processing_accelerator.stdout"
+
+- name: label ascend910
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator=huawei-Ascend910
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when: "'Device d801' in processing_accelerator.stdout or 'Device d802' in processing_accelerator.stdout"
+
+- name: register label info
+  shell:
+    cmd:
+      kubectl get nodes --show-labels 2>/dev/null || true
+  register: node_labels
+  delegate_to: "{{ groups['master'][0] }}"
+  run_once: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+
+- name: check label info
+  fail:
+    msg: "cannot get node label info"
+  delegate_to: "{{ groups['master'][0] }}"
+  run_once: true
+  when:
+    - node_labels is not defined or node_labels.stdout == ""
+
+- name: label node enable on worker
+  shell: |
+    kubectl label --overwrite node {{ NODE_NAME }} nodeDEnable=on
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+
+- name: label huawei-x86
+  shell: kubectl label --overwrite node {{ NODE_NAME }} host-arch=huawei-x86
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - ansible_architecture == "x86_64"
+
+- name: label huawei-arm
+  shell: kubectl label --overwrite node {{ NODE_NAME }} host-arch=huawei-arm
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - ansible_architecture == "aarch64"
+
+- name: get 910B card num
+  shell: "npu-smi info -m | grep -i 910B\\d* | wc -l"
+  register: num_of_910B_card
+
+- name: label module-910b-16
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator-type=module-910b-16
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - num_of_910B_card.stdout|int > 8
+    - not use_old_k8s_version
+    - file_status.stat.exists
+
+- name: label module-910b-8
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator-type=module-910b-8
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - num_of_910B_card.stdout|int <= 8
+    - num_of_910B_card.stdout|int > 2
+    - not use_old_k8s_version
+    - file_status.stat.exists
+
+- name: check is standard card type for A300T A2
+  shell: "npu-smi info -m | grep -i 910B | head -n 1 | cut -d' ' -f1 | xargs npu-smi info -t board -i | grep Board"
+  register: is_standard_card_for_A300T_A2
+  failed_when: false
+
+- name: label standard card for A300T A2
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator-type=card-910b-2
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - "'0xBD' in is_standard_card_for_A300T_A2.stdout"
+    - not use_old_k8s_version
+    - file_status.stat.exists
+
+- name: check is standard card type for A300T
+  shell: "npu-smi info -m | grep -i 910A | head -n 1 | cut -d' ' -f1 | xargs npu-smi info -t board -i | grep Board"
+  register: is_standard_card_for_A300T
+  failed_when: false
+
+- name: label standard card for A300T
+  shell: kubectl label --overwrite node {{ NODE_NAME }} accelerator-type=card
+  delegate_to: "{{ groups['master'][0] }}"
+  delegate_facts: true
+  environment:
+    http_proxy: ""
+    https_proxy: ""
+    HTTP_PROXY: ""
+    HTTPS_PROXY: ""
+  when:
+    - "'0xC0' in is_standard_card_for_A300T.stdout or '0xDF' in is_standard_card_for_A300T.stdout or '0xE1' in is_standard_card_for_A300T.stdout"

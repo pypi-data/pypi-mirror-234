@@ -1,0 +1,165 @@
+- name: find toolkit script
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*toolkit.*{{ ansible_architecture }}.sh"
+  register: toolkit
+
+- name: find toolkit run package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*toolkit.*{{ ansible_architecture }}.run"
+  register: toolkit_run
+
+- name: get toolkit version
+  shell: echo $(basename {{toolkit_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: toolkit_version
+  when: toolkit_run.matched > 0
+
+- name: set log_path for root
+  set_fact:
+    log_path: /var/log/ascend_seclog/
+  when: ansible_user_uid == 0
+
+- name: set log_path for non-root
+  set_fact:
+    log_path: ~/var/log/ascend_seclog/
+  when: ansible_user_uid != 0
+
+- name: install toolkit
+  shell: "echo y | bash {{ toolkit.files[0].path }} {{ log_path }}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result
+  when:
+    - toolkit.matched > 0
+  failed_when: "toolkit_result.rc != 0 and 'already installed' not in toolkit_result.stdout"
+
+- name: find toolkit aarch64 script
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*toolkit.*aarch64.sh"
+  register: toolkit_aarch64
+
+- name: find toolkit aarch64 run package
+  find:
+    paths: "{{ cann_dirs }}"
+    recurse: no
+    file_type: file
+    use_regex: yes
+    patterns: ".*toolkit.*aarch64.run"
+  register: toolkit_aarch64_run
+
+- name: get toolkit aarch64 version
+  shell: echo $(basename {{toolkit_aarch64_run.files[0].path}}) | awk -F '_' '{print $2}'
+  register: toolkit_aarch64_version
+  when: (os_and_arch == 'Ubuntu_18.04_x86_64' or os_and_arch == 'Ubuntu_20.04_x86_64') and toolkit_aarch64_run.matched > 0
+
+- name: install toolkit aarch64 for Ubuntu_18.04_x86_64 or Ubuntu_20.04_x86_64
+  shell: "echo y | bash {{ toolkit_aarch64.files[0].path }} {{ log_path }}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result_ubuntu
+  when:
+    - os_and_arch == 'Ubuntu_18.04_x86_64' or os_and_arch == 'Ubuntu_20.04_x86_64'
+    - toolkit_aarch64.matched > 0
+  failed_when: "toolkit_result_ubuntu.rc != 0 and 'already installed' not in toolkit_result_ubuntu.stdout"
+
+- name: message
+  debug:
+    var: toolkit_result,toolkit_result_ubuntu
+  when: toolkit_result.changed or toolkit_result_ubuntu.changed
+
+- name: check ascend cann install info
+  stat:
+    path: "{{ cann_info_path }}/ascend_cann_install.info"
+  register: install_info
+
+- name: set install_path enable
+  set_fact:
+    ins_path_cmd: "--install-path={{ install_path }}"
+  when: not install_info.stat.exists
+
+- name: set install_path disable
+  set_fact:
+    ins_path_cmd: ""
+  when: install_info.stat.exists or ansible_user_uid != 0
+
+- name: check toolkit exists
+  shell: ls {{ ascend_install_path }}/ascend-toolkit/*/*/ascend_toolkit_install.info 2>/dev/null | wc -l
+  register: toolkit_status
+
+- name: install toolkit
+  shell: "echo y | bash {{ toolkit_run.files[0].path }} --nox11 {{ cann_install_params }} {{ins_path_cmd}}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result
+  when:
+    - toolkit.matched == 0 and toolkit_run.matched > 0 and toolkit_status.stdout == '0'
+  failed_when: "toolkit_result.rc != 0 and 'already installed' not in toolkit_result.stdout"
+
+- name: install toolkit aarch64 for Ubuntu_18.04_x86_64 or Ubuntu_20.04_x86_64
+  shell: "echo y | bash {{ toolkit_aarch64_run.files[0].path }} --nox11 {{ cann_install_params }} {{ ins_path_cmd }}"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result_ubuntu
+  when:
+    - toolkit_aarch64_run.matched > 0 and toolkit_status.stdout == '0'
+    - toolkit_aarch64.matched == 0 and (os_and_arch == 'Ubuntu_18.04_x86_64' or os_and_arch == 'Ubuntu_20.04_x86_64')
+  failed_when: "toolkit_result_ubuntu.rc != 0 and 'already installed' not in toolkit_result_ubuntu.stdout"
+
+- name: message
+  debug:
+    var: toolkit_result,toolkit_result_ubuntu
+  when: toolkit.matched == 0 and (toolkit_result.changed or toolkit_result_ubuntu.changed) and toolkit_status.stdout == '0'
+
+- name: upgrade toolkit
+  shell: "echo y | bash {{ toolkit_run.files[0].path }} --nox11 --upgrade"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result
+  when:
+    - toolkit.matched == 0 and toolkit_run.matched > 0 and toolkit_status.stdout != '0'
+  failed_when: "toolkit_result.rc != 0 and 'already installed' not in toolkit_result.stdout"
+
+- name: upgrade toolkit aarch64 for Ubuntu_18.04_x86_64 or Ubuntu_20.04_x86_64
+  shell: "echo y | bash {{ toolkit_aarch64_run.files[0].path }} --nox11 --upgrade"
+  environment:
+    LD_LIBRARY_PATH: "{{ local_path }}/{{ python_version }}/lib"
+    PATH: "{{ local_path }}/{{ python_version }}/bin:{{ ansible_env.PATH }}"
+  register: toolkit_result_ubuntu
+  when:
+    - toolkit_aarch64_run.matched > 0 and toolkit_status.stdout != '0'
+    - toolkit_aarch64.matched == 0 and (os_and_arch == 'Ubuntu_18.04_x86_64' or os_and_arch == 'Ubuntu_20.04_x86_64')
+  failed_when: "toolkit_result_ubuntu.rc != 0 and 'already installed' not in toolkit_result_ubuntu.stdout"
+
+- name: message
+  debug:
+    var: toolkit_result,toolkit_result_ubuntu
+  when: toolkit.matched == 0 and (toolkit_result.changed or toolkit_result_ubuntu.changed) and toolkit_status.stdout != '0'
+
+- name: message
+  debug:
+    msg:
+      - "[ASCEND]can not find toolkit package, toolkit install skipped"
+  when: toolkit_run.matched == 0
+
+- name: fail if not success
+  fail:
+    msg: "[ASCEND]failed to install toolkit"
+  when:
+    - "'toolkit' in ansible_run_tags"
+    - toolkit_run.matched == 0
