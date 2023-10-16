@@ -1,0 +1,136 @@
+Metadata-Version: 2.1
+Name: npc-sessions
+Version: 0.0.92
+Summary: Tools and interfaces for working with behavior and epyhys sessions from the Mindscope Neuropixels team, in the cloud.
+Author-email: Ben Hardcastle <ben.hardcastle@alleninstitute.org>, Arjun Sridhar <arjun.sridhar@alleninstitute.org>, Ethan McBride <ethan.mcbride@alleninstitute.org>, Corbett Bennett <corbettb@alleninstitute.org>
+License: MIT
+Project-URL: Repository, https://github.com/AllenInstitute/npc_sessions
+Project-URL: Issues, https://github.com/AllenInstitute/npc_sessions/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: npc-session>=0.1.26
+Requires-Dist: npc-lims>=0.1.78
+Requires-Dist: polars[all]>=0.18.14
+Requires-Dist: h5py>=3.9.0
+Requires-Dist: pandas[aws,excel,fss,hdf5,performance,plot]>=1.1.5
+Requires-Dist: universal-pathlib>=0.1.1
+Requires-Dist: s3fs>=2023.6.0
+Requires-Dist: pynwb
+Requires-Dist: crc32c>=2.3.post0
+Requires-Dist: rich>=13.5.2
+Requires-Dist: zarr>=2.16.1
+Requires-Dist: wavpack-numcodecs>=0.1.4
+Requires-Dist: matplotlib>=3.7.2
+Requires-Dist: scipy>=1.9.3
+Requires-Dist: DynamicRoutingTask>=0.1.14
+Requires-Dist: numba>=0.57.1
+Requires-Dist: ipywidgets>=8.1.0
+Requires-Dist: ipympl>=0.9.3
+Requires-Dist: opencv-python-headless>=4.8.0.76
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: ndx-events>=0.2.0
+Requires-Dist: SimpleITK>=2.2.1
+Requires-Dist: pyarrow>=13.0.0
+Requires-Dist: spikeinterface>=0.98.2
+Requires-Dist: ipykernel>=6.25.2
+Requires-Dist: nwbwidgets>=0.11.3
+Requires-Dist: hdmf-zarr>=0.3.0
+Requires-Dist: loky>=3.4.1
+Requires-Dist: hdmf>=3.5.4
+Requires-Dist: nbconvert>=7.9.2
+
+# npc_sessions
+**n**euro**p**ixels **c**loud **sessions**
+	
+Tools for accessing data and metadata for behavior and epyhys sessions from the
+Mindscope Neuropixels team - in the cloud.
+
+[![PyPI](https://img.shields.io/pypi/v/npc-sessions.svg?label=PyPI&color=blue)](https://pypi.org/project/npc-sessions/)
+[![Python version](https://img.shields.io/pypi/pyversions/npc-sessions)](https://pypi.org/project/npc-sessions/)
+
+[![Coverage](https://img.shields.io/codecov/c/github/alleninstitute/npc_sessions?logo=codecov)](https://app.codecov.io/github/AllenInstitute/npc_sessions)
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/alleninstitute/npc_sessions/publish.yml?label=CI/CD&logo=github)](https://github.com/alleninstitute/npc_sessions/actions/workflows/publish.yml)
+[![GitHub issues](https://img.shields.io/github/issues/alleninstitute/npc_sessions?logo=github)](https://github.com/alleninstitute/npc_sessions/issues)
+
+
+## quickstart
+Make a conda environment with python>=3.9 and simply pip install the npc_sessions package:
+
+```bash
+conda create -n npc_sessions python>=3.9
+conda activate npc_sessions
+pip install npc_sessions
+```
+
+```python
+>>> from npc_sessions import DynamicRoutingSession, get_sessions;
+
+# each object is used to get metadata and paths for a session:         
+>>> sesssion = DynamicRoutingSession('668755_2023-08-31')  
+>>> session.is_ephys                                
+True
+>>> session.stim_paths[0].stem                      
+'DynamicRouting1_626791_20220815_112336'
+
+# data is processed on-demand to generate individual pynwb modules:
+>>> session.subject                                 
+subject pynwb.file.Subject at 0x...
+Fields:
+  age: P145D
+  age__reference: birth
+  date_of_birth: 2022-03-22 20:22:03-07:00
+  genotype: wt/wt
+  sex: M
+  species: Mus musculus
+  strain: C57BL6J(NP)
+  subject_id: 626791
+
+# a full NWBFile instance can also be generated with all currently-available data:
+>>> session.nwb                                     # doctest: +SKIP
+root pynwb.file.NWBFile at 0x...
+Fields:
+  acquisition: {
+    lick spout <class 'ndx_events.events.Events'>
+  }
+  devices: {
+    18005102491 <class 'pynwb.device.Device'>,
+    18005114452 <class 'pynwb.device.Device'>,
+    18005123131 <class 'pynwb.device.Device'>,
+    18194810652 <class 'pynwb.device.Device'>,
+    19192719021 <class 'pynwb.device.Device'>,
+    19192719061 <class 'pynwb.device.Device'>
+  }
+   ...     
+# loop over all currently-tracked ephys sessions using the session-generator:
+>>> all(s.session_start_time.year >= 2022 for s in get_sessions())
+True
+>>> trials_dfs = {}
+>>> for session in get_sessions():                  # doctest: +SKIP
+...     trials_dfs[session.id] = session.trials[:]
+
+```
+
+## to develop with conda
+To install with the intention of contributing to this package:
+
+1) create a conda environment:
+```bash
+conda create -n npc_sessions python>=3.9
+conda activate npc_sessions
+```
+2) clone npc_sessions from github:
+```bash
+git clone git@github.com:AllenInstitute/npc_sessions.git
+```
+3) pip install all dependencies:
+```bash
+cd npc_sessions
+pip install -e .
+```
