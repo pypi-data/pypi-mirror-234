@@ -1,0 +1,239 @@
+Metadata-Version: 2.1
+Name: comictagger
+Version: 1.6.0a8
+Summary: A cross-platform GUI/CLI app for writing metadata to comic archives
+Home-page: https://github.com/comictagger/comictagger
+Author: ComicTagger team
+Author-email: comictagger@gmail.com
+License: Apache-2.0
+Keywords: comictagger,comics,comic,metadata,tagging,tagger
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Environment :: MacOS X
+Classifier: Environment :: Win32 (MS Windows)
+Classifier: Environment :: X11 Applications :: Qt
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Multimedia :: Graphics
+Classifier: Topic :: Other/Nonlisted Topic
+Classifier: Topic :: Utilities
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: appdirs ==1.4.4
+Requires-Dist: beautifulsoup4 >=4.1
+Requires-Dist: importlib-metadata >=3.3.0
+Requires-Dist: natsort >=8.1.0
+Requires-Dist: pathvalidate
+Requires-Dist: pillow <10,>=9.1.0
+Requires-Dist: pycountry
+Requires-Dist: pyrate-limiter <3,>=2.6
+Requires-Dist: rapidfuzz >=2.12.0
+Requires-Dist: requests ==2.*
+Requires-Dist: settngs ==0.7.2
+Requires-Dist: text2digits
+Requires-Dist: typing-extensions >=4.3.0
+Requires-Dist: wordninja
+Provides-Extra: 7z
+Requires-Dist: py7zr ; extra == '7z'
+Provides-Extra: cbr
+Requires-Dist: rarfile >=4.0 ; extra == 'cbr'
+Provides-Extra: gui
+Requires-Dist: PyQt5 ; extra == 'gui'
+Provides-Extra: icu
+Requires-Dist: pyicu ; (sys_platform == "linux" or sys_platform == "darwin") and extra == 'icu'
+Provides-Extra: qtw
+Requires-Dist: PyQt5 ; extra == 'qtw'
+Requires-Dist: PyQtWebEngine ; extra == 'qtw'
+Provides-Extra: all
+Requires-Dist: PyQt5 ; extra == 'all'
+Requires-Dist: PyQtWebEngine ; extra == 'all'
+Requires-Dist: metron-talker >=0.1.1 ; extra == 'all'
+Requires-Dist: py7zr ; extra == 'all'
+Requires-Dist: rarfile >=4.0 ; extra == 'all'
+Requires-Dist: pyicu ; (sys_platform == "linux" or sys_platform == "darwin") and extra == 'all'
+Provides-Extra: metron
+Requires-Dist: metron-talker >=0.1.1 ; extra == 'metron'
+
+[![CI](https://github.com/comictagger/comictagger/actions/workflows/build.yaml/badge.svg?branch=develop&event=push)](https://github.com/comictagger/comictagger/actions/workflows/build.yaml)
+[![GitHub release (latest by date)](https://img.shields.io/github/downloads/comictagger/comictagger/latest/total)](https://github.com/comictagger/comictagger/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/comictagger)](https://pypi.org/project/comictagger/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/comictagger)](https://pypistats.org/packages/comictagger)
+[![Chocolatey package](https://img.shields.io/chocolatey/dt/comictagger?color=blue&label=chocolatey)](https://community.chocolatey.org/packages/comictagger)
+[![PyPI - License](https://img.shields.io/pypi/l/comictagger)](https://opensource.org/licenses/Apache-2.0)
+
+[![GitHub Discussions](https://img.shields.io/github/discussions/comictagger/comictagger)](https://github.com/comictagger/comictagger/discussions)
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/comictagger/community)
+[![Google Group](https://img.shields.io/badge/discuss-on%20groups-%23207de5)](https://groups.google.com/forum/#!forum/comictagger)
+[![Twitter](https://img.shields.io/badge/%40comictagger-twitter-lightgrey)](https://twitter.com/comictagger)
+[![Facebook](https://img.shields.io/badge/comictagger-facebook-lightgrey)](https://www.facebook.com/ComicTagger-139615369550787/)
+
+# ComicTagger
+
+ComicTagger is a **multi-platform** app for **writing metadata to digital comics**, written in Python and PyQt.
+
+![ComicTagger logo](https://raw.githubusercontent.com/comictagger/comictagger/develop/comictaggerlib/graphics/app.png)
+
+## Features
+
+* Runs on macOS, Microsoft Windows, and Linux systems
+* Get comic information from [Comic Vine](https://comicvine.gamespot.com/)
+* **Automatic issue matching** using advanced image processing techniques
+* **Batch processing** in the GUI for tagging hundreds or more comics at a time
+* Support for **ComicRack** and **ComicBookLover** tagging formats
+* Native full support for **CBZ** digital comics
+* Native read only support for **CBR** digital comics: full support enabled installing additional [rar tools](https://www.rarlab.com/download.htm)
+* Command line interface (CLI) enabling **custom scripting** and **batch operations on large collections**
+
+For details, screen-shots, and more, visit [the Wiki](https://github.com/comictagger/comictagger/wiki)
+
+
+## Installation
+
+### Binaries
+
+Windows, Linux and MacOS binaries are provided in the [Releases Page](https://github.com/comictagger/comictagger/releases).
+
+Just unzip the archive in any folder and run, no additional installation steps are required.
+
+### PIP installation
+
+A pip package is provided, you can install it with:
+
+```
+ $ pip3 install comictagger[GUI]
+```
+
+There are optional dependencies. You can install the optional dependencies by specifying one or more of them in braces e.g. `comictagger[CBR,GUI]`
+
+Optional dependencies:
+1. `ICU`: Ensures that comic pages are supported correctly. This should always be installed. *Currently only exists in the latest alpha release *
+1. `CBR`: Provides support for CBR/RAR files.
+1. `GUI`: Installs the GUI.
+1. `7Z`: Provides support for CB7/7Z files.
+1. `all`: Installs all of the above optional dependencies.
+
+### Chocolatey installation (Windows only)
+
+A [Chocolatey package](https://community.chocolatey.org/packages/comictagger), maintained by @Xav83, is provided, you can install it with:
+```powershell
+choco install comictagger
+```
+### From source
+
+ 1. Ensure you have python 3.9 installed
+ 2. Clone this repository `git clone https://github.com/comictagger/comictagger.git`
+ 7. `pip3 install .[ICU]` or `pip3 install .[GUI,ICU]`
+
+
+## Contributors
+
+<!-- readme: beville,davide-romanini,collaborators,contributors -start -->
+<table>
+<tr>
+    <td align="center">
+        <a href="https://github.com/beville">
+            <img src="https://avatars.githubusercontent.com/u/7294848?v=4" width="100;" alt="beville"/>
+            <br />
+            <sub><b>beville</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/davide-romanini">
+            <img src="https://avatars.githubusercontent.com/u/731199?v=4" width="100;" alt="davide-romanini"/>
+            <br />
+            <sub><b>davide-romanini</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/fcanc">
+            <img src="https://avatars.githubusercontent.com/u/4999486?v=4" width="100;" alt="fcanc"/>
+            <br />
+            <sub><b>fcanc</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/lordwelch">
+            <img src="https://avatars.githubusercontent.com/u/7547075?v=4" width="100;" alt="lordwelch"/>
+            <br />
+            <sub><b>lordwelch</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/mizaki">
+            <img src="https://avatars.githubusercontent.com/u/1141189?v=4" width="100;" alt="mizaki"/>
+            <br />
+            <sub><b>mizaki</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/MichaelFitzurka">
+            <img src="https://avatars.githubusercontent.com/u/27830765?v=4" width="100;" alt="MichaelFitzurka"/>
+            <br />
+            <sub><b>MichaelFitzurka</b></sub>
+        </a>
+    </td></tr>
+<tr>
+    <td align="center">
+        <a href="https://github.com/abuchanan920">
+            <img src="https://avatars.githubusercontent.com/u/368793?v=4" width="100;" alt="abuchanan920"/>
+            <br />
+            <sub><b>abuchanan920</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/AlbanSeurat">
+            <img src="https://avatars.githubusercontent.com/u/500180?v=4" width="100;" alt="AlbanSeurat"/>
+            <br />
+            <sub><b>AlbanSeurat</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/rhaussmann">
+            <img src="https://avatars.githubusercontent.com/u/7084007?v=4" width="100;" alt="rhaussmann"/>
+            <br />
+            <sub><b>rhaussmann</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/jpcranford">
+            <img src="https://avatars.githubusercontent.com/u/21347202?v=4" width="100;" alt="jpcranford"/>
+            <br />
+            <sub><b>jpcranford</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/PawlakMarek">
+            <img src="https://avatars.githubusercontent.com/u/26022173?v=4" width="100;" alt="PawlakMarek"/>
+            <br />
+            <sub><b>PawlakMarek</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/Xav83">
+            <img src="https://avatars.githubusercontent.com/u/6787157?v=4" width="100;" alt="Xav83"/>
+            <br />
+            <sub><b>Xav83</b></sub>
+        </a>
+    </td></tr>
+<tr>
+    <td align="center">
+        <a href="https://github.com/thFrgttn">
+            <img src="https://avatars.githubusercontent.com/u/39759781?v=4" width="100;" alt="thFrgttn"/>
+            <br />
+            <sub><b>thFrgttn</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/tlc">
+            <img src="https://avatars.githubusercontent.com/u/19436?v=4" width="100;" alt="tlc"/>
+            <br />
+            <sub><b>tlc</b></sub>
+        </a>
+    </td></tr>
+</table>
+<!-- readme: beville,davide-romanini,collaborators,contributors -end -->
