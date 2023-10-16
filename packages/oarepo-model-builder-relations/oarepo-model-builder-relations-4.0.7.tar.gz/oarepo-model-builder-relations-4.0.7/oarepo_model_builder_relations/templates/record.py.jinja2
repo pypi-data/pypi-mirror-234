@@ -1,0 +1,15 @@
+from invenio_records.systemfields import RelationsField
+
+{{ relation_imports|generate_import }}
+
+class {{ vars.record|class_header }}:
+
+    relations = RelationsField(
+        {% for rel in relations %}
+        {{ rel.name }}={{ rel.relation_class }}("{{rel.path}}",
+            {% for param, val in rel.relation_args.items() %}
+                {{ param }} = {{ val }},
+            {% endfor %}
+        ),
+        {% endfor %}
+    )
