@@ -1,0 +1,182 @@
+# using version 2 for the gateway option with ipam
+version: '2'
+
+volumes:
+  mongodb_data:
+
+networks:
+  cpn:
+    external:
+      name: cpn
+
+services:
+  nrf:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    depends_on:
+      hss:
+        condition: service_started
+    container_name: nrf
+    hostname: nrf
+    entrypoint:
+      - /usr/local/bin/open5gs-nrfd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    healthcheck:
+      test: /scripts/nrfhc.sh
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.61
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  ausf:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: ausf
+    hostname: ausf
+    entrypoint:
+      - /usr/local/bin/open5gs-ausfd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.70
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  nssf:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: nssf
+    hostname: nssf
+    entrypoint:
+      - /usr/local/bin/open5gs-nssfd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.92
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  udm:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: udm
+    hostname: udm
+    entrypoint:
+      - /usr/local/bin/open5gs-udmd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.80
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  bsf:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: bsf
+    hostname: bsf
+    entrypoint:
+      - /usr/local/bin/open5gs-bsfd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.91
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  pcf:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: pcf
+    hostname: pcf
+    environment:
+      - DB_HOST=mongodb
+      - 'DB_USER=${DB_USER}'
+      - 'DB_PASS=${DB_PASS}'
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint:
+      - /usr/local/bin/open5gs-pcfd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.93
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  udr:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: udr
+    hostname: udr
+    environment:
+      - DB_HOST=mongodb
+      - 'DB_USER=${DB_USER}'
+      - 'DB_PASS=${DB_PASS}'
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint:
+      - /usr/local/bin/open5gs-udrd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.90
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  amf:
+    restart: always
+    image: iqtlabs/open5gs:v0.11.7
+    container_name: amf
+    hostname: amf
+    depends_on:
+      smf:
+        condition: service_started
+    entrypoint:
+      - /usr/local/bin/open5gs-amfd
+    command:
+      - -c
+      - /usr/local/etc/slice.yaml
+    volumes:
+      - "../configs:/usr/local/etc:z"
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.60
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"

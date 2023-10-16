@@ -1,0 +1,30 @@
+# using version 2 for the gateway option with ipam
+version: '2'
+
+networks:
+  rfn:
+    external:
+      name: rfn
+services:
+  ue1:
+    image: iqtlabs/ueransim:v0.11.7
+    container_name: ue1
+    depends_on:
+      - gnb
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    devices:
+      - /dev/net/tun
+    networks:
+      rfn:
+        ipv4_address: 192.168.28.101
+    volumes:
+      - "../configs/UERANSIM:/config:z"
+    labels:
+      - "daedalus.namespace=primary"
+    entrypoint:
+      - /scripts/run_ue.sh
+    command:
+      - -c
+      - /config/ue.yaml

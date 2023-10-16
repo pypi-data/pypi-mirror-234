@@ -1,0 +1,65 @@
+# using version 2 for the gateway option with ipam
+version: '2'
+
+volumes:
+  mongodb_data:
+
+networks:
+  cpn:
+    external:
+      name: cpn
+
+services:
+  mongodb:
+    image: mongo:jammy
+    container_name: "mongodb"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      - 'MONGO_INITDB_ROOT_USERNAME=${DB_USER}'
+      - 'MONGO_INITDB_ROOT_PASSWORD=${DB_PASS}'
+    command:
+      - mongod
+      - --bind_ip
+      - 0.0.0.0
+    hostname: mongodb
+    healthcheck:
+      test: mongosh mongodb:27017/test --quiet --eval 'db.runCommand("ping").ok'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.5
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
+  mongodbloader:
+    image: mongo:jammy
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mongodb
+      - 'DB_USER=${DB_USER}'
+      - 'DB_PASS=${DB_PASS}'
+    volumes:
+      - "../configs/imsis.json:/tmp/imsis.json:z"
+      - "../open5gs/scripts/run_db.sh:/scripts/run_db.sh:z"
+    entrypoint:
+      - /bin/sh
+      - /scripts/run_db.sh
+
+    healthcheck:
+      test: /bin/cat /importdone
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      cpn:
+        ipv4_address: 192.168.26.19
+    labels:
+      - "dovesnap.faucet.mirror=true"
+      - "daedalus.namespace=primary"
