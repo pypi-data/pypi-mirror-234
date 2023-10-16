@@ -1,0 +1,3 @@
+from conan.tools.cmake.cmakedeps import FIND_MODE_BOTH as FIND_MODE_BOTH, FIND_MODE_MODULE as FIND_MODE_MODULE
+
+def is_multi_configuration(generator): ...
