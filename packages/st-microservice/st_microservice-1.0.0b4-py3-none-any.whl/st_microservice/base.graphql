@@ -1,0 +1,39 @@
+directive @no_authentication on FIELD_DEFINITION | OBJECT
+directive @need_permission(scope: String!, strict: Boolean=false) on FIELD_DEFINITION | OBJECT
+directive @all_filter on OBJECT
+directive @db_model(model_name: String!) on OBJECT  # When Object name doesn't match a database Model name
+directive @filter on FIELD_DEFINITION
+directive @no_filter on FIELD_DEFINITION
+
+scalar Date
+scalar DateTime
+scalar Json
+
+enum FieldFilterType {
+    STRING
+    NUMBER
+    DATE
+    BOOLEAN
+    LIST
+}
+
+type FieldDetail {
+    field_name: String!
+    filter_type: FieldFilterType
+    editable: Boolean!
+}
+
+type TypeInspectorResult {
+    field_details: [FieldDetail!]!
+    primary_keys: [String!]
+}
+
+input FieldFilter {
+    field_name: String!
+    value: String!
+}
+
+input FileUpload {
+    data_url: String
+    filename: String!
+}
