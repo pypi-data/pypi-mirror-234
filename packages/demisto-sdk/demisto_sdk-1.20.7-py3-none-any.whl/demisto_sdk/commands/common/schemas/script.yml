@@ -1,0 +1,186 @@
+type: map
+mapping:
+  commonfields:
+    type: map
+    required: True
+    mapping:
+      id:
+        type: str
+        required: True
+      id_x2:
+        type: str
+      version:
+        type: int
+        required: True
+  name:
+    type: str
+    required: True
+  name_x2:
+    type: str
+  script:
+    type: str
+    required: True
+  type:
+    type: str
+    required: True
+    enum: ['javascript', 'python', 'powershell']
+  tags:
+    type: seq
+    sequence:
+      - type: str
+  comment:
+    type: str
+    required: True
+  comment_x2:
+    type: str
+  enabled:
+    type: bool
+  system:
+    type: bool
+  deprecated:
+    type: bool
+  args:
+    type: seq
+    sequence:
+      - include: argument_schema
+  scripttarget:
+    type: int
+  timeout:
+    type: text
+  dependson:
+    type: map
+    allowempty: True
+  dependson_x2:
+    type: map
+    allowempty: True
+  outputs:
+    type: seq
+    sequence:
+      - include: output_schema
+  important:
+    type: seq
+    sequence:
+      - include: important_schema
+  fromversion:
+    type: text
+  toversion:
+    type: text
+  dockerimage:
+    type: str
+  dockerimage45:
+    type: str
+  alt_dockerimages:
+    type: seq
+    sequence:
+    - type: str
+  nativeImage:
+    type: seq
+    sequence:
+    - type: str
+  runonce:
+    type: bool
+  tests:
+    type: seq
+    sequence:
+    - type: str
+  sensitive:
+    type: bool
+  runas:
+    type: str
+  subtype:
+    type: str
+    enum: ['python2', 'python3']
+  engineinfo:
+    type: map
+    mapping:
+      engine:
+        type: str
+  contentitemexportablefields:
+    type: map
+    mapping:
+      contentitemfields:
+        type: map
+        mapping:
+          fromServerVersion:
+            type: str
+  polling:
+    type: bool
+  autoUpdateDockerImage:
+    type: bool
+  marketplaces:
+    type: seq
+    sequence:
+      - type: str
+        enum: ['xsoar', 'marketplacev2', 'xpanse', 'xsoar_saas', 'xsoar_on_prem']
+  skipprepare:
+    type: seq
+    sequence:
+      - type: str
+        enum: ['script-name-incident-to-alert']
+
+# script->args
+schema;argument_schema:
+  type: map
+  mapping:
+    name:
+      type: str
+      required: True
+    description:
+      type: str
+      required: True
+    description_x2:
+      type: str
+    defaultValue:
+      type: str
+    required:
+      type: bool
+    default:
+      type: bool
+    auto:
+      type: str
+      enum: ['PREDEFINED']
+    predefined:
+      type: seq
+      sequence:
+      - type: str
+    isArray:
+      type: bool
+    secret:
+      type: bool
+    deprecated:
+      type: bool
+    type:
+      type: str
+    hidden:
+      type: bool
+
+# script->outputs
+schema;output_schema:
+  type: map
+  mapping:
+    contentPath:
+      type: str
+    contextPath:
+      type: scalar
+    description:
+      type: str
+      required: True
+    description_x2:
+      type: str
+    type:
+      type: str
+
+# script->important
+schema;important_schema:
+  type: map
+  mapping:
+    contextPath:
+      type: str
+      required: True
+    description:
+      type: str
+      required: True
+    description_x2:
+      type: str
+    related:
+      type: str
