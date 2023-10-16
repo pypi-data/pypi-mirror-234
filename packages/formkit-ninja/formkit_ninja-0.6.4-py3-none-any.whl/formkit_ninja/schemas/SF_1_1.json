@@ -1,0 +1,200 @@
+{
+ "$formkit": "group",
+ "children": [
+  {
+   "$formkit": "group",
+   "children": [
+    {
+     "$formkit": "select",
+     "id": "activity_type",
+     "key": "activity_type",
+     "label": "$pgettext('activity_type', 'Meeting or Training')",
+     "name": "activity_type",
+     "options": "$ida(programactivitytype)",
+     "placeholder": "$gettext(\"Please select\")"
+    },
+    {
+     "$formkit": "select",
+     "id": "activity_subtype",
+     "if": "$get(activity_type).value",
+     "key": "activity_subtype",
+     "label": "$pgettext('activity_type', 'Activity Type')",
+     "name": "activity_subtype",
+     "options": "$ida(programactivity, \"type_id=\"+$get(activity_type).value))",
+     "placeholder": "$gettext(\"Please select\")"
+    },
+    {
+     "$formkit": "datepicker",
+     "_currentDate": "$getCurrentDate",
+     "calendarIcon": "calendar",
+     "format": "DD/MM/YYYY",
+     "id": "date",
+     "key": "date",
+     "label": "$gettext(\"Date\")",
+     "name": "date",
+     "nextIcon": "angleRight",
+     "prevIcon": "angleLeft",
+     "sectionsSchema": {
+      "day": {
+       "children": [
+        "$day.getDate()",
+        {
+         "children": [
+          {
+           "children": [
+            {
+             "$el": "div",
+             "attrs": {
+              "class": "formkit-day-highlight"
+             },
+             "if": "$attrs._currentDate().year === $day.getFullYear()"
+            }
+           ],
+           "if": "$attrs._currentDate().month === $day.getMonth()"
+          }
+         ],
+         "if": "$attrs._currentDate().day === $day.getDate()"
+        }
+       ]
+      }
+     }
+    }
+   ],
+   "icon": "las la-info-circle",
+   "id": "meetingInformation",
+   "title": "Meeting Information"
+  },
+  {
+   "$formkit": "group",
+   "children": [
+    {
+     "$formkit": "select",
+     "id": "district",
+     "key": "district",
+     "label": "$gettext(Municipality)",
+     "name": "district",
+     "options": "$getLocations()"
+    },
+    {
+     "$formkit": "select",
+     "id": "administrative_post",
+     "if": "$get(district).value && $get(activity_subtype).value !== '20'",
+     "key": "administrative_post",
+     "label": "$gettext(\"Administrative Post\")",
+     "name": "administrative_post",
+     "options": "$getLocations($get(district).value)"
+    },
+    {
+     "$formkit": "select",
+     "id": "suco",
+     "if": "$get(administrative_post).value && $get(activity_subtype).value !== '20' && $get(activity_subtype).value !== '21'",
+     "key": "suco",
+     "label": "$gettext(Suco)",
+     "name": "suco",
+     "options": "$getLocations($get(district).value, $get(administrative_post).value)"
+    },
+    {
+     "$formkit": "select",
+     "id": "aldeia",
+     "if": "$get(suco).value && $get(activity_type).value !== '1' && $get(activity_subtype).value !== '20' && $get(activity_subtype).value !== '21' && $get(activity_subtype).value !== '1' && $get(activity_subtype).value !== '24' && $get(activity_subtype).value !== '4' && $get(activity_subtype).value !== '11' && $get(activity_subtype).value !== '16' && $get(activity_subtype).value !== '17' && $get(activity_subtype).value !== '28'",
+     "key": "aldeia",
+     "label": "$gettext(Aldeia)",
+     "name": "aldeia",
+     "options": "$getLocations($get(district).value, $get(administrative_post).value, $get(suco).value)"
+    }
+   ],
+   "icon": "las la-map-marked-alt",
+   "id": "location",
+   "title": "Location"
+  },
+  {
+   "$formkit": "group",
+   "children": [
+    {
+     "$formkit": "number",
+     "id": "attendance_male",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 40 && $get(activity_subtype).value != 11",
+     "key": "attendance_male",
+     "label": "$pgettext('partisipants', 'Total participants male')",
+     "min": 0,
+     "name": "attendance_male",
+     "validation": "greaterThanOrEqualSum:kpa_male+community_member_male",
+     "validation-messages": {
+      "greaterThanOrEqualSum": "$gettext(\"The total participants male should be greater than or equal to the sum of Participants Suku Management Team (SMT) - male and Number of community members - male\")"
+     }
+    },
+    {
+     "$formkit": "number",
+     "id": "attendance_female",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 11",
+     "key": "attendance_female",
+     "label": "$pgettext('partisipants', 'Total participants female')",
+     "min": 0,
+     "name": "attendance_female",
+     "validation": "greaterThanOrEqualSum:kpa_female+community_member_female",
+     "validation-messages": {
+      "greaterThanOrEqualSum": "$gettext(\"The total participants female should be greater than or equal to the sum of Participants Suku Management Team (SMT) - female and Number of community members - female\")"
+     }
+    },
+    {
+     "$formkit": "number",
+     "id": "kpa_male",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 20 && $get(activity_subtype).value != 21 && $get(activity_subtype).value != 40 && $get(activity_subtype).value != 11",
+     "key": "kpa_male",
+     "label": "$pgettext('partisipants', 'Participants Suku Management Team (SMT) - male')",
+     "min": 0,
+     "name": "kpa_male"
+    },
+    {
+     "$formkit": "number",
+     "id": "kpa_female",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 11 && $get(activity_subtype).value != 20 && $get(activity_subtype).value != 21",
+     "key": "kpa_female",
+     "label": "$pgettext('partisipants', 'Participants Suku Management Team (SMT) - female')",
+     "min": 0,
+     "name": "kpa_female"
+    },
+    {
+     "$formkit": "number",
+     "id": "disable_male",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 40 && $get(activity_subtype).value != 11",
+     "key": "disable_male",
+     "label": "$pgettext('partisipants', 'Number of People with Disability - male')",
+     "min": 0,
+     "name": "disable_male"
+    },
+    {
+     "$formkit": "number",
+     "id": "disable_female",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 11",
+     "key": "disable_female",
+     "label": "$pgettext('partisipants', 'Number of People with Disability - female')",
+     "min": 0,
+     "name": "disable_female"
+    },
+    {
+     "$formkit": "number",
+     "id": "community_member_male",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 20 && $get(activity_subtype).value != 21 && $get(activity_subtype).value != 40 && $get(activity_subtype).value != 11",
+     "key": "community_member_male",
+     "label": "$pgettext('partisipants', 'Number of community members - male')",
+     "min": 0,
+     "name": "community_member_male"
+    },
+    {
+     "$formkit": "number",
+     "id": "community_member_female",
+     "if": "$get(activity_type).value !== '----' && $get(activity_subtype).value !== '----' && $get(activity_subtype).value != 16 && $get(activity_subtype).value != 11 && $get(activity_subtype).value != 20 && $get(activity_subtype).value != 21",
+     "key": "community_member_female",
+     "label": "$pgettext('partisipants', 'Number of community members - female')",
+     "min": 0,
+     "name": "community_member_female"
+    }
+   ],
+   "icon": "las la-users",
+   "id": "participants",
+   "title": "Participants"
+  }
+ ],
+ "name": "SF_1_1"
+}

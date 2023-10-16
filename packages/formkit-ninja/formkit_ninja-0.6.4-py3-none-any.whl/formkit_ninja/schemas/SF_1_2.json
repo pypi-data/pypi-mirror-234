@@ -1,0 +1,110 @@
+{
+ "$formkit": "group",
+ "children": [
+  {
+   "$formkit": "group",
+   "children": [
+    {
+     "$formkit": "select",
+     "id": "district",
+     "key": "district",
+     "label": "$gettext(Municipality)",
+     "name": "district",
+     "options": "$getLocations()"
+    },
+    {
+     "$formkit": "select",
+     "id": "administrative_post",
+     "if": "$get(district).value",
+     "key": "administrative_post",
+     "label": "$gettext(\"Administrative Post\")",
+     "name": "administrative_post",
+     "options": "$getLocations($get(district).value)"
+    },
+    {
+     "$formkit": "select",
+     "id": "suco",
+     "if": "$get(administrative_post).value",
+     "key": "suco",
+     "label": "$gettext(Suco)",
+     "name": "suco",
+     "options": "$getLocations($get(district).value, $get(administrative_post).value)"
+    },
+    {
+     "$formkit": "select",
+     "id": "aldeia",
+     "if": "$get(suco).value",
+     "key": "aldeia",
+     "label": "$gettext(Aldeia)",
+     "name": "aldeia",
+     "options": "$getLocations($get(district).value, $get(administrative_post).value, $get(suco).value)"
+    },
+    {
+     "$formkit": "datepicker",
+     "_currentDate": "$getCurrentDate",
+     "calendarIcon": "calendar",
+     "format": "DD/MM/YYYY",
+     "id": "date",
+     "key": "date",
+     "label": "$gettext(\"Date\")",
+     "name": "date",
+     "nextIcon": "angleRight",
+     "prevIcon": "angleLeft",
+     "sectionsSchema": {
+      "day": {
+       "children": [
+        "$day.getDate()",
+        {
+         "children": [
+          {
+           "children": [
+            {
+             "$el": "div",
+             "attrs": {
+              "class": "formkit-day-highlight"
+             },
+             "if": "$attrs._currentDate().year === $day.getFullYear()"
+            }
+           ],
+           "if": "$attrs._currentDate().month === $day.getMonth()"
+          }
+         ],
+         "if": "$attrs._currentDate().day === $day.getDate()"
+        }
+       ]
+      }
+     }
+    }
+   ],
+   "icon": "las la-map-marked-alt",
+   "id": "location",
+   "title": "Location"
+  },
+  {
+   "$formkit": "group",
+   "children": [
+    {
+     "$formkit": "autocomplete",
+     "id": "project_name",
+     "inputClass": "!pl-3",
+     "key": "project_name",
+     "label": "$gettext(\"Project name\")",
+     "name": "project_name",
+     "options": "$ida(output)",
+     "placeholder": "$gettext(\"Please enter\")"
+    },
+    {
+     "$formkit": "currency",
+     "label": "$gettext(\"Cost estimation\")",
+     "min": "0",
+     "name": "cost_estimation",
+     "placeholder": "$gettext(\"Please enter\")"
+    }
+   ],
+   "icon": "las la-address-book",
+   "id": "community",
+   "title": "Community contribution"
+  }
+ ],
+ "name": "SF_1_2"
+}
