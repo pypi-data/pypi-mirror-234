@@ -1,0 +1,40 @@
+<!-- begin columns -->
+
+    <td>
+      <input id="selected_item_{{wrapped.object.id}}" form="{{ form_action_name }}" name="{{ form_action_selected_items_name }}" type="checkbox" value="{{wrapped.object.id}}"/>
+    </td>
+    <td>
+    <div class="btn-group">
+        <a title="Edit Prescription" role="button" href="{{ wrapped.href }}" class="btn {% if wrapped.is_pending %} btn-warning {% else %} {% if wrapped.object.is_approved %} btn-info {% else %} btn-default {%  endif %} {% endif %} btn-sm"><i class="fa fa-pencil-alt fa-fw"></i></a>
+        <a title="Dispensing Listboard" role="button" href="{% url appointment_listboard_url_name wrapped.object.dispense_appointment.schedule.subject_identifier %}" class="btn btn-default btn-sm"><i class="fa fa-calendar fa-fw"></i></a>      
+            <span class="text text-identifier">
+        </span>&nbsp;
+      </div>
+    </td>
+    <td>
+        {{wrapped.object.dispense_appointment.schedule.subject_identifier}}
+    </td>
+    <td>
+        {{wrapped.object.medication_definition.description}}
+    </td>
+     <td>
+       {{wrapped.object.dispense_appointment.schedule.description}}
+    </td>
+     <td>
+        {{wrapped.object.dispense_appointment.appt_datetime | date:"d-m-Y"}}
+    </td>
+    <td>
+       {{wrapped.dispense_appt_describe.duration}} day(s)
+    </td>
+    <td>
+        {{wrapped.object.result}} {{wrapped.object.medication_definition.category}}(s)
+    </td>
+    <td>
+      {% if wrapped.object.is_approved %}
+        <span class="text text-success"><i class="fa fa-check-circle fa-fw" title="Approved"></i></span>
+      {% else %}
+        <span class="text text-danger"><i class="fa fa-times-circle fa-fw" title="Not Approved"></i></span>
+      {% endif %}
+    </td>
+
+<!-- end columns -->
