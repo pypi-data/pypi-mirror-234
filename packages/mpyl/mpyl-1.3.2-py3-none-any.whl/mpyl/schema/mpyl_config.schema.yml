@@ -1,0 +1,444 @@
+"$schema": http://json-schema.org/draft-07/schema#
+"$ref": "#/definitions/Config"
+definitions:
+  Config:
+    type: object
+    additionalProperties: false
+    properties:
+      mpylVersion:
+        description: >-
+          The MINIMAL version of MPyL that should be used to build this project. If not
+          specified, the latest version will be used.
+        type: string
+      vcs:
+        "$ref": "#/definitions/VCS"
+      docker:
+        "$ref": "#/definitions/Docker"
+      dagster:
+        "$ref": "#/definitions/Dagster"
+      whiteLists:
+        "$ref": "#/definitions/Whitelists"
+      cypress:
+        "$ref": "#/definitions/Cypress"
+      kubernetes:
+        "$ref": "#/definitions/Kubernetes"
+      project:
+        "$ref": "#/definitions/Project"
+      jenkins:
+        "$ref": "#/definitions/Jenkins"
+      sbt:
+        "$ref": "#/definitions/Sbt"
+      slack:
+        "$ref": "#/definitions/Slack"
+      jira:
+        "$ref": "#/definitions/Jira"
+      s3:
+        "$ref": "#/definitions/s3"
+    required:
+      - vcs
+      - docker
+    title: MPyL global configuration
+  Whitelists:
+    type: object
+    required:
+      - default
+      - addresses
+    properties:
+      default:
+        description: "Default whitelist for all environments"
+        type: array
+        items:
+          minItems: 1
+          type: string
+      addresses:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          additionalProperties: false
+          required:
+            - name
+          oneOf:
+            - required:
+                - pr
+                - test
+                - acceptance
+                - production
+            - required:
+                - all
+          properties:
+            name:
+              type: string
+            pr:
+              type: array
+              items:
+                minItems: 1
+                type: string
+            test:
+              type: array
+              items:
+                minItems: 1
+                type: string
+            acceptance:
+              type: array
+              items:
+                minItems: 1
+                type: string
+            production:
+              type: array
+              items:
+                minItems: 1
+                type: string
+            all:
+              type: array
+              items:
+                minItems: 1
+                type: string
+  Cypress:
+    type: object
+    additionalProperties: false
+    properties:
+      cypressSourceCodePath:
+        type: string
+        description: 'Path to cypress source code'
+      recordKey:
+        type: string
+        description: 'Key for recording runs to cypress dashboard'
+      kubectlConfigPath:
+        type: string
+        description: 'Path to kubectl config file'
+      ciBuildId:
+        type: [ string, null ]
+        description: 'Build id for cypress dashboard'
+    required:
+      - cypressSourceCodePath
+  Kubernetes:
+    type: object
+    additionalProperties: false
+    properties:
+      deployAction:
+        type: string
+        enum:
+          - 'HelmDeploy'
+          - 'HelmDryRun'
+          - 'HelmTemplate'
+          - 'KubectlManifest'
+        description: >-
+          Defines the action to take in the deploy step. Defaults to helmDeploy. 
+          If set to HelmDeploy, the helm chart will be deployed to the cluster.
+          If set to HelmDryRun, a helm chart deployment to the cluster will be simulated.
+          If set to HelmTemplate, the helm chart will be rendered and the result will be written to the folder specified in the helmTemplateOutputPath property
+          If set to KubectlManifest, a k8s manifest be written to the file specified in the kubectlManifestOutputPath property. This manifest can be deployd with kubectl apply -f <manifest>
+        default: 'HelmDeploy'
+      outputPath:
+        type: string
+        default: target/kubernetes
+        description: >-
+          The path to the folder where the rendered helm chart or kubectl manifest will be written.
+          Defaults to target/kubernetes under the root folder of the project.
+      rancher:
+        type: object
+        additionalProperties: false
+        properties:
+          cluster:
+            "$ref": "#/definitions/RancherClusters"
+  RancherClusters:
+    type: object
+    additionalProperties: false
+    properties:
+      test:
+        "$ref": "#/definitions/RancherCluster"
+      acceptance:
+        "$ref": "#/definitions/RancherCluster"
+      production:
+        "$ref": "#/definitions/RancherCluster"
+  RancherCluster:
+    type: object
+    additionalProperties: false
+    properties:
+      clusterId:
+        type: string
+      projectId:
+        type: string
+      clusterEnv:
+        type: string
+      context:
+        type: string
+    required: [ clusterId, projectId, clusterEnv, context ]
+  VCS:
+    type: object
+    additionalProperties: false
+    properties:
+      git:
+        "$ref": "#/definitions/Git"
+      github:
+        "$ref": "#/definitions/Github"
+    required:
+      - git
+      - github
+    title: VCS
+  Git:
+    type: object
+    additionalProperties: false
+    properties:
+      remote:
+        type: object
+        additionalProperties: false
+        properties:
+          url:
+            type: [ string, null ]
+          userName:
+            type: [ string, null ]
+          password:
+            type: [ string, null ]
+      mainBranch:
+        description: "The main branch of the repository, against which changes are compared"
+        type: string
+      ignorePatterns:
+        description: "Patterns to ignore when checking for changes"
+        type: array
+        default: [ ".md", "*.svg" ]
+        items:
+          type: string
+    required:
+      - mainBranch
+    title: Git
+  Github:
+    type: object
+    additionalProperties: false
+    properties:
+      repository:
+        type: string
+      token:
+        type: [ string, null ]
+      app:
+        type: object
+        properties:
+          privateKeyPath:
+            description: Used to authenticate with github if the app is used (https://github.com/apps/mpyl-pipeline)
+            type: string
+          privateKeyBase64Encoded:
+            description: Used to authenticate with github if the app is used (https://github.com/apps/mpyl-pipeline)
+            type: [ string, null ]
+          appId:
+            description: The id of the github app (https://github.com/apps/mpyl-pipeline) that has permission to update checks
+            type: string
+            default: 295700
+        required:
+          - appId
+    required:
+      - repository
+    title: Github
+  Docker:
+    type: object
+    additionalProperties: false
+    properties:
+      defaultRegistry:
+        type: string
+      registries:
+        type: array
+        minItems: 1
+        items:
+          "$ref": "#/definitions/Registry"
+      build:
+        "$ref": "#/definitions/Build"
+      compose:
+        type: object
+        properties:
+          periodSeconds:
+            description: "Polling interval for checking if containers are up"
+            type: integer
+            default: 2
+          failureThreshold:
+            description: "Maximum number of times to poll before considering 'docker-compose up' failed"
+            type: integer
+            default: 20
+        required: [ 'periodSeconds', 'failureThreshold' ]
+    required:
+      - registries
+      - defaultRegistry
+    title: Docker
+  Build:
+    type: object
+    additionalProperties: false
+    properties:
+      rootFolder:
+        type: string
+      buildTarget:
+        description: "The target in the multi-stage docker file to build in the 'build' stage"
+        type: string
+      testTarget:
+        description: "The target in the multi-stage docker file to build in the 'test' stage"
+        type: string
+      dockerFileName:
+        type: string
+    required: [ rootFolder, buildTarget, dockerFileName ]
+  Registry:
+    type: object
+    additionalProperties: false
+    properties:
+      hostName:
+        type: [ string, null ]
+      organization:
+        type: [ string, null ]
+      userName:
+        type: string
+      password:
+        type: string
+      cache:
+        type: object
+        additionalProperties: false
+        properties:
+          cacheFromRegistry:
+            description: "Whether to cache from the registry. When true, the to and from properties are ignored."
+            type: boolean
+            default: false
+          custom:
+            type: object
+            additionalProperties: false
+            properties:
+              to:
+                description: "The --cache-to argument for docker buildx"
+                type: string
+              from:
+                description: "The --cache-from argument for docker buildx"
+                type: string
+    required:
+      - hostName
+      - password
+      - userName
+    title: Registry
+  Sbt:
+    type: object
+    additionalProperties: false
+    properties:
+      command:
+        type: string
+      clientCommand:
+        type: string
+      verbose:
+        default: false
+        type: boolean
+      testWithCoverage:
+        type: string
+      javaOpts:
+        type: string
+      sbtOpts:
+        type: string
+      clientMode:
+        type: object
+        additionalProperties: false
+        properties:
+          build:
+            type: boolean
+            default: true
+          test:
+            type: boolean
+            default: true
+    required:
+      - command
+      - clientCommand
+      - javaOpts
+      - sbtOpts
+    title: Sbt
+  Project:
+    type: object
+    additionalProperties: false
+    required:
+      - allowedMaintainers
+      - deployment
+    properties:
+      allowedMaintainers:
+        type: array
+        items:
+          type: string
+      deployment:
+        type: object
+        additionalProperties: false
+        properties:
+          traefik:
+            "$ref": "project.schema.yml#/definitions/traefik"
+          kubernetes:
+            "$ref": "project.schema.yml#/definitions/kubernetes"
+  Slack:
+    type: object
+    additionalProperties: false
+    properties:
+      botToken:
+        type: [ string, null ]
+      icons:
+        type: object
+        properties:
+          building:
+            type: string
+          success:
+            type: string
+          failure:
+            type: string
+        required: [ 'success', 'failure', 'building' ]
+    required:
+      - botToken
+      - icons
+  Jenkins:
+    type: object
+    additionalProperties: false
+    required: [ 'url' ]
+    properties:
+      url:
+        type: [ string ]
+        format: url
+      pipelines:
+        type: object
+        additionalProperties: { "type": "string" }
+      defaultPipeline:
+        type: string
+  Jira:
+    type: object
+    additionalProperties: false
+    properties:
+      site:
+        description: "Only works with the cloud version of Jira"
+        type: [ string, null ]
+        format: uri
+      userName:
+        type: string
+      password:
+        type: string
+      token:
+        type: string
+      ticketPattern:
+        type: [ string, null ]
+        default: '[A-Za-z]{2,}-\d+'
+        description: 'A pattern that extracts a ticket number from the branch name'
+    required:
+      - site
+  s3:
+    type: object
+    properties:
+      accessKeyId:
+        type: [ string, null ]
+      secretAccessKey:
+        type: [ string, null ]
+    dependencies:
+      accessKeyId: [ secretAccessKey ]
+      secretAccessKey: [ accessKeyId ]
+  Dagster:
+    title: Dagster
+    type: object
+    additionalProperties: false
+    properties:
+      baseNamespace:
+        description: "Namespace that contains dagster instances"
+        type: string
+      workspaceConfigMap:
+        description: "Configmap that contains the dagster workspace configuration"
+        type: string
+      workspaceFileKey:
+        description: "Key of the workspaceConfigMap entry that contains the list of servers that are hosted on the dagster instance"
+        type: string
+      daemon:
+        description: "Name of the kubernetes instance that runs the dagster daemon"
+        type: string
+      webserver:
+        description: "Name of the kubernetes instance that runs the dagster web UI, default"
+        type: string

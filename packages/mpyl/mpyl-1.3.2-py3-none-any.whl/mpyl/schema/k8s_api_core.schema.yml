@@ -1,0 +1,145 @@
+# Taken from https://github.com/instrumenta/kubernetes-json-schema and converted to YAML
+definitions:
+  io.k8s.api.core.v1.EnvVarSource:
+    description: EnvVarSource represents a source for the value of an EnvVar.
+    properties:
+      configMapKeyRef:
+        $ref: '#/definitions/io.k8s.api.core.v1.ConfigMapKeySelector'
+        description: Selects a key of a ConfigMap.
+      fieldRef:
+        $ref: '#/definitions/io.k8s.api.core.v1.ObjectFieldSelector'
+        description: >-
+          Selects a field of the pod: supports metadata.name,
+          metadata.namespace, metadata.labels, metadata.annotations,
+          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP.
+      resourceFieldRef:
+        $ref: '#/definitions/io.k8s.api.core.v1.ResourceFieldSelector'
+        description: >-
+          Selects a resource of the container: only resources limits and
+          requests (limits.cpu, limits.memory, limits.ephemeral-storage,
+          requests.cpu, requests.memory and requests.ephemeral-storage) are
+          currently supported.
+      secretKeyRef:
+        $ref: '#/definitions/io.k8s.api.core.v1.SecretKeySelector'
+        description: Selects a key of a secret in the pod's namespace
+    type: object
+  io.k8s.api.core.v1.ConfigMapKeySelector:
+    description: Selects a key from a ConfigMap.
+    properties:
+      key:
+        description: The key to select.
+        type: string
+      name:
+        description: >-
+          Name of the referent. More info:
+          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+        type: string
+      optional:
+        description: Specify whether the ConfigMap or it's key must be defined
+        type: boolean
+    required:
+      - key
+    type: object
+  io.k8s.api.core.v1.ObjectFieldSelector:
+    description: ObjectFieldSelector selects an APIVersioned field of an object.
+    properties:
+      apiVersion:
+        description: >-
+          Version of the schema the FieldPath is written in terms of, defaults
+          to "v1".
+        type: string
+      fieldPath:
+        description: Path of the field to select in the specified API version.
+        type: string
+    required:
+      - fieldPath
+    type: object
+  io.k8s.api.core.v1.ResourceFieldSelector:
+    description: >-
+      ResourceFieldSelector represents container resources (cpu, memory) and
+      their output format
+    properties:
+      containerName:
+        description: 'Container name: required for volumes, optional for env vars'
+        type: string
+      divisor:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity'
+        description: Specifies the output format of the exposed resources, defaults to "1"
+      resource:
+        description: 'Required: resource to select'
+        type: string
+    required:
+      - resource
+    type: object
+  io.k8s.api.core.v1.SecretKeySelector:
+    description: SecretKeySelector selects a key of a Secret.
+    properties:
+      key:
+        description: The key of the secret to select from.  Must be a valid secret key.
+        type: string
+      name:
+        description: >-
+          Name of the referent. More info:
+          https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+        type: string
+      optional:
+        description: Specify whether the Secret or it's key must be defined
+        type: boolean
+    required:
+      - key
+    type: object
+  io.k8s.apimachinery.pkg.api.resource.Quantity:
+    oneOf:
+      - type: string
+      - type: number
+  io.k8s.api.core.v1.LocalObjectReference:
+    description: LocalObjectReference contains enough information to let you locate
+      the referenced object inside the same namespace.
+    properties:
+      name:
+        description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+        type: string
+    type: object
+  io.k8s.api.rbac.v1.PolicyRule:
+    description: PolicyRule holds information that describes a policy rule, but does
+      not contain information about who the rule applies to or which namespace the
+      rule applies to.
+    required:
+      - verbs
+    properties:
+      apiGroups:
+        description: APIGroups is the name of the APIGroup that contains the resources.  If
+          multiple API groups are specified, any action requested against one of the
+          enumerated resources in any API group will be allowed.
+        type: array
+        items:
+          type: string
+      nonResourceURLs:
+        description: NonResourceURLs is a set of partial urls that a user should have
+          access to.  *s are allowed, but only as the full, final step in the path
+          Since non-resource URLs are not namespaced, this field is only applicable
+          for ClusterRoles referenced from a ClusterRoleBinding. Rules can either
+          apply to API resources (such as "pods" or "secrets") or non-resource URL
+          paths (such as "/api"),  but not both.
+        type: array
+        items:
+          type: string
+      resourceNames:
+        description: ResourceNames is an optional white list of names that the rule
+          applies to.  An empty set means that everything is allowed.
+        type: array
+        items:
+          type: string
+      resources:
+        description: Resources is a list of resources this rule applies to.  ResourceAll
+          represents all resources.
+        type: array
+        items:
+          type: string
+      verbs:
+        description: Verbs is a list of Verbs that apply to ALL the ResourceKinds
+          and AttributeRestrictions contained in this rule.  VerbAll represents all
+          kinds.
+        type: array
+        items:
+          type: string
