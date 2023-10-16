@@ -1,0 +1,234 @@
+Metadata-Version: 2.1
+Name: aio-scrapy
+Version: 2.0.2
+Summary: A high-level Web Crawling and Web Scraping framework based on Asyncio
+Home-page: https://github.com/conlin-huang/aio-scrapy.git
+Author: conlin
+Author-email: 995018884@qq.com
+License: MIT
+Keywords: aio-scrapy,scrapy,aioscrapy,scrapy redis,asyncio,spider
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: aiohttp
+Requires-Dist: ujson
+Requires-Dist: w3lib (>=1.17.0)
+Requires-Dist: parsel (>=1.5.0)
+Requires-Dist: PyDispatcher (>=2.0.5)
+Requires-Dist: zope.interface (>=5.1.0)
+Requires-Dist: redis (>=4.3.1)
+Requires-Dist: aiomultiprocess (>=0.9.0)
+Requires-Dist: loguru (>=0.7.0)
+Provides-Extra: aio-pika
+Requires-Dist: aio-pika (>=8.1.1) ; extra == 'aio-pika'
+Provides-Extra: aiomysql
+Requires-Dist: aiomysql (>=0.1.1) ; extra == 'aiomysql'
+Requires-Dist: cryptography ; extra == 'aiomysql'
+Provides-Extra: all
+Requires-Dist: aiomysql (>=0.1.1) ; extra == 'all'
+Requires-Dist: httpx[http2] (>=0.23.0) ; extra == 'all'
+Requires-Dist: aio-pika (>=8.1.1) ; extra == 'all'
+Requires-Dist: cryptography ; extra == 'all'
+Requires-Dist: motor (>=3.1.1) ; extra == 'all'
+Requires-Dist: playwright (>=1.31.1) ; extra == 'all'
+Requires-Dist: pyhttpx (>=2.10.1) ; extra == 'all'
+Requires-Dist: asyncpg (>=0.27.0) ; extra == 'all'
+Requires-Dist: XlsxWriter (>=3.1.2) ; extra == 'all'
+Requires-Dist: pillow (>=9.4.0) ; extra == 'all'
+Requires-Dist: requests (>=2.28.2) ; extra == 'all'
+Provides-Extra: execl
+Requires-Dist: XlsxWriter (>=3.1.2) ; extra == 'execl'
+Requires-Dist: pillow (>=9.4.0) ; extra == 'execl'
+Provides-Extra: httpx
+Requires-Dist: httpx[http2] (>=0.23.0) ; extra == 'httpx'
+Provides-Extra: mongo
+Requires-Dist: motor (>=3.1.1) ; extra == 'mongo'
+Provides-Extra: pg
+Requires-Dist: asyncpg (>=0.27.0) ; extra == 'pg'
+Provides-Extra: playwright
+Requires-Dist: playwright (>=1.31.1) ; extra == 'playwright'
+Provides-Extra: pyhttpx
+Requires-Dist: pyhttpx (>=2.10.4) ; extra == 'pyhttpx'
+Provides-Extra: requests
+Requires-Dist: requests (>=2.28.2) ; extra == 'requests'
+
+<!--
+![aio-scrapy](./doc/images/aio-scrapy.png)
+-->
+### aio-scrapy
+
+An asyncio + aiolibs crawler  imitate scrapy framework
+
+English | [中文](./doc/README_ZH.md)
+
+### Overview
+- aio-scrapy framework is base on opensource project Scrapy & scrapy_redis.
+- aio-scrapy implements compatibility with scrapyd.
+- aio-scrapy implements redis queue and rabbitmq queue.
+- aio-scrapy is a fast high-level web crawling and web scraping framework, used to crawl websites and extract structured data from their pages.
+- Distributed crawling/scraping.
+### Requirements
+
+- Python 3.9+
+- Works on Linux, Windows, macOS, BSD
+
+### Install
+
+The quick way:
+
+```shell
+# Install the latest aio-scrapy
+pip install git+https://github.com/conlin-huang/aio-scrapy
+
+# default
+pip install aio-scrapy
+
+# Install all dependencies 
+pip install aio-scrapy[all]
+
+# When you need to use mysql/httpx/rabbitmq/mongo
+pip install aio-scrapy[aiomysql,httpx,aio-pika,mongo]
+```
+
+### Usage
+
+#### create project spider:
+
+```shell
+aioscrapy startproject project_quotes
+```
+
+```
+cd project_quotes
+aioscrapy genspider quotes 
+```
+
+quotes.py
+
+```python
+from aioscrapy.spiders import Spider
+
+
+class QuotesMemorySpider(Spider):
+    name = 'QuotesMemorySpider'
+
+    start_urls = ['https://quotes.toscrape.com']
+
+    async def parse(self, response):
+        for quote in response.css('div.quote'):
+            yield {
+                'author': quote.xpath('span/small/text()').get(),
+                'text': quote.css('span.text::text').get(),
+            }
+
+        next_page = response.css('li.next a::attr("href")').get()
+        if next_page is not None:
+            yield response.follow(next_page, self.parse)
+
+
+if __name__ == '__main__':
+    QuotesMemorySpider.start()
+
+```
+
+run the spider:
+
+```shell
+aioscrapy crawl quotes
+```
+
+#### create single script spider:
+
+```shell
+aioscrapy genspider single_quotes -t single
+```
+
+single_quotes.py:
+
+```python
+from aioscrapy.spiders import Spider
+
+
+class QuotesMemorySpider(Spider):
+    name = 'QuotesMemorySpider'
+    custom_settings = {
+        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36",
+        'CLOSE_SPIDER_ON_IDLE': True,
+        # 'DOWNLOAD_DELAY': 3,
+        # 'RANDOMIZE_DOWNLOAD_DELAY': True,
+        # 'CONCURRENT_REQUESTS': 1,
+        # 'LOG_LEVEL': 'INFO'
+    }
+
+    start_urls = ['https://quotes.toscrape.com']
+
+    @staticmethod
+    async def process_request(request, spider):
+        """ request middleware """
+        pass
+
+    @staticmethod
+    async def process_response(request, response, spider):
+        """ response middleware """
+        return response
+
+    @staticmethod
+    async def process_exception(request, exception, spider):
+        """ exception middleware """
+        pass
+
+    async def parse(self, response):
+        for quote in response.css('div.quote'):
+            yield {
+                'author': quote.xpath('span/small/text()').get(),
+                'text': quote.css('span.text::text').get(),
+            }
+
+        next_page = response.css('li.next a::attr("href")').get()
+        if next_page is not None:
+            yield response.follow(next_page, self.parse)
+
+    async def process_item(self, item):
+        print(item)
+
+
+if __name__ == '__main__':
+    QuotesMemorySpider.start()
+
+```
+
+run the spider:
+
+```shell
+aioscrapy runspider quotes.py
+```
+
+
+### more commands:
+
+```shell
+aioscrapy -h
+```
+
+### Documentation
+[doc](./doc/documentation.md)
+
+### Ready
+
+please submit your sugguestion to owner by issue
+
+## Thanks
+
+[aiohttp](https://github.com/aio-libs/aiohttp/)
+
+[scrapy](https://github.com/scrapy/scrapy)
+
