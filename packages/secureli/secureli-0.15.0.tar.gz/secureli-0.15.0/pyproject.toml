@@ -1,0 +1,69 @@
+[tool.poetry]
+name = "secureli"
+version = "0.15.0"
+description = "Secure Project Manager"
+authors = ["Caleb Tonn <caleb.tonn@slalom.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.scripts]
+secureli = "secureli.main:app"
+
+[tool.poe.tasks]
+coverage = ["test", "coverage_report"]
+coverage_report = "coverage report"
+coverage_run = "coverage run -m pytest"
+coverage_html = "coverage html"
+docker-build-app = "docker build -t secureli . -f Dockerfile_secureli --progress=plain --no-cache"
+docker-build-homebrew = "docker build -t homebrew . -f Dockerfile_homebrew --no-cache --progress=plain"
+docker-build-pypi = "docker build -t pypi . -f Dockerfile_pypi --no-cache --progress=plain"
+init = ["install", "secureli_init"]
+secureli_init = "secureli init -y"
+install = "poetry install"
+lint = "black --check ."
+precommit = "pre-commit run -a"
+test = ["init", "lint", "coverage_run", "coverage_report"]
+e2e = "bats tests/end-to-end/test.bats"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+typer = {version = ">=0.6.1,<0.10.0", extras = ["all"]}
+pygments = "^2.13.0"
+dependency-injector = {version = "^4.40.0", extras = ["yaml"]}
+pydantic = "^1.10.2"
+jinja2 = "^3.1.2"
+pathspec = ">=0.10.1,<0.12.0"
+cfgv = "^3.3.1"
+pre-commit = ">=2.20,<4.0"
+requests = "^2.31.0"
+pyyaml = ">=6.0.1"
+
+[tool.pytest.ini_options]
+addopts = "-p no:cacheprovider"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.1.3"
+pytest-mock = "^3.10.0"
+coverage = ">=6.5,<8.0"
+black = ">=22.10,<24.0"
+identify = "^2.5.7"
+poethepoet = ">=0.16.4,<0.24.0"
+python-semantic-release = ">=8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:tool.poetry.version"]
+major_on_zero = true
+branch = "main"
+upload_to_PyPI = false
+upload_to_vcs_release = true
+upload_to_repository = false
+prerelease = true
+parser_angular_default_level_bump = "patch"
+patch_tags = "fix,perf,docs,chore,chore(release)"
+build_command = "pip install poetry && poetry build"
+commit_message = "chore(release): Tag v{version} [skip ci]"
+tag_format = "v{version}"
