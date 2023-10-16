@@ -1,0 +1,102 @@
+name: Continuous Integration
+on: [push, pull_request]
+env:
+  PROJECT_NAME: #PROJECT_NAME#
+
+jobs:
+  validation:
+    name: Validation
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Uncomment this if you need to install private dependencies
+      # - name: Configure SSH
+      #   uses: webfactory/ssh-agent@v0.7.0
+      #   with:
+      #       ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        uses: i2mint/isee/actions/install-packages@master
+        with:
+          dependency-files: setup.cfg
+
+      - name: Format Source Code
+        uses: i2mint/isee/actions/format-source-code@master
+
+      - name: Pylint Validation
+        uses: i2mint/isee/actions/pylint-validation@master
+        with:
+          root-dir: ${{ env.PROJECT_NAME }}
+          enable: C0114,E0401
+
+      - name: Pytest Validation
+        uses: i2mint/isee/actions/pytest-validation@master
+        with:
+          root-dir: ${{ env.PROJECT_NAME }}
+
+  publish:
+    name: Publish
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')"
+    needs: validation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+            ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Configure Git User
+        uses: i2mint/isee/actions/configure-git-user@master
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        uses: i2mint/isee/actions/install-packages@master
+        with:
+          dependency-files: setup.cfg
+
+      - name: Format Source Code
+        uses: i2mint/isee/actions/format-source-code@master
+
+      - name: Update Version Number
+        uses: i2mint/isee/actions/bump-version-number@master
+
+      - name: Package
+        uses: i2mint/isee/actions/package@master
+
+      - name: Publish
+        uses: i2mint/isee/actions/publish@master
+        with:
+          pypi-username: ${{ secrets.PYPI_USERNAME }}
+          pypi-password: ${{ secrets.PYPI_PASSWORD }}
+
+      - name: Check In
+        uses: i2mint/isee/actions/check-in@master
+        with:
+          commit-message: "**CI** Formatted code + Updated version number and documentation. [skip ci]"
+
+      - name: Tag Repository With New Version Number
+        uses: i2mint/isee/actions/tag-repository@master
+        with:
+          tag: $VERSION
