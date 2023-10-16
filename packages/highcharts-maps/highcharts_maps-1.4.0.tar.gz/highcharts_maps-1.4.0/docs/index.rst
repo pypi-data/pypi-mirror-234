@@ -1,0 +1,451 @@
+.. image:: _static/highcharts-for-python-light-150x149.png
+  :alt: Highcharts for Python - High-end Data Visualization for the Python Ecosystem
+  :align: right
+  :width: 150
+  :height: 149
+
+|
+|
+
+###################################################
+Highcharts Maps for Python
+###################################################
+
+**High-end data and map visualization for the Python ecosystem**
+
+.. toctree::
+  :hidden:
+  :maxdepth: 3
+  :caption: Contents
+
+  Home <self>
+  Quickstart: Patterns and Best Practices <quickstart>
+  Demos <demos>
+  Supported Visualizations <visualizations>
+  FAQ <faq>
+  Toolkit Components and Roadmap <toolkit>
+  Using Highcharts Maps for Python <using>
+  Tutorials <tutorials>
+  API Reference <api>
+  Error Reference <errors>
+  Getting Help <support>
+  Contributor Guide <contributing>
+  Testing Reference <testing>
+  Release History <history>
+  Glossary <glossary>
+  License <license>
+
+.. sidebar:: Version Compatibility
+
+  **Latest Highcharts (JS) version supported:** v.11.1.0
+
+  **Highcharts Maps for Python** is designed to be compatible with:
+
+    * Python 3.10 or higher,
+    * Highcharts JS 10.2 or higher,
+    * Highcharts Core for Python 1.0.0 or higher,
+    * Jupyter Notebook 6.4 or higher,
+    * IPython 8.10 or higher,
+    * NumPy 1.19 or higher,
+    * Pandas 1.3 or higher
+    * PySpark 3.3 or higher
+    * topojson 1.5 or higher
+    * geojson 3.0 or higher
+    * GeoPandas 0.11 or higher
+    * PyShp 2.3.1 or higher
+
+**Highcharts Maps for Python** is an extension to the 
+`Highcharts Core for Python <https://core-docs.highchartspython.com>`__ library, 
+providing a Python wrapper for the 
+`Highcharts Maps <https://www.highcharts.com/products/maps/>`__
+JavaScript data visualization library. 
+
+**Highcharts Maps for Python** also supports
+
+  * **Highcharts Core (JS)** - the core Highcharts data visualization library
+  * The **Highcharts Export Server** - enabling the programmatic creation of static
+    (downloadable) data visualizations
+
+**Highcharts Maps for Python** is fully integrated with the broader Python ecosystem,
+offerin gnative integrations with:
+
+  * **Jupyter Labs/Notebook**. You can now produce high-end and interactive plots and
+    renders using the full suite of Highcharts visualization capabilities.
+  * **Pandas**. Automatically produce data visualizations from your Pandas dataframes
+  * **PySpark**. Automatically produce data visualizations from data in a PySpark
+    dataframe.
+  * **GeoPandas**. Automatically incorporate GIS / map visualizations with data from your
+    GeoPandas GeoDataFrames.
+  * **Topojson**. Automatically visualizes :term:`TopoJSON` :term:`map geometries <map geometry>`.
+  * **Geojson**. Automatically visualizes :term:`GeoJSON` :term:`map geometries <map geometry>`.
+
+.. contents::
+  :depth: 3
+  :backlinks: entry
+
+--------------------
+
+***************************************
+The Highcharts for Python Toolkit
+***************************************
+
+The **Highcharts Maps for Python** library is part of the broader 
+`Highcharts for Python Toolkit <https://www.highcharts.com/integrations/python>`__, 
+which together provides comprehensive support across the entire 
+`Highcharts <https://www.highcharts.com>`__ suite of data visualization libraries:
+
+.. list-table::
+  :widths: 30 30 40
+  :header-rows: 1
+
+  * - Python Library
+    - JavaScript Library
+    - Description
+  * - `Highcharts Core for Python <https://core-docs.highchartspython.com/>`__
+    - `Highcharts Core (JS) <https://www.highcharts.com/products/highcharts/>`__
+    - (this library) the core Highcharts data visualization library
+  * - `Highcharts Stock for Python <https://stock-docs.highchartspython.com/>`__
+    - `Highcharts Stock (JS) <https://www.highcharts.com/products/stock/>`__
+    - the time series visualization extension to Highcharts Core
+  * - **Highcharts Maps for Python**
+    - `Highcharts Maps (JS) <https://www.highcharts.com/products/maps/>`__
+    - the map visualization extension to Highcharts Core
+  * - `Highcharts Gantt <https://gantt-docs.highchartspython.com/>`__
+    - `Highcharts Gantt (JS) <https://www.highcharts.com/products/gantt/>`__
+    - the Gantt charting extension to Highcharts Core
+  * - (all libraries in the Python toolkit)
+    - The **Highcharts Export Server** 
+    - enabling the programmatic creation of static (downloadable) data visualizations
+
+---------------------
+
+*********************************
+Installation
+*********************************
+
+.. include:: _installation.rst
+
+Dependencies
+===============
+
+.. include:: _dependencies.rst
+
+*********************************
+Why Highcharts for Python?
+*********************************
+
+`Highcharts <https://www.highcharts.com>`__ is the world's most popular, most powerful, 
+category-defining JavaScript data visualization library. If you are building a web or 
+mobile app/dashboard that will be visualizing data in some fashion, you should 
+absolutely take a look at the Highcharts suite of solutions. Take a peak at some 
+fantastic `demo visualizations <https://www.highcharts.com/demo/maps>`__.
+
+As a suite of JavaScript libraries, `Highcharts <https://www.highcharts.com>`__ is 
+written in JavaScript, and is used to configure and render data visualizations in a
+web browser (or other JavaScript-executing) environment. As a set of JavaScript
+libraries, its audience is JavaScript developers. But what about the broader ecosystem of
+Python developers and data scientists?
+
+Given Python's increasing adoption as the technology of choice for data science and for
+the backends of leading enterprise-grade applications, Python is often the backend that 
+delivers data and content to the front-end...which then renders it using JavaScript and 
+HTML.
+
+There are numerous Python frameworks (Django, Flask, Tornado, etc.) with specific
+capabilities to simplify integration with Javascript frontend frameworks (React, Angular,
+VueJS, etc.). But facilitating that with Highcharts has historically been very difficult.
+Part of this difficulty is because the Highcharts JavaScript suite - while supporting JSON as a
+serialization/deserialization format - leverages 
+:term:`JavaScript object literals <JavaScript Object Literal Notation>` to expose the
+full power and interactivity of its data visualizations. And while it's easy to serialize
+JSON from Python, serializing and deserializing to/from JavaScript object literal notation
+is much more complicated. 
+
+This means that Python developers looking to integrate with Highcharts typically had to 
+either invest a lot of effort, or were only able to leverage a small portion of Highcharts' 
+rich functionality.
+
+So we wrote the **Highcharts for Python Toolkit** to bridge that gap.
+
+**Highcharts Maps for Python** provides support for
+the `Highcharts Maps <https://www.highcharts.com/products/maps/>`__ extension, which is
+designed to provide extensive map and data visualization capabilities optimized for
+:iabbr:`GIS (Geographic Information System)` data visualization, with
+robust interactivity. For ease of use, it also includes the full functionality of
+**Highcharts for Python** as well.
+
+Key Highcharts Maps for Python Features
+==============================================
+
+* **Clean and consistent API**. No reliance on "hacky" code, :class:`dict <python:dict>`
+  and JSON serialization, or impossible to maintain / copy-pasted "spaghetti code".
+* **Comprehensive Highcharts support**. Every single Highcharts chart type and every
+  single configuration option is supported in **Highcharts Maps for Python**. This
+  includes the over 70 data visualization types supported by
+  `Highcharts Core <https://www.highcharts.com/product/highcharts/>`__ and the four
+  core map visualizations available in 
+  `Highcharts Maps <https://www.highcharts.com/product/maps/>`__.
+  
+  Every Highcharts for Python library provides full support for the rich JavaScript 
+  formatter (JS :term:`callback functions <callback function>`) capabilities that are 
+  often needed to get the most out of Highcharts' visualization and interaction capabilities.
+
+  .. seealso::
+
+    * :doc:`Supported Visualizations <visualizations>`
+
+* **Simple JavaScript Code Generation**. With one method call, produce production-ready
+  JavaScript code to render your interactive visualizations using Highcharts' rich
+  capabilities.
+* **Easy Chart Download**. With one method call, produce high-end static
+  visualizations that can be downloaded or shared as files with your audience. Produce
+  static charts using the Highsoft-provided **Highcharts Export Server**, or using your 
+  own private export server as needed.
+* **Asynchronous Map Data Retrieval**. To minimize the amount of data transferred over
+  the wire, **Highcharts Maps for Python** has built-in support for the configuration of
+  asynchronous client-side retrieval of your map data.
+* **Automatic TopoJSON Optimization**. To minimize the amount of data transferred over
+  the wire, **Highcharts Maps for Python** automatically converts your
+  :term:`map geometries <map geometry>` to highly-efficient :term:`TopoJSON`
+  :term:`topologies <topology>` while still allowing you to work with :term:`GeoJSON` data
+  if you choose to.
+* **Integration with GeoPandas, Pandas, and PySpark**. With two lines of code, produce a
+  high-end interactive visualization of your GeoPandas, Pandas, or PySpark dataframes.
+* **Consistent Code Style**. For Python developers, switching between Pythonic code
+  conventions and JavaScript code conventions can be...annoying. So
+  **Highcharts for Python** applies Pythonic syntax with automatic conversion between
+  Pythonic ``snake_case`` notation and JavaScript ``camelCase`` styles.
+
+|
+
+**Highcharts Maps for Python** vs Alternatives
+=====================================================
+
+.. include:: _versus_alternatives.rst
+
+---------------------
+
+********************************
+Hello World, and Basic Usage
+********************************
+
+1. Import Highcharts Maps for Python
+==========================================
+
+.. include:: using/_importing.rst
+
+2. Create Your Chart
+================================
+
+  .. code-block:: python
+
+    # from a primitive array, using keyword arguments
+    my_chart = Chart(data = [[1, 23], [2, 34], [3, 45]], 
+                     series_type = 'line')
+
+    # from a primitive array, using the .from_array() method
+    my_chart = Chart.from_array([[1, 23], [2, 34], [3, 45]], 
+                                series_type = 'line')
+
+    # from a Numpy ndarray, using keyword arguments
+    my_chart = Chart(data = numpy_array, series_type = 'line')
+
+    # from a Numpy ndarray, using the .from_array() method
+    my_chart = Chart.from_array(data = numpy_array, series_type = 'line')
+
+    # from a JavaScript file
+    my_chart = Chart.from_js_literal('my_js_literal.js')
+
+    # from a JSON file
+    my_chart = Chart.from_json('my_json.json')
+
+    # from a Python dict
+    my_chart = Chart.from_dict(my_dict_obj)
+
+    # from a Pandas dataframe
+    my_chart = Chart.from_pandas(df)
+
+    # from a PySpark dataframe
+    my_chart = Chart.from_pyspark(df,
+                                  property_map = {
+                                      'x': 'transactionDate',
+                                      'y': 'invoiceAmt',
+                                      'id': 'id'
+                                  },
+                                  series_type = 'line')
+
+    # from a CSV
+    my_chart = Chart.from_csv('/some_file_location/filename.csv')
+
+    # from a HighchartsOptions configuration object
+    my_chart = Chart.from_options(my_options)
+
+    # from a Series configuration, using keyword arguments
+    my_chart = Chart(series = my_series)
+
+    # from a Series configuration, using .from_series()
+    my_chart = Chart.from_series(my_series)
+
+
+3. Configure Global Settings (optional)
+=============================================
+
+  .. code-block:: python
+
+    # Import SharedMapsOptions
+    from highcharts_maps.global_options.shared_options import SharedMapsOptions
+
+    # from a JavaScript file
+    my_global_settings = SharedMapsOptions.from_js_literal('my_js_literal.js')
+
+    # from a JSON file
+    my_global_settings = SharedMapsOptions.from_json('my_json.json')
+
+    # from a Python dict
+    my_global_settings = SharedMapsOptions.from_dict(my_dict_obj)
+
+    # from a HighchartsOptions configuration object
+    my_global_settings = SharedMapsOptions.from_options(my_options)
+
+
+4. Configure Your Chart / Global Settings
+================================================
+
+  .. code-block:: python
+
+    from highcharts_maps.options.title import Title
+    from highcharts_maps.options.credits import Credits
+
+    # EXAMPLE 1.
+    # Using dicts
+    my_chart.title = {
+        'align': 'center'
+        'floating': True,
+        'text': 'The Title for My Chart',
+        'use_html': False,
+    }
+
+    my_chart.credits = {
+        'enabled': True,
+        'href': 'https://www.highchartspython.com/',
+        'position': {
+            'align': 'center',
+            'vertical_align': 'bottom',
+            'x': 123,
+            'y': 456
+        },
+        'style': {
+            'color': '#cccccc',
+            'cursor': 'pointer',
+            'font_size': '9px'
+        },
+        'text': 'Chris Modzelewski'
+    }
+
+    # EXAMPLE 2.
+    # Using direct objects
+    from highcharts_maps.options.title import Title
+    from highcharts_maps.options.credits import Credits
+
+    my_title = Title(text = 'The Title for My Chart',
+                     floating = True, 
+                     align = 'center')
+    my_chart.options.title = my_title
+
+    my_credits = Credits(text = 'Chris Modzelewski', 
+                         enabled = True, 
+                         href = 'https://www.highchartspython.com')
+    my_chart.options.credits = my_credits
+
+
+5. Generate the JavaScript Code for Your Chart
+=================================================
+
+Now having configured your chart in full, you can easily generate the JavaScript code
+that will render the chart wherever it is you want it to go:
+
+  .. code-block:: python
+
+    # as a string
+    js_as_str = my_chart.to_js_literal()
+
+    # to a file (and as a string)
+    js_as_str = my_chart.to_js_literal(filename = 'my_target_file.js')
+
+
+6. Generate the JavaScript Code for Your Global Settings (optional)
+=========================================================================
+
+  .. code-block:: python
+
+    # as a string
+    global_settings_js = my_global_settings.to_js_literal()
+
+    # to a file (and as a string)
+    global_settings_js = my_global_settings.to_js_literal('my_target_file.js')
+
+
+7. Generate a Static Version of Your Chart
+==============================================
+
+  .. code-block:: python
+
+    # as in-memory bytes
+    my_image_bytes = my_chart.download_chart(format = 'png')
+
+    # to an image file (and as in-memory bytes)
+    my_image_bytes = my_chart.download_chart(filename = 'my_target_file.png',
+                                             format = 'png')
+
+8. Render Your Chart in a Jupyter Notebook
+===============================================
+
+  .. code-block:: python
+
+    my_chart.display()
+
+--------------
+
+***********************
+Getting Help/Support
+***********************
+
+.. include:: _support.rst
+
+-----------------
+
+*********************
+Contributing
+*********************
+
+We welcome contributions and pull requests! For more information, please see the
+:doc:`Contributor Guide <contributing>`. And thanks to all those who've already
+contributed:
+
+.. include:: _contributors.rst
+
+-------------------
+
+*********************
+Testing
+*********************
+
+We use `TravisCI <http://travisci.com>`_ for our build automation and
+`ReadTheDocs <https://readthedocs.com>`_ for our documentation.
+
+Detailed information about our test suite and how to run tests locally can be
+found in our :doc:`Testing Reference <testing>`.
+
+--------------------
+
+********************
+Indices and tables
+********************
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
+.. target-notes::
+
+.. include:: links.txt
