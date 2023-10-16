@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', path='/css/user_panel.css') }}" rel="stylesheet">
+    <title>User Profile</title>
+</head>
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        cursor: pointer;
+        margin-bottom: 15px;
+    }
+
+    th, td {
+        padding: 15px 15px;
+        text-align: left;
+        font-family: 'Lucida Grande', Arial, sans-serif;
+        border-bottom: 1px solid #ddd;
+        background-color: #f5f5f5;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    tr:hover {
+        background-color: #9f9f9f;
+    }
+
+    .list-users {
+        border-bottom: 1px solid black;
+        width: 70vh;
+    }
+
+</style>
+<body>
+<div class="content">
+    <div class="user-profile">
+        <div>
+            <h1>Your Profile:</h1>
+            <p>Username: {{ user.username }}</p>
+            <p>Email:<b> {{ user.email }}</b></p>
+            <p>Roles: {{ user.roles|map(attribute="name")|join(', ') }}</p>
+        </div>
+    </div>
+    <div class="list-users">
+        <h1>List of Users:</h1>
+        {% if users|length %}
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Roles</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for other_user in users %}
+            <tr>
+                <td>{{other_user.id}}</td>
+                <td>{{other_user.username}}</td>
+                <td>{{other_user.email}}</td>
+                <td>{{other_user.roles|map(attribute="name")|join(', ')}}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        {% endif %}
+
+    </div>
+</div>
+</body>
+</html>
