@@ -1,0 +1,202 @@
+# Project metadata guidelines:
+#   https://peps.python.org/pep-0621/
+#
+# ------------------------------------------------------------------------------
+# Setup
+# ------------------------------------------------------------------------------
+[project]
+dynamic = ["dependencies"]
+
+name = "mk-scaffold"
+version = "1.1.0"
+authors = [
+  {name = "Julien Lecomte", email = "julien@lecomte.at"}
+]
+readme  = "README.md"
+license = {text = "MIT"}
+description = "A cookiecutter clone. A command-line utility that creates projects from templates."
+
+requires-python = ">=3.7"
+# See: https://pypi.python.org/pypi?:action=list_classifiers
+# List of python versions and their support status: https://en.wikipedia.org/wiki/CPython#Version_history
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Developers",
+  "Development Status :: 5 - Production/Stable",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+]
+
+[project.scripts]
+mk-scaffold = "scaffold.__main__:main"
+
+[project.urls]
+Homepage = "https://gitlab.com/jlecomte/python/mk-scaffold"
+Documentation = "https://jlecomte.gitlab.io/python/mk-scaffold/"
+"Source code" = "https://gitlab.com/jlecomte/python/mk-scaffold"
+"Bug tracker" = "https://gitlab.com/jlecomte/python/mk-scaffold/-/issues"
+
+[tool.setuptools]
+packages = [
+  "scaffold"
+]
+zip-safe = true
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[build-system]
+# These are the assumed default build requirements from pip:
+# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
+requires = ["setuptools>=43.0.0", "wheel"]
+
+# ------------------------------------------------------------------------------
+# Other tools
+# ------------------------------------------------------------------------------
+[tool.black]
+line-length = 120
+target_version = ["py37", "py38", "py39"]
+
+[tool.codespell]
+# https://github.com/codespell-project/codespell/blob/master/README.rst
+#
+# Dictionary is updated when codespell is updated, nevertheless, it can
+# be found here: .venv/lib/python3.*/site-packages/codespell_lib/data/dictionary.txt
+skip = "*.pyc,.git,.tox,.venv,public"
+builtin = "clear,informal,rare,names"
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+  "bin/*",
+  "docs/*",
+  "tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+  "@abc.abstractmethod",
+  "@abc.abstractproperty",
+  "_typeshed",
+  "except ImportError",
+  "if False",
+  "if __name__ == .__main__.:",
+  "lambda: None",
+  "pragma: no cover",
+  "raise NotImplemented",
+  "raise NotImplementedError",
+  "return NotImplemented",
+  "t.TYPE_CHECKING",
+]
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.isort]
+# https://pycqa.github.io/isort/docs/configuration/options.html
+profile = "black"
+line_length = 120
+atomic = true
+include_trailing_comma = true
+skip_gitignore = true
+use_parentheses = true
+known_local_folder = "tests"
+
+[tool.mypy]
+# https://mypy.readthedocs.io/en/stable/config_file.html
+pretty = true
+strict = true
+
+warn_return_any = true
+warn_unused_configs = true
+
+implicit_optional = true
+
+ignore_missing_imports = true
+
+exclude = [
+  '^bin\/.*',
+  '^docs\/.*',
+  '^setup.py$',
+  '^tests\/.*',
+]
+
+[tool.pylint.main]
+
+[tool.pylint.reports]
+# Deactivate the evaluation score.
+score = false
+
+[tool.pylint.exceptions]
+# Exceptions that will emit a warning when caught.
+overgeneral-exceptions = "builtins.BaseException"
+
+[tool.pylint."messages control"]
+# Disable the message, report, category or checker with the given id(s). You can
+# either give multiple identifiers separated by comma (,) or put this option
+# multiple times (only on the command line, not in the configuration file where
+# it should appear only once). You can also use "--disable=all" to disable
+# everything first and then re-enable specific checks. For example, if you want
+# to run only the similarities checker, you can use "--disable=all
+# --enable=similarities". If you want to run only the classes checker, but have
+# no Warning level messages displayed, use "--disable=all --enable=classes
+# --disable=W".
+disable = [
+  "raw-checker-failed",
+  "bad-inline-option",
+  "locally-disabled",
+  "file-ignored",
+  "suppressed-message",
+  "useless-suppression",
+  "deprecated-pragma",
+  "use-symbolic-message-instead",
+  # defaults above, custom below
+  "duplicate-code",                # disabled, false positives
+  "fixme",                         # disabled, can be properly handled manually
+  "line-too-long",                 # disabled, we use black so lines over 120 are intended
+  "logging-fstring-interpolation", # disabled, benefit outweighs cost
+  "missing-class-docstring",       # disabled, only relevant with sphinx
+  "missing-function-docstring",    # disabled, only relevant with sphinx
+  "missing-module-docstring",      # disabled, only relevant with sphinx
+  "no-member",                     # disabled, false positives
+  "too-few-public-methods",        # disabled, human knows best
+  "too-many-arguments",            # disabled, human knows best
+  "too-many-branches",             # disabled, human knows best
+  "too-many-instance-attributes",  # disabled, human knows best
+  "too-many-locals",               # disabled, human knows best
+  "too-many-statements",           # disabled, human knows best
+  "ungrouped-imports",             # disabled, we use isort so this is only volontary
+  "wrong-import-order",            # disabled, we use isort so this is only volontary
+]
+
+# Enable the message, report, category or checker with the given id(s). You can
+# either give multiple identifier separated by comma (,) or put this option
+# multiple time (only on the command line, not in the configuration file where it
+# should appear only once). See also the "--disable" option for examples.
+enable = ["c-extension-no-member"]
+
+[tool.pylint.basic]
+# If variable isn't whitelisted here, it'll trigger an 'invalid-name' error
+good-names = [
+  "i",
+  "j",
+  "k",
+  "ex",
+  "Run",
+  "_",
+  # defaults above, custom below
+  "fd", # file descriptor
+  "fn", # function (reserved word)
+  "rv", # frequently used as 'retval', aka 'return value'
+  "v",  # as in `for k, v in {}.items()`
+  "x",  # frequently used in lambdas, more precise than i, j
+]
+
+[tool.pytest.ini_options]
+markers = [
+   "live: connects to internet resource (unselect with '-m \"not live\"')",
+]
