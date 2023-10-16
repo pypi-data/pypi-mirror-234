@@ -1,0 +1,133 @@
+[project]
+name = "marcelotsvaz-python-project-template"
+dynamic = []
+description = "Template to quickly bootstrap Python projects."
+readme = "readme.md"
+authors = [
+    { name = "Marcelo Vaz", email = "marcelotsvaz@gmail.com" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+]
+requires-python = ">= 3.11"
+dependencies = [
+    "django >= 4.2.5",
+]
+version = "0.7.1"
+
+[project.license]
+file = "unlicense.txt"
+
+[project.optional-dependencies]
+json = [
+    "jsons >= 1.6.3",
+]
+
+[project.scripts]
+project-template = "project_template.cli:main"
+
+[project.urls]
+homepage = "https://marcelotsvaz.gitlab.io/python-project-template/"
+documentation = "https://marcelotsvaz.gitlab.io/python-project-template/documentation/"
+issues = "https://gitlab.com/marcelotsvaz/python-project-template/-/issues"
+source = "https://gitlab.com/marcelotsvaz/python-project-template"
+
+[build-system]
+build-backend = "pdm.backend"
+requires = [
+    "pdm-backend",
+    "./build",
+]
+
+[tool.pdm]
+plugins = [
+    "-e ./build",
+]
+
+[tool.pdm.version]
+source = "scm"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "coverage >= 7.3.1",
+    "pdm-backend >= 2.1.6",
+    "pylint >= 2.17.5",
+]
+
+[tool.pdm.scripts.test]
+composite = [
+    "coverage",
+    "coverage-report",
+]
+help = "Run tests with code coverage and show coverage report."
+
+[tool.pdm.scripts.coverage]
+shell = "coverage run -m ${unittestCommand}"
+help = "Run tests with code coverage."
+
+[tool.pdm.scripts.coverage-report]
+shell = "coverage report; coverage xml"
+help = "Show coverage report."
+
+[tool.pdm.scripts.test-only]
+shell = "python -m ${unittestCommand}"
+help = "Run tests without code coverage."
+
+[tool.pdm.scripts._.env]
+unittestCommand = "unittest discover --pattern *_tests.py --start-directory tests/ --verbose"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = "none"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportMissingSuperCall = "warning"
+reportUnknownLambdaType = "none"
+
+[tool.pylint]
+indent-string = "	"
+check-quote-consistency = true
+ignore-long-lines = "# pyright: ignore"
+load-plugins = [
+    "pylint.extensions.docparams",
+    "pylint.extensions.overlapping_exceptions",
+]
+enable = [
+    "useless-suppression",
+]
+disable = [
+    "trailing-whitespace",
+    "missing-final-newline",
+    "logging-fstring-interpolation",
+    "too-few-public-methods",
+]
+variable-naming-style = "camelCase"
+inlinevar-naming-style = "camelCase"
+function-naming-style = "camelCase"
+argument-naming-style = "camelCase"
+method-naming-style = "camelCase"
+class-attribute-naming-style = "camelCase"
+attr-naming-style = "camelCase"
+module-naming-style = "snake_case"
+class-naming-style = "PascalCase"
+const-naming-style = "UPPER_CASE"
+class-const-naming-style = "UPPER_CASE"
+no-docstring-rgx = "^__|.+Tests$|^test|^[Ff]oo$|^[Bb]ar$"
+dummy-variables-rgx = "^(_|[Ff]oo|[Bb]ar)$"
+bad-names = []
+
+[tool.coverage.run]
+source_pkgs = [
+    "project_template",
+]
+data_file = ".staging/coverage"
+branch = true
+
+[tool.coverage.report]
+precision = 2
+skip_covered = true
+show_missing = true
+
+[tool.coverage.xml]
+output = ".staging/coverage.xml"
