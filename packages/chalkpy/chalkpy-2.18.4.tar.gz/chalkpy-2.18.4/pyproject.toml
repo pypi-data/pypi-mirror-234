@@ -1,0 +1,372 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="chalkpy"
+description="Python SDK for Chalk"
+requires-python = ">3.8,<3.12"
+authors = [
+    { name = "Chalk AI, Inc." }
+]
+readme="README.md"
+classifiers=[
+    # Trove classifiers
+    # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python",
+    "Typing :: Typed",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dynamic = ["version"]
+
+dependencies = [
+    "cattrs>=22.1.0,<23",
+    "executing>=1.2.0,<2",
+    "pydantic>=1.0.0,<2",
+    "pyyaml>=6.0,<7",
+    "isodate>=0.6.1,<0.7",
+    "python-dateutil>=2.8.0,<3",
+    "requests>=2.31,<2.32.0",
+    "pandas>=1.5.1,<1.6",  # required for client.offline_query
+    "pyarrow>=10.0.1,<10.1",
+    "backports.zoneinfo[tzdata]>=0.2.1,<3;python_version<'3.9'",
+    "typing-extensions>=4.4.0,<4.8.0,!=4.5.0", # 4.5.0 regressed python 3.8 fraud template query
+    "cloudpickle>=2.2.1",
+    "rich>=13.3.5",
+    "ipywidgets>=8.0.6",
+    "dataclasses_json>=0.5.7",
+]
+
+[project.optional-dependencies]
+base = []
+
+dev=[
+    "mypy",
+    "ddtrace",
+    "pre-commit",
+    "mypy",
+    "pytest",
+    "pytest-env",
+    "pytest-timeout",
+    "pytest-xdist",
+    "python-dotenv",
+    "pytest-asyncio",
+    "sqlalchemy2-stubs",
+    "sqlglot",
+    "types-psycopg2",
+    "types-pymysql",
+    "types-pyyaml",
+    "types-requests",
+    "protobuf"
+]
+
+runtime=[
+    # Dependencies needed to execute resolvers
+    "duckdb==0.6.0",
+    "sqlglot>=14.1.0",
+    "polars[timezone]==0.17.2",
+]
+
+
+# SQL-specific
+sql=[
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    # And the runtime dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["runtime"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+bigquery=[
+    "sqlalchemy-bigquery>=1.5.0,<1.7",
+    # And the sql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["sql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+postgresql=[
+    "psycopg2>=2.9.4,<3",
+    "psycopg[binary]>=3.1.9,<3.2",
+    # And the sql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["sql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+snowflake=[
+    "snowflake-connector-python>=3.2",
+    "snowflake-sqlalchemy>=1.5.0",
+    # And the sql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["sql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+sqlite=[
+    "aiosqlite>=0.19.0,<0.20",
+    # And the sql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["sql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+redshift=[
+    "sqlalchemy-redshift>=0.8.11,<0.9",
+    "redshift_connector>=2.0.909,<2.1",
+    "boto3",
+    # And the postgresql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["postgresql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "psycopg2>=2.9.4,<3",
+    "psycopg[binary]>=3.1.9,<3.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+mysql=[
+    "pymysql>=1.0.2,<2",
+    "aiomysql>=0.1.1,<0.2",
+    # And the sql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["sql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+databricks=[
+    "databricks-sql-connector>=2.5.2,<2.6",
+    # And the sql dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["sql"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+all=[
+    # "All" includes everything except for dev dependencies
+    # [[[cog
+    # import pathlib, tomli
+    # grps = tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]
+    # final_deps = set()
+    # for grp, deps in grps.items():
+    #    if grp in ("runtime", "sql", "bigquery", "postgresql", "snowflake", "sqlite", "redshift", "mysql", "databricks"):
+    #        final_deps.update(deps)
+    # for dep in sorted(final_deps):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "aiomysql>=0.1.1,<0.2",
+    "aiosqlite>=0.19.0,<0.20",
+    "boto3",
+    "databricks-sql-connector>=2.5.2,<2.6",
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "psycopg2>=2.9.4,<3",
+    "psycopg[binary]>=3.1.9,<3.2",
+    "pymysql>=1.0.2,<2",
+    "redshift_connector>=2.0.909,<2.1",
+    "snowflake-connector-python>=3.2",
+    "snowflake-sqlalchemy>=1.5.0",
+    "sqlalchemy-bigquery>=1.5.0,<1.7",
+    "sqlalchemy-redshift>=0.8.11,<0.9",
+    "sqlalchemy[asyncio]>=1.4.26,<2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+# Deprecated groups
+polars=[
+    # deprecated; should use chalkpy[runtime]
+    # [[[cog
+    # import pathlib, tomli
+    # for dep in sorted(set(tomli.loads(pathlib.Path("pyproject.toml").read_text())["project"]["optional-dependencies"]["runtime"])):
+    #     print(f'    "{dep}",')
+    # ]]]
+    "duckdb==0.6.0",
+    "polars[timezone]==0.17.2",
+    "sqlglot>=14.1.0",
+    # [[[end]]]
+]
+
+[project.urls]
+homepage = "https://chalk.ai"
+
+[project.scripts]
+chalkpy="chalk.cli:cli"
+
+
+[tool.setuptools.packages.find]
+include = ["chalk*"]
+exclude = ["tests*"]
+namespaces = false
+
+[tool.setuptools.dynamic]
+version = { attr = "chalk._version.__version__" }
+
+[tool.isort]
+profile = "black"
+py_version=37
+line_length=120
+skip = ["chalk/feature_n/__init__.py"]
+
+[tool.black]
+target-version = ['py37']
+line-length = 120
+
+[tool.autoflake]
+check = true
+remove-duplicate-keys=true
+remove-all-unused-imports=true
+in-place=true
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore:The SQL engine.*AUTOCOMMIT:UserWarning",
+    "ignore:Deprecated call to .pkg_resources.declare_namespace:DeprecationWarning",
+    "ignore::DeprecationWarning",
+]
+env = [
+    "CHALK_ALLOW_REGISTRY_UPDATES=1",
+    "PYTHONASYNCIODEBUG=1",
+    "SQLALCHEMY_WARN_20=1",
+]
+log_cli = true
+addopts = ""
+asyncio_mode = "auto"
+
+[tool.pyright]
+typeCheckingMode = "basic"
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+# strictParameterNoneValue
+# enableTypeIgnoreComments
+reportMissingModuleSource = "error"
+# reportMissingImports
+# reportUndefinedVariable
+# reportAssertAlwaysTrue
+# reportInvalidStringEscapeSequence
+reportInvalidTypeVarUse = "error"
+# reportMissingTypeStubs
+reportSelfClsParameterName = "error"
+reportUnsupportedDunderAll = "error"
+reportUnusedExpression = "error"
+reportWildcardImportFromLibrary = "error"
+# reportGeneralTypeIssues
+# reportOptionalSubscript
+# reportOptionalMemberAccess
+# reportOptionalCall
+# reportOptionalIterable
+# reportOptionalContextManager
+# reportOptionalOperand
+# reportTypedDictNotRequiredAccess
+# reportPrivateImportUsage
+# reportUnboundVariable
+# reportUnusedCoroutine
+reportConstantRedefinition = "error"
+reportDeprecated = "warning"
+reportDuplicateImport = "error"
+reportFunctionMemberAccess = "error"
+# reportImportCycles
+reportIncompatibleMethodOverride = "error"
+reportIncompatibleVariableOverride = "error"
+reportIncompleteStub = "error"
+reportInconsistentConstructor = "warning"
+reportInvalidStubStatement = "error"
+reportMatchNotExhaustive = "error"
+reportMissingParameterType = "error"
+# reportMissingTypeArgument
+reportOverlappingOverload = "error"
+reportPrivateUsage = "warning"
+reportTypeCommentUsage = "error"
+reportShadowedImports = "error"
+# reportUnknownArgumentType
+# reportUnknownLambdaType
+# reportUnknownMemberType
+# reportUnknownParameterType
+# reportUnknownVariableType
+reportUnnecessaryCast = "error"
+reportUnnecessaryComparison = "warning"
+reportUnnecessaryContains = "warning"
+reportUnnecessaryIsInstance = "warning"
+reportUnusedClass = "error"
+reportUnusedImport = "error"
+reportUnusedFunction = "error"
+reportUnusedVariable = "error"
+reportUntypedBaseClass = "error"
+reportUntypedClassDecorator = "error"
+reportUntypedFunctionDecorator = "error"
+reportUntypedNamedTuple = "error"
+reportCallInDefaultInitializer = "error"
+reportImplicitStringConcatenation = "error"
+# reportMissingSuperCall = "none"
+reportPropertyTypeMismatch = "warning"
+# reportUninitializedInstanceVariable = "none"
+reportUnnecessaryTypeIgnoreComment = "error"
+# reportUnusedCallResult
+include=["**/chalk/chalk/**", "**/chalk/tests/**"]
+exclude=["**/node_modules", "**/__pycache__", "**/.*", "**/chalk/feature_n/**", "build/"]
+
+[tool.pdm]
