@@ -1,0 +1,238 @@
+Metadata-Version: 2.1
+Name: seqhelp
+Version: 0.2.2
+Summary: Package with helper functions for the retrieval and analysis of sequences from ncbi
+Home-page: https://gitlab.com/Kalior/seqhelp
+Author: Joel Gustafsson
+Author-email: me@joelgustafsson.com
+Requires-Python: >=3.10
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: biopython (>=1.79,<2.0)
+Requires-Dist: ete3 (>=3.1,<4.0)
+Requires-Dist: numba (>=0.55)
+Requires-Dist: numpy (>=1.18)
+Requires-Dist: openpyxl (>=3.1.0)
+Requires-Dist: pandas (>=1.4)
+Requires-Dist: tqdm (>=4.62,<5.0)
+Project-URL: Repository, https://gitlab.com/Kalior/seqhelp
+Description-Content-Type: text/markdown
+
+# SeqHelp
+
+A collection of scripts to help with the retrieval and analysis of sequences, primarily from NCBI's nucleotide db. Also includes numba-accelerated computation of gc, dinucleotide, codon, and codon-pair correlation. 
+
+# Installation
+[Is available in PyPi](https://pypi.org/project/seqhelp/) and can be installed through pip:
+```shell
+pip install seqhelp
+```
+
+# Usage
+## Sequences
+Provides a straight-forward approach to download and use genomic sequences, primarily from NCBI.
+
+The main use-case is through the following functions:
+
+- `get_sequence(aid, ...)` - returns a sequence matching the provided aid.
+- `get_sequence_batch(aids, ...)` - returns an iterator with sequences matching the provided aids.
+
+For additional convenience, the dustmasked, TandemRepeatsFinder filtered, coding or non-coding version of the sequences can be requested. Running DustMasker requires `dustmasker`, which is present on debian in the `ncbi-blast+` package.  Running TandemRepeatsFinder requires [installing `trf`](https://github.com/Benson-Genomics-Lab/TRF).
+
+### Example
+    >>> import seqhelp
+    >>> from seqhelp.sequences import SequencePart
+    >>> rec = get_sequence("NC_001367.1", download_folder=Path.home() / "data", sequence_part=SequencePart.DustMasked)
+
+I would not recommend using this to download a large collection of sequences, as they will be downloaded sequentially. For this purpose, you can either try [ncbi's datasets cli](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/download-and-install/) or the batched version here.
+
+    >>> get_sequence_batch(["NC_001367.1", "NC_001368.1", "NC_001369.1"], download_folder=Path.home() / "data")
+
+
+## Taxonomy
+Provides an easy method of getting taxonomic data from NCBIs taxonomy database and ICTVs metadata files.
+
+### Examples
+    >>> meta = seqhelp.taxonomy.get_ncbi_taxonomy("Homo sapiens")
+    {'superkingdom': 'Eukaryota', 'realm': '', 'kingdom': 'Metazoa', 'phylum': 'Chordata', 'subphylum': 'Craniata', 'class': 'Mammalia', 'order': 'Primates', 'suborder': 'Haplorrhini', 'family': 'Hominidae', 'subfamily': 'Homininae', 'genus': 'Homo', 'subgenus': '', 'species': 'Homo sapiens', 'subspecies': '', 'strain': ''}
+
+    >>> meta = seqhelp.taxonomy.get_ictv_taxonomy("Tobacco mosaic virus", "")
+    defaultdict(<class 'str'>, {'realm': 'Riboviria', 'kingdom': nan, 'phylum': 'Negarnaviricota', 'subphylum': 'Haploviricotina', 'class': 'Chunqiuviricetes', 'order': 'Muvirales', 'suborder': nan, 'family': 'Qinviridae', 'subfamily': nan, 'genus': 'Yingvirus', 'subgenus': nan, 'species': 'Beihai yingvirus', 'genome composition': 'ssRNA(-)', 'host/source': 'invertebrates'})
+
+
+## Virus-hosts
+Parses and provides an interface to retrieve known virus-host information from the virus-host db of https://www.genome.jp/.
+
+### Examples
+    >>> virus_hosts.get_virus_hosts([(12242, "Tobacco mosaic virus", "NC_001367.1")])
+    {'Tobacco mosaic virus': {'Nicotiana tabacum'}}
+
+    Multiple of the fields can be None, but their presence makes the parsing more reliable:
+    >>> seqhelp.virus_hosts.get_virus_hosts([(12242, "Tobacco mosaic virus", "NC_001367.1"), (None, "Human herpesvirus 3", None)])
+    {'Tobacco mosaic virus': {'Nicotiana tabacum'}, 'Human herpesvirus 3': {'Homo sapiens'}}
+
+
+## GC
+Calculation of GC content and the cosine distances of GC content between two sequences.
+
+Sped up with Numba to enable the calculations in seconds/minutes instead of hours.
+
+### Examples
+
+    >>> left = seqhelp.gc_content.cache_gc_content("NC_004162", Path("path/to/NC_004162.fa.gz"))
+    >>> left
+    array([3517, 2947, 2971, 2391])
+    >>> right = seqhelp.gc_content.cache_gc_content("NC_012561", Path("path/to/NC_012561.fa.gz"))
+    >>> right
+    array([3278, 2874, 2781, 2593])
+    >>> seqhelp.gc_content.get_gc_diff(left, right)
+    0.03534222425802276
+
+Or, with the class:
+
+    >>> gc = seqhelp.gc_content.GC({"NC_004162": Path("path/to/NC_004162.fa.gz"), "NC_012561": Path("path/to/NC_012561.fa.gz")})
+    >>> gc.distance("NC_004162", "NC_012561")
+    0.03534222425802276
+
+Or, with parallelisation over the cosine distance of many entries:
+
+    >>> gc = seqhelp.gc_content.GC({"NC_004162": Path("path/to/NC_004162.fa.gz"), "NC_012561": Path("path/to/NC_012561.fa.gz")})
+    >>> gcs = np.array([gc.transform(aid) for aid in ["NC_004162", "NC_012561"]])
+    >>> seqhelp.common.cosine_distances(gcs)
+    array([[0.00000000e+00, 3.53422243e-02],
+           [3.53422243e-02, 0.00000000e+00]])
+
+## Dinucleotides
+Calculation of dinucleotide content and the cosine distances thereof between two sequences.
+
+Sped up with Numba to enable the calculations in seconds/minutes instead of hours.
+
+### Examples
+    >>> left = seqhelp.dinucleotides.cache_dinucleotides("NC_004162", Path("path/to/NC_004162.fa.gz"))
+    >>> left
+    {'AT': 652, 'GT': 645, 'AA': 1033, 'GA': 880, 'TC': 535, 'CA': 973, 'CG': 603, 'TT': 466, 'AG': 911, 'GG': 697, 'TA': 630, 'TG': 760, 'GC': 749, 'CC': 742, 'AC': 921, 'CT': 628}
+    >>> right = seqhelp.dinucleotides.cache_dinucleotides("NC_012561", Path("path/to/NC_012561.fa.gz"))
+    >>> right
+    {'AT': 725, 'GT': 641, 'AA': 882, 'GA': 791, 'TC': 585, 'CA': 941, 'CG': 607, 'TT': 595, 'AG': 810, 'GG': 614, 'TA': 663, 'TG': 750, 'GC': 735, 'CC': 693, 'AC': 861, 'CT': 632}
+
+    >>> left_gc = seqhelp.gc_content.cache_gc_content("NC_004162", Path("path/to/NC_004162.fa.gz"))
+    >>> right_gc = seqhelp.gc_content.cache_gc_content("NC_012561", Path("path/to/NC_012561.fa.gz"))
+    >>> seqhelp.dinucleotides.dinucleotide_odds_ratio_cosine_distance(left, left_gc, right, right_gc)
+    0.02840407145550572
+
+Or, with the class:
+
+    >>> import seqhelp
+    >>> paths = {"NC_004162": Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", "NC_012561": Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz"}
+    >>> dinucleotides = seqhelp.dinucleotides.Dinucleotides(paths)
+    >>> dinucleotides.distance("NC_004162", "NC_012561")
+    0.03534222425802276
+
+Or, with parallelisation over the cosine distance of many entries:
+
+    >>> import seqhelp
+    >>> paths = {"NC_004162": Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", "NC_012561": Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz"}
+    >>> dinucleotides = seqhelp.dinucleotides.Dinucleotides(paths)
+    >>> dins = np.array([dinucleotides.transform(aid) for aid in ["NC_004162", "NC_012561"]])
+    >>> seqhelp.common.cosine_distances(dins)
+    array([[0.00000000e+00, 2.84040715e-02],
+           [2.84040715e-02, 0.00000000e+00]])
+
+
+# Codon
+Calculation of relative synonymous codon usage and the cosine distances thereof between two sequences.
+
+Sped up with Numba to enable the calculations in seconds/minutes instead of hours.
+
+### Examples
+    >>> left = seqhelp.codon.generate_rscu_array("NC_004162", Path("path/to/NC_004162.fa.gz"))
+    >>> left
+    array([0.74452555, 1.19075145, 1.46715328, 0.78461538, 0.97260274,
+           1.00411523, 0.89230769, 0.62992126, 1.17647059, 0.51666667,
+           1.0617284 , 1.28395062, 0.95172414, 1.27692308, 1.15      ,
+           0.8516129 , 0.87603306, 1.40740741, 1.1       , 0.35036496,
+           0.68275862, 1.05555556, 1.02057613, 0.78014184, 0.60891089,
+           1.13207547, 1.2       , 1.21985816, 1.36551724, 0.91970803,
+           0.80924855, 0.64197531, 1.1023622 , 1.13385827, 1.49315068,
+           1.20812183, 1.66336634, 1.13580247, 1.1483871 , 0.74452555,
+           0.9       , 1.04615385, 1.13385827, 1.05445545, 1.77372263,
+           0.82352941, 0.94444444, 1.0617284 , 0.9245283 , 1.11538462,
+           0.79187817, 0.83950617, 1.12396694, 0.95890411, 0.78712871,
+           0.57534247, 1.        , 1.02475248, 0.54320988, 0.94339623,
+           0.88461538, 0.86138614, 1.13333333, 1.        ])
+    >>> right = seqhelp.codon.generate_rscu_array("NC_012561", Path("path/to/NC_012561.fa.gz"))
+    >>> right
+    array([0.79704797, 1.03448276, 0.86346863, 1.19111111, 0.81818182,
+           0.9516129 , 0.67555556, 0.97222222, 1.10429448, 0.79207921,
+           0.82634731, 0.79041916, 0.75949367, 1.28      , 0.95049505,
+           0.95364238, 0.97435897, 1.2754491 , 0.77124183, 1.10701107,
+           0.83544304, 1.03636364, 1.32258065, 0.99082569, 0.78358209,
+           0.93925234, 1.33333333, 1.00917431, 1.40506329, 1.2398524 ,
+           0.96551724, 1.0239521 , 0.94444444, 1.19444444, 1.13636364,
+           0.92753623, 1.41044776, 1.        , 1.04635762, 1.01845018,
+           1.22875817, 0.85333333, 0.88888889, 1.00746269, 0.97416974,
+           0.89570552, 0.96363636, 1.13173653, 1.14953271, 1.22302158,
+           1.07246377, 0.72580645, 1.02564103, 1.20454545, 1.00746269,
+           0.84090909, 1.        , 0.60447761, 0.95209581, 0.91121495,
+           0.77697842, 1.18656716, 0.92409241, 1.        ])
+    >>> seqhelp.common.cosine_distance(left, right)
+    0.16652628662258662
+
+Or, with the class:
+
+    >>> import seqhelp
+    >>> paths = {"NC_004162": Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", "NC_012561": Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz"}
+    >>> codon = seqhelp.codon.RSCUCorrelation(paths)
+    >>> codon.distance("NC_004162", "NC_012561")
+    0.16652628662258662
+
+Or, with parallelisation over the cosine distance of many entries:
+
+    >>> import seqhelp
+    >>> paths = {"NC_004162": Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", "NC_012561": Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz"}
+    >>> codon = seqhelp.codon.RSCUCorrelation(paths)
+    >>> codons = np.array([codon.transform(aid) for aid in ["NC_004162", "NC_012561"]])
+    >>> seqhelp.common.cosine_distances(codons)
+    array([[0.00000000e+00, 1.66526287e-01],
+           [1.66526287e-01, 0.00000000e+00]])
+
+## Codon pair
+Calculation of codon pairs and the cosine distances thereof between two sequences.
+
+ Sped up with Numba to enable the calculations in seconds/minutes instead of hours.
+
+### Examples
+    >>> left = seqhelp.codon_pair.get_codon_pair_score_array("NC_004162", Path("path/to/NC_004162.fa.gz"))
+    >>> left
+    {'AT': 652, 'GT': 645, 'AA': 1033, 'GA': 880, 'TC': 535, 'CA': 973, 'CG': 603, 'TT': 466, 'AG': 911, 'GG': 697, 'TA': 630, 'TG': 760, 'GC': 749, 'CC': 742, 'AC': 921, 'CT': 628}
+    >>> right = seqhelp.codon_pair.get_codon_pair_score_array("NC_012561", Path("path/to/NC_012561.fa.gz"))
+    >>> right
+    {'AT': 725, 'GT': 641, 'AA': 882, 'GA': 791, 'TC': 585, 'CA': 941, 'CG': 607, 'TT': 595, 'AG': 810, 'GG': 614, 'TA': 663, 'TG': 750, 'GC': 735, 'CC': 693, 'AC': 861, 'CT': 632}
+    >>> seqhelp.common.cosine_distance(left, right)
+    0.855109251212154
+
+Or, with the class:
+
+    >>> import seqhelp
+    >>> paths = {"NC_004162": Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", "NC_012561": Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz"}
+    >>> codon_pair = seqhelp.codon_pair.CPSCorrelation(paths)
+    >>> codon_pair.distance("NC_004162", "NC_012561")
+    0.855109251212154
+
+Or,
+
+    >>> codon_pair = seqhelp.codon_pair.CPSCorrelation()
+    >>> codon_pair.distance(Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz")
+
+Or, with parallelisation over the cosine distance of many entries:
+
+    >>> import seqhelp
+    >>> paths = {"NC_004162": Path.home() / "data" / "togaviridae" / "NC_004162.fa.gz", "NC_012561": Path.home() / "data" / "togaviridae" / "NC_012561.fa.gz"}
+    >>> codon_pair = seqhelp.codon_pair.CPSCorrelation(paths)
+    >>> codon_pairs = np.array([codon_pair.transform(aid) for aid in ["NC_004162", "NC_012561"]])
+    >>> seqhelp.common.cosine_distances(codon_pairs)
+    array([[0.00000000e+00, 8.55109251e-01],
+           [8.55109251e-01, 0.00000000e+00]])
+
+
