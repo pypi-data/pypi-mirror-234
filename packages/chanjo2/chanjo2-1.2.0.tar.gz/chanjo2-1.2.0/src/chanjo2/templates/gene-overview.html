@@ -1,0 +1,51 @@
+{% extends "base-layout.html" %}
+
+{% macro gene_stats_macro() %}
+	<h2>Gene: {{ gene.hgnc_symbol or gene.hgnc_id }}</h2>
+	<br>
+	{% for interval_id, samples_stats in interval_coverage_stats.items() %}
+	<tr>
+		<td class="row">
+			<div class="panel-default">
+				<div class="panel-heading">
+					{{ interval_type }}: <strong>{{ interval_id }}</strong>
+				</div>
+			</div>
+			<div class="table-responsive">
+				<table class="table table-bordered">
+					<caption>Coverage overview over gene {{ gene.hgnc_symbol or gene.hgnc_id }}</caption>
+					<thead>
+						<th>Sample</th>
+						<th>Mean coverage</th>
+						{% for level, _ in levels.items() %}
+							<th>Completeness {{ level }}x [%]</th>
+						{% endfor %}
+					</thead>
+					<tbody>
+					{% for sample_stats in samples_stats %}
+						<td>{{ sample_stats[0] }}</td>
+						<td>{{ (sample_stats[1] * 100)|round(2) }}</td>
+						{% for level, _ in levels.items() %}
+							<td>{{ (sample_stats[2][level] * 100)|round(2) }}</td>
+						{% endfor %}
+					{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</td>
+	</tr>
+	<br>
+	{% endfor %}
+{% endmacro %}
+
+{% block title %}
+<title>Chanjo2 gene coverage overview</title>
+{% endblock %}
+
+{% block content %}
+{{ gene_stats_macro() }}
+{% endblock%}
+
+
+
+
