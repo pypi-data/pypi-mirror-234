@@ -1,0 +1,37 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install wheel --upgrade pip setuptools
+          python -m pip install .[dev]
+          huggingface-cli download aladar/TinyLLama-v0-GGUF TinyLLama-v0.Q8_0.gguf --local-dir ./tests/llama_cpp/fixtures/models --local-dir-use-symlinks False
+
+      - name: Run tests
+        run: |
+          python -m pytest --cov=cappr
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
