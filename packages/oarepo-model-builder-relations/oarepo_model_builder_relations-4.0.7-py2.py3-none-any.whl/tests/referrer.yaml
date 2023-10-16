@@ -1,0 +1,144 @@
+record:
+    use: invenio
+    custom-fields:
+    - config: TEST_CF
+    module:
+        qualified: referrer
+    properties:
+        metadata:
+            properties:
+                obj{}:
+                    ^id: anchor-obj
+                    test: keyword
+                    id: keyword
+                arr[]:
+                    type: object
+                    ^id: anchor-arr
+                    properties:
+                        test: keyword
+                        id: keyword
+                arrobj[]:
+                    type: object
+                    id: anchor-arrobj
+                    properties:
+                        test: keyword
+                        id: keyword
+
+                # internal references outside array that point
+                # to single object, array or object array
+                internal-ref:
+                    type: relation
+                    model: "#anchor-obj"
+                    keys: [id, test]
+                    extras:
+                        test:
+                            mapping:
+                                copy_to: blah
+
+                internal-ref-arr:
+                    type: relation
+                    model: "#anchor-arr"
+                    keys: [id, test]
+
+                internal-ref-arrobj:
+                    type: relation
+                    model: "#anchor-arrobj"
+                    keys: [id, test]
+
+                # array referencing array
+                internal-array-ref-array[]:
+                    type: relation
+                    model: "#anchor-arr"
+                    keys: [id, test]
+                    extras:
+                        test:
+                            mapping:
+                                copy_to: blah
+
+                # object inside array
+                internal-array-object-ref-array[]:
+                    type: "object"
+                    properties:
+                        ref:
+                            type: relation
+                            model: "#anchor-arr"
+                            keys: [id, test]
+
+                # array inside array
+                internal-array-nested[]:
+                    type: "object"
+                    properties:
+                        ref-arr[]:
+                            type: relation
+                            model: "#anchor-arr"
+                            keys: [id, test]
+
+                internal-cf:
+                    type: relation
+                    model: "#"
+                    keys:
+                    - id
+                    - key: test
+                      model:
+                          type: keyword
+
+
+                invenio-ref:
+                    type: relation
+                    model: referred
+                invenio-array[]:
+                    type: relation
+                    model: referred
+                invenio-nested[]:
+                    type: "object"
+                    properties:
+                        ref:
+                            type: relation
+                            model: referred
+                            name: invenio-nested
+                invenio-array-nested[]:
+                    type: "object"
+                    properties:
+                        ref-arr[]:
+                            type: relation
+                            model: referred
+                ref:
+                    type: relation
+                    model: referred
+                    flatten: true
+                array[]:
+                    type: relation
+                    model: referred
+                    name: array
+                    flatten: true
+                nested[]:
+                    type: "object"
+                    properties:
+                        ref:
+                            type: relation
+                            model: referred
+                            name: nested
+                            flatten: true
+                array-nested[]:
+                    type: "object"
+                    properties:
+                        ref-arr[]:
+                            type: relation
+                            model: referred
+                            flatten: true
+                cf:
+                    type: relation
+                    model: referred
+                    flatten: true
+                    keys:
+                    - id
+                    - metadata.title
+                    - key: test
+                      model:
+                          type: keyword
+
+settings:
+    schema-server: 'local://'
+plugins:
+    builder:
+        disable: [script_sample_data]
