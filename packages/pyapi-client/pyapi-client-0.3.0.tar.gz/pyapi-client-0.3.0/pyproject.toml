@@ -1,0 +1,136 @@
+[project]
+name = "pyapi-client"
+version = "0.3.0"
+description = "Python client library for making requests to any OpenAPI-based service."
+readme = "README.md"
+authors = [
+    { name = "Berislav Lopac", email = "berislav@lopac.net" },
+]
+requires-python = ">=3.8,<4.0"
+dependencies = [
+    "PyYAML>=5.4",
+    "stringcase>=1.2.0",
+    "openapi-core>=0.16.1",
+    "httpx>=0.22",
+]
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+homepage = "https://pyapi-client.readthedocs.io"
+documentation = "https://pyapi-client.readthedocs.io"
+repository = "https://github.com/berislavlopac/pyapi-client"
+
+[build-system]
+requires = [
+    "pdm-pep517>=1.0.0",
+]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm.build]
+includes = [
+    "pyapi/client/",
+]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest-asyncio>=0.18.3",
+    "pytest-cov>=3.0.0",
+    "pytest-flake8>=1.1.1",
+    "pytest-mypy>=0.9.1",
+    "requests>=2.27.1",
+    "pytest>=7.1.1",
+    "black>=22.1.0",
+    "pydocstyle>=6.1.1",
+    "mypy>=0.942",
+    "tox>=3.24.5",
+    "toml>=0.10.2",
+    "pytest-spec>=3.2.0",
+    "tox-pdm>=0.6.1",
+    "isort>=5.10.1",
+    "ruff>=0.0.253",
+    "pyapi-server>=0.3.4",
+]
+docs = [
+    "mkdocs>=1.3.0",
+    "mkdocs-material>=8.5.6",
+]
+
+[tool.pdm.scripts.tests]
+cmd = "pytest --spec --cov"
+
+[tool.pdm.scripts.check-lint]
+shell = "    ruff .\n    black --check .\n    isort --check .\n"
+
+[tool.pdm.scripts.check-typing]
+cmd = "mypy --install-types --non-interactive pyapi/"
+
+[tool.pdm.scripts.check-docs]
+cmd = "pydocstyle pyapi/"
+
+[tool.pdm.scripts.checks]
+composite = [
+    "check-lint",
+    "check-typing",
+    "check-docs",
+]
+
+[tool.pdm.scripts.new-commits]
+shell = "git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-decorate"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = [
+    "pyapi/",
+]
+omit = [
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
+fail_under = 90
+exclude_lines = [
+    "pragma: no cover",
+    "@abstract",
+]
+
+[tool.black]
+line-length = 96
+target-version = [
+    "py38",
+    "py39",
+    "py310",
+    "py311",
+]
+verbose = false
+skip-string-normalization = false
+
+[tool.isort]
+profile = "black"
+line_length = 96
+filter_files = true
+force_alphabetical_sort_within_sections = true
+
+[tool.ruff]
+line-length = 96
+target-version = "py38"
+output-format = "grouped"
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = [
+    "F401",
+]
+
+[tool.pydocstyle]
+add-ignore = "D104, D107, D212, D401"
+convention = "google"
+match-dir = "^(?!tests|examples).*"
+
+[tool.mypy]
+mypy_path = "pyapi/"
+ignore_missing_imports = true
