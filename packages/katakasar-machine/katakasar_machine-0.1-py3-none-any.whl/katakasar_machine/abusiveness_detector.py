@@ -1,0 +1,23 @@
+# abusiveness_detector.py
+
+import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Load model dari file pickle
+with open('model.pkl', 'rb') as model_file:
+    model = pickle.load(model_file)
+
+# Load TF-IDF Vectorizer dari file pickle
+with open('tfidf_vectorizer.pkl', 'rb') as vectorizer_file:
+    tfidf_vectorizer = pickle.load(vectorizer_file)
+
+# Fungsi untuk menghitung skor abusiveness
+def predict_abusiveness(text):
+    # Transformasi teks input ke dalam representasi TF-IDF
+    tfidf_text = tfidf_vectorizer.transform([text])
+
+    # Prediksi skor abusiveness
+    abusiveness_score = model.predict_proba(tfidf_text)[0]
+
+    # Mengembalikan skor positif dan negatif
+    return abusiveness_score[0], abusiveness_score[1]
