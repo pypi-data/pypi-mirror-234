@@ -1,0 +1,78 @@
+Metadata-Version: 2.1
+Name: gundi-client-v2
+Version: 2.1.4
+Summary: An async client for Gundi's API
+License: Apache-2.0
+Author: Chris Doehring
+Author-email: chrisdo@earthranger.com
+Requires-Python: >=3.7,<4.0
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: environs (>=9.5,<10.0)
+Requires-Dist: gundi-core (>=1.2.1,<2.0.0)
+Requires-Dist: httpx (>=0.24.0,<0.25.0)
+Requires-Dist: pydantic (>=1.10,<2.0)
+Requires-Dist: respx (>=0.20.1,<0.21.0)
+Description-Content-Type: text/markdown
+
+# Gundi Client
+## Introduction
+[Gundi](https://www.earthranger.com/), a.k.a "The Portal" is a platform to manage integrations.
+The gundi-client is an async python client to interact with Gundi's REST API.
+
+## Installation
+```
+pip install gundi-client-v2
+```
+
+## Usage
+
+```
+from gundi_client_v2 import GundiClient
+import httpx
+
+# You can use it as an async context-managed client
+async with GundiClient() as client:
+   try:
+    connection = await client.get_connection_details(
+        integration_id="some-integration-uuid"
+    )
+    except httpx.RequestError as e:
+        logger.exception("Request Error")   
+        ...
+    except httpx.TimeoutException as e:
+        logger.exception("Request timed out")
+        ...
+    except httpx.HTTPStatusError as e:
+        logger.exception("Response returned error")
+    else:
+        for integration in connection.destinations:  
+            ...
+   ...
+
+# Or create an instance and close the client explicitly later
+client = GundiClient()
+try:
+    response = await client.get_connection_details(
+        integration_id="some-integration-uuid"
+    )
+    except httpx.RequestError as e:
+        logger.exception("Request Error")   
+        ...
+    except httpx.TimeoutException as e:
+        logger.exception("Request timed out")
+        ...
+    except httpx.HTTPStatusError as e:
+        logger.exception("Response returned error")
+    else:
+        for integration in connection.destinations:
+            ...
+   ...
+   await client.close()  # Close the session used to send requests to Gundi
+```
+
