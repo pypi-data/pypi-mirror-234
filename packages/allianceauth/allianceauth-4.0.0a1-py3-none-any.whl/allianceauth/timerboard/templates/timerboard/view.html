@@ -1,0 +1,620 @@
+{% extends "allianceauth/base-bs5.html" %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+{% load evelinks %}
+
+{% block page_title %}{% translate "Structure Timer Management" %}{% endblock page_title %}
+{% block extra_css %}{% endblock extra_css %}
+
+{% block content %}
+    <div class="col-lg-12">
+        <h1 class="page-header text-center">{% translate "Structure Timers" %}
+            <div class="text-end">
+                {% if perms.auth.timer_management %}
+                    <a href="{% url 'timerboard:add' %}" class="btn btn-success">
+                        {% translate "Create Structure Timer" %}
+                    </a>
+                {% endif %}
+            </div>
+        </h1>
+        <div class="col-lg-12 text-center">
+            <div class="badge badge-info text-start">
+                <b>{% translate "Current Eve Time:" %} </b>
+            </div>
+            <strong class="badge badge-info text-start" id="current-time"></strong>
+        </div>
+        {% if corp_timers %}
+            <h4><b>{% translate "Corp Timers" %}</b></h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th style="width:150px" class="text-center">{% translate "Details" %}</th>
+                        <th class="text-center">{% translate "Objective" %}</th>
+                        <th class="text-center">{% translate "System" %}</th>
+                        <th class="text-center">{% translate "Structure" %}</th>
+                        <th class="text-center">{% translate "Eve Time" %}</th>
+                        <th class="text-center">{% translate "Local Time" %}</th>
+                        <th class="text-center">{% translate "Creator" %}</th>
+                        {% if perms.auth.timer_management %}
+                            <th class="text-center">{% translate "Action" %}</th>
+                        {% endif %}
+                    </tr>
+                    {% for timer in corp_timers %}
+                        {% if timer.important == True %}
+                            <tr class="danger">
+                        {% else %}
+                            <tr class="info">
+                        {% endif %}
+                    <td style="width:150px" class="text-center">
+                        {{ timer.details }}
+                        {% if timer.timer_type != 'UNSPECIFIED' %}
+                            <br>({{ timer.get_timer_type_display }})
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if timer.objective == "Hostile" %}
+                            <div class="badge badge-danger">
+                                {% translate "Hostile" %}
+                            </div>
+                        {% endif %}
+                        {% if timer.objective == "Friendly" %}
+                            <div class="badge badge-primary">
+                                {% translate "Friendly" %}
+                            </div>
+                        {% endif %}
+                        {% if timer.objective == "Neutral" %}
+                            <div class="badge badge-default">
+                                {% translate "Neutral" %}
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td class="text-center"><a href="{{ timer.system|dotlan_solar_system_url }}">
+                        {{ timer.system }} {{ timer.planet_moon }}
+                        </a>
+                    </td>
+                    <td class="text-center">
+                        {% if timer.structure == "POCO" %}
+                            <div class="badge badge-info">
+                                POCO
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "I-HUB" %}
+                            <div class="badge badge-warning">
+                                I-HUB
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "TCU" %}
+                            <div class="badge badge-danger">
+                                TCU
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "POS[S]" %}
+                            <div class="badge badge-info">
+                                POS [S]
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "POS[M]" %}
+                            <div class="badge badge-info">
+                                POS [M]
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "POS[L]" %}
+                            <div class="badge badge-info">
+                                POS [L]
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Citadel[M]" or timer.structure == "Astrahus" %}
+                            <div class="badge badge-danger">
+                                Astrahus
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Citadel[L]" or timer.structure == "Fortizar" %}
+                            <div class="badge badge-danger">
+                                Fortizar
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Citadel[XL]" or timer.structure == "Keepstar" %}
+                            <div class="badge badge-danger">
+                                Keepstar
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Engineering Complex[M]" or timer.structure == "Raitaru" %}
+                            <div class="badge badge-warning">
+                                Raitaru
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Engineering Complex[L]" or timer.structure == "Azbel" %}
+                            <div class="badge badge-warning">
+                                Azbel
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Engineering Complex[XL]" or timer.structure == "Sotiyo" %}
+                            <div class="badge badge-warning">
+                                Sotiyo
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Refinery[M]" or timer.structure == "Athanor" %}
+                            <div class="badge badge-warning">
+                                Athanor
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Refinery[L]" or timer.structure == "Tatara"%}
+                            <div class="badge badge-warning">
+                                Tatara
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Cyno Beacon" or timer.structure == "Pharolux Cyno Beacon" %}
+                            <div class="badge badge-warning">
+                                Cyno Beacon
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Cyno Jammer" or timer.structure == "Tenebrex Cyno Jammer" %}
+                            <div class="badge badge-warning">
+                                Tenebrex Cyno Jammer
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Jump Gate" or timer.structure == "Ansiblex Jump Gate" %}
+                            <div class="badge badge-warning">
+                                Ansiblex Jump Gate
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Moon Mining Cycle" %}
+                            <div class="badge badge-success">
+                                Moon Mining Cycle
+                            </div>
+                        {% endif %}
+                        {% if timer.structure == "Other" %}
+                            <div class="badge badge-default">
+                                Other
+                            </div>
+                        {% endif %}
+                    </td>
+                    <td class="text-center" nowrap>{{ timer.eve_time | date:"Y-m-d H:i" }}</td>
+                    <td class="text-center" nowrap>
+                        <div id="localtime{{ timer.id }}"></div>
+                        <div id="countdown{{ timer.id }}"></div>
+                    </td>
+                    <td class="text-center">{{ timer.eve_character.character_name }}</td>
+                    {% if perms.auth.timer_management %}
+                        <td class="text-center">
+                            <a href="{% url 'timerboard:delete' timer.id %}" class="btn btn-danger">
+                                <span class="glyphicon glyphicon-remove"></span>
+                            </a>
+                            <a href="{% url 'timerboard:edit' timer.id %}" class="btn btn-info">
+                                <span class="glyphicon glyphicon-pencil"></span>
+                            </a>
+                        </td>
+                    {% endif %}
+                    </tr>
+                {% endfor %}
+                </table>
+            </div>
+        {% endif %}
+        <h4><b>{% translate "Next Timers" %}</b></h4>
+        {% if future_timers %}
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th style="width:150px" class="text-center">{% translate "Details" %}</th>
+                        <th class="text-center">{% translate "Objective" %}</th>
+                        <th class="text-center">{% translate "System" %}</th>
+                        <th class="text-center">{% translate "Structure" %}</th>
+                        <th class="text-center">{% translate "Eve Time" %}</th>
+                        <th class="text-center">{% translate "Local Time" %}</th>
+                        <th class="text-center">{% translate "Creator" %}</th>
+                        {% if perms.auth.timer_management %}
+                            <th class="text-center">{% translate "Action" %}</th>
+                        {% endif %}
+                    </tr>
+                    {% for timer in future_timers %}
+                        {% if timer.important == True %}
+                            <tr class="danger">
+                        {% else %}
+                            <tr class="info">
+                        {% endif %}
+                        <td style="width:150px" class="text-center">
+                            {{ timer.details }}
+                            {% if timer.timer_type != 'UNSPECIFIED' %}
+                                <br>({{ timer.get_timer_type_display }})
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                        {% if timer.objective == "Hostile" %}
+                            <div class="badge badge-danger">
+                                {% translate "Hostile" %}
+                            </div>
+                        {% endif %}
+                        {% if timer.objective == "Friendly" %}
+                            <div class="badge badge-primary">
+                                {% translate "Friendly" %}
+                            </div>
+                        {% endif %}
+                        {% if timer.objective == "Neutral" %}
+                            <div class="badge badge-default">
+                                {% translate "Neutral" %}
+                            </div>
+                        {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ timer.system|dotlan_solar_system_url }}">
+                                {{ timer.system }} {{ timer.planet_moon }}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            {% if timer.structure == "POCO" %}
+                                <div class="badge badge-info">
+                                    POCO
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "I-HUB" %}
+                                <div class="badge badge-warning">
+                                    I-HUB
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "TCU" %}
+                                <div class="badge badge-danger">
+                                    TCU
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "POS[S]" %}
+                                <div class="badge badge-info">
+                                    POS [S]
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "POS[M]" %}
+                                <div class="badge badge-info">
+                                    POS [M]
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "POS[L]" %}
+                                <div class="badge badge-info">
+                                    POS [L]
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Citadel[M]" or timer.structure == "Astrahus" %}
+                                <div class="badge badge-danger">
+                                    Astrahus
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Citadel[L]" or timer.structure == "Fortizar" %}
+                                <div class="badge badge-danger">
+                                    Fortizar
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Citadel[XL]" or timer.structure == "Keepstar" %}
+                                <div class="badge badge-danger">
+                                    Keepstar
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Engineering Complex[M]" or timer.structure == "Raitaru" %}
+                                <div class="badge badge-warning">
+                                    Raitaru
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Engineering Complex[L]" or timer.structure == "Azbel" %}
+                                <div class="badge badge-warning">
+                                    Azbel
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Engineering Complex[XL]" or timer.structure == "Sotiyo" %}
+                                <div class="badge badge-warning">
+                                    Sotiyo
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Refinery[M]" or timer.structure == "Athanor" %}
+                                <div class="badge badge-warning">
+                                    Athanor
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Refinery[L]" or timer.structure == "Tatara" %}
+                                <div class="badge badge-warning">
+                                    Tatara
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Cyno Beacon" or timer.structure == "Pharolux Cyno Beacon" %}
+                                <div class="badge badge-warning">
+                                    Pharolux Cyno Beacon
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Cyno Jammer" or timer.structure == "Tenebrex Cyno Jammer" %}
+                                <div class="badge badge-warning">
+                                    Tenebrex Cyno Jammer
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Jump Gate" or timer.structure == "Ansiblex Jump Gate" %}
+                                <div class="badge badge-warning">
+                                    Ansiblex Jump Gate
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Moon Mining Cycle" %}
+                                <div class="badge badge-success">
+                                    Moon Mining Cycle
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Other" %}
+                                <div class="badge badge-default">
+                                    Other
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="text-center" nowrap>{{ timer.eve_time | date:"Y-m-d H:i" }}</td>
+                        <td class="text-center" nowrap>
+                            <div id="localtime{{ timer.id }}"></div>
+                            <div id="countdown{{ timer.id }}"></div>
+                        </td>
+                        <td class="text-center">{{ timer.eve_character.character_name }}</td>
+                        {% if perms.auth.timer_management %}
+                            <td class="text-center">
+                                <a href="{% url 'timerboard:delete' timer.id %}" class="btn btn-danger">
+                                    <span class="glyphicon glyphicon-remove"></span>
+                                </a>
+                                <a href="{% url 'timerboard:edit' timer.id %}" class="btn btn-info">
+                                    <span class="glyphicon glyphicon-pencil"></span>
+                                </a>
+                            </td>
+                        {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning text-center">
+                {% translate "No upcoming timers." %}
+            </div>
+        {% endif %}
+
+        <h4><b>{% translate "Past Timers" %}</b></h4>
+        {% if past_timers %}
+            <div class="table-responsive">
+                <table class="table">
+                    <tr>
+                        <th style="width:150px" class="text-center">{% translate "Details" %}</th>
+                        <th class="text-center">{% translate "Objective" %}</th>
+                        <th class="text-center">{% translate "System" %}</th>
+                        <th class="text-center">{% translate "Structure" %}</th>
+                        <th class="text-center">{% translate "Eve Time" %}</th>
+                        <th class="text-center">{% translate "Local Time" %}</th>
+                        <th class="text-center">{% translate "Creator" %}</th>
+                        {% if perms.auth.timer_management %}
+                            <th class="text-center">{% translate "Action" %}</th>
+                        {% endif %}
+                    </tr>
+                    {% for timer in past_timers %}
+                        {% if timer.important == True %}
+                            <tr class="danger">
+                                {% else %}
+                            <tr class="info">
+                        {% endif %}
+                        <td style="width:150px" class="text-center">
+                            {{ timer.details }}
+                            {% if timer.timer_type != 'UNSPECIFIED' %}
+                                <br>({{ timer.get_timer_type_display }})
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                        {% if timer.objective == "Hostile" %}
+                            <div class="badge badge-danger">
+                                {% translate "Hostile" %}
+                            </div>
+                        {% endif %}
+                        {% if timer.objective == "Friendly" %}
+                            <div class="badge badge-primary">
+                                {% translate "Friendly" %}
+                            </div>
+                        {% endif %}
+                        {% if timer.objective == "Neutral" %}
+                            <div class="badge badge-default">
+                                {% translate "Neutral" %}
+                            </div>
+                        {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ timer.system|dotlan_solar_system_url }}">
+                                {{ timer.system }} {{ timer.planet_moon }}
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            {% if timer.structure == "POCO" %}
+                                <div class="badge badge-info">
+                                    POCO
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "I-HUB" %}
+                                <div class="badge badge-warning">
+                                    I-HUB
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "TCU" %}
+                                <div class="badge badge-danger">
+                                    TCU
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "POS[S]" %}
+                                <div class="badge badge-info">
+                                    POS [S]
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "POS[M]" %}
+                                <div class="badge badge-info">
+                                    POS [M]
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "POS[L]" %}
+                                <div class="badge badge-info">
+                                    POS [L]
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Citadel[M]" or timer.structure == "Astrahus" %}
+                                <div class="badge badge-danger">
+                                    Astrahus
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Citadel[L]" or timer.structure == "Fortizar" %}
+                                <div class="badge badge-danger">
+                                    Fortizar
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Citadel[XL]" or timer.structure == "Keepstar" %}
+                                <div class="badge badge-danger">
+                                    Keepstar
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Engineering Complex[M]" or timer.structure == "Raitaru" %}
+                                <div class="badge badge-warning">
+                                    Raitaru
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Engineering Complex[L]" or timer.structure == "Azbel" %}
+                                <div class="badge badge-warning">
+                                    Azbel
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Engineering Complex[XL]" or timer.structure == "Sotiyo" %}
+                                <div class="badge badge-warning">
+                                    Sotiyo
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Refinery[M]" or timer.structure == "Athanor" %}
+                                <div class="badge badge-warning">
+                                    Athanor
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Refinery[L]" or timer.structure == "Tatara" %}
+                                <div class="badge badge-warning">
+                                    Tatara
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Cyno Beacon" or timer.structure == "Pharolux Cyno Beacon" %}
+                                <div class="badge badge-warning">
+                                    Pharolux Cyno Beacon
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Cyno Jammer" or timer.structure == "Tenebrex Cyno Jammer" %}
+                                <div class="badge badge-warning">
+                                    Tenebrex Cyno Jammer
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Jump Gate" or timer.structure == "Ansiblex Jump Gate" %}
+                                <div class="badge badge-warning">
+                                    Ansiblex Jump Gate
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Moon Mining Cycle" %}
+                                <div class="badge badge-success">
+                                    Moon Mining Cycle
+                                </div>
+                            {% endif %}
+                            {% if timer.structure == "Other" %}
+                                <div class="badge badge-default">
+                                    Other
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="text-center" nowrap>{{ timer.eve_time | date:"Y-m-d H:i" }}</td>
+                        <td class="text-center" nowrap>
+                            <div id="localtime{{ timer.id }}"></div>
+                            <div id="countdown{{ timer.id }}"></div>
+                        </td>
+                        <td class="text-center">{{ timer.eve_character.character_name }}</td>
+                        {% if perms.auth.timer_management %}
+                            <td class="text-center">
+                                <a href="{% url 'timerboard:delete' timer.id %}" class="btn btn-danger">
+                                    <span class="glyphicon glyphicon-remove"></span>
+                                </a>
+                                <a href="{% url 'timerboard:edit' timer.id %}" class="btn btn-info">
+                                    <span class="glyphicon glyphicon-pencil"></span>
+                                </a>
+                            </td>
+                        {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning text-center">
+                {% translate "No past timers." %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% include "bundles/moment-js.html" with locale=True %}
+    {% include "bundles/timers-js.html" %}
+    <script>
+        let timers = [
+            {% for timer in timers %}
+                {
+                    'id': {{ timer.id }},
+                    'targetDate': moment("{{ timer.eve_time | date:"c" }}"),
+                    'expired': false
+                },
+            {% endfor %}
+            {% for timer in corp_timers %}
+                {
+                    'id': {{ timer.id }},
+                    'targetDate': moment("{{ timer.eve_time | date:"c" }}"),
+                    'expired': false
+                },
+            {% endfor %}
+        ];
+
+        /**
+         * Update a timer
+         * @param timer Timer information
+         */
+        let updateTimer = function (timer) {
+            if (timer.targetDate.isAfter(Date.now())) {
+                let duration = moment.duration(timer.targetDate - moment(), 'milliseconds');
+
+                document.getElementById("countdown" + timer.id).innerHTML = getDurationString(duration);
+            } else {
+                timer.expired = true;
+
+                document.getElementById("countdown" + timer.id).innerHTML = "";
+            }
+        };
+
+        let updateAllTimers = function () {
+            let l = timers.length;
+
+            for (let i=0; i < l; ++i) {
+                if (timers[i].expired) continue;
+
+                updateTimer(timers[i]);
+            }
+        };
+
+        function timedUpdate() {
+            updateClock();
+            updateAllTimers();
+        }
+
+        /**
+         * Set the local time info for the timer
+         * @param timer Timer information
+         */
+        let setLocalTime = function (timer) {
+            document.getElementById("localtime" + timer.id).innerHTML = timer.targetDate.format("ddd @ LT");
+        };
+
+        /**
+         * Set all local time fields
+         */
+        let setAllLocalTimes = function () {
+            let l = timers.length;
+
+            for (let i=0; i < l; ++i) {
+                setLocalTime(timers[i]);
+            }
+        };
+
+        let updateClock = function () {
+            document.getElementById("current-time").innerHTML = getCurrentEveTimeString();
+        };
+        // Set initial values
+        setAllLocalTimes();
+        timedUpdate();
+
+        // Start timed updates
+        setInterval(timedUpdate, 1000);
+    </script>
+{% endblock content %}

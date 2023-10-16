@@ -1,0 +1,32 @@
+{% load i18n %}
+{% load navactive %}
+{% if not item.hide %}
+    <li class="d-flex flex-wrap m-2 p-2 pt-0 pb-0 mt-0 mb-0 me-0 pe-0">
+        <i class="nav-link {{ item.classes }} fa-fw align-self-center me-3 {% if item.navactive %}{% navactive request item.navactive|join:' ' %}{% endif %}" {% if item.items|length %} type="button" data-bs-toggle="collapse" data-bs-target="#id-{{ item.text|slugify }}" aria-expanded="false" aria-controls="" {% endif %}></i>
+        <a class="nav-link flex-fill align-self-center" {% if item.items|length %} type="button" data-bs-toggle="collapse" data-bs-target="#id-{{ item.text|slugify }}" aria-expanded="false" aria-controls="" {% endif %}
+            href="{% if item.url_name %}{% url item.url_name %}{% else %}{{ item.url }}{% endif %}">
+            {% translate item.text %}
+        </a>
+        {% if item.count >= 1 %}
+            <span class="badge bg-primary rounded-pill m-2 align-self-center {% if item.items|length == 0 %}me-4{% endif %}">
+                {{ item.count }}
+            </span>
+        {% elif item.url %}
+            <span class="pill m-2 me-4 align-self-center fas fa-external-link-alt"></span>
+        {% endif %}
+        {% if item.items|length > 0 %}
+            <span class="pill m-2 me-4 align-self-center fas fa-solid fa-chevron-down"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#id-{{ item.text|slugify }}"
+                aria-expanded="false"
+                aria-controls=""></span>
+            <!--<hr class="m-0 w-100">-->
+            <ul class="collapse ps-1 w-100 border-start rounded-start border-light border-3" id="id-{{ item.text|slugify }}">
+                {% for sub_item in item.items %}
+                    {{ sub_item.render }}
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </li>
+{% endif %}

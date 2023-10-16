@@ -1,0 +1,51 @@
+{% load i18n %}
+{% load evelinks %}
+{% load theme_tags %}
+<div style="z-index:5;" class="w100 d-flex flex-column justify-content-center align-items-center text-center pb-2">
+
+    {% if request.user.profile.main_character %}
+        {% with request.user.profile.main_character as main %}
+            <div class="p-2 position-relative m-2">
+                <img class="rounded-circle" src="{{ main.character_id|character_portrait_url:64 }}" alt="{{ main.character_name }}"/>
+                <img class="rounded-circle position-absolute bottom-0 start-0" src="{{ main.corporation_logo_url_32 }}" alt="{{ main.corporation_name }}"/>
+                {% if main.alliance_id %}
+                    <img class="rounded-circle position-absolute bottom-0 end-0" src="{{ main.alliance_logo_url_32 }}" alt="{{ main.alliance_name }}"/>
+                {% elif main.faction_id %}
+                    <img class="rounded-circle position-absolute bottom-0 end-0" src="{{ main.faction_logo_url_32 }}" alt="{{ main.faction_name }}"/>
+                {% endif %}
+            </div>
+            <h5>{{ main.character_name }}</h5>
+        {% endwith %}
+    {% else %}
+        <img class="rounded-circle m-2" src="{{ 1|character_portrait_url:32 }}" alt="{% translate 'No Main Character!' %}"/>
+        <h5>{% translate "No Main Character!" %}</h5>
+    {% endif %}
+    {% if user.is_authenticated %}
+        {% theme_select %}
+    {% endif %}
+    <div class="btn-group m-2">
+        <button type="button" class="btn btn-secondary p-1">
+            {% include "public/lang_select.html" %}
+        </button>
+        {% if user.is_superuser %}
+        <a role="button" class="btn btn btn-secondary d-flex"
+            href="{% url 'admin:index' %}"
+            bs-data-toggle="button">
+            <span class="align-self-center">{% translate "Admin" %}</span>
+        </a>
+        {% endif %}
+    </div>
+    <div class="btn-group m-2">
+        <a role="button" class="btn btn-info" href="{% url 'authentication:token_management' %}" alt="Token Management"><i class="fa-solid fa-user-lock fa-fw"></i></a>
+    {% if user.is_superuser %}
+        <a role="button" class="btn btn-info" href="https://allianceauth.readthedocs.io/" alt="Alliance Auth Documentation"><i class="fa-solid fa-book fa-fw"></i></a>
+        <a role="button" class="btn btn-info" href="https://discord.gg/fjnHAmk" alt="Alliance Auth Discord"><i class="fa-brands fa-discord fa-fw"></i></a>
+        <a role="button" class="btn btn-info" href="https://gitlab.com/allianceauth/allianceauth" alt="Alliance Auth Git"><i class="fa-brands fa-gitlab fa-fw"></i></a>
+    {% endif %}
+    {% if user.is_authenticated %}
+        <a role="button" class="btn btn-danger" href="{% url 'logout' %}" alt="{% translate 'Sign Out' %}"><i class="fa-solid fa-right-from-bracket fa-fw"></i></a>
+    {% else %}
+        <a role="button" class="btn btn-success" href="{% url 'authentication:login' %}" alt="{% translate 'Sign In' %}"> <i class="fa-solid fa-right-to-bracket fa-fw"></i></a>
+    {% endif %}
+    </div>
+</div>
