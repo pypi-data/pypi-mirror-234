@@ -1,0 +1,65 @@
+name: Documentation
+
+on:
+  push:
+  release:
+    types:
+      - published
+
+
+jobs:
+  create-documentation:
+
+    name: Build documentation HTML
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Setup Mamba environment for Python
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: ./environment.yml
+        environment-name: ocsmesh-env
+    - name: Install dependencies
+      shell: bash -l {0}
+      run: |
+        python ./setup.py install_jigsaw
+        pip install .[documentation]
+    - name: Retrieve latest version from Git tags
+      uses: mtkennerly/dunamai-action@v1
+      with:
+        env-var: VERSION
+        args: --style semver
+    - name: Build documentation site with Sphinx
+      shell: bash -l {0}
+      run: |
+          cd docs
+          make html
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation_built
+        path: docs/build/html
+
+  deploy-documentation:
+
+    name: deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [ create-documentation ]
+    if: github.event_name == 'release'
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    - name: Download documentation for deployment
+      uses: actions/download-artifact@v3
+      with:
+        name: documentation_built
+        path: docs/build/html
+    - name: Deploy to GitHub Pages
+      uses: JamesIves/github-pages-deploy-action@4.1.5
+      with:
+        branch: gh-pages
+        folder: docs/build/html

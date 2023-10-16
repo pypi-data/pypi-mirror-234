@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=7", "wheel", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+
+[tool.setuptools.packages]
+find = {}
+
+[project]
+name = "ocsmesh"
+authors = [
+    {name = "Jaime R Calzada", email = "jreniel@gmail.com"},
+    {name = "Soroosh Mani", email = "soroosh.mani@noaa.gov"}
+]
+maintainers = [
+    {name = "Soroosh Mani", email = "soroosh.mani@noaa.gov"}
+]
+description = "Package to generate computational unstructured meshes from planetary modeling."
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = '>=3.9' # 3.8 -> scipy
+dependencies = [
+    "colored-traceback", "fiona", "geopandas",
+    "jigsawpy", "matplotlib", "netCDF4", "numba",
+    "numpy>=1.21", # introduce npt.NDArray
+    "pyarrow", "rtree", "pyproj>=3.0", "rasterio", "scipy",
+    "shapely", "triangle", "typing_extensions", "utm",
+    ]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://noaa-ocs-modeling.github.io/OCSMesh/"
+Source = "https://github.com/noaa-ocs-modeling/OCSMesh/"
+
+[project.scripts]
+ocsmesh = "ocsmesh.__main__:main"
+
+[project.optional-dependencies]
+testing = ['pylint>=2.14']
+documentation = [
+    'sphinx < 7.0.0', # due to sphinx_rtd_theme support
+    'sphinx-rtd-theme', 'sphinx-argparse',
+    'mistune==0.8.4', 'm2r2', 'numpydoc'
+]
