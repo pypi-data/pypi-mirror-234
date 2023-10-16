@@ -1,0 +1,125 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v0.991
+  hooks:
+  - id: mypy
+    additional_dependencies: [types-requests, types-PyYAML, types-tabulate]
+    files: daft
+    exclude: daft/pickle/.*\.py
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: detect-private-key
+  - id: trailing-whitespace
+    exclude: docs/source/api_docs/
+  - id: end-of-file-fixer
+    exclude: docs/source/api_docs/
+  - id: check-yaml
+    exclude: kubernetes-ops
+  - id: pretty-format-json
+    exclude: |
+      (?x)^(
+          tutorials/.*\.ipynb|
+          docs/.*\.ipynb
+      )$
+    args:
+    - --autofix
+    - --no-sort-keys
+    - '--indent=  '
+  - id: check-added-large-files
+  - id: check-merge-conflict
+  - id: check-docstring-first
+  - id: check-toml
+  - id: debug-statements
+
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.6.0
+  hooks:
+  - id: pretty-format-toml
+    args: [--autofix]
+  - id: pretty-format-yaml
+    args: [--autofix]
+
+- repo: https://github.com/pycqa/isort
+  rev: 5.11.5
+  hooks:
+  - id: isort
+    name: isort (python)
+    files: \.py$
+    args: [--profile, black, --filter-files, -a, from __future__ import annotations]
+  - id: isort
+    name: isort (cython)
+    files: \.pyx$
+    args: [--profile, black, --filter-files]
+
+
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.3.1
+  hooks:
+  - id: pyupgrade
+    args: [--py37-plus]
+    exclude: (daft/dataframe/dataframe.py|tests/expression_operators/test_udf.py)
+
+- repo: https://github.com/myint/autoflake
+  rev: v2.0.0
+  hooks:
+  - id: autoflake
+    args: [--in-place, --remove-all-unused-imports, --remove-unused-variable, --ignore-init-module-imports]
+
+- repo: https://github.com/psf/black
+  rev: 22.12.0
+  hooks:
+  - id: black
+
+- repo: local
+  hooks:
+  - id: fmt
+    name: fmt
+    description: Format files with cargo fmt.
+    entry: cargo fmt
+    language: system
+    types: [rust]
+    args: [--]
+  - id: cargo-check
+    name: cargo check
+    description: Check the package for errors.
+    entry: cargo check
+    language: system
+    types: [rust]
+    pass_filenames: false
+    args: [--workspace]
+
+  - id: cargo-check-no-default
+    name: cargo check
+    description: Check the package for errors without default features.
+    entry: cargo check
+    language: system
+    types: [rust]
+    pass_filenames: false
+    args: [--workspace, --no-default-features]
+
+  - id: clippy
+    name: clippy
+    description: Lint rust sources
+    entry: cargo clippy
+    language: system
+    args: [--workspace, --, -D, warnings]
+    types: [rust]
+    pass_filenames: false
+
+  - id: check-for-rustls
+    name: check-for-rustls
+    description: Lint rust sources
+    entry: ./tools/check_for_rustls.sh
+    language: system
+    types: [rust]
+    pass_filenames: false
+
+
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: v0.10.1
+  hooks:
+  - id: validate-pyproject

@@ -1,0 +1,55 @@
+[dependencies]
+common-error = {path = "../common-error", default-features = false}
+daft-core = {path = "../daft-core", default-features = false}
+daft-io = {path = "../daft-io", default-features = false}
+daft-table = {path = "../daft-table", default-features = false}
+async-compat = "0.2.1"
+async-stream = "0.3.5"
+bytes = "1.4.0"
+futures = "0.3.28"
+itertools = "0.11"
+rayon = "1.7.0"
+snafu = "0.7.4"
+tokio-util = "0.7.8"
+
+[features]
+default = ["python"]
+python = ["dep:pyo3", "dep:pyo3-log", "common-error/python", "daft-core/python", "daft-io/python", "daft-table/python"]
+
+[package]
+edition = "2021"
+name = "daft-parquet"
+version = "0.1.20"
+
+[dependencies.tokio]
+version = "1.32.0"
+features = [ "net", "time", "bytes", "process", "signal", "macros", "rt", "rt-multi-thread",]
+
+[dependencies.tokio-stream]
+version = "0.1.14"
+features = [ "fs",]
+
+[dependencies.arrow2]
+git = "https://github.com/Eventual-Inc/arrow2"
+package = "arrow2"
+rev = "065a31da8fd8a75cbece5f99295a4068713a71ed"
+features = ["io_parquet", "io_parquet_compression"]
+
+[dependencies.log]
+features = [ "std",]
+version = "0.4.19"
+
+[dependencies.parquet2]
+features = [ "async",]
+git = "https://github.com/Eventual-Inc/parquet2"
+package = "parquet2"
+rev = "d4c24086c4cc824fbabef093ab2fda95d3aacb78"
+
+[dependencies.pyo3]
+features = [ "extension-module", "multiple-pymethods", "abi3-py37",]
+version = "0.19.2"
+optional = true
+
+[dependencies.pyo3-log]
+version = "0.8.3"
+optional = true

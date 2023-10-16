@@ -1,0 +1,144 @@
+[features]
+default = [ "python",]
+python = [ "dep:pyo3", "dep:pyo3-log", "daft-core/python", "daft-table/python", "daft-dsl/python", "daft-io/python", "daft-plan/python", "daft-parquet/python", "daft-csv/python",]
+
+[lib]
+crate-type = [ "cdylib",]
+name = "daft"
+
+[package]
+edition = "2021"
+name = "daft"
+publish = false
+version = "0.1.20"
+
+[workspace]
+members = ["local_dependencies/daft-core", "local_dependencies/daft-io", "local_dependencies/daft-parquet", "local_dependencies/daft-csv", "local_dependencies/daft-dsl", "local_dependencies/daft-table", "local_dependencies/daft-plan"]
+
+[dependencies.daft-core]
+path = "local_dependencies/daft-core"
+default-features = false
+
+[dependencies.daft-csv]
+path = "local_dependencies/daft-csv"
+default-features = false
+
+[dependencies.daft-dsl]
+path = "local_dependencies/daft-dsl"
+default-features = false
+
+[dependencies.daft-io]
+path = "local_dependencies/daft-io"
+default-features = false
+
+[dependencies.daft-parquet]
+path = "local_dependencies/daft-parquet"
+default-features = false
+
+[dependencies.daft-plan]
+path = "local_dependencies/daft-plan"
+default-features = false
+
+[dependencies.daft-table]
+path = "local_dependencies/daft-table"
+default-features = false
+
+[profile.dev]
+overflow-checks = false
+
+[profile.dev-bench]
+codegen-units = 16
+debug = 1
+inherits = "release"
+lto = "thin"
+strip = "none"
+
+[profile.release-lto]
+codegen-units = 1
+inherits = "release"
+lto = "fat"
+
+[profile.rust-analyzer]
+inherits = "dev"
+
+[workspace.dependencies]
+async-compat = "0.2.1"
+async-stream = "0.3.5"
+bytes = "1.4.0"
+futures = "0.3.28"
+html-escape = "0.2.13"
+indexmap = "2.0.0"
+itertools = "0.11"
+num-derive = "0.3.3"
+num-traits = "0.2"
+prettytable-rs = "0.10"
+rand = "^0.8"
+rayon = "1.7.0"
+serde_json = "1.0.104"
+snafu = "0.7.4"
+tokio-util = "0.7.8"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.20"
+
+[patch.crates-io.parquet2]
+git = "https://github.com/Eventual-Inc/parquet2"
+rev = "d4c24086c4cc824fbabef093ab2fda95d3aacb78"
+
+[workspace.dependencies.tokio]
+version = "1.32.0"
+features = [ "net", "time", "bytes", "process", "signal", "macros", "rt", "rt-multi-thread",]
+
+[workspace.dependencies.tokio-stream]
+version = "0.1.14"
+features = [ "fs",]
+
+[workspace.dependencies.arrow2]
+git = "https://github.com/Eventual-Inc/arrow2"
+package = "arrow2"
+rev = "065a31da8fd8a75cbece5f99295a4068713a71ed"
+
+[workspace.dependencies.bincode]
+version = "1.3.3"
+
+[workspace.dependencies.lazy_static]
+version = "1.4.0"
+
+[workspace.dependencies.log]
+features = [ "std",]
+version = "0.4.19"
+
+[workspace.dependencies.parquet2]
+features = [ "async",]
+git = "https://github.com/Eventual-Inc/parquet2"
+package = "parquet2"
+rev = "d4c24086c4cc824fbabef093ab2fda95d3aacb78"
+
+[workspace.dependencies.pyo3]
+features = [ "extension-module", "multiple-pymethods", "abi3-py37",]
+version = "0.19.2"
+
+[dependencies.pyo3]
+features = [ "extension-module", "multiple-pymethods", "abi3-py37",]
+version = "0.19.2"
+optional = true
+
+[workspace.dependencies.pyo3-log]
+version = "0.8.3"
+
+[dependencies.pyo3-log]
+version = "0.8.3"
+optional = true
+
+[workspace.dependencies.serde]
+features = [ "derive", "rc",]
+version = "1.0.179"
+
+[target."cfg(not(target_env = \"msvc\"))".dependencies.libc]
+version = "^0.2.8"
+default-features = false
+
+[target."cfg(not(target_env = \"msvc\"))".dependencies.tikv-jemallocator]
+version = "0.5.4"
+features = [ "disable_initial_exec_tls",]

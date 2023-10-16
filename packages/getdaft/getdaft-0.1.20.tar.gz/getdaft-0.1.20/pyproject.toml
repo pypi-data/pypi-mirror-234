@@ -1,0 +1,83 @@
+[build-system]
+build-backend = "maturin"
+requires = ["maturin>=1.2.0,<1.3.0"]
+
+[project]
+authors = [{name = "Eventual Inc", email = "daft@eventualcomputing.com"}]
+dependencies = [
+  "pyarrow >= 6.0.1",
+  "fsspec[http]",
+  "loguru",
+  "psutil",
+  "typing-extensions >= 4.0.0; python_version < '3.8'",
+  "pickle5 >= 0.0.12; python_version < '3.8'"
+]
+description = "A Distributed DataFrame library for large scale complex data processing."
+dynamic = ["version"]
+license = {file = "LICENSE"}
+maintainers = [
+  {name = "Sammy Sidhu", email = "sammy@eventualcomputing.com"},
+  {name = "Jay Chia", email = "jay@eventualcomputing.com"}
+]
+name = "getdaft"
+readme = "README.rst"
+requires-python = ">=3.7"
+
+[project.optional-dependencies]
+all = ["getdaft[aws, azure, gcp, ray, pandas, numpy, viz]"]
+aws = ["s3fs"]
+azure = ["adlfs"]
+gcp = ["gcsfs"]
+numpy = ["numpy"]
+pandas = ["pandas"]
+ray = [
+  # Inherit existing Ray version. Get the "default" extra for the Ray dashboard.
+  "ray[data, default]>=2.0.0",
+  # Explicitly install packaging. See issue: https://github.com/ray-project/ray/issues/34806
+  "packaging"
+]
+viz = ["pydot"]
+
+[project.urls]
+homepage = "https://www.getdaft.io"
+repository = "https://github.com/Eventual-Inc/Daft"
+
+[tool]
+
+[tool.black]
+line-length = 120
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+exclude = ['daft/pickle/*.py$']
+files = ["daft/**/*.py", "daft/**/*.pyx", "tests/**/*.py"]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = [
+  "pyarrow.*",
+  "fsspec.*",
+  "icebridge.*",
+  "cloudpickle.*",
+  "docker.*",
+  "uvicorn.*",
+  "numba.*"
+]
+
+[[tool.mypy.overrides]]
+enable_error_code = ["attr-defined"]
+module = 'daft.*'
+warn_return_any = false
+
+[tool.pytest.ini_options]
+addopts = "--benchmark-skip -m 'not hypothesis' -m 'not integration'"
+minversion = "6.0"
+testpaths = [
+  "tests"
+]
