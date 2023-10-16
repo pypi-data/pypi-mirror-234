@@ -1,0 +1,2 @@
+class CancelInit(Exception):
+    pass

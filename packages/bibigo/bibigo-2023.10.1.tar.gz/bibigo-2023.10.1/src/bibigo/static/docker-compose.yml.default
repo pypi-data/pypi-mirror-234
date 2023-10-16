@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  {service}:
+    image: {image}
+    command: {command}
+    deploy:
+      mode: {mode}
+      replicas: {replicas}
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == {role}
+      update_config:
+        order: stop-first
+        parallelism: 1
+        failure_action: rollback
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network={traefik-network}"
+        # http routers -> https
+        - "traefik.http.routers.web-{service}.entrypoints={http-entrypoint}"
+        - "traefik.http.routers.web-{service}.rule=Host(`{domain}`)"
+        - "traefik.http.routers.web-{service}.middlewares={http-redirect}"
+        # https routers -> service
+        - "traefik.http.routers.websecure-{service}.entrypoints={https-entrypoint}"
+        - "traefik.http.routers.websecure-{service}.rule=Host(`{domain}`)"
+        - "traefik.http.routers.websecure-{service}.tls=true"
+        - "traefik.http.routers.websecure-{service}.tls.certresolver={certresolver}"
+        - "traefik.http.routers.websecure-{service}.service={service}"
+        # service
+        - "traefik.http.services.{service}.loadbalancer.server.port={port}"
+    networks:
+      - {traefik-network}
+      
+networks:
+  {traefik-network}:
+    external: true
