@@ -1,0 +1,35 @@
+name: Project release on PyPi
+
+on:
+  repository_dispatch:
+    types: [preview_release]
+
+jobs:
+  release-on-pypi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Hatch
+        run: pip install hatch
+
+      - name: Bump version
+        run: hatch version minor
+
+      - name: Build Haystack
+        run: ./build.sh
+
+      - name: Commit version bump
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "Bump version"
+          git push
+
+      - name: Publish on PyPi
+        env:
+          HATCH_INDEX_USER: __token__
+          HATCH_INDEX_AUTH: ${{ secrets.PYPI_API_TOKEN }}
+        run: hatch publish -y
