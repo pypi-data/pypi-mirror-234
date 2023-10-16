@@ -1,0 +1,11 @@
+export function turtle_init(block: any): string;
+export function turtle_speed(block: any): string;
+export function turtle_line_width(block: any): string;
+export function turtle_line_color(block: any): string;
+export function turtle_line_hsv(block: any): string;
+export function turtle_pen_up(block: any): string;
+export function turtle_pen_down(block: any): string;
+export function turtle_forward(block: any): string;
+export function turtle_turn_right(block: any): string;
+export function turtle_turn_left(block: any): string;
+export function turtle_move(block: any): string;
