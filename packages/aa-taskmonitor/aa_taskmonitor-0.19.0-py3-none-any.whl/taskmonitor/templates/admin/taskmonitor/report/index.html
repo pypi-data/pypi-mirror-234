@@ -1,0 +1,231 @@
+{% extends 'admin/change_list.html' %}
+{% load i18n humanize static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'taskmonitor/css/admin.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'taskmonitor/css/reports.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% static 'taskmonitor/vendor/highcharts/highcharts.js' %}"></script>
+    <script src="{% static 'taskmonitor/js/highcharts_defaults.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:app_list' app_label=cl.opts.app_label %}">{{ cl.opts.app_config.verbose_name }}</a>
+        &rsaquo; {{ title }}
+    </div>
+{% endblock %}
+
+{% block content_title %}
+    <h1>
+        {{ title }}
+        <span class="float-right">
+            <a href="{% url 'admin:taskmonitor_tasklog_changelist' %}">
+                <input type="button" value="Task Logs">
+            </a>
+            <a href="{% url 'taskmonitor:admin_taskmonitor_reports_recalculation' %}">
+                <input type="button" value="Recalc now">
+            </a>
+            {% if debug_mode %}
+                <a href="{% url 'taskmonitor:admin_taskmonitor_reports_clear_cache' %}">
+                    <input type="button" value="Clear cache">
+                </a>
+            {% endif %}
+        </span>
+    </h1>
+    <br class="clear">
+{% endblock %}
+
+{% block content %}
+
+    <div id="content-main">
+
+        <div class="module" id="changelist">
+
+            <div id="changelist-filter">
+
+                <h2>Contents</h2>
+
+                <h3>Overview</h3>
+                <ul>
+                    <li class="selected"><a class="tabLinks" href="#task-runs-by-state">Task runs by state</a></li>
+                    <li><a class="tabLinks" href="#task-runs-by-app">Task runs by app</a></li>
+                    <li><a class="tabLinks" href="#task-througput">Througput</a></li>
+                </ul>
+                <h3>Top Apps</h3>
+                <ul>
+                    <li><a class="tabLinks" href="#top-apps-by-runs">Top apps by total task runs</a></li>
+                    <li><a class="tabLinks" href="#top-apps-by-cum-runtime">Top apps by total task runtime</a></li>
+                </ul>
+                <h3>Top Tasks</h3>
+                <ul>
+                    <li><a class="tabLinks" href="#top-tasks-by-runs">Top tasks by runs</a></li>
+                    <li><a class="tabLinks" href="#top-tasks-by-max-runtime">Top tasks by max runtime</a></li>
+                    <li><a class="tabLinks" href="#top-tasks-by-avg-runtime">Top tasks by avg runtime</a></li>
+                    <li><a class="tabLinks" href="#top-tasks-by-cum-runtime">Top tasks by total runtime</a></li>
+                    <li><a class="tabLinks" href="#top-failed-tasks">Top tasks by failed runs</a></li>
+                    <li><a class="tabLinks" href="#top-retried-tasks">Top tasks by retried runs</a></li>
+                </ul>
+                <h3>Over time</h3>
+                <ul>
+                    <li><a class="tabLinks" href="#throughput-by-state">Throughput by state</a></li>
+                    <li><a class="tabLinks" href="#throughput-by-app">Throughput by app</a></li>
+                    <li><a class="tabLinks" href="#exceptions-over-time">Exceptions over time</a></li>
+                    <li><a class="tabLinks" href="#app-failures-over-time">App failures over time</a></li>
+                    <li><a class="tabLinks" href="#queue-length">Queue Length over time</a></li>
+                </ul>
+                <h3>Task analysis</h3>
+                <ul>
+                    <li><a class="tabLinks" href="#task-statistics">Task runs vs. runtime</a></li>
+                </ul>
+            </div>
+
+            <div class="changelist-form-container">
+                <div id="task-runs-by-state" class="tabContent">
+                    <h2>Task runs by state</h2>
+                    {% include "admin/taskmonitor/report/chart_pie_partial.html" with report_name="task_runs_by_state" %}
+                </div>
+
+                <div id="task-runs-by-app" class="tabContent">
+                    <h2>Task runs by app</h2>
+                    {% include "admin/taskmonitor/report/chart_pie_partial.html" with report_name="task_runs_by_app" %}
+                </div>
+
+                <div id="task-througput" class="tabContent">
+                    <h2>Completed tasks per minute</h2>
+                    {% include "admin/taskmonitor/report/table_partial.html" with report_name="tasks_throughput" disable_percent="yes" %}
+                </div>
+
+                <div id="top-tasks-by-runs" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} tasks by runs</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="tasks_top_runs" %}
+                </div>
+
+                <div id="top-apps-by-runs" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} apps by total task runs</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="apps_top_runs" %}
+                </div>
+
+                <div id="top-tasks-by-max-runtime" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} tasks by max instance runtime in seconds</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="tasks_top_max_runtime" %}
+                </div>
+
+                <div id="top-tasks-by-avg-runtime" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} tasks by average instance runtime in seconds</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="tasks_top_avg_runtime" %}
+                </div>
+
+                <div id="top-tasks-by-cum-runtime" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} tasks by total runtime in seconds</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="tasks_top_cum_runtime" %}
+                </div>
+
+                <div id="top-apps-by-cum-runtime" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} apps by total task runtime in seconds</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="apps_top_cum_runtime" %}
+                </div>
+
+                <div id="top-failed-tasks" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} tasks by failed runs</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="tasks_top_failed" %}
+                </div>
+
+                <div id="top-retried-tasks" class="tabContent">
+                    <h2>Top {{ MAX_TOP }} tasks by retried runs</h2>
+                    {% include "admin/taskmonitor/report/chart_bar_partial.html" with report_name="tasks_top_retried" %}
+                </div>
+
+                <div id="throughput-by-state" class="tabContent">
+                    <h2>Executed tasks per minute by state</h2>
+                    {% include "admin/taskmonitor/report/chart_throughput_partial.html" with report_name="tasks_throughput_by_state" %}
+                </div>
+
+                <div id="throughput-by-app" class="tabContent">
+                    <h2>Completed tasks per minute by app</h2>
+                    {% include "admin/taskmonitor/report/chart_throughput_partial.html" with report_name="tasks_throughput_by_app" %}
+                </div>
+
+                <div id="exceptions-over-time" class="tabContent">
+                    <h2>Exceptions per minute</h2>
+                    {% include "admin/taskmonitor/report/chart_throughput_partial.html" with report_name="exceptions_throughput" %}
+                </div>
+
+                <div id="app-failures-over-time" class="tabContent">
+                    <h2>App failures per minute</h2>
+                    {% include "admin/taskmonitor/report/chart_throughput_partial.html" with report_name="app_failures_over_time" %}
+                </div>
+
+                <div id="queue-length" class="tabContent">
+                    <h2>Queue length over time</h2>
+                    {% include "admin/taskmonitor/report/chart_throughput_partial.html" with report_name="queue_length_over_time" %}
+                </div>
+
+
+                <div id="task-statistics" class="tabContent">
+                    <h2>Task runs vs. runtime (logarithmic scale)</h2>
+                    {% include "admin/taskmonitor/report/chart_scatter_partial.html" with report_name="task_statistics" %}
+                </div>
+
+                <br>
+                <p>
+                    Total of
+                    {% if total_runs > 1000000 %}
+                        {{ total_runs|intword }}
+                    {% else %}
+                        {{ total_runs|intcomma }}
+                    {% endif %}
+                    task logs spanning {{ newest_date|timeuntil:oldest_date }}.
+                    This data is cached and was last updated {{ last_update_at|naturaltime|default:"?"}}.
+                    All data of this app is stored for a maxmimum of {{ data_max_age }} hours.
+                </p>
+            </div>
+
+
+        </div>
+
+    </div>
+
+    <script>
+        const tabLinks = document.querySelectorAll('.tabLinks');
+        tabLinks.forEach(el => el.addEventListener('click', event => {
+            // Hide all tabContent elements
+            const tabContent = document.querySelectorAll('.tabContent');
+            tabContent.forEach(el => {
+                el.style.display = "none";
+            });
+
+            // Remove the class "active" from tabLinks
+            tabLinks.forEach(el => {
+                el.className = el.className.replace(" active", "");
+                el.parentElement.className = el.parentElement.className.replace("selected", "");
+            });
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            const tabName = event.target.hash.slice(1);
+            document.getElementById(tabName).style.display = "block";
+            event.target.className += " active";
+            event.target.parentNode.className += " selected";
+        }));
+
+        if(window.location.hash) {
+            // activate tab from hash
+            tabLinks.forEach(el => {
+                if (el.hash == window.location.hash) {
+                    el.click();
+                }
+            });
+        } else {
+            // activate default tab
+            const selectedItems = document.querySelectorAll('.selected');
+            selectedItems.item(0).firstChild.click();
+        }
+
+    </script>
+
+{% endblock %}
