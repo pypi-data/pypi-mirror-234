@@ -1,0 +1,3 @@
+from _typeshed import Incomplete
+
+def bazel_layout(conanfile, generator: Incomplete | None = ..., src_folder: str = ...) -> None: ...

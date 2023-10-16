@@ -1,0 +1,3 @@
+check_msg: str
+
+def check_using_build_profile(conanfile) -> None: ...
