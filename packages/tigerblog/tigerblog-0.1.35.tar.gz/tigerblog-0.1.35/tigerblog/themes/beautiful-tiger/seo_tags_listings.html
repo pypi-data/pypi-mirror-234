@@ -1,0 +1,36 @@
+<!-- META TAGS -->
+<meta name="title" content="{{ blog.title }}">
+<meta name="keywords" content="{% if blog.tags %}{% for tag in blog.tags %}{%if not loop.first %},{% endif %}{{ tag.title }}{% endfor %}{% else %}{{ blog.keywords }}{% endif %}"/>
+<meta name="description" content="{{ blog.description }}">
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{url}}">
+<meta property="og:title" content="{{ blog.title }}">
+<meta property="og:description" content="{{ blog.description }}">
+<meta property="og:image" content="{{blog.config.host}}/{{blog.logo}}">
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="{{url}}">
+<meta property="twitter:title" content="{{ blog.title }}">
+<meta property="twitter:description" content="{{ blog.description }}">
+<meta property="twitter:image" content="{{blog.config.host}}/{{blog.logo}}">
+
+<!-- Search Engine Verification Tags -->
+{% if blog.config.googleVerificationCode %}<meta name="google-site-verification" content="{{ blog.config.googleVerificationCode }}" />{% endif %}
+{% if blog.config.bingVerificationCode %}<meta name="bing-site-verification" content="{{ blog.config.bingVerificationCode }}" />{% endif %}
+
+<!-- CANONICAL URL -->
+<link rel="canonical" href="{{url}}" />
+
+<!-- JSON LD -->
+<script type="application/ld+json">
+{ 
+	"@context": "https://schema.org", 
+	"@type": "Blog",
+	"name": "{{ blog.name }}",
+	"image": "{{blog.config.host}}/{{blog.logo}}",
+	"keywords": "{% if blog.tags %}{% for tag in blog.tags %}{%if not loop.first %},{% endif %}{{ tag.title }}{% endfor %}{% else %}{{ blog.keywords }}{% endif %}",
+	"url": "{{ url }}",
+	"description": "{{ blog.description }}"
+}
+</script>
