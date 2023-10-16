@@ -1,0 +1,1 @@
+# testimport osfrom pyrateshield.version import __version____pkg_root__ = os.path.split(__file__)[0]from pyrateshield import model_items, model_sequences
