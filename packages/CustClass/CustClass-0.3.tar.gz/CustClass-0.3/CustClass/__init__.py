@@ -1,0 +1,2 @@
+from CustClass.add_number import AddOrConcatNumber
+from CustClass.mul_number import MulOrRepeatNumberStr
