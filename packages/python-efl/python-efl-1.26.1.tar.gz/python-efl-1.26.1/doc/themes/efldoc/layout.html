@@ -1,0 +1,74 @@
+{#
+    sphinxdoc/layout.html
+    ~~~~~~~~~~~~~~~~~~~~~
+
+    Sphinx layout template for the sphinxdoc theme.
+
+    :copyright: Copyright 2007-2019 by the Sphinx team, see AUTHORS.
+    :license: BSD, see LICENSE for details.
+#}
+{%- extends "basic/layout.html" %}
+
+
+
+{% block extrahead %}
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:300,400,700'
+          rel='stylesheet' type='text/css'>
+{{ super() }}
+
+{%- if not embedded %}
+    <style type="text/css">
+      table.right { float: right; margin-left: 20px; }
+      table.right td { border: 1px solid #ccc; }
+    </style>
+{%- endif %}
+
+{% endblock %}
+
+
+{% block rootrellink %}
+        <li><a href="{{ pathto('index') }}">Home</a>&#160;|</li>
+       <!-- <li><a href="{{ pathto('contents') }}">Documentation</a> &#187;</li>-->
+{% endblock %}
+
+{% block header %}
+<div class="pageheader">
+  <ul class="menu">
+    <li class="index"><a href="{{ pathto('index') }}"><span></span></a></li>
+    <li class="maintitle">{{ project }} - {{ version }}</li>
+    <li class="current"><a href="{{ pathto('index') }}"><span>python docs</span></a></li>
+    <li><a href="https://www.enlightenment.org/docs"><span>other docs</span></a></li>
+    <li><a href="https://www.enlightenment.org/about-efl"><span>EFL</span></a></li>
+  </ul>
+</div>
+{% endblock %}
+
+{%- block content %}
+    <div class="document">
+  {%- block document %}
+    <div id="layout">
+      <div id="content">
+        <div class="body">
+          {% block body %} {% endblock %}
+        </div>
+      </div>
+      {%- if render_sidebar %}
+      <div id="sidebar">{{ sidebar() }}</div>
+      {%- endif %}
+    </div>
+  {%- endblock %}
+    </div>
+{%- endblock %}
+
+{%- block footer %}
+<div class="footer">
+  {% trans copyright=copyright|e %}&copy; Copyright {{ copyright }}.{% endtrans %}
+  <br>
+  {%- if last_updated %}
+    {% trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
+  {%- endif %}
+  {%- if show_sphinx %}
+    {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
+  {%- endif %}
+</div>
+{%- endblock %}
