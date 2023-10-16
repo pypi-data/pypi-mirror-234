@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkui=self.webpackChunkui||[]).push([[8678],{30706:function(n,e,s){s.r(e);s(72791);var u=s(25344),a=s(80184);e.default=function(n){return(0,a.jsx)("div",{className:"VizComponentContainer",children:(0,a.jsx)(u.Z,{src:n.data})})}}}]);
+//# sourceMappingURL=JSON.816c2f14.chunk.js.map

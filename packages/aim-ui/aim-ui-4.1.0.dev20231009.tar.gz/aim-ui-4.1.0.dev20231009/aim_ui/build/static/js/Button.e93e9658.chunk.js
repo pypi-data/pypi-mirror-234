@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkui=self.webpackChunkui||[]).push([[5939],{9234:function(n,l,c){c.r(l);var u=c(1413),i=c(72791),a=c(57678),e=c(80184);l.default=function(n){var l=i.useCallback((function(l){var c;null===(c=n.callbacks)||void 0===c||c.on_click(l)}),[]);return(0,e.jsx)(a.zx,(0,u.Z)((0,u.Z)({},n.options),{},{onClick:l,children:n.options.label}))}}}]);
+//# sourceMappingURL=Button.e93e9658.chunk.js.map
