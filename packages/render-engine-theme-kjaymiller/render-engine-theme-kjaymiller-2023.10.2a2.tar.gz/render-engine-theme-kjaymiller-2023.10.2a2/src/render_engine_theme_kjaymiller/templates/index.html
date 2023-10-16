@@ -1,0 +1,58 @@
+{% extends 'base.html'%} {% block head %}
+<!-- <link rel="stylesheet" type="text/css" href="/static/css/index.css" /> -->
+{% endblock %}
+{% block content %}
+  {% if hero %}
+    <section class="py-4 my-2">
+      {% if hero.target %}
+      <h2 class="text-3xl my-3 font-semibold"><a href="{{hero.target}}">{{hero.title}}</a></h2>
+      {% else %}
+      <h2 class="text-3xl my-3 font-semibold">{{hero.title}}</h2>
+      {% endif %}
+      <article class="prose lg:prose-lg dark:prose-invert prose-slate">
+        {% if hero.from_template %}
+        {% include hero.from_template %}
+        {% else %}
+        {{hero.content}}
+        {% endif %}
+      </article>
+    </section>
+  {% endif %}
+  {% if secondary %}
+  <section class="my-2 py-2">
+    {% if hero.target %}
+    <h2 class="my-4 text-2xl font-semibold"><a href="{{secondary.target}}">{{secondary.title}}</a></h2>
+    {% else %}
+    <h2 class="my-4 text-2xl font-semibold">{{secondary.title}}</h2>
+    {% endif %}
+    {% if secondary.from_template%}
+        {% include secondary.from_template %}
+    {% else %}
+      {{secondary.content}}
+    {% endif %}
+  {% endif %}
+  </section>
+  {% if other %}
+<section>
+    {% if other.target %}
+    <h2><a href="{{other.target}}">{{other.title}}</a></h2>
+    {% else %}
+    <h2>{{other.title}}</h2>
+    {% endif %}
+    {% for other_section in other['sections'] %}
+    {% if other_section.target %}
+    <h3 class="my-4 text-xl font-bold"><a href="{{other_section.target}}">{{other_section.title}}</a></h3>
+    {% else %}
+    <h3 class="my-4 text-xl font-bold">{{other_section.title}}</h3>
+    {% endif %}
+    {% if other_section.from_template %}    
+      {% include other_section.from_template %}
+    {% else %}
+      <p>
+        {{other_section.content}}
+      <p>
+    {% endif %}
+    {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}
