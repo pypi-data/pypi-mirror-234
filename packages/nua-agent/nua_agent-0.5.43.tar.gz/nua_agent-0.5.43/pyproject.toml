@@ -1,0 +1,81 @@
+[tool.poetry]
+name = "nua-agent"
+version = "0.5.43"
+description = "Nua agent"
+authors = [
+    "Stefane Fermigier <sf@abilian.com>",
+    "Jerome Dumonteil <jd@abilian.com>",
+]
+license = "Apache-2.0"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+readme = "README.md"
+documentation = "https://nua.rocks/"
+repository = "https://github.com/abilian/nua"
+
+packages = [
+    { include = "nua", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+nua-lib = "=0.5.43"
+
+[tool.poetry.group.dev.dependencies]
+urllib3 = "<2.0"
+abilian-devtools = "*"
+
+[tool.poetry.scripts]
+app_builder = "nua.agent.scripts.app_builder:main"
+
+[build-system]
+requires = [
+    "poetry-core>=1.0.0",
+]
+build-backend = "poetry.core.masonry.api"
+
+# -----------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:.*distutils package:DeprecationWarning",
+    "ignore::DeprecationWarning",
+]
+
+
+# -----------------------------------------------------------------------------
+[tool.ruff]
+
+# -----------------------------------------------------------------------------
+
+[tool.deptry]
+exclude = [
+    ".nox",
+    "tests",
+    "noxfile.py",
+]
+ignore_unused = [
+    "setuptools",
+    "nua-lib",
+]
+ignore_missing = [
+    "nua",
+]
+ignore_transitive = []
+
+# -----------------------------------------------------------------------------
+
+[tool.pyright]
+exclude = [
+    ".nox",
+    "tests",
+    "noxfile.py",
+]
