@@ -1,0 +1,2 @@
+from .widget_graphsVisual import Widget_graphsVisualLite, Widget_graphsVisual
+from .widget_fitOnGraph import Widget_FitOnGraph, Abstract_FitOnGraph

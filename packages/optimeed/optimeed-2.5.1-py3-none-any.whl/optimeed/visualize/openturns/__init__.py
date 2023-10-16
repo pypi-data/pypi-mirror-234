@@ -1,0 +1,2 @@
+from .widget_openturns import Widget_Metamodel_PC_Monotonicity, Widget_Metamodel_PC_Tuner, Widget_Collection_Metamodels
+from .widget_simplifyMetamodel import Widget_simplifyMetamodel
