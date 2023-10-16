@@ -1,0 +1,155 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 1200px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "id": "cognitive", "label": "cognitive", "mass": 4, "shape": "box"}, {"color": "red", "id": "algorithms", "label": "algorithms", "mass": 4, "shape": "box"}, {"color": "red", "id": "Cognitive flexibility", "label": "Cognitive flexibility", "mass": 4, "shape": "box"}, {"color": "red", "id": "adaptive reasoning", "label": "adaptive reasoning", "mass": 4, "shape": "box"}, {"color": "red", "id": "Decision-making processes", "label": "Decision-making processes", "mass": 4, "shape": "box"}, {"color": "red", "id": "Memory and recall abilities", "label": "Memory and recall abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "Decision-making abilities", "label": "Decision-making abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "Creative problem-solving", "label": "Creative problem-solving", "mass": 4, "shape": "box"}, {"color": "red", "id": "decision-making abilities", "label": "decision-making abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "decision-making capabilities", "label": "decision-making capabilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "Adaptive learning algorithms", "label": "Adaptive learning algorithms", "mass": 4, "shape": "box"}, {"color": "red", "id": "intelligence", "label": "intelligence", "mass": 4, "shape": "box"}, {"color": "red", "id": "Cognitive abilities of artificial general intelligence", "label": "Cognitive abilities of artificial general intelligence", "mass": 4, "shape": "box"}, {"color": "red", "id": "memory", "label": "memory", "mass": 4, "shape": "box"}, {"color": "red", "id": "creative problem-solving", "label": "creative problem-solving", "mass": 4, "shape": "box"}, {"color": "red", "id": "Problem-solving skills of artificial general intelligence", "label": "Problem-solving skills of artificial general intelligence", "mass": 4, "shape": "box"}, {"color": "red", "id": "Problem-solving skills", "label": "Problem-solving skills", "mass": 4, "shape": "box"}, {"color": "red", "id": "Cognitive reasoning capabilities", "label": "Cognitive reasoning capabilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "Adaptive reasoning", "label": "Adaptive reasoning", "mass": 4, "shape": "box"}, {"color": "red", "id": "decision-making processes", "label": "decision-making processes", "mass": 4, "shape": "box"}, {"color": "red", "id": "Decision-making capabilities", "label": "Decision-making capabilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "learning capacity", "label": "learning capacity", "mass": 4, "shape": "box"}, {"color": "red", "id": "learning capabilities", "label": "learning capabilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "capabilities", "label": "capabilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "Learning capacity", "label": "Learning capacity", "mass": 4, "shape": "box"}, {"color": "red", "id": "cognitive abilities", "label": "cognitive abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "artificial general intelligence", "label": "artificial general intelligence", "mass": 4, "shape": "box"}, {"color": "red", "id": "Learning and adaptation", "label": "Learning and adaptation", "mass": 4, "shape": "box"}, {"color": "red", "id": "Knowledge acquisition mechanisms", "label": "Knowledge acquisition mechanisms", "mass": 4, "shape": "box"}, {"color": "red", "id": "learning and adaptation", "label": "learning and adaptation", "mass": 4, "shape": "box"}, {"color": "red", "id": "abilities", "label": "abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "artificial", "label": "artificial", "mass": 4, "shape": "box"}, {"color": "red", "id": "mechanisms", "label": "mechanisms", "mass": 4, "shape": "box"}, {"color": "red", "id": "knowledge", "label": "knowledge", "mass": 4, "shape": "box"}, {"color": "red", "id": "adaptive", "label": "adaptive", "mass": 4, "shape": "box"}, {"color": "red", "id": "cognitive flexibility", "label": "cognitive flexibility", "mass": 4, "shape": "box"}, {"color": "red", "id": "Learning capabilities of artificial general intelligence", "label": "Learning capabilities of artificial general intelligence", "mass": 4, "shape": "box"}, {"color": "red", "id": "problem-solving skills", "label": "problem-solving skills", "mass": 4, "shape": "box"}, {"color": "red", "id": "recall abilities", "label": "recall abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "Cognitive reasoning abilities", "label": "Cognitive reasoning abilities", "mass": 4, "shape": "box"}, {"color": "red", "id": "this", "label": "this", "mass": 4, "shape": "box"}]);
+                  edges = new vis.DataSet([{"arrows": "to", "color": "blue", "from": "adaptive", "label": "learning", "to": "algorithms"}, {"arrows": "to", "color": "blue", "from": "Adaptive learning algorithms", "label": "is about", "to": "adaptive"}, {"arrows": "to", "color": "blue", "from": "Adaptive learning algorithms", "label": "discusses", "to": "algorithms"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "adaptive reasoning"}, {"arrows": "to", "color": "blue", "from": "Adaptive reasoning", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Adaptive reasoning", "label": "discusses", "to": "adaptive reasoning"}, {"arrows": "to", "color": "blue", "from": "cognitive abilities", "label": "of", "to": "artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "is about", "to": "cognitive abilities"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "discusses", "to": "artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "depends on", "to": "Cognitive reasoning capabilities"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "depends on", "to": "Learning and adaptation"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "depends on", "to": "Problem-solving skills"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "depends on", "to": "Memory and recall abilities"}, {"arrows": "to", "color": "blue", "from": "Cognitive abilities of artificial general intelligence", "label": "depends on", "to": "Decision-making processes"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "cognitive flexibility"}, {"arrows": "to", "color": "blue", "from": "Cognitive flexibility", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Cognitive flexibility", "label": "discusses", "to": "cognitive flexibility"}, {"arrows": "to", "color": "blue", "from": "cognitive", "label": "reasoning", "to": "abilities"}, {"arrows": "to", "color": "blue", "from": "Cognitive reasoning abilities", "label": "is about", "to": "cognitive"}, {"arrows": "to", "color": "blue", "from": "Cognitive reasoning abilities", "label": "discusses", "to": "abilities"}, {"arrows": "to", "color": "blue", "from": "cognitive", "label": "reasoning", "to": "capabilities"}, {"arrows": "to", "color": "blue", "from": "Cognitive reasoning capabilities", "label": "is about", "to": "cognitive"}, {"arrows": "to", "color": "blue", "from": "Cognitive reasoning capabilities", "label": "discusses", "to": "capabilities"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "creative problem-solving"}, {"arrows": "to", "color": "blue", "from": "Creative problem-solving", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Creative problem-solving", "label": "discusses", "to": "creative problem-solving"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "decision-making abilities"}, {"arrows": "to", "color": "blue", "from": "Decision-making abilities", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Decision-making abilities", "label": "discusses", "to": "decision-making abilities"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "decision-making capabilities"}, {"arrows": "to", "color": "blue", "from": "Decision-making capabilities", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Decision-making capabilities", "label": "discusses", "to": "decision-making capabilities"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "decision-making processes"}, {"arrows": "to", "color": "blue", "from": "Decision-making processes", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Decision-making processes", "label": "discusses", "to": "decision-making processes"}, {"arrows": "to", "color": "blue", "from": "knowledge", "label": "acquisition", "to": "mechanisms"}, {"arrows": "to", "color": "blue", "from": "Knowledge acquisition mechanisms", "label": "is about", "to": "knowledge"}, {"arrows": "to", "color": "blue", "from": "Knowledge acquisition mechanisms", "label": "discusses", "to": "mechanisms"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "learning and adaptation"}, {"arrows": "to", "color": "blue", "from": "Learning and adaptation", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Learning and adaptation", "label": "discusses", "to": "learning and adaptation"}, {"arrows": "to", "color": "blue", "from": "learning capabilities", "label": "of", "to": "artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "is about", "to": "learning capabilities"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "discusses", "to": "artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "depends on", "to": "Cognitive reasoning abilities"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "depends on", "to": "Adaptive learning algorithms"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "depends on", "to": "Knowledge acquisition mechanisms"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "depends on", "to": "Problem-solving skills"}, {"arrows": "to", "color": "blue", "from": "Learning capabilities of artificial general intelligence", "label": "depends on", "to": "Decision-making capabilities"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "learning capacity"}, {"arrows": "to", "color": "blue", "from": "Learning capacity", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Learning capacity", "label": "discusses", "to": "learning capacity"}, {"arrows": "to", "color": "blue", "from": "memory", "label": "and", "to": "recall abilities"}, {"arrows": "to", "color": "blue", "from": "Memory and recall abilities", "label": "is about", "to": "memory"}, {"arrows": "to", "color": "blue", "from": "Memory and recall abilities", "label": "discusses", "to": "recall abilities"}, {"arrows": "to", "color": "blue", "from": "this", "label": "is about", "to": "problem-solving skills"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills", "label": "is about", "to": "this"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills", "label": "discusses", "to": "problem-solving skills"}, {"arrows": "to", "color": "blue", "from": "problem-solving skills", "label": "of", "to": "artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "is about", "to": "problem-solving skills"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "discusses", "to": "artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "depends on", "to": "Cognitive flexibility"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "depends on", "to": "Adaptive reasoning"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "depends on", "to": "Creative problem-solving"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "depends on", "to": "Learning capacity"}, {"arrows": "to", "color": "blue", "from": "Problem-solving skills of artificial general intelligence", "label": "depends on", "to": "Decision-making abilities"}, {"arrows": "to", "color": "blue", "from": "artificial", "label": "general", "to": "intelligence"}, {"arrows": "to", "color": "blue", "from": "artificial general intelligence", "label": "is about", "to": "artificial"}, {"arrows": "to", "color": "blue", "from": "artificial general intelligence", "label": "discusses", "to": "intelligence"}, {"arrows": "to", "color": "blue", "from": "artificial general intelligence", "label": "depends on", "to": "Cognitive abilities of artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "artificial general intelligence", "label": "depends on", "to": "Learning capabilities of artificial general intelligence"}, {"arrows": "to", "color": "blue", "from": "artificial general intelligence", "label": "depends on", "to": "Problem-solving skills of artificial general intelligence"}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
