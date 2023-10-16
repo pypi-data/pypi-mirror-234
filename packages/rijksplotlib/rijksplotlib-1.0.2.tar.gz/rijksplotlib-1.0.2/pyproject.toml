@@ -1,0 +1,115 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rijksplotlib"
+dynamic = ["version", "readme"]
+description = "A datavizualization compliance library for RWS Datalab"
+keywords = ["rijksplotlib"]
+authors = [{ name = "RWS Datalab", email = "datalab.codebase@rws.nl" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: Matplotlib",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Scientific/Engineering :: Visualization"
+]
+dependencies = [
+    "matplotlib==3.7.2",
+    "numpy==1.25.0",
+    "astroid==2.15.8",
+    "pylint==2.17.7",
+    "logginginitializer==1.2.0"
+]
+requires-python = ">=3.10"
+
+[project.urls]
+homepage = "https://rwsdatalab.gitlab.io/public/codebase/tools/rijksplotlib/index.html"
+repository = "https://gitlab.com/rwsdatalab/public/codebase/tools/rijksplotlib"
+changelog = "https://gitlab.com/rwsdatalab/public/codebase/tools/rijksplotlib/blob/main/CHANGELOG.rst"
+
+[project.optional-dependencies]
+dev = [
+    "bandit",
+    "black",
+    "flake8",
+    "flake8-bugbear",
+    "flake8-comprehensions",
+    "flake8-docstrings",
+    "flake8-polyfill",
+    "isort",
+    "mypy",
+    "pre-commit",
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "rstcheck[sphinx]",
+    "radon",
+    "safety",
+    "astroid",
+    "pandas",
+    "seaborn",
+]
+doc = [
+    "pydata-sphinx-theme",
+    "sphinx",
+    "sphinx-autodoc-typehints",
+    "sphinx-gallery",
+    "chardet",
+    "pandas",
+    "seaborn",
+    "matplotlib",
+    "numpy",
+    "logginginitializer"
+]
+
+[tool.setuptools]
+include-package-data = true
+license-files = ["LICENSE"]
+packages = [
+    "rijksplotlib",
+    "rijksplotlib.stylesheets",
+] # Note: add all namespace packages if applicable
+zip-safe = false
+
+[tool.setuptools.package-data]
+"rijksplotlib" = ["py.typed", "*.mplstyle"]
+
+[tool.setuptools.dynamic]
+version = { attr = "rijksplotlib.__version__" }
+readme = { file = ["README.rst"] }
+
+[tool.semantic_release]
+version_variables = ["rijksplotlib.__version__"]
+
+[tool.isort]
+profile = "black"
+known_first_party = ["rijksplotlib"]
+skip_glob = ".venv/**,tests/**,doc/**"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pylint]
+extension-pkg-whitelist = ""
+disable = ["C0103"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov --cov-report xml --cov-report term --cov-report html"
+
+[tool.coverage.run]
+branch = true
+source = ["rijksplotlib"]
