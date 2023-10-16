@@ -1,0 +1,106 @@
+[tool.poetry]
+name = "nua-build"
+version = "0.5.43"
+description = "Nua build package (currently: build, core build, agent)"
+authors = [
+    "Stefane Fermigier <sf@abilian.com>",
+    "Jerome Dumonteil <jd@abilian.com>",
+]
+license = "Apache-2.0"
+
+readme = "README.md"
+documentation = "https://nua.rocks/"
+repository = "https://github.com/abilian/nua"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+packages = [
+  { include = "nua", from = "src" }
+]
+
+[tool.poetry.scripts]
+nua-build = "nua.build.main:app"
+
+# Do we need this?
+nua-build-base-images = "nua.build.autobuild.main:app"
+
+# FIXME: remove
+nua_test_replace_domain = "nua.build.scripts.test_replace_domain:main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+nua-lib = "=0.5.43"
+tomli = "^2.0.1"
+tomli-w = "^1.0.0"
+snoop = "^0.4.3"
+cleez = "^0.1.8"
+typer = {version = "^0.7.0", extras = ["all"]}
+docker = {version = "^6.0.1", extras = ["ssh"]}
+pydantic = "^1.10.8"
+packaging = "^23.1"
+
+[tool.poetry.group.dev.dependencies]
+urllib3 = "<2.0"
+abilian-devtools = "*"
+devtools = "^0.11.0"
+
+# Types
+#types-setuptools = "*"
+#types-pyyaml = "*"
+
+# To please poetry
+#platformdirs = "<3.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+# ------------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:.*distutils package:DeprecationWarning",
+    "ignore::DeprecationWarning",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+# ------------------------------------------------------------------------------
+
+[tool.ruff]
+# Do not remove
+
+# ------------------------------------------------------------------------------
+
+[tool.deptry]
+exclude = [
+    '.nox',
+    'tests',
+    "noxfile.py"
+]
+ignore_unused = [
+    "nua-lib",
+    "nua-agent",
+]
+ignore_missing = [
+    "nua",
+]
+ignore_transitive = [
+]
+
+# ------------------------------------------------------------------------------
+
+[tool.pyright]
+exclude = [
+    '.nox',
+    'tests',
+    'noxfile.py',
+]
