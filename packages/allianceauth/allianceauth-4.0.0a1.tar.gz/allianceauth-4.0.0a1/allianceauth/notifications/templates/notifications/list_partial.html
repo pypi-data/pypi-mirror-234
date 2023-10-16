@@ -1,0 +1,27 @@
+{% load i18n %}
+
+{% if notifications %}
+    <table class="table table-striped">
+        <tr>
+            <th class="text-center">{% translate "Timestamp" %}</th>
+            <th class="text-center">{% translate "Title" %}</th>
+            <th class="text-center">{% translate "Action" %}</th>
+        </tr>
+        {% for notif in notifications %}
+            <tr class="{{ notif.level }}">
+                <td class="text-center">{{ notif.timestamp }}</td>
+                <td class="text-center">{{ notif.title }}</td>
+                <td class="text-center">
+                    <a href="{% url 'notifications:view' notif.id %}" class="btn btn-primary" title="View">
+                        <span class="fas fa-eye"></span>
+                    </a>
+                    <a href="{% url 'notifications:remove' notif.id %}" class="btn btn-danger" title="Remove">
+                        <span class="fas fa-trash"></span>
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <div class="alert alert-default text-center">{% translate "No notifications." %}</div>
+{% endif %}

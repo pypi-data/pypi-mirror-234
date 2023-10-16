@@ -1,0 +1,38 @@
+{% load i18n %}
+{% load evelinks %}
+
+<div class="col-12 col-xl-6 align-self-stretch p-2">
+    <div class="card h-100">
+        <div class="card-body">
+            <h4 class="card-title text-center">{% translate "Upcoming Fleets" %}</h4>
+            <div class="card-body">
+                <div style="height: 300px;overflow:-moz-scrollbars-vertical;overflow-y:auto;">
+                    <table class="table" style="--bs-table-bg: transparent;">
+                        <thead>
+                            <th class="text-center">{% translate "Operation" %}</th>
+                            <th class="text-center">{% translate "Type" %}</th>
+                            <th class="text-center">{% translate "Form Up System" %}</th>
+                            <th class="text-center">{% translate "Start Time" %}</th>
+                                </thead>
+                        <tbody>
+                        {% for ops in timers %}
+                        <tr>
+                            <td class="text-center">
+                                {{ ops.operation_name }}
+                            </td>
+                            <td class="text-center">
+                                ({{ ops.type }})
+                            </td>
+                            <td class="text-center">
+                                <a href="{{ ops.system|dotlan_solar_system_url }}">{{ ops.system }}</a>
+                            </td>
+                            <td class="text-center" nowrap>{{ ops.start | date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

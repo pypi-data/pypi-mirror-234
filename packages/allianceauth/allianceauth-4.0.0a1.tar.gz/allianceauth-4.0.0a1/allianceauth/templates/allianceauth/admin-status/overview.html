@@ -1,0 +1,149 @@
+{% load i18n %}
+{% load humanize %}
+{% if notifications %}
+<div class="col-12 align-self-stretch p-2">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="w-100 align-self-stretch">
+                    <h4 class="ms-auto me-auto">
+                        {% translate "Alliance Auth Notifications" %}
+                    </h4>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% for notif in notifications %}
+                            <li class="list-group-item">
+                                {% if notif.state == 'opened' %}
+                                    <span class="badge badge-success">{% translate "Open" %}</span>
+                                {% else %}
+                                    <span class="badge badge-danger">{% translate "Closed" %}</span>
+                                {% endif %}
+                                <a href="{{ notif.web_url }}" target="_blank">#{{ notif.iid }} {{ notif.title }}</a>
+                            </li>
+                            {% empty %}
+                            <div class="alert alert-primary" role="alert">
+                                {% translate "No notifications at this time" %}
+                            </div>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="text-end" style="position: absolute; bottom: 5px; right: 5px;">
+                        <a href="https://gitlab.com/allianceauth/allianceauth/issues" target="_blank" style="margin-right: 0.5rem;">
+                            <span class="badge" style="background-color: #e65328;">
+                                <i class="fab fa-gitlab" aria-hidden="true"></i>
+                                {% translate 'Powered by GitLab' %}
+                            </span>
+                        </a>
+                        <a href="https://discord.com/invite/fjnHAmk" target="_blank">
+                            <span class="badge" style="background-color: rgb(110,133,211);">
+                                <i class="fab fa-discord" aria-hidden="true"></i>
+                                {% translate 'Support Discord' %}
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="col-12 align-self-stretch p-2">
+    <div class="card">
+        <div class="card-body d-flex flex-row flex-wrap">
+            <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+                <h4 class="ms-auto me-auto text-center">
+                    {% translate "Software Version" %}
+                </h4>
+                <div class="card-body pb-0">
+                    <ul class="list-group list-group-horizontal w-100" role="group" aria-label="Basic example">
+                        <li type="button" class="list-group-item w-100">
+                            <h5 class="list-group-item-heading">{% translate "Current" %}</h5>
+                            <p class="list-group-item-text">
+                                {{ current_version }}
+                            </p>
+                        </li>
+                        <li class="list-group-item list-group-item-{% if latest_patch %}success{% elif latest_minor %}warning{% else %}danger{% endif %} w-100" href="https://gitlab.com/allianceauth/allianceauth/-/tags/v{{ latest_patch_version }}">
+                                <h5 class="list-group-item-heading">{% translate "Latest Stable" %}</h5>
+                                <p class="list-group-item-text">
+                                        <i class="fab fa-gitlab hidden-xs" aria-hidden="true"></i>
+                                        {{ latest_patch_version }}
+                                    {% if not latest_patch %}<br>{% translate "Update available" %}{% endif %}
+                                </p>
+                        </li>
+                        {% if latest_beta %}
+                        <li>
+                            <a type="button" class="btn btn-info w-100" href="https://gitlab.com/allianceauth/allianceauth/-/tags/v{{ latest_beta_version }}">
+                                <h5 class="list-group-item-heading">{% translate "Latest Pre-Release" %}</h5>
+                                <p class="list-group-item-text">
+                                    <i class="fab fa-gitlab hidden-xs" aria-hidden="true"></i>
+                                    {{ latest_beta_version }}
+                                    <br>{% translate "Pre-Release available" %}
+                                </p>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <div class="d-xl-none d-lg-show d-md-show d-sm-show m-2"></div>
+            <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+                <h4 class="ms-auto me-auto text-center">
+                    {% translate "Task Queue" %}
+                </h4>
+                <div class="card-body pb-0">
+                    <p>
+                    {% blocktranslate with total=tasks_total|intcomma latest=earliest_task|timesince|default:"?" %}
+                    Status of {{ total }} processed tasks • last {{ latest }}
+                    {% endblocktranslate %}
+                    </p>
+                    <div
+                        class="progress"
+                        style="height: 21px;"
+                        title="{{ tasks_succeeded|intcomma }} succeeded, {{ tasks_retried|intcomma }} retried, {{ tasks_failed|intcomma }} failed"
+                    >
+                        {% include "allianceauth/admin-status/celery_bar_partial.html" with label="suceeded" level="success" tasks_count=tasks_succeeded %}
+                        {% include "allianceauth/admin-status/celery_bar_partial.html" with label="retried" level="info" tasks_count=tasks_retried %}
+                        {% include "allianceauth/admin-status/celery_bar_partial.html" with label="failed" level="danger" tasks_count=tasks_failed %}
+                    </div>
+                    <p>
+                        <span id="task-counts">?</span> {% translate 'running' %} |
+                        <span id="queued-tasks-count">?</span> {% translate 'queued' %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const elemRunning = document.getElementById("task-counts");
+    const elemQueued = document.getElementById("queued-tasks-count");
+
+    fetch('{% url "authentication:task_counts" %}')
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error("Something went wrong");
+        })
+        .then((responseJson) => {
+            const running = responseJson.tasks_running;
+            if (running == null) {
+                elemRunning.textContent = "N/A";
+            } else {
+                elemRunning.textContent = running.toLocaleString();
+            }
+
+            const queued = responseJson.tasks_queued;
+            if (queued == null) {
+                elemQueued.textContent = "N/A";
+            } else {
+                elemQueued.textContent = queued.toLocaleString();
+            }
+        })
+        .catch((error) => {
+            console.log(error);
+            elemRunning.textContent = "ERROR";
+            elemQueued.textContent = "ERROR";
+        });
+</script>
