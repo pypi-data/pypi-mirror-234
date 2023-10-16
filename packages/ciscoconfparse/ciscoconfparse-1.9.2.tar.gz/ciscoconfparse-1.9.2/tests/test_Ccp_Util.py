@@ -1,0 +1,788 @@
+r""" test_Ccp_Util.py - Parse, Query, Build, and Modify IOS-style configs
+
+     Copyright (C) 2021-2023 David Michael Pennington
+     Copyright (C) 2020-2021 David Michael Pennington at Cisco Systems
+     Copyright (C) 2019      David Michael Pennington at ThousandEyes
+     Copyright (C) 2014-2019 David Michael Pennington at Samsung Data Services
+
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+     If you need to contact the author, you can do so by emailing:
+     mike [~at~] pennington [/dot\] net
+"""
+
+
+import sys
+import os
+
+sys.path.insert(0, "..")
+
+from ciscoconfparse.ccp_util import _RGX_IPV4ADDR, _RGX_IPV6ADDR
+from ciscoconfparse.ccp_util import IPv4Obj, L4Object, ip_factory
+from ciscoconfparse.ccp_util import IPv6Obj
+from ciscoconfparse.ccp_util import CiscoRange
+from ciscoconfparse.ccp_util import dns_lookup, reverse_dns_lookup
+from ciscoconfparse.ccp_util import collapse_addresses
+import pytest
+
+from ipaddress import IPv4Network, IPv6Network, IPv4Address, IPv6Address
+import ipaddress
+
+from dns.resolver import Timeout
+
+
+@pytest.mark.parametrize(
+    "addr", ["192.0.2.1", "4.2.2.2", "10.255.255.255", "127.0.0.1",]
+)
+def test_IPv4_REGEX(addr):
+    test_result = _RGX_IPV4ADDR.search(addr)
+    assert test_result.group("addr") == addr
+
+
+@pytest.mark.parametrize(
+    "addr",
+    [
+        "fe80::",  # Trailing double colons
+        "fe80:beef::",  # Trailing double colons
+        "fe80:dead:beef::",  # Trailing double colons
+        "fe80:a:dead:beef::",  # Trailing double colons
+        "fe80:a:a:dead:beef::",  # Trailing double colons
+        "fe80:a:a:a:dead:beef::",  # Trailing double colons
+        "fe80:a:a:a:a:dead:beef::",  # Trailing double colons
+        "fe80:dead:beef::a",  #
+        "fe80:dead:beef::a:b",  #
+        "fe80:dead:beef::a:b:c",  #
+        "fe80:dead:beef::a:b:c:d",  #
+        "FE80:AAAA::DEAD:BEEF",  # Capital letters
+        "FE80:AAAA:0000:0000:0000:0000:DEAD:BEEF",  # Capital Letters
+        "0:0:0:0:0:0:0:1",  # Loopback
+        "::1",  # Loopback, leading double-colons
+        "::",  # Shorthand for 0:0:0:0:0:0:0:0
+    ],
+)
+def test_IPv6_REGEX(addr):
+    test_result = _RGX_IPV6ADDR.search(addr)
+    assert test_result.group("addr") == addr
+
+
+@pytest.mark.parametrize(
+    "addr",
+    [
+        "fe80:",  # Single trailing colon
+        "fe80:beef",  # Insufficient number of bytes
+        "fe80:dead:beef",  # Insufficient number of bytes
+        "fe80:a:dead:beef",  # Insufficient number of bytes
+        "fe80:a:a:dead:beef",  # Insufficient number of bytes
+        "fe80:a:a:a:dead:beef",  # Insufficient number of bytes
+        "fe80:a:a:a:a:dead:beef",  # Insufficient number of bytes
+        "fe80:a:a:a :a:dead:beef",  # Superflous space
+        "zzzz:a:a:a:a:a:dead:beef",  # bad characters
+        "0:0:0:0:0:0:1",  # Loopback, insufficient bytes
+        "0:0:0:0:0:1",  # Loopback, insufficient bytes
+        "0:0:0:0:1",  # Loopback, insufficient bytes
+        "0:0:0:1",  # Loopback, insufficient bytes
+        "0:0:1",  # Loopback, insufficient bytes
+        "0:1",  # Loopback, insufficient bytes
+        ":1",  # Loopback, insufficient bytes
+        # FIXME: The following *should* fail, but I'm not failing on them
+        #':::beef',                     # FAIL Too many leading colons
+        #'fe80::dead::beef',            # FAIL multiple double colons
+        #'::1::',                       # FAIL too many double colons
+        #'fe80:0:0:0:0:0:dead:beef::',  # FAIL Too many bytes with double colons
+    ],
+)
+def test_negative_IPv6_REGEX(addr):
+    test_result = _RGX_IPV6ADDR.search(addr)
+    assert test_result is None  # The regex *should* fail on these addrs
+
+
+def testL4Object_asa_eq01():
+    pp = L4Object(protocol="tcp", port_spec="eq smtp", syntax="asa")
+    assert pp.protocol == "tcp"
+    assert pp.port_list == [25]
+
+
+def testL4Object_asa_eq02():
+    pp = L4Object(protocol="tcp", port_spec="smtp", syntax="asa")
+    assert pp.protocol == "tcp"
+    assert pp.port_list == [25]
+
+
+def testL4Object_asa_range01():
+    pp = L4Object(protocol="tcp", port_spec="range smtp 32", syntax="asa")
+    assert pp.protocol == "tcp"
+    assert pp.port_list == sorted(range(25, 33))
+
+
+def testL4Object_asa_lt01():
+    pp = L4Object(protocol="tcp", port_spec="lt echo", syntax="asa")
+    assert pp.protocol == "tcp"
+    assert pp.port_list ==sorted(range(1, 7))
+
+
+def testL4Object_asa_gt01():
+    pp = L4Object(protocol="tcp", port_spec="gt 65534", syntax="asa")
+    assert pp.protocol == "tcp"
+    assert pp.port_list ==[65535]
+
+
+@pytest.mark.xfail(
+    sys.version_info[0] == 3 and sys.version_info[1] == 2,
+    reason="Known failure in Python3.2 due to range()",
+)
+def testL4Object_asa_lt02():
+    pp = L4Object(protocol="tcp", port_spec="lt 7", syntax="asa")
+    assert pp.protocol == "tcp"
+    assert pp.port_list == sorted(range(1, 7))
+
+
+def testIPv4Obj_contains_01():
+    ## Test ccp_util.IPv4Obj.__contains__()
+    ##
+    ## Test whether a prefix is or is not contained in another prefix
+    results_correct = [
+        ("1.0.0.0/8", "0.0.0.0/0", True),  # Is 1.0.0.0/8 in 0.0.0.0/0?
+        ("0.0.0.0/0", "1.0.0.0/8", False),  # Is 0.0.0.0/0 in 1.0.0.0/8?
+        ("1.1.1.0/27", "1.0.0.0/8", True),  # Is 1.1.1.0/27 in 1.0.0.0/8?
+        ("1.1.1.0/27", "9.9.9.9/32", False),  # Is 1.1.1.0/27 in 9.9.9.9/32?
+        ("9.9.9.0/27", "9.9.9.9/32", False),  # Is 9.9.9.0/27 in 9.9.9.9/32?
+    ]
+    for prefix1, prefix2, result_correct in results_correct:
+        ## 'foo in bar' tests bar.__contains__(foo)
+        test_result = IPv4Obj(prefix1) in IPv4Obj(prefix2)
+        assert test_result == result_correct
+
+
+def testIPv4Obj_contains_02():
+
+    test_result = IPv4Obj("200.1.1.1/24") in IPv4Network("200.1.1.0/24")
+    assert test_result is True
+
+    test_result = IPv4Obj("1.1.1.1/24") in IPv4Network("200.1.1.0/24")
+    assert test_result is False
+
+
+@pytest.mark.parametrize(
+    "addr_mask", [
+        "1.0.0.1/24",
+        "1.0.0.1/32",
+        "1.0.0.1 255.255.255.0",
+        "1.0.0.1\r255.255.255.0",
+        "1.0.0.1\n255.255.255.0",
+        "1.0.0.1\t255.255.255.0",
+        "1.0.0.1\t 255.255.255.0",
+        "1.0.0.1 \t255.255.255.0",
+        "1.0.0.1 \t 255.255.255.0",
+        "1.0.0.1\t \t255.255.255.0",
+        "1.0.0.1     255.255.255.0",
+        "1.0.0.1     255.255.255.255",
+        "1.0.0.1 255.255.255.0",
+        "1.0.0.1 255.255.255.255",
+        "1.0.0.1/255.255.255.0",
+        "1.0.0.1/255.255.255.255",
+    ]
+)
+def testIPv4Obj_parse(addr_mask):
+    ## Ensure that IPv4Obj can correctly parse various inputs
+    test_result = IPv4Obj(addr_mask)
+    assert isinstance(test_result, IPv4Obj)
+
+
+def testIPv4Obj_set_masklen01():
+
+    MASK_RESET = 32
+    test_object = IPv4Obj("1.1.1.1/%s" % MASK_RESET)
+
+    for result_correct_masklen in [32, 24, 16, 8]:
+
+        test_object = IPv4Obj("1.1.1.1/%s" % MASK_RESET)
+
+        # Test the masklen setter method...
+        test_object.masklen = result_correct_masklen
+
+        assert test_object.masklen == result_correct_masklen
+        assert test_object.masklength == result_correct_masklen
+        assert test_object.prefixlen == result_correct_masklen
+        assert test_object.prefixlength == result_correct_masklen
+
+        test_object = IPv4Obj("1.1.1.1/%s" % MASK_RESET)
+
+        # Test the prefixlen setter method...
+        test_object.prefixlen = result_correct_masklen
+
+        assert test_object.masklen == result_correct_masklen
+        assert test_object.masklength == result_correct_masklen
+        assert test_object.prefixlen == result_correct_masklen
+        assert test_object.prefixlength == result_correct_masklen
+
+def testIPv4Obj_network_offset():
+    test_object = IPv4Obj("192.0.2.28/24")
+    assert test_object.masklength == 24
+    assert test_object.network_offset == 28
+
+def testIPv4Obj_set_network_offset():
+    test_object = IPv4Obj("192.0.2.28/24")
+    # Change the last octet to be 200...
+    test_object.network_offset = 200
+    assert test_object == IPv4Obj("192.0.2.200/24")
+
+def testIPv4Obj_attributes_01():
+    ## Ensure that attributes are accessible and pass the smell test
+    test_object = IPv4Obj("1.0.0.1 255.255.255.0")
+    results_correct = [
+        ("as_binary_tuple", ("00000001", "00000000", "00000000", "00000001")),
+        ("as_cidr_addr", "1.0.0.1/24"),
+        ("as_cidr_net", "1.0.0.0/24"),
+        ("as_decimal", 16777217),
+        ("as_decimal_network", 16777216),
+        ("as_hex_tuple", ("01", "00", "00", "01")),
+        ("as_zeropadded", "001.000.000.001"),
+        ("as_zeropadded_network", "001.000.000.000/24"),
+        ("broadcast", IPv4Address("1.0.0.255")),
+        ("hostmask", IPv4Address("0.0.0.255")),
+        ("ip", IPv4Address("1.0.0.1")),
+        ("ip_object", IPv4Address("1.0.0.1")),
+        ("is_multicast", False),
+        ("is_private", False),
+        ("is_reserved", False),
+        ("masklen", 24),
+        ("masklength", 24),
+        ("netmask", IPv4Address("255.255.255.0")),
+        ("network", IPv4Network("1.0.0.0/24")),
+        ("network_object", IPv4Network("1.0.0.0/24")),
+        ("network_offset", 1),
+        ("prefixlen", 24),
+        ("prefixlength", 24),
+        ("numhosts", 254),
+        ("version", 4),
+    ]
+    for attribute, result_correct in results_correct:
+
+        assert getattr(test_object, attribute) == result_correct
+
+
+def test_ip_factory_inputs_01():
+    """Test input / output of ccp_util.ip_factory()"""
+    # Test whether IPv4Obj is retured
+    test_params = (
+        # Test format...
+        #    (<dict with test inputs>, result_correct)
+        ({'val': '1.1.1.1/16', 'stdlib': False}, IPv4Obj("1.1.1.1/16")),
+        ({'val': '1.1.1.1/16', 'stdlib': True},  IPv4Network("1.1.1.1/16", strict=False)),
+        ({'val': '1.1.1.1/32', 'stdlib': False}, IPv4Obj("1.1.1.1/32")),
+        ({'val': '1.1.1.1/32', 'stdlib': True},  IPv4Address("1.1.1.1")),
+        ({'val': '2b00:cd80:14:10::1/64', 'stdlib': False}, IPv6Obj("2b00:cd80:14:10::1/64")),
+        ({'val': '2b00:cd80:14:10::1/64', 'stdlib': True}, IPv6Network("2b00:cd80:14:10::/64", strict=True)),
+        ({'val': '::1/64', 'stdlib': False}, IPv6Obj("::1/64")),
+        ({'val': '::1/64', 'stdlib': True},  IPv6Network("::0/64")),
+        ({'val': '::1/128', 'stdlib': False}, IPv6Obj("::1/128")),
+        ({'val': '::1/128', 'stdlib': True},  IPv6Address("::1")),
+        )
+    for test_args, result_correct in test_params:
+        assert ip_factory(**test_args)==result_correct
+
+
+def test_ip_factory_inputs_02():
+    """Test input / output of ccp_util.ip_factory().  This tests checks error conditions"""
+
+    # invalid ip address...
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("brickTrick", stdlib=False, mode="auto_detect")
+
+    # invalid ipv4 address
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("brickTrick", stdlib=False, mode="ipv4")
+
+    # invalid ipv6 address
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("brickTrick", stdlib=False, mode="ipv6")
+
+    # invalid ipv4 address
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("::1/128", stdlib=False, mode="ipv4")
+
+    # invalid ipv4 address
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("1.2.3.4.5", stdlib=False, mode="ipv4")
+
+    # invalid first octet and parse auto_detect...
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("256.1.1.1", stdlib=False, mode="auto_detect")
+
+    # invalid first octet and parse as ipv4
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("256.1.1.1", stdlib=False, mode="ipv4")
+
+    # invalid first octet and parse as ipv6
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("256.1.1.1", stdlib=False, mode="ipv6")
+
+    # netmask too long...
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("239.1.1.1/33", stdlib=False, mode="ipv4")
+
+    # parse ipv6 as ipv6...
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("239.1.1.1/24", stdlib=False, mode="ipv6")
+
+    # parse invalid ipv6 address...
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("FE80:AAAA::DEAD:BEEEEEEEEEEF", stdlib=False, mode="ipv6")
+
+    # parse invalid auto_detect ipv6 address...
+    with pytest.raises(ipaddress.AddressValueError):
+        ip_factory("FE80:AAAA::DEAD:BEEEEEEEEEEF", stdlib=False, mode="auto_detect")
+
+def testIPv6Obj_attributes_01():
+    ## Ensure that attributes are accessible and pass the smell test
+    test_object = IPv6Obj("2001::dead:beef/64")
+    results_correct = [
+        (
+            "as_binary_tuple",
+            (
+                "0010000000000001",
+                "0000000000000000",
+                "0000000000000000",
+                "0000000000000000",
+                "0000000000000000",
+                "0000000000000000",
+                "1101111010101101",
+                "1011111011101111",
+            ),
+        ),
+        ("as_cidr_addr", "2001::dead:beef/64"),
+        ("as_cidr_net", "2001::/64"),
+        ("as_decimal", 42540488161975842760550356429036175087),
+        ("as_decimal_network", 42540488161975842760550356425300246528),
+        ("ip", IPv6Address("2001::dead:beef")),
+        ("ip_object", IPv6Address("2001::dead:beef")),
+        ("netmask", IPv6Address("ffff:ffff:ffff:ffff::")),
+        ("prefixlen", 64),
+        ("network", IPv6Network("2001::/64")),
+        ("network_object", IPv6Network("2001::/64")),
+        ("network_offset", 3735928559),
+        ("hostmask", IPv6Address("::ffff:ffff:ffff:ffff")),
+        ("numhosts", 18446744073709551614),
+        ("version", 6),
+        ("is_multicast", False),
+        ("is_link_local", False),
+        ("is_private", True),
+        ("is_reserved", False),
+        ("is_site_local", False),
+        (
+            "as_hex_tuple",
+            ("2001", "0000", "0000", "0000", "0000", "0000", "dead", "beef"),
+        ),
+    ]
+    for attribute, result_correct in results_correct:
+
+        assert getattr(test_object, attribute) == result_correct
+ 
+def testIPv6Obj_network_offset_01():
+    test_object = IPv6Obj("2001::dead:beef/64")
+    assert test_object.network_offset == 3735928559
+
+def testIPv6Obj_set_network_offset_01():
+    test_object = IPv6Obj("2001::dead:beef/64")
+    test_object.network_offset = 200
+    assert test_object == IPv6Obj("2001::c8/64")
+
+def testIPv4Obj_sort_01():
+    """Simple IPv4Obj sorting test"""
+    cidr_addrs_list = [
+        "192.168.1.3/32",
+        "192.168.1.2/32",
+        "192.168.1.1/32",
+        "192.168.1.4/15",
+    ]
+
+    result_correct = [
+        "192.168.1.4/15",  # Shorter prefixes are "lower" than longer prefixes
+        "192.168.1.1/32",
+        "192.168.1.2/32",
+        "192.168.1.3/32",
+    ]
+
+    obj_list = [IPv4Obj(ii) for ii in cidr_addrs_list]
+    # Ensure we get the correct sorted order for this list
+    assert [ii.as_cidr_addr for ii in sorted(obj_list)] == result_correct
+
+
+def testIPv4Obj_sort_02():
+    """Complex IPv4Obj sorting test"""
+    cidr_addrs_list = [
+        "192.168.1.1/32",
+        "192.168.0.1/32",
+        "192.168.0.2/16",
+        "192.168.0.3/15",
+        "0.0.0.0/32",
+        "0.0.0.1/31",
+        "16.0.0.1/8",
+        "0.0.0.2/30",
+        "127.0.0.0/0",
+        "16.0.0.0/1",
+        "128.0.0.0/1",
+        "16.0.0.0/4",
+        "16.0.0.3/4",
+        "0.0.0.0/0",
+        "0.0.0.0/8",
+    ]
+
+    result_correct = [
+        "0.0.0.0/0",
+        "127.0.0.0/0",
+        "16.0.0.0/1",
+        "0.0.0.0/8",  # for the same network, longer prefixlens sort "higher" than shorter prefixlens
+        "0.0.0.2/30",  # for the same network, longer prefixlens sort "higher" than shorter prefixlens
+        "0.0.0.1/31",  # for the same network, longer prefixlens sort "higher" than shorter prefixlens
+        "0.0.0.0/32",
+        "16.0.0.0/4",
+        "16.0.0.3/4",
+        "16.0.0.1/8",  # for the same network, longer prefixlens sort "higher" than shorter prefixlens
+        "128.0.0.0/1",
+        "192.168.0.3/15",
+        "192.168.0.2/16",
+        "192.168.0.1/32",
+        "192.168.1.1/32",
+    ]
+
+    obj_list = [IPv4Obj(ii) for ii in cidr_addrs_list]
+    # Ensure we get the correct sorted order for this list
+    assert [ii.as_cidr_addr for ii in sorted(obj_list)] == result_correct
+
+
+def testIPv4Obj_recursive():
+    """IPv4Obj() should be able to parse itself"""
+    obj = IPv4Obj(IPv4Obj("1.1.1.1/24"))
+    assert str(obj.ip_object) == "1.1.1.1"
+    assert obj.prefixlen == 24
+
+
+def testIPv4Obj_from_int():
+    assert IPv4Obj(2886729984).ip == IPv4Address('172.16.1.0')
+
+
+def testIPv4Obj_neq_01():
+    """Simple in-equality test fail (ref - Github issue #180)"""
+    assert IPv4Obj("1.1.1.1/24") != ""
+
+
+def testIPv4Obj_neq_02():
+    """Simple in-equality test"""
+    obj1 = IPv4Obj("1.1.1.1/24")
+    obj2 = IPv4Obj("1.1.1.2/24")
+    assert obj1 != obj2
+
+
+def testIPv4Obj_eq_01():
+    """Simple equality test"""
+    obj1 = IPv4Obj("1.1.1.1/24")
+    obj2 = IPv4Obj("1.1.1.1/24")
+    assert obj1 == obj2
+
+
+def testIPv4Obj_eq_02():
+    """Simple equality test"""
+    obj1 = IPv4Obj("1.1.1.1/24")
+    obj2 = IPv4Obj("1.1.1.0/24")
+    assert obj1 != obj2
+
+
+def testIPv4Obj_gt_01():
+    """Simple greater-than test - same network number"""
+    assert IPv4Obj("1.1.1.1/24") > IPv4Obj("1.1.1.0/24")
+
+
+def testIPv4Obj_gt_02():
+    """Simple greater-than test - different network number"""
+    assert IPv4Obj("1.1.1.0/24") > IPv4Obj("1.1.0.0/24")
+
+
+def testIPv4Obj_gt_03():
+    """Simple greater-than test - different prefixlen"""
+    assert IPv4Obj("1.1.1.0/24") > IPv4Obj("1.1.0.0/23")
+
+
+def testIPv4Obj_lt_01():
+    """Simple less-than test - same network number"""
+    obj1 = IPv4Obj("1.1.1.1/24")
+    obj2 = IPv4Obj("1.1.1.0/24")
+    assert obj2 < obj1
+
+
+def testIPv4Obj_lt_02():
+    """Simple less-than test - different network number"""
+    obj1 = IPv4Obj("1.1.1.0/24")
+    obj2 = IPv4Obj("1.1.0.0/24")
+    assert obj2 < obj1
+
+
+def testIPv4Obj_lt_03():
+    """Simple less-than test - different prefixlen"""
+    obj1 = IPv4Obj("1.1.1.0/24")
+    obj2 = IPv4Obj("1.1.0.0/23")
+    assert obj2 < obj1
+
+
+def testIPv4Obj_contains_03():
+    """Test __contains__ method"""
+    obj1 = IPv4Obj("1.1.1.0/24")
+    obj2 = IPv4Obj("1.1.0.0/23")
+    assert obj1 in obj2
+
+
+def testIPv4Obj_contains_04():
+    """Test __contains__ method"""
+    obj1 = IPv4Obj("1.1.1.1/32")
+    obj2 = IPv4Obj("1.1.1.0/24")
+    assert obj1 in obj2
+
+
+def testIPv4Obj_contains_05():
+    """Test __contains__ method"""
+    obj1 = IPv4Obj("1.1.1.255/32")
+    obj2 = IPv4Obj("1.1.1.0/24")
+    assert obj1 in obj2
+
+
+def testIPv6Obj_recursive():
+    """IPv6Obj() should be able to parse itself"""
+    obj = IPv6Obj(IPv6Obj("fe80:a:b:c:d:e::1/64"))
+    assert str(obj.ip_object) == "fe80:a:b:c:d:e:0:1"
+    assert obj.prefixlen == 64
+
+
+def testIPv6Obj_neq_01():
+    """Simple in-equality test fail (ref - Github issue #180)"""
+    assert IPv6Obj("::1") != ""
+
+
+def testIPv6Obj_neq_02():
+    """Simple in-equality test"""
+    assert IPv6Obj("::1") != IPv6Obj("::2")
+
+
+def testIPv6Obj_eq_01():
+    """Simple equality test"""
+    assert IPv6Obj("::1") == IPv6Obj("::1")
+
+
+def testIPv6Obj_gt_01():
+    """Simple greater_than test"""
+    assert IPv6Obj("::2") > IPv6Obj("::1")
+
+
+def testIPv6Obj_lt_01():
+    """Simple less_than test"""
+    assert IPv6Obj("::1") < IPv6Obj("::2")
+
+
+def test_collapse_addresses_01():
+
+    net_collapsed = ipaddress.collapse_addresses([IPv4Network('192.0.0.0/22'), IPv4Network('192.0.2.128/25')])
+
+
+    for idx, entry in enumerate(net_collapsed):
+        if idx==0:
+            assert entry == IPv4Network("192.0.0.0/22")
+
+
+def test_collapse_addresses_02():
+    net_list = [IPv4Obj('192.0.2.128/25'), IPv4Obj('192.0.0.0/26')]
+    collapsed_list = sorted(collapse_addresses(net_list))
+    assert collapsed_list[0].network_address==IPv4Obj('192.0.0.0/26').ip
+    assert collapsed_list[1].network_address==IPv4Obj('192.0.2.128/25').ip
+
+
+def test_dns_lookup():
+    # Use my hostname to test...
+    test_hostname = "pennington.net"
+    result_correct_address = "65.19.187.2"
+    result_correct = {"addrs": [result_correct_address], "name": test_hostname, "error": "", "record_type": "A"}
+    try:
+        test_result = dns_lookup(test_hostname)
+    except Timeout:
+        pytest.skip("Skipping due to DNS resolver timeout")
+
+    if test_result["error"] != "":
+        assert dns_lookup(test_hostname) == result_correct
+    else:
+        pytest.skip(test_result["error"])
+
+
+def test_reverse_dns_lookup():
+
+    #result_correct = {"addrs": ["127.0.0.1"], "name": "localhost.", "error": ""}
+    test_result = reverse_dns_lookup("127.0.0.1")
+    assert isinstance(test_result, dict)
+    try:
+        assert test_result["error"] == ""
+    except Exception:
+        pytest.skip(test_result["error"])
+
+
+
+def test_CiscoRange_01():
+    """Basic vlan range test"""
+    result_correct = ["1"]
+    assert CiscoRange("1").as_list == result_correct
+
+
+def test_CiscoRange_02():
+    """Basic vlan range test"""
+    result_correct = ["1", "3"]
+    assert CiscoRange("1,3").as_list == result_correct
+
+
+def test_CiscoRange_03():
+    """Basic vlan range test"""
+    result_correct = ["1", "2", "3", "4", "5"]
+    assert CiscoRange("1,2-4,5").as_list == result_correct
+
+
+def test_CiscoRange_04():
+    """Basic vlan range test"""
+    result_correct = ["1", "2", "3", "4", "5"]
+    assert CiscoRange("1-3,4,5").as_list == result_correct
+
+
+def test_CiscoRange_05():
+    """Basic vlan range test"""
+    result_correct = ["1", "2", "3", "4", "5"]
+    assert CiscoRange("1,2,3-5").as_list == result_correct
+
+
+def test_CiscoRange_06():
+    """Basic slot range test"""
+    result_correct = ["1/1", "1/2", "1/3", "1/4", "1/5"]
+    assert CiscoRange("1/1-3,4,5").as_list == result_correct
+
+
+def test_CiscoRange_07():
+    """Basic slot range test"""
+    result_correct = ["1/1", "1/2", "1/3", "1/4", "1/5"]
+    assert CiscoRange("1/1,2-4,5").as_list == result_correct
+
+
+def test_CiscoRange_08():
+    """Basic slot range test"""
+    result_correct = ["1/1", "1/2", "1/3", "1/4", "1/5"]
+    assert CiscoRange("1/1,2,3-5").as_list == result_correct
+
+
+def test_CiscoRange_09():
+    """Basic slot range test"""
+    result_correct = ["2/1/1", "2/1/2", "2/1/3", "2/1/4", "2/1/5"]
+    assert CiscoRange("2/1/1-3,4,5").as_list == result_correct
+
+
+def test_CiscoRange_10():
+    """Basic slot range test"""
+    result_correct = ["2/1/1", "2/1/2", "2/1/3", "2/1/4", "2/1/5"]
+    assert CiscoRange("2/1/1,2-4,5").as_list == result_correct
+
+
+def test_CiscoRange_11():
+    """Basic slot range test"""
+    result_correct = ["2/1/1", "2/1/2", "2/1/3", "2/1/4", "2/1/5"]
+    assert CiscoRange("2/1/1,2,3-5").as_list == result_correct
+
+
+def test_CiscoRange_12():
+    """Basic interface slot range test"""
+    result_correct = [
+        "interface Eth2/1/1",
+        "interface Eth2/1/2",
+        "interface Eth2/1/3",
+        "interface Eth2/1/4",
+        "interface Eth2/1/5",
+    ]
+    assert CiscoRange("interface Eth2/1/1-3,4,5").as_list == result_correct
+
+
+def test_CiscoRange_13():
+    """Basic interface slot range test"""
+    result_correct = [
+        "interface Eth2/1/1",
+        "interface Eth2/1/2",
+        "interface Eth2/1/3",
+        "interface Eth2/1/4",
+        "interface Eth2/1/5",
+    ]
+    assert CiscoRange("interface Eth2/1/1,2-4,5").as_list == result_correct
+
+
+def test_CiscoRange_14():
+    """Basic interface slot range test"""
+    result_correct = [
+        "interface Eth2/1/1",
+        "interface Eth2/1/2",
+        "interface Eth2/1/3",
+        "interface Eth2/1/4",
+        "interface Eth2/1/5",
+    ]
+    assert CiscoRange("interface Eth2/1/1,2,3-5").as_list == result_correct
+
+
+def test_CiscoRange_15():
+    """Basic interface slot range test"""
+    result_correct = [
+        "interface Eth 2/1/1",
+        "interface Eth 2/1/2",
+        "interface Eth 2/1/3",
+        "interface Eth 2/1/4",
+        "interface Eth 2/1/5",
+    ]
+    assert CiscoRange("interface Eth 2/1/1,2,3-5").as_list == result_correct
+
+
+def test_CiscoRange_16():
+    """Empty range test"""
+    result_correct = []
+    assert CiscoRange("").as_list == result_correct
+
+
+def test_CiscoRange_17():
+    """Append range test"""
+    result_correct = [1, 2, 3]
+    assert CiscoRange("", result_type=int).append("1-3").as_list == result_correct
+
+
+def test_CiscoRange_18():
+    """Parse a string with a common prefix on all of the CiscoRange() inputs"""
+    result_correct = [
+        "Eth1/1",
+        "Eth1/10",
+        "Eth1/12-20",
+    ]
+    CiscoRange("Eth1/1,Eth1/12-20,Eth1/16,Eth1/10").as_list == result_correct
+
+
+def test_CiscoRange_19():
+    """Parse a string with a common prefix on all of the CiscoRange() inputs"""
+    result_correct = [
+        "interface Eth1/1",
+        "interface Eth1/10",
+        "interface Eth1/12-20",
+    ]
+    CiscoRange("interface Eth1/1,interface Eth1/12-20,interface Eth1/16,interface Eth1/10").as_list == result_correct
+
+
+def test_CiscoRange_compressed_str_01():
+    """compressed_str test"""
+    assert CiscoRange("1,2, 3, 6, 7,  8 , 9, 911").compressed_str == "1-3,6-9,911"
+
+
+def test_CiscoRange_contains():
+    assert "Ethernet1/2" in CiscoRange("Ethernet1/1-20")
