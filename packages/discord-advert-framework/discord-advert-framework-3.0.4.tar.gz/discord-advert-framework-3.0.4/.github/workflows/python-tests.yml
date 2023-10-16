@@ -1,0 +1,50 @@
+name: Self-Test
+
+on:
+  push:
+    branches: [ "master"]
+  pull_request:
+    branches: [ "master" , "develop"]
+  workflow_dispatch:
+
+concurrency:
+    group: "selftest-cg"
+    cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.11"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    - name: Install APT dependencies
+      run: |
+        sudo apt-get update
+        sudo apt install ffmpeg
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[all] .[testing]
+    - name: Test version compatibility
+      env:
+        DISCORD_TOKEN: ${{secrets.DATT}}
+      if: ${{ matrix.python-version != 3.8 }}
+      run: |
+        pytest -v testing/test_period_dynamic.py  
+    - name: Test all
+      env:
+        DISCORD_TOKEN: ${{secrets.DATT}}
+      if: ${{ matrix.python-version == 3.8 }}
+      run: |
+        pytest -v -m "not group_remote"
+        pytest -v -m "group_remote"
+      
