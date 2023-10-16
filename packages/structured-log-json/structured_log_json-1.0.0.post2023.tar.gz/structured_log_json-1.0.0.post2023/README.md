@@ -1,0 +1,131 @@
+# 通用事件结构化表达-Json格式化日志
+
+**通用事件结构化表达-Json格式化日志**模块继承于Python [`logging`](https://docs.python.org/3/library/logging.html) 模块，提供一种JSON格式输出网络安全事件日志。
+
+网络空间安全事件表达模型详见“网络空间拟态防御领域通用日志表达标准规范.md”。
+
+
+
+## 1. 功能特性
+
+本模块继承Python logging模块的Formatters 与 FileHandler，提供JsonFormatter 与 JsonRotatingFileHandler。
+
+**JsonFormatter：**实现日志的JSON格式化输出，其日志消息结构符合“网络空间拟态防御领域通用日志表达标准规范.md”。
+
+**JsonRotatingFileHandler：**实现日志文件记录，其日志文件命名符合“网络空间拟态防御领域通用日志表达标准规范.md”。
+
+## 2. API说明
+
+本模块对外目前仅提供一个接口：
+
+```python
+def setup_logging(path: str, device_name: str, mode_name: str, log_type: str, log_level, skip_attrs:List[str]=[]):
+    """
+    用于Logger object的生成，根据用户提供的配置，配置JsonFormatter与JsonRotatingFileHandler
+    :param path: 日志文件存放的目录路径
+    :param device_name: 需要记录日志的设备或系统名字
+    :param mode_name: 事件发生时所在的模块名
+    :param log_type: 日志类型，日志类型参见“网络空间拟态防御领域通用日志表达标准规范.md”
+    :param log_level: 参见python logging 中日志级别设置
+    :param skip_attrs: 需要在最终输出中隐藏的固定属性值
+    :return: 无
+    """
+```
+
+可以设置隐藏的属性值：
+
+```python
+STATIC_ATTRS: Tuple[str, ...] = (
+	'filename', 'modulename', 'funcname', 'process', 'processName', 'thread', 'threadName', 'lineno',
+    )
+```
+
+
+
+## 3. demo
+
+```python
+from structured_log_json import jsonlogger
+import logging
+'''
+1. inherited  logging class Formatter;
+2. inherited  logging class Handler;
+'''
+
+
+
+def print_hi(name):
+    logger = jsonlogger.setup_logging("./", "mimicrouter", __name__, "dmf", logging.INFO,['filename','processName'])
+    test = {
+
+        "event_domain": "mimic_multimode_ruling",
+        "event_action": "attack",
+        "router_multimode_ruling":
+            [
+	            {
+                    "exception_type":"missing_router_item",
+                    "action":"del_route",
+                    "executor_role":"master",
+                    "prefix":"2.2.2.2",
+                    "mask":32,
+                    "nexthop_info.nexthop":["100.0.13.3"],
+                    "nexthop_info.ifname":["GigEth0"],
+                    "nexthop_info.label":[]
+                },
+                {
+                    "exception_type":"missing_router_item",
+                    "action":"del_route",
+                    "executor_role":"master",
+                    "prefix":"11.11.11.11",
+                    "mask":32,
+                    "nexthop_info.nexthop":["100.0.13.3"],
+                    "nexthop_info.ifname":["GigEth0"],
+                    "nexthop_info.label":[]
+                },
+                {
+                    "exception_type":"missing_router_item",
+                    "action":"del_route",
+                    "executor_role":"master",
+                    "prefix":"100.0.12.0",
+                    "mask":24,
+                    "nexthop_info.nexthop":["100.0.13.3"],
+                    "nexthop_info.ifname":["GigEth0"],
+                    "nexthop_info.label":[]
+                },
+	            {
+                    "exception_type":"missing_router_item",
+                    "action":"del_route",
+                    "executor_role":"master",
+                    "prefix":"100.0.17.0",
+                    "mask":24,
+                    "nexthop_info.nexthop":["100.0.13.3"]
+			    }
+
+		    ]
+    }
+    for i in range(5):
+        #1. 带message附加信息方式，extra 是自定义字段
+        logger.info("test",extra=test)
+        #2. 直接传输自定义字段字典类型
+        logger.info(test)
+        
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    print_hi('PyCharm')
+
+# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+```
+
+
+
+### 4. How to install
+
+1. [python 3.6+](https://www.python.org/downloads/) must be installed
+2. Use pip to install module:
+
+```python
+python  pip install structured_log_json
+```
+
