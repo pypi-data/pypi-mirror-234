@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.simBMA456 &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.simBMA456</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Simulation of the BMA456 accelerometer device.</span>
+
+<span class="sd">This module provides a pure software implementation of the device to</span>
+<span class="sd">virtualize its serial communication behavior. This is to support</span>
+<span class="sd">cross-platform development and debugging.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SimDevBMA456&quot;</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">.bma456_reg</span> <span class="kn">import</span> <span class="n">BMA456_Reg</span>
+<span class="kn">from</span> <span class="nn">.simdev</span> <span class="kn">import</span> <span class="n">SimDevMemory</span><span class="p">,</span> <span class="n">Register</span><span class="p">,</span> <span class="n">MemoryType</span>
+
+
+<div class="viewcode-block" id="SimDevBMA456"><a class="viewcode-back" href="../../philander.html#philander.simBMA456.SimDevBMA456">[docs]</a><span class="k">class</span> <span class="nc">SimDevBMA456</span><span class="p">(</span> <span class="n">SimDevMemory</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A software simulation of the BMA456. The current implementation is</span>
+<span class="sd">    incomplete and imperfect to some extent. The status is as follows.</span>
+<span class="sd">    </span>
+<span class="sd">    Working</span>
+<span class="sd">    ========</span>
+<span class="sd">    * simulation of its bare existence by responding properly in serial communication</span>
+<span class="sd">    * all registers are present, accessible and constructed with correct reset values.</span>
+<span class="sd">    * register ``CHIP_ID``</span>
+<span class="sd">    * ``STATUS:DRDY_ACC/AUX`` cleared at each read-access to ``ACC_X/Y/Z`` or ``AUX_X/Y/Z/R`` </span>
+<span class="sd">    </span>
+<span class="sd">    Limitations</span>
+<span class="sd">    ===========</span>
+<span class="sd">    * ``ACC_X/Y/Z`` get just incremented after each read access.</span>
+<span class="sd">    * ``STATUS:DRDY_ACC/AUX`` get set after polling (reading) ``STATUS`` for 10 times.</span>
+<span class="sd">    * ``SENSOR_TIME[0:1:2]`` incremented after each read-access</span>
+<span class="sd">    * initialization sequence is satisfied by writing ``LOAD_CFG_FILE``\</span>
+<span class="sd">    followed by ``START_INIT`` to the ``INIT_CTRL`` register. This will\</span>
+<span class="sd">    set ``INTERNAL_STATUS:MSG`` to ``INIT_OK``. Otherwise, these bits\</span>
+<span class="sd">    are set to ``INIT_ERR``. </span>
+<span class="sd">    </span>
+<span class="sd">    Missing</span>
+<span class="sd">    ========</span>
+<span class="sd">    * Simulation of acceleration flow, e.g. as read from an input file</span>
+<span class="sd">    * Feature simulation (step counter etc.)</span>
+<span class="sd">    * Simulation of the chip status and behavior, such as ``ERROR`` and ``STATUS``</span>
+<span class="sd">    * power modes</span>
+<span class="sd">    * interrupts</span>
+<span class="sd">    * NVM     </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">regset</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_CHIP_ID</span><span class="p">,</span>               <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_CHIP_ID</span><span class="p">,</span>                 <span class="n">MemoryType</span><span class="o">.</span><span class="n">ROM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ERROR</span><span class="p">,</span>                 <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_ERROR_CODE_NONE</span><span class="p">,</span>         <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_STATUS</span><span class="p">,</span>                <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_STATUS_CMD_RDY</span><span class="p">,</span>          <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_X_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_X_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Y_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Y_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Z_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Z_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_R_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_R_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_X_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_X_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Y_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Y_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Z_LOW</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Z_HI</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SENSOR_TIME0</span><span class="p">,</span>          <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SENSOR_TIME1</span><span class="p">,</span>          <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SENSOR_TIME2</span><span class="p">,</span>          <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_EVENT</span><span class="p">,</span>                 <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_EVENT_POR</span><span class="p">,</span>               <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT_STATUS0</span><span class="p">,</span>           <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT_STATUS1</span><span class="p">,</span>           <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSWBL_REG_STEP_COUNTER0</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSWBL_REG_STEP_COUNTER1</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSWBL_REG_STEP_COUNTER2</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSWBL_REG_STEP_COUNTER3</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_TEMPERATURE</span><span class="p">,</span>           <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_LENGTH_LOW</span><span class="p">,</span>       <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_LENGTH_HI</span><span class="p">,</span>        <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_DATA</span><span class="p">,</span>             <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSWBL_REG_ACTIVITY_TYPE</span><span class="p">,</span>   <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSHBL_REG_FEAT_EN1</span><span class="p">,</span>        <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_FSHBL_REG_FEAT_EN2</span><span class="p">,</span>        <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INTERNAL_STATUS</span><span class="p">,</span>       <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_CONF</span><span class="p">,</span>              <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_ACC_CONF_DEFAULT</span><span class="p">,</span>        <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_RANGE</span><span class="p">,</span>             <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_ACC_RANGE_DEFAULT</span><span class="p">,</span>       <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_CONF</span><span class="p">,</span>              <span class="mh">0x46</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_DOWNS</span><span class="p">,</span>            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_FIFO_DOWNS_FILTER</span><span class="p">,</span>       <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_WM_LOW</span><span class="p">,</span>           <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_WM_HI</span><span class="p">,</span>            <span class="mh">0x02</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_CFG0</span><span class="p">,</span>             <span class="mh">0x02</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FIFO_CFG1</span><span class="p">,</span>             <span class="mh">0x10</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_DEV_ID</span><span class="p">,</span>            <span class="mh">0x20</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_IF_CONF</span><span class="p">,</span>           <span class="mh">0x83</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_RD_ADDR</span><span class="p">,</span>           <span class="mh">0x42</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_WR_ADDR</span><span class="p">,</span>           <span class="mh">0x4c</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_WR_DATA</span><span class="p">,</span>           <span class="mh">0x02</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT1_IO_CTRL</span><span class="p">,</span>          <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INT1_IO_CTRL_DEFAULT</span><span class="p">,</span>    <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT2_IO_CTRL</span><span class="p">,</span>          <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INT2_IO_CTRL_DEFAULT</span><span class="p">,</span>    <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT_LATCH</span><span class="p">,</span>             <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INT_LATCH_NONE</span><span class="p">,</span>          <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT1_MAP</span><span class="p">,</span>              <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INTX_MAP_DEFAULT</span><span class="p">,</span>        <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT2_MAP</span><span class="p">,</span>              <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INTX_MAP_DEFAULT</span><span class="p">,</span>        <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INT_MAP_DATA</span><span class="p">,</span>          <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INT_MAP_DATA_DEFAULT</span><span class="p">,</span>    <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INIT_CTRL</span><span class="p">,</span>             <span class="mh">0x90</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_DMA_LOW</span><span class="p">,</span>               <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_DMA_HI</span><span class="p">,</span>                <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_FEATURES</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INTERNAL_ERR</span><span class="p">,</span>          <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_NVM_CFG</span><span class="p">,</span>               <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_NVM_CFG_PPROG_DISABLE</span><span class="p">,</span>   <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_IF_CFG</span><span class="p">,</span>                <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SELF_TST</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_NVM_BE_CFG</span><span class="p">,</span>            <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_OFFSET_X</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_OFFSET_Y</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_OFFSET_Z</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_PWR_CONF</span><span class="p">,</span>              <span class="mh">0x03</span><span class="p">,</span>                                           <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_PWR_CTRL</span><span class="p">,</span>              <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+            <span class="n">Register</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_CMD</span><span class="p">,</span>                   <span class="mi">0</span><span class="p">,</span>                                              <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span> <span class="p">),</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_regStatusReadCnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">SimDevMemory</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regset</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_onPostRead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">):</span>
+        <span class="c1"># Status register</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">address</span> <span class="o">==</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_STATUS</span><span class="p">):</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_STATUS_DRDY_ACC</span> <span class="o">|</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_STATUS_DRDY_AUX</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">&amp;</span> <span class="n">mask</span><span class="p">)</span> <span class="o">!=</span> <span class="n">mask</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_regStatusReadCnt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regStatusReadCnt</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_regStatusReadCnt</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_regStatusReadCnt</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">|=</span> <span class="n">mask</span>
+        <span class="c1"># Acceleration data</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">address</span> <span class="ow">in</span> <span class="p">[</span><span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_X_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_X_HI</span><span class="p">,</span>
+                            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Y_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Y_HI</span><span class="p">,</span>
+                            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Z_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_Z_HI</span><span class="p">,</span> 
+                            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_R_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_AUX_R_HI</span><span class="p">,</span>
+                            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_X_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_X_HI</span><span class="p">,</span>
+                            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Y_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Y_HI</span><span class="p">,</span>
+                            <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Z_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Z_HI</span><span class="p">,</span> <span class="p">]):</span>
+            <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">statreg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findReg</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_STATUS</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">address</span> <span class="ow">in</span> <span class="p">[</span><span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_X_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_X_HI</span><span class="p">,</span>
+                                <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Y_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Y_HI</span><span class="p">,</span>
+                                <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Z_LOW</span><span class="p">,</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_ACC_Z_HI</span><span class="p">,</span> <span class="p">]):</span>
+                <span class="n">statreg</span><span class="o">.</span><span class="n">content</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_STATUS_DRDY_ACC</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">statreg</span><span class="o">.</span><span class="n">content</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_STATUS_DRDY_AUX</span>
+        <span class="c1"># Sensor time</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">address</span> <span class="o">==</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SENSOR_TIME0</span><span class="p">):</span>
+            <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">==</span> <span class="mh">0x100</span><span class="p">):</span>
+                <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findReg</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SENSOR_TIME1</span> <span class="p">)</span>
+                <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">==</span> <span class="mh">0x100</span><span class="p">):</span>
+                    <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findReg</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_SENSOR_TIME2</span> <span class="p">)</span>
+                    <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">==</span> <span class="mh">0x100</span><span class="p">):</span>
+                        <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_onPreWrite</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">newData</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">address</span> <span class="o">==</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INIT_CTRL</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">newData</span> <span class="o">==</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INIT_CTRL_START_INIT</span><span class="p">):</span>
+                <span class="c1"># Set internal status</span>
+                <span class="n">statreg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findReg</span><span class="p">(</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_REG_INTERNAL_STATUS</span><span class="p">)</span>
+                <span class="n">statreg</span><span class="o">.</span><span class="n">content</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INTERNAL_STATUS_MSG</span> 
+                <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">==</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INIT_CTRL_LOAD_CONFIG_FILE</span><span class="p">):</span>
+                    <span class="n">statreg</span><span class="o">.</span><span class="n">content</span> <span class="o">|=</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_INIT_OK</span> 
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">statreg</span><span class="o">.</span><span class="n">content</span> <span class="o">|=</span> <span class="n">BMA456_Reg</span><span class="o">.</span><span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_INIT_ERR</span> 
+        <span class="k">return</span> <span class="n">newData</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

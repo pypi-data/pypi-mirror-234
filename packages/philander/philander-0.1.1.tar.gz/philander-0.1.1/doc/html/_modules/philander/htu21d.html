@@ -1,0 +1,511 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.htu21d &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.htu21d</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Driver implementation for the HTU21D relative humidity and temperature sensor.</span>
+
+<span class="sd">More information on the functionality of the chip can be found at</span>
+<span class="sd">the TE site:</span>
+<span class="sd">https://www.te.com/deu-de/product-CAT-HSC0004.html</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;StatusID&quot;</span><span class="p">,</span> <span class="s2">&quot;Data&quot;</span><span class="p">,</span> <span class="s2">&quot;HTU21D&quot;</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">unique</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">import</span> <span class="nn">time</span>    
+
+<span class="kn">from</span> <span class="nn">.configurable</span> <span class="kn">import</span> <span class="n">Configuration</span><span class="p">,</span> <span class="n">ConfigItem</span>
+<span class="kn">from</span> <span class="nn">.hygrometer</span> <span class="kn">import</span> <span class="n">Data</span> <span class="k">as</span> <span class="n">hygData</span>
+<span class="kn">from</span> <span class="nn">.sensor</span> <span class="kn">import</span> <span class="n">Sensor</span><span class="p">,</span> <span class="n">SelfTest</span>
+<span class="kn">from</span> <span class="nn">.serialbus</span> <span class="kn">import</span> <span class="n">SerialBusDevice</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+<span class="kn">from</span> <span class="nn">.thermometer</span> <span class="kn">import</span> <span class="n">Data</span> <span class="k">as</span> <span class="n">thmData</span>
+
+
+<div class="viewcode-block" id="StatusID"><a class="viewcode-back" href="../../philander.html#philander.htu21d.StatusID">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">StatusID</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to comprise different types of status information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">powerOk</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Data"><a class="viewcode-back" href="../../philander.html#philander.htu21d.Data">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span> <span class="n">thmData</span><span class="p">,</span> <span class="n">hygData</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container type to wrap this sensor&#39;s measurement result.</span>
+<span class="sd">    </span>
+<span class="sd">    This data type carries both, temperature and humidity measurement</span>
+<span class="sd">    results.</span>
+<span class="sd">    Also see: :class:`.thermometer.Data`, :class:`.hygrometer.Data` </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="HTU21D"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D">[docs]</a><span class="k">class</span> <span class="nc">HTU21D</span><span class="p">(</span> <span class="n">Sensor</span><span class="p">,</span> <span class="n">SerialBusDevice</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;HTU21D driver implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Chip address</span>
+    <span class="n">ADDRESS</span> <span class="o">=</span> <span class="mh">0x40</span>
+    
+    <span class="c1"># Configuration mnemonics</span>
+    <span class="n">CFG_RESOLUTION_HUM8_TEMP12</span>    <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">CFG_RESOLUTION_HUM10_TEMP13</span>   <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">CFG_RESOLUTION_HUM11_TEMP11</span>   <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">CFG_RESOLUTION_HUM12_TEMP14</span>   <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">CFG_RESOLUTION_DEFAULT</span>        <span class="o">=</span> <span class="n">CFG_RESOLUTION_HUM12_TEMP14</span>
+    
+    <span class="c1"># Communication commands and registers</span>
+    <span class="n">CMD_GET_TEMP_HOLD</span>  <span class="o">=</span> <span class="mh">0xE3</span>
+    <span class="n">CMD_GET_HUM_HOLD</span>   <span class="o">=</span> <span class="mh">0xE5</span>
+    <span class="n">CMD_GET_TEMP</span>       <span class="o">=</span> <span class="mh">0xF3</span>
+    <span class="n">CMD_GET_HUM</span>        <span class="o">=</span> <span class="mh">0xF5</span>
+    <span class="n">CMD_WRITE_USR_REG</span>  <span class="o">=</span> <span class="mh">0xE6</span>
+    <span class="n">CMD_READ_USR_REG</span>   <span class="o">=</span> <span class="mh">0xE7</span>
+    <span class="n">CMD_SOFT_RESET</span>     <span class="o">=</span> <span class="mh">0xFE</span>
+    
+    <span class="c1"># Register content</span>
+    <span class="n">CNT_USR_RESOLUTION</span>     <span class="o">=</span> <span class="mh">0x81</span>
+    <span class="n">CNT_USR_RESOLUTION_RH12_T14</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">CNT_USR_RESOLUTION_RH8_T12</span>  <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">CNT_USR_RESOLUTION_RH10_T13</span> <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">CNT_USR_RESOLUTION_RH11_T11</span> <span class="o">=</span> <span class="mh">0x81</span>
+    <span class="n">CNT_USR_RESOLUTION_DEFAULT</span>  <span class="o">=</span> <span class="n">CNT_USR_RESOLUTION_RH12_T14</span>
+    <span class="n">CNT_USR_POWER</span>          <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">CNT_USR_POWER_GOOD</span>     <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">CNT_USR_POWER_LOW</span>      <span class="o">=</span> <span class="n">CNT_USR_POWER</span>
+    <span class="n">CNT_USR_RESERVED</span>       <span class="o">=</span> <span class="mh">0x38</span>
+    <span class="n">CNT_USR_CHIP_HEATER</span>    <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">CNT_USR_CHIP_HEATER_ON</span> <span class="o">=</span> <span class="n">CNT_USR_CHIP_HEATER</span>   <span class="c1"># Consumes 5.5mW, heat by ~1.0°C</span>
+    <span class="n">CNT_USR_CHIP_HEATER_OFF</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">CNT_USR_OTP_RELOAD</span>     <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">CNT_USR_OTP_RELOAD_ENABLE</span><span class="o">=</span><span class="mh">0x00</span>
+    <span class="n">CNT_USR_OTP_RELOAD_DISABLE</span> <span class="o">=</span> <span class="n">CNT_USR_OTP_RELOAD</span>
+    <span class="n">CNT_USR_DEFAULT</span> <span class="o">=</span> <span class="n">CNT_USR_RESOLUTION_DEFAULT</span> <span class="o">|</span> <span class="n">CNT_USR_POWER_GOOD</span> <span class="o">|</span> <span class="n">CNT_USR_CHIP_HEATER_OFF</span> <span class="o">|</span> <span class="n">CNT_USR_OTP_RELOAD_DISABLE</span>
+    
+    <span class="c1"># Diagnosis bits in a data frame</span>
+    <span class="n">DIAG_CIRC_OPEN</span>     <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">DIAG_TEMP_OK</span>       <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># documented as 0, should it be 1 ?</span>
+    <span class="n">DIAG_HUM_OK</span>        <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">DIAG_CIRC_SHORT</span>    <span class="o">=</span> <span class="mi">3</span>
+    
+    <span class="c1"># Time constants</span>
+    <span class="n">MEAS_TIME_MAX_MS_RH8</span>    <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">MEAS_TIME_MAX_MS_RH10</span>   <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">MEAS_TIME_MAX_MS_RH11</span>   <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">MEAS_TIME_MAX_MS_RH12</span>   <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">MEAS_TIME_MAX_MS_T11</span>    <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">MEAS_TIME_MAX_MS_T12</span>    <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">MEAS_TIME_MAX_MS_T13</span>    <span class="o">=</span> <span class="mi">25</span>
+    <span class="n">MEAS_TIME_MAX_MS_T14</span>    <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">RESET_TIME_MAX_MS</span>       <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">SELFTEST_TIME_WAIT_S</span>    <span class="o">=</span> <span class="mi">5</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latestData</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span>    <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># in seconds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_DEFAULT</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="HTU21D.Params_init"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes configuration parameters with defaults.</span>
+<span class="sd">        </span>
+<span class="sd">        The following settings are supported:</span>
+<span class="sd">        </span>
+<span class="sd">        =============================    ==========================================================================================================</span>
+<span class="sd">        Key name                         Value type, meaning and default</span>
+<span class="sd">        =============================    ==========================================================================================================</span>
+<span class="sd">        SerialBusDevice.address          ``int`` I2C serial device address, must be :attr:`ADDRESS`; default is :attr:`ADDRESS`.</span>
+<span class="sd">        Sensor.dataRate                  ``int`` Data rate in Hz; default is set by :meth:`.Sensor.Params_init`.</span>
+<span class="sd">        HTU21D.resolution                ``int`` Resolution in bits; default is :attr:`.CFG_RESOLUTION_HUM12_TEMP14`.</span>
+<span class="sd">        =============================    ==========================================================================================================</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Sensor.Params_init`, :meth:`.SerialBusDevice.Params_init`. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">ADDRESS</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;HTU21D.resolution&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;HTU21D.resolution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CFG_RESOLUTION_DEFAULT</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="HTU21D.open"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+        <span class="c1"># Get defaults</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">HTU21D</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+        <span class="c1"># Open the bus device</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">]</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">SerialBusDevice</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">)</span>
+        <span class="c1"># Reset sensor</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="c1"># Open the sensor, configure rate and range</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">Sensor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">)</span>
+        <span class="c1"># Configure the sensor</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;HTU21D.resolution&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">(</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">resolution</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;HTU21D.resolution&quot;</span><span class="p">])</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span> <span class="n">cfg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;HTU21D.resolution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;HTU21D.resolution&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="HTU21D.close"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+    
+    <span class="k">def</span> <span class="nf">_heaterOn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_READ_USR_REG</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_CHIP_HEATER</span>
+            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">|</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_CHIP_HEATER_ON</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">|</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_CHIP_HEATER_OFF</span>
+            <span class="n">ret</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_WRITE_USR_REG</span><span class="p">,</span> <span class="n">data</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+        
+<div class="viewcode-block" id="HTU21D.selfTest"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.selfTest">[docs]</a>    <span class="k">def</span> <span class="nf">selfTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tests</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute one or more sensor self tests.</span>
+<span class="sd">        </span>
+<span class="sd">        :attr:`.SelfTest.FUNCTIONAL`: </span>
+<span class="sd">        The on-chip heater is used to check if the sensor shows the</span>
+<span class="sd">        expected temperature raise and humidity drop. The heater consumes</span>
+<span class="sd">        ~5.5mW and the test takes about 5 seconds.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Sensor.selfTest`.</span>
+
+<span class="sd">        :param int tests: A bit mask to select the tests to be executed.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">tests</span> <span class="o">&amp;</span> <span class="n">SelfTest</span><span class="o">.</span><span class="n">FUNCTIONAL</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">oldTemp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latestData</span><span class="o">.</span><span class="n">temperature</span>
+                <span class="n">oldHum</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latestData</span><span class="o">.</span><span class="n">humidity</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">oldTemp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getTemperature</span><span class="p">()</span>
+                <span class="n">oldHum</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getHumidity</span><span class="p">(</span> <span class="n">oldTemp</span> <span class="p">)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heaterOn</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">SELFTEST_TIME_WAIT_S</span> <span class="p">)</span>
+                <span class="n">newTemp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getTemperature</span><span class="p">()</span>
+                <span class="n">newHum</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getHumidity</span><span class="p">(</span> <span class="n">newTemp</span> <span class="p">)</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_heaterOn</span><span class="p">(</span> <span class="kc">False</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">newTemp</span> <span class="o">&gt;=</span> <span class="n">oldTemp</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">newHum</span> <span class="o">&lt;=</span> <span class="n">oldHum</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+        
+    
+<div class="viewcode-block" id="HTU21D.reset"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reboots the sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Power-cycles the chip and restarts it with the default</span>
+<span class="sd">        configuration. So, any user configuration applied before, will</span>
+<span class="sd">        be lost.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Sensor.reset`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeBuffer</span><span class="p">(</span> <span class="p">[</span><span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_SOFT_RESET</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span> <span class="mi">2</span><span class="o">*</span><span class="n">HTU21D</span><span class="o">.</span><span class="n">RESET_TIME_MAX_MS</span> <span class="o">/</span> <span class="mi">1000</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">latestData</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_DEFAULT</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">Sensor</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_getMaxMeasurementTime</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">resolution</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">resolution</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH8_T12</span><span class="p">):</span>
+            <span class="n">maxTime</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_RH8</span><span class="p">,</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_T12</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">resolution</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH10_T13</span><span class="p">):</span>
+            <span class="n">maxTime</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_RH10</span><span class="p">,</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_T13</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">resolution</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH11_T11</span><span class="p">):</span>
+            <span class="n">maxTime</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_RH11</span><span class="p">,</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_T11</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">resolution</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH12_T14</span><span class="p">):</span>
+            <span class="n">maxTime</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_RH12</span><span class="p">,</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">MEAS_TIME_MAX_MS_T14</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">maxTime</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1000</span>
+        <span class="n">maxTime</span> <span class="o">=</span> <span class="n">maxTime</span> <span class="o">/</span> <span class="mi">1000</span>
+        <span class="k">return</span> <span class="n">maxTime</span>
+        
+<div class="viewcode-block" id="HTU21D.configure"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configData</span><span class="p">):</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_READ_USR_REG</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="c1"># Resolution</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">resolution</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION</span>
+                <span class="k">if</span><span class="p">(</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CFG_RESOLUTION_HUM8_TEMP12</span> <span class="p">):</span>
+                    <span class="n">newResolution</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH8_T12</span>
+                <span class="k">elif</span><span class="p">(</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CFG_RESOLUTION_HUM10_TEMP13</span> <span class="p">):</span>
+                    <span class="n">newResolution</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH10_T13</span>
+                <span class="k">elif</span><span class="p">(</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CFG_RESOLUTION_HUM11_TEMP11</span> <span class="p">):</span>
+                    <span class="n">newResolution</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH11_T11</span>
+                <span class="k">elif</span><span class="p">(</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CFG_RESOLUTION_HUM12_TEMP14</span> <span class="p">):</span>
+                    <span class="n">newResolution</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_RESOLUTION_RH12_T14</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errSpecRange</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">|</span> <span class="n">newResolution</span>
+                    <span class="n">ret</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_WRITE_USR_REG</span><span class="p">,</span> <span class="n">data</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">newResolution</span>
+                    <span class="n">maxTime</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">_getMaxMeasurementTimeMS</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="p">)</span>
+                    <span class="k">if</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span> <span class="o">&lt;</span> <span class="n">maxTime</span> <span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span> <span class="o">=</span> <span class="n">maxTime</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span>
+            <span class="c1"># Data rate</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">rate</span><span class="p">):</span>
+                <span class="n">maxTime</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">_getMaxMeasurementTimeMS</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">maxTime</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errCorruptData</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="o">/</span><span class="n">maxTime</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errSpecRange</span>
+            <span class="c1"># Anything else</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="HTU21D.getStatus"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.getStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statusID</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve dynamic status info from the sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        The resulting status data object depends on the requested info</span>
+<span class="sd">        as follows:</span>
+<span class="sd">        </span>
+<span class="sd">        :attr:`.htu21d.StatusID.powerOk`:</span>
+<span class="sd">        Reads the power indicator bit (#6, End-of-Battery) and returns</span>
+<span class="sd">        a boolean True, if the VDD power is above the minimum required,</span>
+<span class="sd">        or False otherwise.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Sensor.getStatus`.</span>
+
+<span class="sd">        :param int statusID: Identifies the status information to be retrieved.</span>
+<span class="sd">        :return: The status object and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">statusID</span> <span class="o">==</span> <span class="n">StatusID</span><span class="o">.</span><span class="n">powerOk</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_READ_USR_REG</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="p">((</span><span class="n">data</span> <span class="o">&amp;</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_POWER</span><span class="p">)</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CNT_USR_POWER_GOOD</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">ret</span></div>
+        
+    <span class="nd">@classmethod</span>    
+    <span class="k">def</span> <span class="nf">_extractReading</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">isTemperature</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">reading</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xFC</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x03</span>
+        <span class="c1"># CRC is currently not checked</span>
+        <span class="c1">#crcValue = data[2]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">status</span><span class="o">==</span><span class="n">HTU21D</span><span class="o">.</span><span class="n">DIAG_CIRC_OPEN</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">reading</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+                <span class="c1"># Open circuit</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnderrun</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">isTemperature</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInadequate</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">status</span> <span class="o">==</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">DIAG_HUM_OK</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">isTemperature</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInadequate</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">status</span><span class="o">==</span><span class="n">HTU21D</span><span class="o">.</span><span class="n">DIAG_CIRC_SHORT</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">reading</span> <span class="o">==</span> <span class="mh">0xFFFC</span><span class="p">):</span>
+                <span class="c1"># Short circuit</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOverflow</span>
+        <span class="k">return</span> <span class="n">reading</span><span class="p">,</span> <span class="n">err</span>
+
+
+    <span class="k">def</span> <span class="nf">_getTemperature</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readBufferRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_GET_TEMP_HOLD</span><span class="p">,</span> <span class="mi">3</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">reading</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">_extractReading</span><span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="kc">True</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="c1"># Transfer function: temp = -46,85 + 175,72*reading/2^16</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">reading</span> <span class="o">*</span> <span class="mf">175.72</span> <span class="o">/</span> <span class="mh">0x10000</span> <span class="o">-</span> <span class="mf">46.85</span>
+        <span class="k">return</span> <span class="n">temp</span><span class="p">,</span> <span class="n">err</span>
+
+    
+    <span class="k">def</span> <span class="nf">_getHumidity</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">temp</span> <span class="p">):</span>
+        <span class="n">hum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readBufferRegister</span><span class="p">(</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">CMD_GET_HUM_HOLD</span><span class="p">,</span> <span class="mi">3</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">reading</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">HTU21D</span><span class="o">.</span><span class="n">_extractReading</span><span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="kc">False</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="c1"># RH transfer function: rh = -6 + 125 * reading / 2^16</span>
+            <span class="n">hum</span> <span class="o">=</span> <span class="n">reading</span> <span class="o">*</span> <span class="mi">125</span> <span class="o">/</span> <span class="mi">65536</span> <span class="o">-</span> <span class="mi">6</span>
+            <span class="c1"># Now, compensate by temperature</span>
+            <span class="n">hum</span> <span class="o">=</span> <span class="n">hum</span> <span class="o">+</span> <span class="p">(</span><span class="n">temp</span> <span class="o">-</span> <span class="mi">25</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.15</span>
+        <span class="k">return</span> <span class="n">hum</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">_getMeasurement</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">measurement</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">temp</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getTemperature</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">hum</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getHumidity</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="n">measurement</span> <span class="o">=</span> <span class="n">Data</span><span class="p">()</span>
+                <span class="n">measurement</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temp</span>
+                <span class="n">measurement</span><span class="o">.</span><span class="n">humidity</span> <span class="o">=</span> <span class="n">hum</span>
+                <span class="c1"># Update latest memory</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">latestData</span> <span class="o">=</span> <span class="n">measurement</span>
+        <span class="k">return</span> <span class="n">measurement</span><span class="p">,</span> <span class="n">err</span>
+    
+<div class="viewcode-block" id="HTU21D.getLatestData"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.getLatestData">[docs]</a>    <span class="k">def</span> <span class="nf">getLatestData</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the most recent data.</span>
+<span class="sd">        </span>
+<span class="sd">        If the data is older than the measurement interval indicated by</span>
+<span class="sd">        the configured data rate, a new measurement sample is retrieved</span>
+<span class="sd">        from the sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Sensor.getLatestData`.</span>
+
+<span class="sd">        :return: The measurement data object and an error code indicating\</span>
+<span class="sd">        either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">measurement</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">tNow</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">tNow</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span><span class="p">:</span>
+            <span class="n">measurement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">latestData</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">measurement</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getMeasurement</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">measurement</span><span class="p">,</span> <span class="n">err</span></div>
+    
+<div class="viewcode-block" id="HTU21D.getNextData"><a class="viewcode-back" href="../../philander.html#philander.htu21d.HTU21D.getNextData">[docs]</a>    <span class="k">def</span> <span class="nf">getNextData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait for the next sample and retrieve that measurement.</span>
+<span class="sd">        </span>
+<span class="sd">        If a full measurement interval, as defined by the configured</span>
+<span class="sd">        data rate, has not yet elapsed, wait until that point. Then,</span>
+<span class="sd">        retrieve a fresh measurement sample.</span>
+
+<span class="sd">        Also see: :meth:`.Sensor.getNextData`.</span>
+
+<span class="sd">        :return: The measurement data object and an error code indicating\</span>
+<span class="sd">        either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tNow</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">tDiff</span> <span class="o">=</span> <span class="n">tNow</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeStampLatest</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tDiff</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span><span class="p">):</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">measInterval</span> <span class="o">-</span> <span class="n">tDiff</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getMeasurement</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,557 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.ble &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.ble</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract interface for sub-systems connected via BlueTooth Low Energy (BLE).</span>
+
+<span class="sd">Provide an API to abstract from any type of BLE subsystem.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Event&quot;</span><span class="p">,</span> <span class="s2">&quot;ConnectionState&quot;</span><span class="p">,</span> <span class="s2">&quot;BLE&quot;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">Lock</span>
+
+<span class="kn">from</span> <span class="nn">bleak</span> <span class="kn">import</span> <span class="n">BleakClient</span><span class="p">,</span> <span class="n">BleakScanner</span><span class="p">,</span> <span class="n">BleakGATTCharacteristic</span>
+<span class="kn">from</span> <span class="nn">bleak.exc</span> <span class="kn">import</span> <span class="n">BleakDBusError</span>
+
+<span class="kn">from</span> <span class="nn">.interruptable</span> <span class="kn">import</span> <span class="n">Interruptable</span>
+<span class="kn">from</span> <span class="nn">.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../philander.html#philander.ble.Event">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Event</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to represent events, emitted by the BLE device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bleDisconnected</span><span class="o">=</span> <span class="s2">&quot;ble.disconnected&quot;</span>
+    <span class="n">bleDiscovering</span> <span class="o">=</span> <span class="s2">&quot;ble.discovering&quot;</span>
+    <span class="n">bleConnected</span>   <span class="o">=</span> <span class="s2">&quot;ble.connected&quot;</span></div>
+
+<div class="viewcode-block" id="ConnectionState"><a class="viewcode-back" href="../../philander.html#philander.ble.ConnectionState">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">ConnectionState</span><span class="p">(</span> <span class="n">Enum</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to represent BLE connection states</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">disconnected</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">discovering</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">connected</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+    
+
+<div class="viewcode-block" id="BLE"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE">[docs]</a><span class="k">class</span> <span class="nc">BLE</span><span class="p">(</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Interruptable</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of an BLE device or subsystem.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">DISCOVERY_TIMEOUT</span>   <span class="o">=</span> <span class="mf">5.0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Timeout for the discovery phase, given in seconds.&quot;&quot;&quot;</span>
+    <span class="n">WRITE_NOTIFICATION_TIMEOUT</span>  <span class="o">=</span> <span class="mf">0.5</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Timeout for a notification response after a GATT write, given in seconds.&quot;&quot;&quot;</span> 
+    
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="c1"># Initialize base class attributes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># Create instance attributes</span>
+        <span class="n">defDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">BLE</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">defDict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleDiscoveryTimeout</span> <span class="o">=</span> <span class="n">defDict</span><span class="p">[</span><span class="s2">&quot;BLE.discovery.timeout&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleClientName</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleCharacteristicUUID</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bleCharacteristic</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">=</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connectionStateLock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notificationData</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notificationLock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_writeLock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acceptNotificationLock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notificationReceivedLock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_asyncError</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evtEnabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="BLE.Params_init"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize parameters with their defaults.</span>
+<span class="sd">        </span>
+<span class="sd">        The following settings are supported:</span>
+<span class="sd">        </span>
+<span class="sd">        =======================    ==========================================================================================================</span>
+<span class="sd">        Key name                   Value type, meaning and default</span>
+<span class="sd">        =======================    ==========================================================================================================</span>
+<span class="sd">        BLE.discovery.timeout      ``int`` or ``float`` Timeout for the BLE discovery phase, given in seconds. :attr:`DISCOVERY_TIMEOUT`</span>
+<span class="sd">        BLE.client.name            ``string`` Name of the client device to connect to, given as a string. No default.</span>
+<span class="sd">        BLE.characteristic.uuid    ``string`` UUID of the client characteristic, given as a string. No default.</span>
+<span class="sd">        =======================    ==========================================================================================================</span>
+
+<span class="sd">        Also see: :meth:`.Module.Params_init`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: The configuration dictionary.</span>
+<span class="sd">        :returns: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;BLE.discovery.timeout&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;BLE.discovery.timeout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">BLE</span><span class="o">.</span><span class="n">DISCOVERY_TIMEOUT</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+    
+<div class="viewcode-block" id="BLE.open"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an instance and prepare it for use.</span>
+
+<span class="sd">        Also see: :meth:`.Module.open`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as\</span>
+<span class="sd">        possibly obtained from :meth:`Params_init`.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;BLE.discovery.timeout&quot;</span><span class="p">,</span> <span class="n">BLE</span><span class="o">.</span><span class="n">DISCOVERY_TIMEOUT</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span> <span class="n">val</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">BLE</span><span class="o">.</span><span class="n">DISCOVERY_TIMEOUT</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">BLE</span><span class="o">.</span><span class="n">DISCOVERY_TIMEOUT</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;BLE.discovery.timeout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleDiscoveryTimeout</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleClientName</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;BLE.client.name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bleClientName</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleCharacteristicUUID</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;BLE.characteristic.uuid&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bleCharacteristicUUID</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">isCoupled</span><span class="p">()</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decouple</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evtEnabled</span> <span class="o">=</span> <span class="kc">True</span>
+        
+        <span class="c1">#self.couple()</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="BLE.close"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shuts down the instance safely.</span>
+
+<span class="sd">        Also see: :meth:`.Module.close`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">isCoupled</span><span class="p">()</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decouple</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Interruptable API</span>
+    <span class="c1">#</span>
+    
+<div class="viewcode-block" id="BLE.enableInterrupt"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.enableInterrupt">[docs]</a>    <span class="k">def</span> <span class="nf">enableInterrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables the interrupt(s) of the implementing device.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason\</span>
+<span class="sd">        of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evtEnabled</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div>
+    
+<div class="viewcode-block" id="BLE.disableInterrupt"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.disableInterrupt">[docs]</a>    <span class="k">def</span> <span class="nf">disableInterrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Disables the interrupt(s) of the implementing device.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason\</span>
+<span class="sd">        of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_evtEnabled</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div>
+    
+<div class="viewcode-block" id="BLE.getEventContext"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.getEventContext">[docs]</a>    <span class="k">def</span> <span class="nf">getEventContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves more detailed information on an interrupt / event.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFewData</span></div>
+        
+    <span class="c1">#</span>
+    <span class="c1"># Specific public API</span>
+    <span class="c1">#</span>
+    
+<div class="viewcode-block" id="BLE.setDiscoveryTimeout"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.setDiscoveryTimeout">[docs]</a>    <span class="k">def</span> <span class="nf">setDiscoveryTimeout</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timeOut</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the BLE discovery timeout.</span>
+
+<span class="sd">        Discovery phase will definitely end, after the given time has elapsed.</span>
+<span class="sd">        </span>
+<span class="sd">        :param timeOut: The timeout, given in seconds.</span>
+<span class="sd">        :type timeOut: int or float</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bleDiscoveryTimeout</span> <span class="o">=</span> <span class="n">timeOut</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div>
+    
+<div class="viewcode-block" id="BLE.getConnectionState"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.getConnectionState">[docs]</a>    <span class="k">def</span> <span class="nf">getConnectionState</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the current BLE connection state.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: The current connection state.</span>
+<span class="sd">        :rtype: ConnectionState</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span></div>
+
+<div class="viewcode-block" id="BLE.isCoupled"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.isCoupled">[docs]</a>    <span class="k">def</span> <span class="nf">isCoupled</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tell the current coupling status of this instance.</span>
+<span class="sd">        </span>
+<span class="sd">        Informs the caller on whether or not the connection with the</span>
+<span class="sd">        actuator unit has been established via BLE and is still intact.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns :attr:`.ErrorCode.errOk` if the unit is coupled,</span>
+<span class="sd">        :attr:`.ErrorCode.errUnavailable` if it is not coupled</span>
+<span class="sd">        and any other value to indicate the reason, why this information</span>
+<span class="sd">        could not be retrieved.</span>
+
+<span class="sd">        :return: An error code to indicate, if the remote device is coupled or not. </span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connectionStateLock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">==</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">connected</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="BLE.couple"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.couple">[docs]</a>    <span class="k">def</span> <span class="nf">couple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trigger the procedure to establish a BLE connection.</span>
+<span class="sd">        </span>
+<span class="sd">        Return quickly with a success-or-failure indicator for this</span>
+<span class="sd">        triggering.</span>
+<span class="sd">        Notice on the result of the coupling is given via subscription</span>
+<span class="sd">        on the :attr:`Event.bleDiscovering` and</span>
+<span class="sd">        :attr:`Event.bleConnected` event.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">==</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span> <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_bleWorker</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;BLE coupling&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_couplingRoutine</span><span class="p">(),</span> <span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+    
+    
+<div class="viewcode-block" id="BLE.decouple"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.decouple">[docs]</a>    <span class="k">def</span> <span class="nf">decouple</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trigger the procedure to close a BLE connection.</span>
+<span class="sd">        </span>
+<span class="sd">        Return quickly with a success-or-failure indicator for this</span>
+<span class="sd">        triggering, i.e. gives :attr:`.ErrorCode.errOk`, if the procedure</span>
+<span class="sd">        launched, and a failure e.g. when the AU is not coupled.</span>
+<span class="sd">        Notice on the result of the decoupling is given via</span>
+<span class="sd">        subscription to the :attr:`Event.bleDisconnected` event.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">==</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">connected</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decouplingRoutine</span><span class="p">()</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInadequate</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="BLE.writeCharacteristic"><a class="viewcode-back" href="../../philander.html#philander.ble.BLE.writeCharacteristic">[docs]</a>    <span class="k">def</span> <span class="nf">writeCharacteristic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">,</span> <span class="n">readResponse</span> <span class="o">=</span> <span class="kc">False</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write data to the remote BLE characteristic.</span>
+<span class="sd">        </span>
+<span class="sd">        The instance must be coupled to a device, before using this</span>
+<span class="sd">        function.</span>
+<span class="sd">        The notification content is only valid if requested by ``readResponse=True``</span>
+<span class="sd">        and the error code indicates a successful operation.</span>
+<span class="sd">        </span>
+<span class="sd">        :param bytearray data: The content to write to the characteristic.</span>
+<span class="sd">        :param bool readResponse: Whether or not to read back the response notification.</span>
+<span class="sd">        :return: A tuple of an error code indicating either success or the reason of failure and the notification data.</span>
+<span class="sd">        :rtype: ErrorCode, bytearray</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">==</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">connected</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendRoutine</span><span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="n">readResponse</span> <span class="p">)</span> <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendRoutine</span><span class="p">(</span> <span class="n">data</span><span class="p">,</span> <span class="n">readResponse</span> <span class="p">)</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="n">readResponse</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_asyncError</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notificationData</span></div>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Internal helper functions</span>
+    <span class="c1">#</span>
+    
+
+    <span class="k">def</span> <span class="nf">_setState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newState</span> <span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connectionStateLock</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">=</span> <span class="n">newState</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_emitState</span><span class="p">(</span> <span class="n">newState</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+        
+    <span class="k">def</span> <span class="nf">_changeState</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">toState</span><span class="p">,</span> <span class="n">fromState</span><span class="o">=</span><span class="kc">None</span> <span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="kc">False</span>
+        
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connectionStateLock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">fromState</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">!=</span> <span class="n">toState</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">==</span> <span class="n">fromState</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bleConnectionState</span> <span class="o">=</span> <span class="n">toState</span>
+
+        <span class="k">if</span> <span class="n">ret</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_emitState</span><span class="p">(</span> <span class="n">toState</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_emitState</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newState</span><span class="p">):</span>
+        <span class="n">stateXevt</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span><span class="p">:</span>  <span class="n">Event</span><span class="o">.</span><span class="n">bleDisconnected</span><span class="p">,</span>
+            <span class="n">ConnectionState</span><span class="o">.</span><span class="n">connected</span><span class="p">:</span>     <span class="n">Event</span><span class="o">.</span><span class="n">bleConnected</span><span class="p">,</span>
+            <span class="n">ConnectionState</span><span class="o">.</span><span class="n">discovering</span><span class="p">:</span>   <span class="n">Event</span><span class="o">.</span><span class="n">bleDiscovering</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evtEnabled</span><span class="p">:</span>
+            <span class="n">evt</span> <span class="o">=</span> <span class="n">stateXevt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">newState</span><span class="p">,</span> <span class="n">Event</span><span class="o">.</span><span class="n">bleDisconnected</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fire</span><span class="p">(</span> <span class="n">evt</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+        
+    <span class="k">def</span> <span class="nf">_handleDisconnected</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">client</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setState</span><span class="p">(</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span> <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Unsolicited disconnect: &#39;</span> <span class="o">+</span> <span class="n">client</span><span class="o">.</span><span class="n">address</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_decouplingRoutine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close a BLE connection.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns nothing, but emits the :attr:`.Event.bleDisconnected`</span>
+<span class="sd">        event, as a side-effect.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decouplingRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; caught &#39;</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="p">)</span>
+        <span class="c1">#self._setState( ConnectionState.disconnected )</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_couplingRoutine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish a connection with the first available matching device.</span>
+<span class="sd">        </span>
+<span class="sd">        Do the BlueTooth coupling.</span>
+<span class="sd">        Returns nothing, but executes the bleDiscovering,</span>
+<span class="sd">        bleConnected or bleDisconnected events, as a side-effect.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Discovering</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_changeState</span><span class="p">(</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">discovering</span> <span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">device</span> <span class="o">=</span> <span class="k">await</span> <span class="n">BleakScanner</span><span class="o">.</span><span class="n">find_device_by_name</span><span class="p">(</span>
+                                    <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bleClientName</span><span class="p">,</span>
+                                    <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bleDiscoveryTimeout</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_setState</span><span class="p">(</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span> <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_couplingRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot; found BLE device:&quot;</span> <span class="o">+</span>
+                                  <span class="s2">&quot; name=&quot;</span> <span class="o">+</span> <span class="n">device</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span>
+                                  <span class="s2">&quot; address=&quot;</span> <span class="o">+</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span>
+                                  <span class="s2">&quot; RSSI=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">details</span><span class="p">[</span><span class="s2">&quot;props&quot;</span><span class="p">][</span><span class="s2">&quot;RSSI&quot;</span><span class="p">])</span> <span class="p">)</span>
+                    <span class="c1"># Try to connect</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span> <span class="o">=</span> <span class="n">BleakClient</span><span class="p">(</span> <span class="n">device</span><span class="p">,</span> <span class="n">disconnected_callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_handleDisconnected</span> <span class="p">)</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_couplingRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot; BLE connected.&quot;</span> <span class="p">)</span>
+                        <span class="n">svcColl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">services</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_bleCharacteristic</span> <span class="o">=</span> <span class="n">svcColl</span><span class="o">.</span><span class="n">get_characteristic</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">bleCharacteristicUUID</span> <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_setState</span><span class="p">(</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">connected</span> <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_couplingRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot; BLE could not connect.&quot;</span> <span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_setState</span><span class="p">(</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_couplingRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; caught &#39;</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_setState</span><span class="p">(</span> <span class="n">ConnectionState</span><span class="o">.</span><span class="n">disconnected</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="k">def</span> <span class="nf">_bleWorker</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">routine</span> <span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">is_closed</span><span class="p">():</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">is_running</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span> <span class="n">routine</span> <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_evtLoop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span> <span class="n">routine</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_handleNotification</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">sender</span><span class="p">:</span> <span class="n">BleakGATTCharacteristic</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytearray</span><span class="p">):</span>
+        <span class="k">del</span> <span class="n">sender</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notificationLock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acceptNotificationLock</span><span class="o">.</span><span class="n">locked</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_notificationData</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">data</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_notificationReceivedLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">rte</span><span class="p">:</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handleNotification</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; caught &#39;</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">rte</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rte</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_sendRoutine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmdData</span><span class="p">,</span> <span class="n">readResponse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writeLock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">readResponse</span><span class="p">:</span>
+                        <span class="n">flag</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">start_notify</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleCharacteristic</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handleNotification</span> <span class="p">)</span>
+                        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acceptNotificationLock</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_notificationReceivedLock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+                            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">write_gatt_char</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleCharacteristic</span><span class="p">,</span> <span class="n">cmdData</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+                            <span class="n">flag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notificationReceivedLock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">BLE</span><span class="o">.</span><span class="n">WRITE_NOTIFICATION_TIMEOUT</span><span class="p">)</span>
+                            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">stop_notify</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleCharacteristic</span> <span class="p">)</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_notificationReceivedLock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+                            <span class="n">flag</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">flag</span>
+                        <span class="k">finally</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_asyncError</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_asyncError</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFewData</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleClient</span><span class="o">.</span><span class="n">write_gatt_char</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bleCharacteristic</span><span class="p">,</span> <span class="n">cmdData</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="kc">True</span> <span class="p">)</span>
+                <span class="k">except</span> <span class="n">BleakDBusError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span> <span class="c1"># In Progress</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_asyncError</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; caught &#39;</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">err</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">dbus_error_details</span> <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_asyncError</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendRoutine</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39; caught &#39;</span> <span class="o">+</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

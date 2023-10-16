@@ -1,0 +1,563 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.fastgait.actorunit &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.fastgait.actorunit</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A module for the FastGait ActorUnit driver implementations.</span>
+
+<span class="sd">In case of FOG, the ActorUnit is alerted via BlueTooth and starts</span>
+<span class="sd">vibrating in pulses, giving the patient a tactile cueing impulse.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Event&quot;</span><span class="p">,</span> \
+           <span class="s2">&quot;Default&quot;</span><span class="p">,</span> <span class="s2">&quot;Intensity&quot;</span><span class="p">,</span> <span class="s2">&quot;Motor&quot;</span><span class="p">,</span> <span class="s2">&quot;TimerControl&quot;</span><span class="p">,</span> \
+           <span class="s2">&quot;Configuration&quot;</span><span class="p">,</span> \
+           <span class="s2">&quot;ActorUnit&quot;</span><span class="p">,]</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">auto</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span>
+
+<span class="kn">from</span> <span class="nn">philander.actuator</span> <span class="kn">import</span> <span class="n">Actuator</span><span class="p">,</span> <span class="n">Direction</span>
+<span class="kn">from</span> <span class="nn">philander.ble</span> <span class="kn">import</span> <span class="n">BLE</span>
+<span class="kn">from</span> <span class="nn">philander.configurable</span> <span class="kn">import</span> <span class="n">ConfigItem</span><span class="p">,</span> <span class="n">Configuration</span> <span class="k">as</span> <span class="n">BaseConfiguration</span><span class="p">,</span> <span class="n">Configurable</span>
+<span class="kn">from</span> <span class="nn">philander.primitives</span> <span class="kn">import</span> <span class="n">Percentage</span>
+<span class="kn">from</span> <span class="nn">philander.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.Event">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">Event</span><span class="p">(</span> <span class="n">Enum</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to represent events emitted by the ActorUnit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cueStandard</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">cueStop</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Default"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.Default">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Default</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for default values that are not part of any other data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">FIRST_DELAY</span>         <span class="o">=</span> <span class="mi">0</span>     <span class="c1"># immediately</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delay of the first pulse, given in milliseconds 0...65535 (0xFFFF). Zero (0) to start immediately.&quot;&quot;&quot;</span>
+    <span class="n">PULSE_PERIOD</span>        <span class="o">=</span> <span class="mi">200</span>  <span class="c1"># ms</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pulse period in milliseconds 0...65535 (0xFFFF).&quot;&quot;&quot;</span>
+    <span class="n">PULSE_ON_DURATION</span>   <span class="o">=</span> <span class="mi">120</span>   <span class="c1"># ms; 60% duty cycle</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pulse ON duration in milliseconds 0...65535 (0xFFFF). Must be less than the period.&quot;&quot;&quot;</span>
+    <span class="n">PULSE_COUNT</span>         <span class="o">=</span> <span class="mi">3</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Total number of pulses 0...255. Zero (0) means infinitely.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Intensity"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.Intensity">[docs]</a><span class="k">class</span> <span class="nc">Intensity</span><span class="p">(</span> <span class="n">Percentage</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structure to reflect the intensity that the vibration motors run on.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MIN</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimal intensity.&quot;&quot;&quot;</span>
+    <span class="n">OFF</span> <span class="o">=</span> <span class="n">MIN</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Least possible intensity, actually no vibration.&quot;&quot;&quot;</span>
+    <span class="n">WEAK</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weak intensity.&quot;&quot;&quot;</span>
+    <span class="n">MEDIUM</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Medium vibration intensity.&quot;&quot;&quot;</span>
+    <span class="n">STRONG</span> <span class="o">=</span> <span class="mi">80</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strong intensity.&quot;&quot;&quot;</span>
+    <span class="n">MAX</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Maximum possible intensity.&quot;&quot;&quot;</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">STRONG</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default intensity.&quot;&quot;&quot;</span></div>
+    
+<div class="viewcode-block" id="Motor"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.Motor">[docs]</a><span class="k">class</span> <span class="nc">Motor</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Motor selection used for vibration: Motor #1, or #2 or both.&quot;&quot;&quot;</span>
+    <span class="n">NONE</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mnemonics for no actuator&quot;&quot;&quot;</span>
+    <span class="n">ONE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;First actuator&quot;&quot;&quot;</span>
+    <span class="n">TWO</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Second actuator&quot;&quot;&quot;</span>
+    <span class="n">ALL</span>  <span class="o">=</span> <span class="n">ONE</span> <span class="o">|</span> <span class="n">TWO</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mnemonics for all motors&quot;&quot;&quot;</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">ALL</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Default motor selection.&quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="TimerControl"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.TimerControl">[docs]</a><span class="k">class</span> <span class="nc">TimerControl</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Structure to reflect the timer control setting as part of a vibration command</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">KEEP</span>  <span class="o">=</span> <span class="mh">0x00</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Keep the current timer setting.&quot;&quot;&quot;</span>
+    <span class="n">RESET</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reset the timer.&quot;&quot;&quot;</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">RESET</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Default timer control value.&quot;&quot;&quot;</span></div>
+    
+<div class="viewcode-block" id="Configuration"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.Configuration">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Configuration</span><span class="p">(</span> <span class="n">BaseConfiguration</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to represent a (default) configuration of the ActorUnit.</span>
+
+<span class="sd">    Pulses are emitted periodically in rectangle form and the low-level</span>
+<span class="sd">    API allows to configure:</span>
+<span class="sd">    - the length of one period,</span>
+<span class="sd">    - the length of the on-part,</span>
+<span class="sd">    - an initial delay and</span>
+<span class="sd">    - the number of periods to run.</span>
+<span class="sd">    </span>
+<span class="sd">    ::</span>
+<span class="sd">    </span>
+<span class="sd">                    |&lt; PULSE ON &gt;|</span>
+<span class="sd">                    _____________       _____________       ______     ON</span>
+<span class="sd">         ...........|            |______|            |______|     ...  OFF</span>
+<span class="sd">        |&lt;  DELAY  &gt;|&lt;      PERIOD     &gt;|</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">onDuration</span>  <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">PULSE_ON_DURATION</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Length of the duty cycle, given in milliseconds.&quot;&quot;&quot;</span>
+    <span class="n">period</span>      <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">PULSE_PERIOD</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Total length of each interval in milliseconds. Must be larger than the onDuration.&quot;&quot;&quot;</span> 
+    <span class="n">delay</span>       <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">FIRST_DELAY</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wait time before the first interval, specified in milliseconds.&quot;&quot;&quot;</span>
+    <span class="n">numPulses</span>   <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">PULSE_COUNT</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of repetitions. Zero means infinitely.&quot;&quot;&quot;</span>
+    <span class="n">intensity</span>   <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Intensity</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Intensity of the vibration [0...100].&quot;&quot;&quot;</span>
+    <span class="n">motors</span>      <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Motor</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Motor(s) to use for vibration. 0=none, 1=left, 2=right, 3=both.&quot;&quot;&quot;</span> 
+    <span class="n">resetTimer</span>  <span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">TimerControl</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether or not to reset the pulse timer. 0=keep, 1=reset.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ActorUnit"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit">[docs]</a><span class="k">class</span> <span class="nc">ActorUnit</span><span class="p">(</span> <span class="n">BLE</span><span class="p">,</span> <span class="n">Actuator</span><span class="p">,</span> <span class="n">Configurable</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of the vibration belt driver, also called ActorUnit.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Public attributes</span>
+    <span class="c1">#</span>
+
+    <span class="n">CMD_START</span>         <span class="o">=</span> <span class="mh">0x01</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to start a vibration as specified by further parameters.&quot;&quot;&quot;</span> 
+    <span class="n">CMD_STOP</span>          <span class="o">=</span> <span class="mh">0x02</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command to immediately stop vibration.&quot;&quot;&quot;</span> 
+    <span class="n">CMD_SET_DEFAULT</span>   <span class="o">=</span> <span class="mh">0x03</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configure default vibration parameters.&quot;&quot;&quot;</span>
+    <span class="n">CMD_GET_DEFAULT</span>   <span class="o">=</span> <span class="mh">0x04</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve current default configuration:&quot;&quot;&quot;</span>
+    <span class="n">CMD_START_DEFAULT</span> <span class="o">=</span> <span class="mh">0x05</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Start vibration as specified by the default parameters.&quot;&quot;&quot;</span>
+    
+    <span class="n">CMDBUF_STOP</span>          <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span> <span class="p">[</span><span class="n">CMD_STOP</span><span class="p">]</span> <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command buffer to stop vibration.&quot;&quot;&quot;</span>
+    <span class="n">CMDBUF_GET_DEFAULT</span>   <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span> <span class="p">[</span><span class="n">CMD_GET_DEFAULT</span><span class="p">]</span> <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command buffer to retrieve default vibration parameters.&quot;&quot;&quot;</span>
+    <span class="n">CMDBUF_START_DEFAULT</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span> <span class="p">[</span><span class="n">CMD_START_DEFAULT</span><span class="p">]</span> <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Complete command buffer to start vibration using the default parameter set.&quot;&quot;&quot;</span>
+
+    <span class="c1"># BLE UUIDs</span>
+    <span class="c1">#DEVICE_UUID         = &#39;0000fa01-0000-1000-8000-00805f9b34fb&#39;</span>
+    <span class="n">CLIENT_NAME</span>         <span class="o">=</span> <span class="s2">&quot;FastGait AU&quot;</span>
+    <span class="n">CHARACTERISTIC_UUID</span> <span class="o">=</span> <span class="s1">&#39;0000fa61-0000-1000-8000-00805f9b34fb&#39;</span>
+    
+
+    <span class="c1">#</span>
+    <span class="c1"># Private attributes</span>
+    <span class="c1">#</span>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Module API</span>
+    <span class="c1">#</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="c1"># Initialize base class attributes</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># Create instance attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">(</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">implicit</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span> <span class="mi">11</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="ActorUnit.Params_init"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize parameters with their defaults.</span>
+<span class="sd">        </span>
+<span class="sd">        The following settings are supported:</span>
+<span class="sd">        </span>
+<span class="sd">        ===============================    ==========================================================================================================</span>
+<span class="sd">        Key name                           Value type, meaning and default</span>
+<span class="sd">        ===============================    ==========================================================================================================</span>
+<span class="sd">        ActorUnit.delay                    ``int`` [0...65535] Initial delay in ms; :attr:`DELAY_DEFAULT`</span>
+<span class="sd">        ActorUnit.pulsePeriod              ``int`` [0...65535] Length of one period in ms; :attr:`PULSE_PERIOD_DEFAULT`</span>
+<span class="sd">        ActorUnit.pulseOn                  ``int`` [0...pulsePeriod] Length of the active part in that period in ms; :attr:`PULSE_ON_DEFAULT`</span>
+<span class="sd">        ActorUnit.pulseCount               ``int`` [0...255] Number of pulses. Zero (0) means infinite pulses. :attr:`PULSE_COUNT_DEFAULT`</span>
+<span class="sd">        ActorUnit.pulseIntensity           ``int`` [0...100] Intensity of the pulses given as a percentage %. :attr:`PULSE_INTENSITY_DEFAULT`</span>
+<span class="sd">        ActorUnit.motors                   Motors to be used for the pulses [0...3] meaning none, left, right, both motors; :attr:`MOTORS_DEFAULT`</span>
+<span class="sd">        All other BLE.* settings as documented at :meth:`.BLE.Params_init`.</span>
+<span class="sd">        =============================================================================================================================================</span>
+
+<span class="sd">        Also see: :meth:`.Module.Params_init`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: The configuration dictionary.</span>
+<span class="sd">        :returns: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># ActorUnit pulse configuration</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;ActorUnit.delay&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;ActorUnit.delay&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">FIRST_DELAY</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;ActorUnit.pulsePeriod&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;ActorUnit.pulsePeriod&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">PULSE_PERIOD</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;ActorUnit.pulseOn&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;ActorUnit.pulseOn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">PULSE_ON_DURATION</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;ActorUnit.pulseCount&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;ActorUnit.pulseCount&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Default</span><span class="o">.</span><span class="n">PULSE_COUNT</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;ActorUnit.pulseIntensity&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;ActorUnit.pulseIntensity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Intensity</span><span class="o">.</span><span class="n">DEFAULT</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;ActorUnit.motors&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;ActorUnit.motors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Motor</span><span class="o">.</span><span class="n">DEFAULT</span>
+        <span class="c1"># BLE UUIDs</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;BLE.client.name&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;BLE.client.name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CLIENT_NAME</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="s2">&quot;BLE.characteristic.uuid&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;BLE.characteristic.uuid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CHARACTERISTIC_UUID</span>
+        <span class="c1"># General BLE configuration</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ActorUnit</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">paramDict</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_extractParameterInt</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">default</span><span class="p">,</span> <span class="n">lowLimit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">highLimit</span><span class="o">=</span><span class="mh">0xFFFF</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">intValue</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="mi">0</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">intValue</span> <span class="o">=</span> <span class="n">default</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">intValue</span> <span class="o">&lt;</span> <span class="n">lowLimit</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">intValue</span> <span class="o">&gt;</span> <span class="n">highLimit</span><span class="p">):</span>
+            <span class="n">intValue</span> <span class="o">=</span> <span class="n">default</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">return</span> <span class="n">intValue</span><span class="p">,</span> <span class="n">err</span>
+    
+    
+<div class="viewcode-block" id="ActorUnit.open"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize an instance and prepare it for use.</span>
+
+<span class="sd">        Also see: :meth:`.Module.open`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as\</span>
+<span class="sd">        possibly obtained from :meth:`Params_init`.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">defParam</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">ActorUnit</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">defParam</span> <span class="p">)</span>
+        
+        <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;ActorUnit.delay&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">_extractParameterInt</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0xFFFF</span> <span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="n">val</span>
+            
+        <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;ActorUnit.pulsePeriod&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">_extractParameterInt</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0xFFFF</span> <span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">period</span> <span class="o">=</span> <span class="n">val</span>
+            
+        <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;ActorUnit.pulseOn&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">_extractParameterInt</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">period</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">period</span> <span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">onDuration</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;ActorUnit.pulseCount&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">_extractParameterInt</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0xFF</span> <span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">numPulses</span> <span class="o">=</span> <span class="n">val</span>
+            
+        <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;ActorUnit.pulseIntensity&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">val</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">_extractParameterInt</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">],</span> <span class="n">Intensity</span><span class="o">.</span><span class="n">MIN</span><span class="p">,</span> <span class="n">Intensity</span><span class="o">.</span><span class="n">MAX</span> <span class="p">)</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="n">val</span>
+            
+        <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;ActorUnit.motors&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Motor</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">Motor</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">val</span><span class="p">,</span> <span class="mi">0</span> <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="o">&lt;</span> <span class="n">Motor</span><span class="o">.</span><span class="n">NONE</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">val</span> <span class="o">&gt;</span> <span class="n">Motor</span><span class="o">.</span><span class="n">ALL</span><span class="p">):</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">motors</span> <span class="o">=</span> <span class="n">val</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;BLE.client.name&quot;</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">sKey</span> <span class="o">=</span> <span class="s2">&quot;BLE.characteristic.uuid&quot;</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">sKey</span><span class="p">,</span> <span class="n">defParam</span><span class="p">[</span><span class="n">sKey</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">paramDict</span> <span class="p">)</span>
+        
+        <span class="c1">#self.couple()</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="c1">#</span>
+    <span class="c1"># Configurable API</span>
+    <span class="c1">#</span>
+    
+<div class="viewcode-block" id="ActorUnit.configure"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configData</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-configures the driver&#39;s default vibration parameters.</span>
+
+<span class="sd">        :param .actorunit.Configuration configData: The configuration to apply.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">configData</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFewData</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">configData</span><span class="p">,</span> <span class="n">Configuration</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+            <span class="c1"># Do range-checking, instead of blunt copy</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">period</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">period</span> <span class="o">&lt;=</span> <span class="mh">0xFFFF</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">period</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">period</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">onDuration</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">onDuration</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">period</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">onDuration</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">onDuration</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">delay</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">delay</span> <span class="o">&lt;=</span> <span class="mh">0xFFFF</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">delay</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">delay</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">numPulses</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">numPulses</span> <span class="o">&lt;=</span> <span class="mh">0xFF</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">numPulses</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">numPulses</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">Intensity</span><span class="o">.</span><span class="n">MIN</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">intensity</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">intensity</span> <span class="o">&lt;=</span> <span class="n">Intensity</span><span class="o">.</span><span class="n">MAX</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">intensity</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">intensity</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">Motor</span><span class="o">.</span><span class="n">NONE</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">motors</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">motors</span> <span class="o">&lt;=</span> <span class="n">Motor</span><span class="o">.</span><span class="n">ALL</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">motors</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">motors</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">TimerControl</span><span class="o">.</span><span class="n">KEEP</span> <span class="o">&lt;=</span> <span class="n">configData</span><span class="o">.</span><span class="n">resetTimer</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">resetTimer</span> <span class="o">&lt;=</span> <span class="n">TimerControl</span><span class="o">.</span><span class="n">RESET</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">resetTimer</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">resetTimer</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+                
+        <span class="k">return</span> <span class="n">result</span></div>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Actuator API</span>
+    <span class="c1">#</span>
+    
+<div class="viewcode-block" id="ActorUnit.action"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.action">[docs]</a>    <span class="k">def</span> <span class="nf">action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes a predefined action or movement pattern with this actuator.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int pattern: The action pattern to execute.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">pattern</span>
+        <span class="n">result</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CMDBUF_START_DEFAULT</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="ActorUnit.startOperation"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.startOperation">[docs]</a>    <span class="k">def</span> <span class="nf">startOperation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="n">Direction</span><span class="o">.</span><span class="n">positive</span><span class="p">,</span>
+                       <span class="n">strengthIntensity</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">onSpeedDuty</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">ctrlInterval</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                       <span class="n">durationLengthCycles</span> <span class="o">=</span> <span class="kc">None</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Issue a start command to the actuator unit.</span>
+
+<span class="sd">        Make the actor unit start cueing.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">direction</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">strengthIntensity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">strengthIntensity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">intensity</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">onSpeedDuty</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">onSpeedDuty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">onDuration</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ctrlInterval</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">ctrlInterval</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">period</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">durationLengthCycles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">durationLengthCycles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">numPulses</span>
+        <span class="c1">#Create parametric start-vibration-command buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CMD_START</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">onSpeedDuty</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">onSpeedDuty</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctrlInterval</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">ctrlInterval</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">delay</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">delay</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">durationLengthCycles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">strengthIntensity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">motors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vibConfig</span><span class="o">.</span><span class="n">resetTimer</span>
+        
+        <span class="n">result</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+    
+<div class="viewcode-block" id="ActorUnit.stopOperation"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.stopOperation">[docs]</a>    <span class="k">def</span> <span class="nf">stopOperation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Issue a stop command to the actuator unit.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CMDBUF_STOP</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+    <span class="c1">#</span>
+    <span class="c1"># Individual specific API</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="ActorUnit.getDefault"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.getDefault">[docs]</a>    <span class="k">def</span> <span class="nf">getDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve default configuration from the remote client unit.</span>
+
+<span class="sd">        :return: The configuration and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Configuration, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">()</span>
+        <span class="n">err</span><span class="p">,</span> <span class="n">dataBuf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CMDBUF_GET_DEFAULT</span><span class="p">,</span>
+                                                 <span class="n">readResponse</span> <span class="o">=</span> <span class="kc">True</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">dataBuf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataBuf</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">11</span><span class="p">)</span> <span class="p">):</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFewData</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># neglect CMD byte at index 0</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">onDuration</span>  <span class="o">=</span> <span class="p">(</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">period</span>      <span class="o">=</span> <span class="p">(</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">delay</span>       <span class="o">=</span> <span class="p">(</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">numPulses</span>   <span class="o">=</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">intensity</span>   <span class="o">=</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">motors</span>      <span class="o">=</span> <span class="n">Motor</span><span class="p">(</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="p">)</span>
+                <span class="n">cfg</span><span class="o">.</span><span class="n">resetTimer</span>  <span class="o">=</span> <span class="n">TimerControl</span><span class="p">(</span> <span class="n">dataBuf</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">err</span></div>
+    
+<div class="viewcode-block" id="ActorUnit.setDefault"><a class="viewcode-back" href="../../../philander.fastgait.html#philander.fastgait.actorunit.ActorUnit.setDefault">[docs]</a>    <span class="k">def</span> <span class="nf">setDefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">newDefault</span><span class="p">:</span> <span class="n">Configuration</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store default configuration onto the remote client unit.</span>
+
+<span class="sd">        :param newDefault: The configuration to store as the new default.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">ActorUnit</span><span class="o">.</span><span class="n">CMD_SET_DEFAULT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">onDuration</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">onDuration</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">period</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">period</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">delay</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">delay</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">numPulses</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">intensity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">motors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="n">newDefault</span><span class="o">.</span><span class="n">resetTimer</span>
+        
+        <span class="n">result</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataBuf</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div></div>
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

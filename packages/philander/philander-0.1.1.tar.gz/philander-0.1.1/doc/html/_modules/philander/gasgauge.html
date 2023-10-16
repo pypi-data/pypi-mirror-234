@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.gasgauge &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.gasgauge</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;A module to provide base classes and data types for gas gauge driver implementations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;GasGauge&quot;</span><span class="p">,</span><span class="s2">&quot;SOCChangeRate&quot;</span><span class="p">,</span> <span class="s2">&quot;EventSource&quot;</span><span class="p">,</span> <span class="s2">&quot;EventContext&quot;</span><span class="p">,</span>\
+           <span class="s2">&quot;StatusID&quot;</span><span class="p">,]</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">unique</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="kn">from</span> <span class="nn">.battery</span> <span class="kn">import</span> <span class="n">Status</span> <span class="k">as</span> <span class="n">BatStatus</span><span class="p">,</span> <span class="n">Level</span> <span class="k">as</span> <span class="n">BatLevel</span>
+<span class="kn">from</span> <span class="nn">.primitives</span> <span class="kn">import</span> <span class="n">Current</span><span class="p">,</span> <span class="n">Voltage</span><span class="p">,</span> <span class="n">Percentage</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">Info</span>
+
+
+<div class="viewcode-block" id="SOCChangeRate"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.SOCChangeRate">[docs]</a><span class="k">class</span> <span class="nc">SOCChangeRate</span><span class="p">(</span><span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;State of charge (SOC) change rate, given in milli-C rate [mC].</span>
+
+<span class="sd">    Remember 1C = 100% per 1 hour.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">invalid</span> <span class="o">=</span> <span class="mh">0xFFFF</span></div>
+
+<div class="viewcode-block" id="EventSource"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.EventSource">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">EventSource</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; * Event source type to detail the reason for an interrupt occurrence.</span>
+<span class="sd">    </span>
+<span class="sd">    Not all implementations will support all types of interrupt.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">none</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;No event reason&quot;&quot;&quot;</span>
+    <span class="n">lowSOC</span>          <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SOC dropped below a threshold&quot;&quot;&quot;</span>
+    <span class="n">highSOC</span>          <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SOC reached a high/full info level&quot;&quot;&quot;</span>
+    <span class="n">lowVolt</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Battery voltage dropped below a threshold&quot;&quot;&quot;</span>
+    <span class="n">batFail</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;General battery failure, e.g. battery swapped&quot;&quot;&quot;</span>
+    <span class="n">undervoltage</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Brown-out/Lockout due to low voltage&quot;&quot;&quot;</span>
+    <span class="n">hardReset</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Power-on reset detected&quot;&quot;&quot;</span>
+    <span class="n">unknown</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">(),</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unknown event reason&quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="EventContext"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.EventContext">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">EventContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Event context type to detail the context information for an interrupt occurrence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source</span><span class="p">:</span>     <span class="n">EventSource</span> <span class="o">=</span> <span class="n">EventSource</span><span class="o">.</span><span class="n">none</span>
+    <span class="n">soc</span><span class="p">:</span>        <span class="n">Percentage</span>  <span class="o">=</span> <span class="n">Percentage</span><span class="o">.</span><span class="n">invalid</span>
+    <span class="n">voltage</span><span class="p">:</span>    <span class="n">Voltage</span>     <span class="o">=</span> <span class="n">Voltage</span><span class="o">.</span><span class="n">invalid</span>
+    <span class="n">batStatus</span><span class="p">:</span>  <span class="n">BatStatus</span>   <span class="o">=</span> <span class="n">BatStatus</span><span class="o">.</span><span class="n">unknown</span></div>
+
+<div class="viewcode-block" id="StatusID"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.StatusID">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">StatusID</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to comprise different types of status information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">batTemp</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">dieTemp</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="GasGauge"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge">[docs]</a><span class="k">class</span> <span class="nc">GasGauge</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a driver base class for a gas gauge IC.</span>
+<span class="sd">    </span>
+<span class="sd">    A gas gauge allows to keep track of the state of charge</span>
+<span class="sd">    (SOC), remaining capacity, current voltage etc. of a battery.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GasGauge.reset"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Soft resets the device.</span>
+<span class="sd">        </span>
+<span class="sd">        The device is in some default state, afterwards and must be</span>
+<span class="sd">        re-configured according to the application&#39;s needs.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="GasGauge.getInfo"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getInfo">[docs]</a>    <span class="k">def</span> <span class="nf">getInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves an information block from the gas gauge device.</span>
+<span class="sd">        </span>
+<span class="sd">        Typically, this kind of information is rather static in that,</span>
+<span class="sd">        it does not change over time. Usually, this information is</span>
+<span class="sd">        somewhat unique for the charger origin, manufacturing date,</span>
+<span class="sd">        hardware/firmware revision, product/model ID, chip series and alike.</span>
+<span class="sd">        For that reason, this function can be used to see,</span>
+<span class="sd">        if communication works reliably.</span>
+
+<span class="sd">        For more dynamic meta-information see :meth:`getStatus`.</span>
+<span class="sd">        </span>
+<span class="sd">        The method returns both, an instance of :class:`Info`, carrying</span>
+<span class="sd">        the information block as well as an error code, indicating</span>
+<span class="sd">        success or failure. The info block shall be evaluated only, if</span>
+<span class="sd">        the method returned successfully.</span>
+<span class="sd">        Even then, the caller should still evaluate the ``validity``</span>
+<span class="sd">        attribute of the returned info block to find out, which of the</span>
+<span class="sd">        information is actually valid.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: The information object and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Info, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">Info</span><span class="p">()</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">return</span> <span class="n">info</span><span class="p">,</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="GasGauge.getStatus"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statusID</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves status data from the device.</span>
+<span class="sd">        </span>
+<span class="sd">        Typically, this kind of information is more dynamic in that, it</span>
+<span class="sd">        changes (much) over time. Usually, it further describes the</span>
+<span class="sd">        IC&#39;s current shape and condition, such as the availability of</span>
+<span class="sd">        new data, the cause of an interrupt or the status of</span>
+<span class="sd">        certain hardware functions. Also, secondary measurements such as</span>
+<span class="sd">        the die temperature could be subject to status data.</span>
+<span class="sd">        </span>
+<span class="sd">        For more static meta-information see :meth:`getInfo`.</span>
+<span class="sd">        </span>
+<span class="sd">        The given ``statusID`` parameter specifies, exactly which status</span>
+<span class="sd">        information should be retrieved. Its type and interpretation</span>
+<span class="sd">        depends on the implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        The method returns both, resulting status data and an error code</span>
+<span class="sd">        indicating success or failure. The status data should be considered</span>
+<span class="sd">        valid only, if the error code indicates a successful execution</span>
+<span class="sd">        of this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The type and interpretation of the status data depends on the</span>
+<span class="sd">        specific implementation.</span>
+
+<span class="sd">        :param int statusID: Identifies the status information to be retrieved.</span>
+<span class="sd">        :return: The status object and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">statusID</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span></div>
+
+
+    
+<div class="viewcode-block" id="GasGauge.getStateOfCharge"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getStateOfCharge">[docs]</a>    <span class="k">def</span> <span class="nf">getStateOfCharge</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the state of charge.</span>
+<span class="sd">        </span>
+<span class="sd">        That is the fraction of electric energy from the total capacity,</span>
+<span class="sd">        that is still or already stored in the battery. This information</span>
+<span class="sd">        is valid for both, the charging as well as the discharging process.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A percentage [0...100] value or :attr:`Percentage.invalid`\</span>
+<span class="sd">        to indicate that this information could not be retrieved.</span>
+<span class="sd">        :rtype: Percentage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Percentage</span><span class="o">.</span><span class="n">invalid</span></div>
+
+<div class="viewcode-block" id="GasGauge.getChangeRate"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getChangeRate">[docs]</a>    <span class="k">def</span> <span class="nf">getChangeRate</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the SOC change rate in milli C.</span>
+<span class="sd">        </span>
+<span class="sd">        Remember that 1C = 100% in 1 hour. This information may be used</span>
+<span class="sd">        to estimate the remaining stamina or how long the charging</span>
+<span class="sd">        process will still take.</span>
+<span class="sd">        :return: A SOC change rate (non-negative) or :attr:&#39;SOCChangeRate.invalid`\</span>
+<span class="sd">        to indicate that this information could not be retrieved.</span>
+<span class="sd">        :rtype: SOCChangeRate</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SOCChangeRate</span><span class="o">.</span><span class="n">invalid</span></div>
+    
+<div class="viewcode-block" id="GasGauge.getBatteryVoltage"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getBatteryVoltage">[docs]</a>    <span class="k">def</span> <span class="nf">getBatteryVoltage</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the battery voltage in milli Volt.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A on-negative integer value [mV] or :attr:`Voltage.invalid`\</span>
+<span class="sd">        to indicate that this information could not be retrieved.</span>
+<span class="sd">        :rtype: Voltage</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Voltage</span><span class="o">.</span><span class="n">invalid</span></div>
+
+<div class="viewcode-block" id="GasGauge.getBatteryCurrent"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getBatteryCurrent">[docs]</a>    <span class="k">def</span> <span class="nf">getBatteryCurrent</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the battery current in micro Ampere at the time this\</span>
+<span class="sd">        function is executed.</span>
+<span class="sd">        </span>
+<span class="sd">        See also: :meth:`getBatteryCurrentAvg`</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A on-negative integer value [µA] or :attr:`Current.invalid`\</span>
+<span class="sd">        to indicate that this information could not be retrieved.</span>
+<span class="sd">        :rtype: Current</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Current</span><span class="o">.</span><span class="n">invalid</span></div>
+
+<div class="viewcode-block" id="GasGauge.getBatteryCurrentAvg"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getBatteryCurrentAvg">[docs]</a>    <span class="k">def</span> <span class="nf">getBatteryCurrentAvg</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the average battery current.</span>
+<span class="sd">        </span>
+<span class="sd">        The average is taken over some time interval, e.g. 2 seconds.</span>
+<span class="sd">        The length of the time window is at the discretion of the</span>
+<span class="sd">        implementation and cannot be adjusted by the caller.</span>
+<span class="sd">        </span>
+<span class="sd">        See also: :meth:`getBatteryCurrent`</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A on-negative integer value [�A] or :attr:`Current.invalid`\</span>
+<span class="sd">        to indicate that this information could not be retrieved.</span>
+<span class="sd">        :rtype: Current</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Current</span><span class="o">.</span><span class="n">invalid</span></div>
+
+
+<div class="viewcode-block" id="GasGauge.rateSOC"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.rateSOC">[docs]</a>    <span class="k">def</span> <span class="nf">rateSOC</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">soc</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a continuous SOC percentage into its next-lower battery level predicate.</span>
+<span class="sd">        </span>
+<span class="sd">        Does not retrieve any information from the underlying hardware.</span>
+
+<span class="sd">        :param Percentage soc: The state of charge, given in percent.</span>
+<span class="sd">        :return: The next-lower battery level mnemonic.</span>
+<span class="sd">        :rtype: battery.Level</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">medium</span>
+        <span class="k">if</span> <span class="n">soc</span> <span class="o">&gt;=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">full</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">full</span>
+        <span class="k">elif</span> <span class="n">soc</span> <span class="o">&gt;=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">good</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">good</span>
+        <span class="k">elif</span> <span class="n">soc</span> <span class="o">&gt;=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">medium</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">medium</span>
+        <span class="k">elif</span> <span class="n">soc</span> <span class="o">&gt;=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">low</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">low</span>
+        <span class="k">elif</span> <span class="n">soc</span> <span class="o">&gt;=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">empty</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">BatLevel</span><span class="o">.</span><span class="n">deepDischarge</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+    
+<div class="viewcode-block" id="GasGauge.getRatedSOC"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getRatedSOC">[docs]</a>    <span class="k">def</span> <span class="nf">getRatedSOC</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the current state of charge as a discrete battery level predicate.</span>
+
+<span class="sd">        :return: The next-lower battery level corresponding to the current SOC.</span>
+<span class="sd">        :rtype: battery.Level</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">soc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getStateOfCharge</span><span class="p">()</span>
+        <span class="n">lvl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rateSOC</span><span class="p">(</span> <span class="n">soc</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">lvl</span></div>
+    
+<div class="viewcode-block" id="GasGauge.getRatedSOCStr"><a class="viewcode-back" href="../../philander.html#philander.gasgauge.GasGauge.getRatedSOCStr">[docs]</a>    <span class="k">def</span> <span class="nf">getRatedSOCStr</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the remaining capacity as a battery level string.</span>
+
+<span class="sd">        :return: The next-lower battery level corresponding to the current SOC.</span>
+<span class="sd">        :rtype: String</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lvl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getRatedSOC</span><span class="p">()</span>
+        <span class="n">lvlStr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span> <span class="n">lvl</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">lvlStr</span></div></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

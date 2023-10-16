@@ -1,0 +1,1024 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.bma456_reg &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.bma456_reg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Register definition for the BMA456 accelerometer.</span>
+<span class="sd">    </span>
+<span class="sd">    Definition of registers, content masks and default values for the</span>
+<span class="sd">    above mentioined chip.</span>
+<span class="sd">    Externalized, just for clarity of the source code.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;BMA456_Reg&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="BMA456_Reg"><a class="viewcode-back" href="../../philander.html#philander.bma456_reg.BMA456_Reg">[docs]</a><span class="k">class</span> <span class="nc">BMA456_Reg</span><span class="p">:</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Definitions of known feature sets</span>
+    <span class="c1">#</span>
+    <span class="n">BMA456_FEATURE_SET_WEARABLE</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c1"># Wearable gadget like watch</span>
+    <span class="n">BMA456_FEATURE_SET_HEARABLE</span> <span class="o">=</span> <span class="mi">1</span>     <span class="c1"># Hearable gadget like ear pod</span>
+    <span class="n">BMA456_FEATURE_SET_MM</span>       <span class="o">=</span> <span class="mi">2</span>     <span class="c1"># Mass market</span>
+    <span class="n">BMA456_FEATURE_SET_AN</span>       <span class="o">=</span> <span class="mi">3</span>     <span class="c1"># Any/No motion device</span>
+    <span class="n">BMA456_NUM_FEATURE_SETS</span>     <span class="o">=</span> <span class="mi">4</span>     <span class="c1"># Total number of feature sets</span>
+    <span class="n">BMA456_DEFAULT_FEATURE_SET</span>  <span class="o">=</span> <span class="n">BMA456_FEATURE_SET_WEARABLE</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Definition of BMA456 registers and register content.</span>
+    <span class="c1">#</span>
+    <span class="c1"># Feature set: All</span>
+    <span class="n">BMA456_REG_CHIP_ID</span>      <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_CHIP_ID</span>      <span class="o">=</span> <span class="mh">0x16</span>
+    <span class="n">BMA456_REG_ERROR</span>        <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_ERROR_AUX</span>    <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_ERROR_FIFO</span>   <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_CNT_ERROR_CODE</span>   <span class="o">=</span> <span class="mh">0x1C</span>
+    <span class="n">BMA456_CNT_ERROR_CODE_NONE</span><span class="o">=</span><span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_ERROR_CODE_ACC</span><span class="o">=</span><span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_ERROR_CMD</span>    <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_ERROR_FATAL</span>  <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_REG_STATUS</span>       <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_CNT_STATUS_DRDY_ACC</span><span class="o">=</span><span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_STATUS_DRDY_AUX</span><span class="o">=</span><span class="mh">0x20</span>
+    <span class="n">BMA456_CNT_STATUS_CMD_RDY</span><span class="o">=</span><span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_STATUS_AUX_MAN_OP</span><span class="o">=</span><span class="mh">0x04</span>
+    <span class="n">BMA456_REG_AUX_X_LOW</span>    <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_REG_DATA0</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_X_LOW</span>
+    <span class="n">BMA456_REG_AUX_X_HI</span>     <span class="o">=</span> <span class="mh">0x0B</span>
+    <span class="n">BMA456_REG_DATA1</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_X_HI</span>
+    <span class="n">BMA456_REG_AUX_X</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_X_LOW</span>
+    <span class="n">BMA456_REG_AUX_Y_LOW</span>    <span class="o">=</span> <span class="mh">0x0C</span>
+    <span class="n">BMA456_REG_DATA2</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_Y_LOW</span>
+    <span class="n">BMA456_REG_AUX_Y_HI</span>     <span class="o">=</span> <span class="mh">0x0D</span>
+    <span class="n">BMA456_REG_DATA3</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_Y_HI</span>
+    <span class="n">BMA456_REG_AUX_Y</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_Y_LOW</span>
+    <span class="n">BMA456_REG_AUX_Z_LOW</span>    <span class="o">=</span> <span class="mh">0x0E</span>
+    <span class="n">BMA456_REG_DATA4</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_Z_LOW</span>
+    <span class="n">BMA456_REG_AUX_Z_HI</span>     <span class="o">=</span> <span class="mh">0x0F</span>
+    <span class="n">BMA456_REG_DATA5</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_Z_HI</span>
+    <span class="n">BMA456_REG_AUX_Z</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_Z_LOW</span>
+    <span class="n">BMA456_REG_AUX_R_LOW</span>    <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_REG_DATA6</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_R_LOW</span>
+    <span class="n">BMA456_REG_AUX_R_HI</span>     <span class="o">=</span> <span class="mh">0x11</span>
+    <span class="n">BMA456_REG_DATA7</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_R_HI</span>
+    <span class="n">BMA456_REG_AUX_R</span>        <span class="o">=</span> <span class="n">BMA456_REG_AUX_R_LOW</span>
+    <span class="n">BMA456_REG_ACC_X_LOW</span>    <span class="o">=</span> <span class="mh">0x12</span>
+    <span class="n">BMA456_REG_DATA8</span>        <span class="o">=</span> <span class="n">BMA456_REG_ACC_X_LOW</span>
+    <span class="n">BMA456_REG_ACC_X_HI</span>     <span class="o">=</span> <span class="mh">0x13</span>
+    <span class="n">BMA456_REG_DATA9</span>        <span class="o">=</span> <span class="n">BMA456_REG_ACC_X_HI</span>
+    <span class="n">BMA456_REG_ACC_X</span>        <span class="o">=</span> <span class="n">BMA456_REG_ACC_X_LOW</span>
+    <span class="n">BMA456_REG_ACC_Y_LOW</span>    <span class="o">=</span> <span class="mh">0x14</span>
+    <span class="n">BMA456_REG_DATA10</span>       <span class="o">=</span> <span class="n">BMA456_REG_ACC_Y_LOW</span>
+    <span class="n">BMA456_REG_ACC_Y_HI</span>     <span class="o">=</span> <span class="mh">0x15</span>
+    <span class="n">BMA456_REG_DATA11</span>       <span class="o">=</span> <span class="n">BMA456_REG_ACC_Y_HI</span>
+    <span class="n">BMA456_REG_ACC_Y</span>        <span class="o">=</span> <span class="n">BMA456_REG_ACC_Y_LOW</span>
+    <span class="n">BMA456_REG_ACC_Z_LOW</span>    <span class="o">=</span> <span class="mh">0x16</span>
+    <span class="n">BMA456_REG_DATA12</span>       <span class="o">=</span> <span class="n">BMA456_REG_ACC_Z_LOW</span>
+    <span class="n">BMA456_REG_ACC_Z_HI</span>     <span class="o">=</span> <span class="mh">0x17</span>
+    <span class="n">BMA456_REG_DATA13</span>       <span class="o">=</span> <span class="n">BMA456_REG_ACC_Z_HI</span>
+    <span class="n">BMA456_REG_ACC_Z</span>        <span class="o">=</span> <span class="n">BMA456_REG_ACC_Z_LOW</span>
+    <span class="n">BMA456_REG_SENSOR_TIME0</span> <span class="o">=</span> <span class="mh">0x18</span>
+    <span class="n">BMA456_REG_SENSOR_TIME1</span> <span class="o">=</span> <span class="mh">0x19</span>
+    <span class="n">BMA456_REG_SENSOR_TIME2</span> <span class="o">=</span> <span class="mh">0x1A</span>
+    <span class="n">BMA456_REG_SENSOR_TIME</span>  <span class="o">=</span> <span class="n">BMA456_REG_SENSOR_TIME0</span>
+    <span class="n">BMA456_REG_EVENT</span>        <span class="o">=</span> <span class="mh">0x1B</span>
+    <span class="n">BMA456_CNT_EVENT_POR</span>    <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_REG_INT_STATUS0</span>  <span class="o">=</span> <span class="mh">0x1C</span>
+    <span class="n">BMA456_REG_INT_STATUS1</span>  <span class="o">=</span> <span class="mh">0x1D</span>
+    <span class="n">BMA456_REG_INT_STATUS</span>   <span class="o">=</span> <span class="n">BMA456_REG_INT_STATUS0</span>
+    <span class="n">BMA456_CNT_INT_STATUS_ACC_DRDY</span><span class="o">=</span><span class="mh">0x8000</span>
+    <span class="n">BMA456_CNT_INT_STATUS_AUX_DRDY</span><span class="o">=</span><span class="mh">0x2000</span>
+    <span class="n">BMA456_CNT_INT_STATUS_FIFO_WM</span> <span class="o">=</span><span class="mh">0x0200</span>
+    <span class="n">BMA456_CNT_INT_STATUS_FIFO_FULL</span><span class="o">=</span><span class="mh">0x0100</span>
+    <span class="n">BMA456_CNT_INT_STATUS_ERROR</span>   <span class="o">=</span><span class="mh">0x0080</span>
+    <span class="c1"># Feature set: Wearable</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_ERROR</span>           <span class="o">=</span> <span class="mh">0x0080</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_NO_MOTION</span>       <span class="o">=</span> <span class="mh">0x0040</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_ANY_MOTION</span>      <span class="o">=</span> <span class="mh">0x0020</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_DBL_TAP</span>         <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_WRIST_WKUP</span>      <span class="o">=</span> <span class="mh">0x0008</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_ACTIVITY</span>        <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_STEP_COUNT</span>      <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FSWBL_CNT_INT_STATUS_TAP_DETECT</span>      <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="c1"># Feature set: Hearable</span>
+    <span class="n">BMA456_FSHBL_CNT_INT_STATUS_ERROR</span>           <span class="o">=</span> <span class="mh">0x0080</span>
+    <span class="n">BMA456_FSHBL_CNT_INT_STATUS_NO_MOTION</span>       <span class="o">=</span> <span class="mh">0x0020</span>
+    <span class="n">BMA456_FSHBL_CNT_INT_STATUS_ANY_MOTION</span>      <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BMA456_FSHBL_CNT_INT_STATUS_ACTIVITY</span>        <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FSHBL_CNT_INT_STATUS_STEP_COUNT</span>      <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FSHBL_CNT_INT_STATUS_TAP_DETECT</span>      <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="c1"># Feature set: MM</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_ERROR</span>            <span class="o">=</span> <span class="mh">0x0080</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_NO_MOTION</span>        <span class="o">=</span> <span class="mh">0x0040</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_ANY_MOTION</span>       <span class="o">=</span> <span class="mh">0x0020</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_SIG_MOTION</span>       <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_HIGH_G</span>           <span class="o">=</span> <span class="mh">0x0008</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_LOW_G</span>            <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_ORIENT</span>           <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FSMM_CNT_INT_STATUS_TAP_DETECT</span>       <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="c1"># Feature set: AN</span>
+    <span class="n">BMA456_FSAN_CNT_INT_STATUS_ERROR</span>            <span class="o">=</span> <span class="mh">0x0080</span>
+    <span class="n">BMA456_FSAN_CNT_INT_STATUS_NO_MOTION</span>        <span class="o">=</span> <span class="mh">0x0040</span>
+    <span class="n">BMA456_FSAN_CNT_INT_STATUS_ANY_MOTION</span>       <span class="o">=</span> <span class="mh">0x0020</span>
+
+    <span class="c1"># Feature set: Wearable</span>
+    <span class="n">BMA456_FSWBL_REG_STEP_COUNTER0</span>              <span class="o">=</span> <span class="mh">0x1E</span>
+    <span class="n">BMA456_FSWBL_REG_STEP_COUNTER1</span>              <span class="o">=</span> <span class="mh">0x1F</span>
+    <span class="n">BMA456_FSWBL_REG_STEP_COUNTER2</span>              <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSWBL_REG_STEP_COUNTER3</span>              <span class="o">=</span> <span class="mh">0x21</span>
+    <span class="n">BMA456_FSWBL_REG_STEP_COUNTER</span>               <span class="o">=</span> <span class="n">BMA456_FSWBL_REG_STEP_COUNTER0</span>
+    <span class="c1"># Feature set: Hearable</span>
+    <span class="n">BMA456_FSHBL_REG_STEP_COUNTER0</span>              <span class="o">=</span> <span class="mh">0x1E</span>
+    <span class="n">BMA456_FSHBL_REG_STEP_COUNTER1</span>              <span class="o">=</span> <span class="mh">0x1F</span>
+    <span class="n">BMA456_FSHBL_REG_STEP_COUNTER2</span>              <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSHBL_REG_STEP_COUNTER3</span>              <span class="o">=</span> <span class="mh">0x21</span>
+    <span class="n">BMA456_FSHBL_REG_STEP_COUNTER</span>               <span class="o">=</span> <span class="n">BMA456_FSHBL_REG_STEP_COUNTER0</span>
+    <span class="c1"># Feature set: MM</span>
+    <span class="n">BMA456_FSMM_REG_ORIENT_OUTPUT</span>               <span class="o">=</span> <span class="mh">0x1E</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_FACE</span>          <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_FACE_DOWN</span>     <span class="o">=</span> <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_FACE</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_FACE_UP</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_STAND</span>         <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_STAND_PORT_UP</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_STAND_LAND_LEFT</span>   <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_STAND_PORT_DOWN</span>   <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSMM_CNT_ORIENT_OUTPUT_STAND_LAND_RIGHT</span>  <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_FSMM_REG_HIGH_G_OUTPUT</span>               <span class="o">=</span> <span class="mh">0x1F</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_SIGN</span>          <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_SIGN_NEG</span>      <span class="o">=</span> <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_SIGN</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_SIGN_POS</span>      <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_AXES</span>          <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_AXES_X</span>        <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_AXES_Y</span>        <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSMM_CNT_HIGH_G_OUTPUT_AXES_Z</span>        <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSMM_REG_MULTITAP_OUTPUT</span>             <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSMM_CNT_MULTITAP_OUTPUT_STAP</span>        <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSMM_CNT_MULTITAP_OUTPUT_DTAP</span>        <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSMM_CNT_MULTITAP_OUTPUT_TTAP</span>        <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="c1"># Feature set: All</span>
+    <span class="n">BMA456_REG_TEMPERATURE</span>          <span class="o">=</span> <span class="mh">0x22</span>
+    <span class="n">BMA456_REG_FIFO_LENGTH_LOW</span>      <span class="o">=</span> <span class="mh">0x24</span>
+    <span class="n">BMA456_REG_FIFO_LENGTH_HI</span>       <span class="o">=</span> <span class="mh">0x25</span>
+    <span class="n">BMA456_REG_FIFO_LENGTH</span>          <span class="o">=</span> <span class="n">BMA456_REG_FIFO_LENGTH_LOW</span>
+    <span class="n">BMA456_REG_FIFO_DATA</span>            <span class="o">=</span> <span class="mh">0x26</span>
+    <span class="c1"># Feature set: Wearable</span>
+    <span class="n">BMA456_FSWBL_REG_ACTIVITY_TYPE</span>              <span class="o">=</span> <span class="mh">0x27</span>
+    <span class="n">BMA456_FSWBL_CNT_ACTIVITY_TYPE</span>              <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_FSWBL_CNT_ACTIVITY_TYPE_STILL</span>        <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSWBL_CNT_ACTIVITY_TYPE_WALK</span>         <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSWBL_CNT_ACTIVITY_TYPE_RUN</span>          <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSWBL_CNT_ACTIVITY_TYPE_UNKNOWN</span>      <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="c1"># Feature set: Hearable</span>
+    <span class="n">BMA456_FSHBL_REG_FEAT_OUT</span>                   <span class="o">=</span> <span class="mh">0x27</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_ACTTYPE</span>           <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_ACTTYPE_STILL</span>     <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_ACTTYPE_WALK</span>      <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_ACTTYPE_RUN</span>       <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_ACTTYPE_UNKNOWN</span>   <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_STAP</span>              <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_DTAP</span>              <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_OUT_TTAP</span>              <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSHBL_REG_FEAT_EN1</span>                   <span class="o">=</span> <span class="mh">0x28</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO</span>              <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_X</span>            <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_Y</span>            <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_Z</span>            <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_NONE</span>         <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_ALL</span>          <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_X</span><span class="o">|</span><span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_Y</span><span class="o">|</span><span class="n">BMA456_FSHBL_CNT_FEAT_EN1_NOMO_Z</span><span class="p">)</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO</span>             <span class="o">=</span> <span class="mh">0x38</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_X</span>           <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_Y</span>           <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_Z</span>           <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_NONE</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_ALL</span>         <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_X</span><span class="o">|</span><span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_Y</span><span class="o">|</span><span class="n">BMA456_FSHBL_CNT_FEAT_EN1_ANYMO_Z</span><span class="p">)</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_SW_LOCK</span>           <span class="o">=</span> <span class="mh">0xC0</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_SW_LOCK_CALC</span>      <span class="o">=</span> <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_SW_LOCK</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN1_SW_LOCK_CLEAR</span>     <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSHBL_REG_FEAT_EN2</span>                   <span class="o">=</span> <span class="mh">0x29</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_STEP_DETECT</span>       <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_STEP_COUNT</span>        <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_ACTIVITY_DETECT</span>   <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_AUTO_LOW_POW</span>      <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_STAP</span>              <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_DTAP</span>              <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_TTAP</span>              <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_FSHBL_CNT_FEAT_EN2_AVERAGING2</span>        <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="c1"># Feature set: All</span>
+    <span class="n">BMA456_REG_INTERNAL_STATUS</span>                <span class="o">=</span> <span class="mh">0x2A</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_ODR_HIGH_ERROR</span> <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_ODR_50HZ_ERROR</span> <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_AXES_REMAP_ERROR</span> <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_ALP_SLEEP</span>      <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_MSG</span>            <span class="o">=</span> <span class="mh">0x0F</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_NOT_INIT</span>   <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_INIT_OK</span>    <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_INIT_ERR</span>   <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_DRV_ERR</span>    <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_CNT_INTERNAL_STATUS_MSG_SNS_STOP</span>   <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_REG_ACC_CONF</span>             <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_CNT_ACC_CONF_PERF_MODE</span>   <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_ACC_CONF_PERF_MODE_AVG</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_ACC_CONF_PERF_MODE_CONT</span><span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_ACC_CONF_BWP</span>         <span class="o">=</span> <span class="mh">0x70</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE</span>        <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_CNT_ACC_CONF_PERF_MODE</span> <span class="o">|</span> <span class="n">BMA456_CNT_ACC_CONF_BWP</span><span class="p">)</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG1</span>   <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG2</span>   <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG4</span>   <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG8</span>   <span class="o">=</span> <span class="mh">0x30</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG16</span>  <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG32</span>  <span class="o">=</span> <span class="mh">0x50</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG64</span>  <span class="o">=</span> <span class="mh">0x60</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_AVG128</span> <span class="o">=</span> <span class="mh">0x70</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_OSR4</span>   <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_OSR2</span>   <span class="o">=</span> <span class="mh">0x90</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_NORM</span>   <span class="o">=</span> <span class="mh">0xA0</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_CIC</span>    <span class="o">=</span> <span class="mh">0xB0</span>
+    <span class="n">BMA456_CNT_ACC_CONF_MODE_DEFAULT</span><span class="o">=</span> <span class="n">BMA456_CNT_ACC_CONF_MODE_NORM</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR</span>      <span class="o">=</span> <span class="mh">0x0F</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_0P78</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_1P5</span>  <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_3P1</span>  <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_6P25</span> <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_12P5</span> <span class="o">=</span> <span class="mh">0x05</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_25</span>   <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_50</span>   <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_100</span>  <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_200</span>  <span class="o">=</span> <span class="mh">0x09</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_400</span>  <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_800</span>  <span class="o">=</span> <span class="mh">0x0B</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_1K6</span>  <span class="o">=</span> <span class="mh">0x0C</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_3K2</span>  <span class="o">=</span> <span class="mh">0x0D</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_6K4</span>  <span class="o">=</span> <span class="mh">0x0E</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_12K8</span> <span class="o">=</span> <span class="mh">0x0F</span>
+    <span class="n">BMA456_CNT_ACC_CONF_ODR_DEFAULT</span> <span class="o">=</span> <span class="n">BMA456_CNT_ACC_CONF_ODR_100</span>
+    <span class="n">BMA456_CNT_ACC_CONF_DEFAULT</span> <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_CNT_ACC_CONF_MODE_DEFAULT</span> <span class="o">|</span> <span class="n">BMA456_CNT_ACC_CONF_ODR_DEFAULT</span><span class="p">)</span>
+    <span class="n">BMA456_REG_ACC_RANGE</span>    <span class="o">=</span> <span class="mh">0x41</span>
+    <span class="n">BMA456_CNT_ACC_RANGE_2G</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_ACC_RANGE_4G</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_ACC_RANGE_8G</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_ACC_RANGE_16G</span><span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">BMA456_CNT_ACC_RANGE_DEFAULT</span> <span class="o">=</span> <span class="n">BMA456_CNT_ACC_RANGE_4G</span>
+    <span class="n">BMA456_REG_AUX_CONF</span>     <span class="o">=</span> <span class="mh">0x44</span>
+    <span class="n">BMA456_REG_FIFO_DOWNS</span>   <span class="o">=</span> <span class="mh">0x045</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_FILTER</span> <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_NOFILT</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DSAMPLING</span> <span class="o">=</span> <span class="mh">0x70</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS0</span>    <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS1</span>    <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS2</span>    <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS3</span>    <span class="o">=</span> <span class="mh">0x30</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS4</span>    <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS5</span>    <span class="o">=</span> <span class="mh">0x50</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS6</span>    <span class="o">=</span> <span class="mh">0x60</span>
+    <span class="n">BMA456_CNT_FIFO_DOWNS_DS7</span>    <span class="o">=</span> <span class="mh">0x70</span>
+    <span class="n">BMA456_REG_FIFO_WM_LOW</span>  <span class="o">=</span> <span class="mh">0x46</span>
+    <span class="n">BMA456_REG_FIFO_WM_HI</span>   <span class="o">=</span> <span class="mh">0x47</span>
+    <span class="n">BMA456_REG_FIFO_WM</span>      <span class="o">=</span> <span class="n">BMA456_REG_FIFO_WM_LOW</span>
+    <span class="n">BMA456_REG_FIFO_CFG0</span>    <span class="o">=</span> <span class="mh">0x48</span>
+    <span class="n">BMA456_REG_FIFO_CFG1</span>    <span class="o">=</span> <span class="mh">0x49</span>
+    <span class="n">BMA456_REG_FIFO_CFG</span>     <span class="o">=</span> <span class="n">BMA456_REG_FIFO_CFG0</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_ACC</span> <span class="o">=</span> <span class="mh">0x4000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_ACC_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_ACC</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_ACC_DISABLE</span><span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_AUX</span> <span class="o">=</span> <span class="mh">0x2000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_AUX_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_AUX</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_AUX_DISABLE</span><span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_HEAD</span><span class="o">=</span> <span class="mh">0x1000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_HEAD_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_HEAD</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_HEAD_DISABLE</span><span class="o">=</span> <span class="mh">0x000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_INT1_TAG</span> <span class="o">=</span> <span class="mh">0x0800</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_INT1_TAG_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_INT1_TAG</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_INT1_TAG_DISABLE</span><span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_INT2_TAG</span> <span class="o">=</span> <span class="mh">0x0400</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_INT2_TAG_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_INT2_TAG</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_INT2_TAG_DISABLE</span><span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_TIME</span><span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_TIME_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_TIME</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_TIME_DISABLE</span><span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_STOP</span><span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_STOP_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_FIFO_CFG_STOP</span>
+    <span class="n">BMA456_CNT_FIFO_CFG_STOP_DISABLE</span><span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_REG_AUX_DEV_ID</span>   <span class="o">=</span> <span class="mh">0x4B</span>
+    <span class="n">BMA456_REG_AUX_IF_CONF</span>  <span class="o">=</span> <span class="mh">0x4C</span>
+    <span class="n">BMA456_REG_AUX_RD_ADDR</span>  <span class="o">=</span> <span class="mh">0x4D</span>
+    <span class="n">BMA456_REG_AUX_WR_ADDR</span>  <span class="o">=</span> <span class="mh">0x4E</span>
+    <span class="n">BMA456_REG_AUX_WR_DATA</span>  <span class="o">=</span> <span class="mh">0x4F</span>
+    <span class="n">BMA456_REG_INT1_IO_CTRL</span> <span class="o">=</span> <span class="mh">0x53</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_INPUT</span> <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_INPUT_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT1_IO_CTRL_INPUT</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_INPUT_DISABLE</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_OUTPUT</span><span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_OUTPUT_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT1_IO_CTRL_OUTPUT</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_OUTPUT_DISABLE</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_MODE</span>  <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_MODE_OPEN_DRAIN</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT1_IO_CTRL_MODE</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_MODE_PUSH_PULL</span>  <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_LEVEL</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_LEVEL_ACT_HI</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT1_IO_CTRL_LEVEL</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_LEVEL_ACT_LOW</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_COND</span>  <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_COND_EDGE</span>  <span class="o">=</span> <span class="n">BMA456_CNT_INT1_IO_CTRL_COND</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_COND_LEVEL</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT1_IO_CTRL_DEFAULT</span>     <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_INT2_IO_CTRL</span> <span class="o">=</span> <span class="mh">0x54</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_INPUT</span> <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_INPUT_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT2_IO_CTRL_INPUT</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_INPUT_DISABLE</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_OUTPUT</span><span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_OUTPUT_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT2_IO_CTRL_OUTPUT</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_OUTPUT_DISABLE</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_MODE</span>  <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_MODE_OPEN_DRAIN</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT2_IO_CTRL_MODE</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_MODE_PUSH_PULL</span>  <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_LEVEL</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_LEVEL_ACT_HI</span> <span class="o">=</span> <span class="n">BMA456_CNT_INT2_IO_CTRL_LEVEL</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_LEVEL_ACT_LOW</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_COND</span>  <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_COND_EDGE</span>  <span class="o">=</span> <span class="n">BMA456_CNT_INT2_IO_CTRL_COND</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_COND_LEVEL</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT2_IO_CTRL_DEFAULT</span>     <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_INT_LATCH</span>    <span class="o">=</span> <span class="mh">0x55</span>
+    <span class="n">BMA456_CNT_INT_LATCH_NONE</span><span class="o">=</span><span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INT_LATCH_PERM</span><span class="o">=</span><span class="mh">0x01</span>
+    <span class="n">BMA456_REG_INT1_MAP</span>     <span class="o">=</span> <span class="mh">0x56</span>
+    <span class="n">BMA456_CNT_INTX_MAP_ERROR</span>                   <span class="o">=</span> <span class="mh">0x80</span>
+    <span class="n">BMA456_CNT_INTX_MAP_TAP</span>                     <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_INTX_MAP_ALL</span>                     <span class="o">=</span> <span class="mh">0xFF</span>
+    <span class="n">BMA456_CNT_INTX_MAP_NONE</span>                    <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_CNT_INTX_MAP_DEFAULT</span>                 <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># Feature set: Wearable</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_ERROR</span>             <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_ERROR</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_NO_MOTION</span>         <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_ANY_MOTION</span>        <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_DTAP</span>              <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_WRIST_WKUP</span>        <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_ACTIVITY</span>          <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_STEP_CNT</span>          <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSWBL_CNT_INTX_MAP_STAP</span>              <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_TAP</span>
+    <span class="c1"># Feature set: Hearable</span>
+    <span class="n">BMA456_FSHBL_CNT_INTX_MAP_ERROR</span>             <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_ERROR</span>
+    <span class="n">BMA456_FSHBL_CNT_INTX_MAP_NO_MOTION</span>         <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSHBL_CNT_INTX_MAP_ANY_MOTION</span>        <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSHBL_CNT_INTX_MAP_ACTIVITY</span>          <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSHBL_CNT_INTX_MAP_STEP_CNT</span>          <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSHBL_CNT_INTX_MAP_TAP</span>               <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_TAP</span>
+    <span class="c1"># Feature set: MM</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_ERROR</span>              <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_ERROR</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_NO_MOTION</span>          <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_ANY_MOTION</span>         <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_SIG_MOTION</span>         <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_HIGH_G</span>             <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_LOW_G</span>              <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_ORIENT</span>             <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSMM_CNT_INTX_MAP_TAP</span>                <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_TAP</span>
+    <span class="c1"># Feature set: AN</span>
+    <span class="n">BMA456_FSAN_CNT_INTX_MAP_ERROR</span>              <span class="o">=</span> <span class="n">BMA456_CNT_INTX_MAP_ERROR</span>
+    <span class="n">BMA456_FSAN_CNT_INTX_MAP_NO_MOTION</span>          <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_FSAN_CNT_INTX_MAP_ANY_MOTION</span>         <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="c1"># Feature set: All</span>
+    <span class="n">BMA456_REG_INT2_MAP</span>     <span class="o">=</span> <span class="mh">0x57</span>
+    <span class="n">BMA456_REG_INT_MAP_DATA</span> <span class="o">=</span> <span class="mh">0x58</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_INT2_DRDY</span> <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_INT2_FIFO_WM</span> <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_INT2_FIFO_FULL</span> <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_INT1_DRDY</span> <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_INT1_FIFO_WM</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_INT1_FIFO_FULL</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_INT_MAP_DATA_DEFAULT</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_INIT_CTRL</span>    <span class="o">=</span> <span class="mh">0x59</span>
+    <span class="n">BMA456_CNT_INIT_CTRL_LOAD_CONFIG_FILE</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_INIT_CTRL_START_INIT</span>       <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_REG_DMA_LOW</span>      <span class="o">=</span> <span class="mh">0x5B</span>
+    <span class="n">BMA456_REG_DMA_HI</span>       <span class="o">=</span> <span class="mh">0x5C</span>
+    <span class="n">BMA456_REG_FEATURES</span>     <span class="o">=</span> <span class="mh">0x5E</span>
+    <span class="n">BMA456_CNT_FEATURES_ANY_MOT1</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_FEATURES_ANY_MOT2</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT1</span><span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT2</span><span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT3</span><span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT4</span><span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT5</span><span class="o">=</span> <span class="mh">0x0C</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT6</span><span class="o">=</span> <span class="mh">0x0E</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT7</span><span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT8</span><span class="o">=</span> <span class="mh">0x12</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT9</span><span class="o">=</span> <span class="mh">0x14</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT10</span><span class="o">=</span><span class="mh">0x16</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT11</span><span class="o">=</span><span class="mh">0x18</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT12</span><span class="o">=</span><span class="mh">0x1A</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT13</span><span class="o">=</span><span class="mh">0x1C</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT14</span><span class="o">=</span><span class="mh">0x1E</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT15</span><span class="o">=</span><span class="mh">0x20</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT16</span><span class="o">=</span><span class="mh">0x22</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT17</span><span class="o">=</span><span class="mh">0x24</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT18</span><span class="o">=</span><span class="mh">0x26</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT19</span><span class="o">=</span><span class="mh">0x28</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT20</span><span class="o">=</span><span class="mh">0x2A</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT21</span><span class="o">=</span><span class="mh">0x2C</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT22</span><span class="o">=</span><span class="mh">0x2E</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT23</span><span class="o">=</span><span class="mh">0x30</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT24</span><span class="o">=</span><span class="mh">0x32</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT25</span><span class="o">=</span><span class="mh">0x34</span>
+    <span class="n">BMA456_CNT_FEATURES_STEPBMA456_CNT26</span><span class="o">=</span><span class="mh">0x36</span>
+    <span class="n">BMA456_CNT_FEATURES_TAP_DTAP</span> <span class="o">=</span> <span class="mh">0x38</span>
+    <span class="n">BMA456_CNT_FEATURES_WRIST_TILT</span><span class="o">=</span><span class="mh">0x3A</span>
+    <span class="n">BMA456_CNT_FEATURES_GEN_CFG_ID</span><span class="o">=</span><span class="mh">0x3C</span>
+    <span class="n">BMA456_CNT_FEATURES_GEN_AXES_REMAP</span> <span class="o">=</span> <span class="mh">0x3E</span>
+    <span class="n">BMA456_REG_INTERNAL_ERR</span> <span class="o">=</span> <span class="mh">0x5F</span>
+    <span class="n">BMA456_CNT_INTERNAL_ERR_FATAL</span><span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_INTERNAL_ERR_LONG</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_REG_NVM_CFG</span>      <span class="o">=</span> <span class="mh">0x6A</span>
+    <span class="n">BMA456_CNT_NVM_CFG_PPROG</span><span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_NVM_CFG_PPROG_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_NVM_CFG_PPROG</span>
+    <span class="n">BMA456_CNT_NVM_CFG_PPROG_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_IF_CFG</span>       <span class="o">=</span> <span class="mh">0x6B</span>
+    <span class="n">BMA456_CNT_IF_CFG_AUX</span>   <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_CNT_IF_CFG_AUX_MAG</span><span class="o">=</span><span class="n">BMA456_CNT_IF_CFG_AUX</span>
+    <span class="n">BMA456_CNT_IF_CFG_AUX_OFF</span><span class="o">=</span><span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_IF_CFG_SPI</span>   <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_IF_CFG_SPI_3</span> <span class="o">=</span> <span class="n">BMA456_CNT_IF_CFG_SPI</span>
+    <span class="n">BMA456_CNT_IF_CFG_SPI_4</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_SELF_TST</span>     <span class="o">=</span> <span class="mh">0x6D</span>
+    <span class="n">BMA456_CNT_SELF_TST_AMP</span> <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_CNT_SELF_TST_AMP_HI</span> <span class="o">=</span> <span class="n">BMA456_CNT_SELF_TST_AMP</span>
+    <span class="n">BMA456_CNT_SELF_TST_AMP_LOW</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_SELF_TST_SIGN</span><span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_SELF_TST_SIGN_POS</span> <span class="o">=</span> <span class="n">BMA456_CNT_SELF_TST_SIGN</span>
+    <span class="n">BMA456_CNT_SELF_TST_SIGN_NEG</span> <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_SELF_TST_ENABLE</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_SELF_TST_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_NVM_BE_CFG</span>   <span class="o">=</span> <span class="mh">0x70</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_OFFSET</span> <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_OFFSET_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_NVM_BE_CFG_OFFSET</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_OFFSET_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDT</span><span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDT_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDT</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDT_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDTPER</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDTPER_LONG</span> <span class="o">=</span> <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDTPER</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_I2C_WDTPER_SHORT</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_SPI</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_SPI_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_NVM_BE_CFG_SPI</span>
+    <span class="n">BMA456_CNT_NVM_BE_CFG_SPI_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_OFFSET_X</span>     <span class="o">=</span> <span class="mh">0x71</span>
+    <span class="n">BMA456_REG_OFFSET_Y</span>     <span class="o">=</span> <span class="mh">0x72</span>
+    <span class="n">BMA456_REG_OFFSET_Z</span>     <span class="o">=</span> <span class="mh">0x73</span>
+    <span class="n">BMA456_REG_PWR_CONF</span>      <span class="o">=</span> <span class="mh">0x7C</span>
+    <span class="n">BMA456_CNT_PWR_CONF_FIFO_WKUP</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_CNT_PWR_CONF_FIFO_WKUP_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_PWR_CONF_FIFO_WKUP</span>
+    <span class="n">BMA456_CNT_PWR_CONF_FIFO_WKUP_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_PWR_CONF_ADV_PWR_SAVE</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_PWR_CONF_ADV_PWR_SAVE_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_PWR_CONF_ADV_PWR_SAVE</span>
+    <span class="n">BMA456_CNT_PWR_CONF_ADV_PWR_SAVE_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_PWR_CTRL</span>     <span class="o">=</span> <span class="mh">0x7D</span>
+    <span class="n">BMA456_CNT_PWR_CTRL_ACC</span> <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_CNT_PWR_CTRL_ACC_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_PWR_CTRL_ACC</span>
+    <span class="n">BMA456_CNT_PWR_CTRL_ACC_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_CNT_PWR_CTRL_AUX</span> <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">BMA456_CNT_PWR_CTRL_AUX_ENABLE</span> <span class="o">=</span> <span class="n">BMA456_CNT_PWR_CTRL_AUX</span>
+    <span class="n">BMA456_CNT_PWR_CTRL_AUX_DISABLE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_REG_CMD</span>          <span class="o">=</span> <span class="mh">0x7E</span>
+    <span class="n">BMA456_CNT_CMD_NVM_PROG</span> <span class="o">=</span> <span class="mh">0xA0</span>
+    <span class="n">BMA456_CNT_CMD_FIFO_FLUSH</span> <span class="o">=</span> <span class="mh">0xB0</span>
+    <span class="n">BMA456_CNT_CMD_SOFTRESET</span><span class="o">=</span> <span class="mh">0xB6</span>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Definition of feature set parameters - content of register FEATURES_IN (= 0x5E)</span>
+    <span class="c1"># Feature set: Wearable</span>
+    <span class="c1">#</span>
+    <span class="n">BMA456_FSWBL_IDX_ANY_MOTION_1</span>               <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSWBL_IDX_ANY_MOTION_2</span>               <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSWBL_IDX_NO_MOTION_1</span>                <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSWBL_IDX_NO_MOTION_2</span>                <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_1</span>             <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_2</span>             <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_3</span>             <span class="o">=</span> <span class="mh">0x0C</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_4</span>             <span class="o">=</span> <span class="mh">0x0E</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_5</span>             <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_6</span>             <span class="o">=</span> <span class="mh">0x12</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_7</span>             <span class="o">=</span> <span class="mh">0x14</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_8</span>             <span class="o">=</span> <span class="mh">0x16</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_9</span>             <span class="o">=</span> <span class="mh">0x18</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_10</span>            <span class="o">=</span> <span class="mh">0x1A</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_11</span>            <span class="o">=</span> <span class="mh">0x1C</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_12</span>            <span class="o">=</span> <span class="mh">0x1E</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_13</span>            <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_14</span>            <span class="o">=</span> <span class="mh">0x22</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_15</span>            <span class="o">=</span> <span class="mh">0x24</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_16</span>            <span class="o">=</span> <span class="mh">0x26</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_17</span>            <span class="o">=</span> <span class="mh">0x28</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_18</span>            <span class="o">=</span> <span class="mh">0x2A</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_19</span>            <span class="o">=</span> <span class="mh">0x2C</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_20</span>            <span class="o">=</span> <span class="mh">0x2E</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_21</span>            <span class="o">=</span> <span class="mh">0x30</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_22</span>            <span class="o">=</span> <span class="mh">0x32</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_23</span>            <span class="o">=</span> <span class="mh">0x34</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_24</span>            <span class="o">=</span> <span class="mh">0x36</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_25</span>            <span class="o">=</span> <span class="mh">0x38</span>
+    <span class="n">BMA456_FSWBL_IDX_STEP_COUNTER_26</span>            <span class="o">=</span> <span class="mh">0x3A</span>
+    <span class="c1"># By documentation rev. 1.2 as of January 2021 (BST_MAS_AN032-02)</span>
+    <span class="c1">#BMA456_FSWBL_IDX_SINGLE_TAP                 = 0x3C</span>
+    <span class="c1">#BMA456_FSWBL_IDX_DOUBLE_TAP                 = 0x3E</span>
+    <span class="c1">#BMA456_FSWBL_IDX_WRIST_WAKEUP               = 0x40</span>
+    <span class="c1">#BMA456_FSWBL_IDX_GENERAL_CONFIG_ID          = 0x42</span>
+    <span class="c1">#BMA456_FSWBL_IDX_GENERAL_AXES_REMAP         = 0x44</span>
+    <span class="c1">#BMA456_FSWBL_TOTAL_SIZE                     = 0x46</span>
+    <span class="c1"># As reverse engineered from driver source code V2.24.1 as of 01.07.2022</span>
+    <span class="n">BMA456_FSWBL_IDX_WRIST_WAKEUP</span>               <span class="o">=</span> <span class="mh">0x3C</span>
+    <span class="c1"># Cosine of minimum expected attitude change of the device</span>
+    <span class="c1"># within 1 second time window when moving within focus position.</span>
+    <span class="n">BMA456_FSWBL_IDX_WRIST_WAKEUP_MINANGLE_FOCUS</span>    <span class="o">=</span> <span class="mh">0x3E</span>
+    <span class="c1"># Cosine of minimum expected attitude change of the device</span>
+    <span class="c1"># within 1 second time window when moving from non-focus to focus position.</span>
+    <span class="n">BMA456_FSWBL_IDX_WRIST_WAKEUP_MINANGLE_NONFOCUS</span> <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="c1"># Sine of the maximum allowed tilt angle in landscape</span>
+    <span class="c1"># left/right direction of the device, when it is in focus position</span>
+    <span class="n">BMA456_FSWBL_IDX_WRIST_WAKEUP_ANGLE_LANDSCAPE</span>   <span class="o">=</span> <span class="mh">0x42</span>
+    <span class="c1"># Sine of the maximum allowed forward tilt angle in portrait</span>
+    <span class="c1"># up/down direction of the device, when it is in focus position</span>
+    <span class="n">BMA456_FSWBL_IDX_WRIST_WAKEUP_ANGLE_PORTRAIT</span>    <span class="o">=</span> <span class="mh">0x44</span>
+    <span class="c1"># Minimum duration the arm should be moved while performing gesture</span>
+    <span class="c1"># or static between two consecutive gestures.</span>
+    <span class="n">BMA456_FSWBL_IDX_WRIST_WAKEUP_DURATION</span>      <span class="o">=</span> <span class="mh">0x46</span>
+    <span class="n">BMA456_FSWBL_IDX_GENERAL_CONFIG_ID</span>          <span class="o">=</span> <span class="mh">0x48</span>
+    <span class="n">BMA456_FSWBL_IDX_GENERAL_AXES_REMAP</span>         <span class="o">=</span> <span class="mh">0x4A</span>
+    <span class="n">BMA456_FSWBL_TOTAL_SIZE</span>                     <span class="o">=</span> <span class="mh">0x4C</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Feature set: Hearable</span>
+    <span class="c1">#</span>
+    <span class="n">BMA456_FSHBL_IDX_ANY_MOTION_1</span>               <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSHBL_IDX_ANY_MOTION_2</span>               <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSHBL_IDX_NO_MOTION_1</span>                <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSHBL_IDX_NO_MOTION_2</span>                <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_1</span>             <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_2</span>             <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_3</span>             <span class="o">=</span> <span class="mh">0x0C</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_4</span>             <span class="o">=</span> <span class="mh">0x0E</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_5</span>             <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_6</span>             <span class="o">=</span> <span class="mh">0x12</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_7</span>             <span class="o">=</span> <span class="mh">0x14</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_8</span>             <span class="o">=</span> <span class="mh">0x16</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_9</span>             <span class="o">=</span> <span class="mh">0x18</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_10</span>            <span class="o">=</span> <span class="mh">0x1A</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_11</span>            <span class="o">=</span> <span class="mh">0x1C</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_12</span>            <span class="o">=</span> <span class="mh">0x1E</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_13</span>            <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_14</span>            <span class="o">=</span> <span class="mh">0x22</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_15</span>            <span class="o">=</span> <span class="mh">0x24</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_16</span>            <span class="o">=</span> <span class="mh">0x26</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_17</span>            <span class="o">=</span> <span class="mh">0x28</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_18</span>            <span class="o">=</span> <span class="mh">0x2A</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_19</span>            <span class="o">=</span> <span class="mh">0x2C</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_20</span>            <span class="o">=</span> <span class="mh">0x2E</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_21</span>            <span class="o">=</span> <span class="mh">0x30</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_22</span>            <span class="o">=</span> <span class="mh">0x32</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_23</span>            <span class="o">=</span> <span class="mh">0x34</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_24</span>            <span class="o">=</span> <span class="mh">0x36</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_25</span>            <span class="o">=</span> <span class="mh">0x38</span>
+    <span class="n">BMA456_FSHBL_IDX_STEP_COUNTER_26</span>            <span class="o">=</span> <span class="mh">0x3A</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_1</span>                <span class="o">=</span> <span class="mh">0x3C</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_2</span>                <span class="o">=</span> <span class="mh">0x3E</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_3</span>                <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_4</span>                <span class="o">=</span> <span class="mh">0x42</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_5</span>                <span class="o">=</span> <span class="mh">0x44</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_6</span>                <span class="o">=</span> <span class="mh">0x46</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_7</span>                <span class="o">=</span> <span class="mh">0x48</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_8</span>                <span class="o">=</span> <span class="mh">0x4A</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_9</span>                <span class="o">=</span> <span class="mh">0x4C</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_10</span>               <span class="o">=</span> <span class="mh">0x4E</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_11</span>               <span class="o">=</span> <span class="mh">0x50</span>
+    <span class="n">BMA456_FSHBL_IDX_MULTI_TAP_12</span>               <span class="o">=</span> <span class="mh">0x52</span>
+    <span class="n">BMA456_FSHBL_IDX_SOFTWARE_LOCK_IN</span>           <span class="o">=</span> <span class="mh">0x54</span>
+    <span class="n">BMA456_FSHBL_IDX_SOFTWARE_LOCK_OUT</span>          <span class="o">=</span> <span class="mh">0x56</span>
+    <span class="n">BMA456_FSHBL_IDX_AUTO_LOW_POWER</span>             <span class="o">=</span> <span class="mh">0x58</span>
+    <span class="n">BMA456_FSHBL_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION</span>           <span class="o">=</span> <span class="mh">0x1FFC</span>
+    <span class="n">BMA456_FSHBL_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION_MIN_MS</span>    <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSHBL_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION_MAX_MS</span>    <span class="o">=</span> <span class="mi">40940</span>
+    <span class="c1">#BMA456_FSHBL_DEF_MS_TO_AUTO_LOW_POWER_TIME_OUT_DURATION(ms) ((((ms) + 10) / 5) &amp; BMA456_FSHBL_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION)</span>
+    <span class="n">BMA456_FSHBL_IDX_GENERAL_CONFIG_ID</span>          <span class="o">=</span> <span class="mh">0x5A</span>
+    <span class="n">BMA456_FSHBL_IDX_GENERAL_AXES_REMAP</span>         <span class="o">=</span> <span class="mh">0x5C</span>
+    <span class="n">BMA456_FSHBL_TOTAL_SIZE</span>                     <span class="o">=</span> <span class="mh">0x5E</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Feature set: MM</span>
+    <span class="c1">#</span>
+    <span class="n">BMA456_FSMM_IDX_ANY_MOTION_1</span>                <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSMM_IDX_ANY_MOTION_2</span>                <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSMM_IDX_NO_MOTION_1</span>                 <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSMM_IDX_NO_MOTION_2</span>                 <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">BMA456_FSMM_IDX_ORIENT_1</span>                    <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSMM_IDX_ORIENT_2</span>                    <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_FSMM_IDX_LOW_G_1</span>                     <span class="o">=</span> <span class="mh">0x0C</span>
+    <span class="n">BMA456_FSMM_IDX_LOW_G_2</span>                     <span class="o">=</span> <span class="mh">0x0E</span>
+    <span class="n">BMA456_FSMM_IDX_LOW_G_3</span>                     <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_1</span>                 <span class="o">=</span> <span class="mh">0x12</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_2</span>                 <span class="o">=</span> <span class="mh">0x16</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_3</span>                 <span class="o">=</span> <span class="mh">0x18</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_4</span>                 <span class="o">=</span> <span class="mh">0x1C</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_5</span>                 <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_6</span>                 <span class="o">=</span> <span class="mh">0x22</span>
+    <span class="n">BMA456_FSMM_IDX_MULTI_TAP_7</span>                 <span class="o">=</span> <span class="mh">0x26</span>
+    <span class="n">BMA456_FSMM_IDX_AUTO_LOW_POWER</span>              <span class="o">=</span> <span class="mh">0x2C</span>
+    <span class="n">BMA456_FSMM_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION</span>           <span class="o">=</span> <span class="mh">0x0FFC</span>
+    <span class="n">BMA456_FSMM_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION_MIN_MS</span>    <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FSMM_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION_MAX_MS</span>    <span class="o">=</span> <span class="mi">20460</span>
+    <span class="c1">#BMA456_FSMM_DEF_MS_TO_AUTO_LOW_POWER_TIME_OUT_DURATION(ms) ((((ms) + 10) / 5) &amp; BMA456_FSMM_DEF_AUTO_LOW_POWER_TIME_OUT_DURATION)</span>
+    <span class="n">BMA456_FSMM_DEF_AUTO_LOW_POWER_ENABLE</span>       <span class="o">=</span> <span class="mh">0x1000</span>
+    <span class="n">BMA456_FSMM_IDX_HIGH_G_1</span>                    <span class="o">=</span> <span class="mh">0x2E</span>
+    <span class="n">BMA456_FSMM_IDX_HIGH_G_2</span>                    <span class="o">=</span> <span class="mh">0x30</span>
+    <span class="n">BMA456_FSMM_IDX_HIGH_G_3</span>                    <span class="o">=</span> <span class="mh">0x32</span>
+    <span class="n">BMA456_FSMM_IDX_SIG_MOTION_1</span>                <span class="o">=</span> <span class="mh">0x34</span>
+    <span class="n">BMA456_FSMM_IDX_SIG_MOTION_2</span>                <span class="o">=</span> <span class="mh">0x36</span>
+    <span class="n">BMA456_FSMM_DEF_SIG_MOTION_ENABLE</span>           <span class="o">=</span> <span class="mh">0x0200</span>
+    <span class="n">BMA456_FSMM_IDX_SIG_MOTION_3</span>                <span class="o">=</span> <span class="mh">0x38</span>
+    <span class="n">BMA456_FSMM_IDX_GENERAL_CONFIG_ID</span>           <span class="o">=</span> <span class="mh">0x3A</span>
+    <span class="n">BMA456_FSMM_IDX_GENERAL_AXES_REMAP</span>          <span class="o">=</span> <span class="mh">0x3C</span>
+    <span class="n">BMA456_FSMM_TOTAL_SIZE</span>                      <span class="o">=</span> <span class="mh">0x3E</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Feature set: AN</span>
+    <span class="c1">#</span>
+    <span class="n">BMA456_FSAN_IDX_ANY_MOTION_1</span>                <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">BMA456_FSAN_IDX_ANY_MOTION_2</span>                <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">BMA456_FSAN_IDX_NO_MOTION_1</span>                 <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">BMA456_FSAN_IDX_NO_MOTION_2</span>                 <span class="o">=</span> <span class="mh">0x06</span>
+    <span class="n">BMA456_FSAN_IDX_GENERAL_CONFIG_ID</span>           <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">BMA456_FSAN_IDX_GENERAL_AXES_REMAP</span>          <span class="o">=</span> <span class="mh">0x0A</span>
+    <span class="n">BMA456_FSAN_TOTAL_SIZE</span>                      <span class="o">=</span> <span class="mh">0x0C</span>
+
+
+    <span class="c1">#</span>
+    <span class="c1"># Further feature register contents, commonly used by all feature sets</span>
+    <span class="c1">#</span>
+    <span class="n">BMA456_FEATURE_MAX_SIZE</span>                         <span class="o">=</span> <span class="mh">0x60</span>
+    
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_THRESHOLD</span>              <span class="o">=</span> <span class="mh">0x07FF</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_THRESHOLD_MIN_MG</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_THRESHOLD_MAX_MG</span>       <span class="o">=</span> <span class="mi">1000</span>
+    <span class="c1">#BMA456_FEAT_MG_TO_ANYNO_MOTION_THRESHOLD(mg)    ((((mg) &lt;&lt; 1) + ((mg) * 6 + 62) / 125) &amp; BMA456_FEAT_ANYNO_MOTION_THRESHOLD)</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_INT_BHVR</span>               <span class="o">=</span> <span class="mh">0x0800</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_INT_BHVR_MULTI</span>         <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_INT_BHVR_SINGLE</span>        <span class="o">=</span> <span class="n">BMA456_FEAT_ANYNO_MOTION_INT_BHVR</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_SLOPE</span>                  <span class="o">=</span> <span class="mh">0x1000</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_SLOPE_LAST_TO_CURRENT</span>  <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_SLOPE_CONSEC</span>           <span class="o">=</span> <span class="n">BMA456_FEAT_ANYNO_MOTION_SLOPE</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_DURATION</span>               <span class="o">=</span> <span class="mh">0x1FFF</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_DURATION_MIN_MS</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_DURATION_MAX_MS</span>        <span class="o">=</span> <span class="mi">163000</span>
+    <span class="c1">#BMA456_FEAT_MS_TO_ANYNO_MOTION_DURATION(ms)     (((ms) + 10) / 20)</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_X_EN</span>                   <span class="o">=</span> <span class="mh">0x2000</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_Y_EN</span>                   <span class="o">=</span> <span class="mh">0x4000</span>
+    <span class="n">BMA456_FEAT_ANYNO_MOTION_Z_EN</span>                   <span class="o">=</span> <span class="mh">0x8000</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_WATERMARK_LEVEL</span>        <span class="o">=</span> <span class="mh">0x03FF</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_WATERMARK_MIN_STEPS</span>    <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_WATERMARK_MAX_STEPS</span>    <span class="o">=</span> <span class="mi">20460</span>
+    <span class="c1">#BMA456_FEAT_STEPS_TO_WATERMARK(num)             (((num) &amp; = 0x7FFF + 10) / 20)</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_RESET_COUNTER</span>          <span class="o">=</span> <span class="mh">0x0400</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_ENABLE_DETECT</span>          <span class="o">=</span> <span class="mh">0x0800</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_ENABLE_COUNT</span>           <span class="o">=</span> <span class="mh">0x1000</span>
+    <span class="n">BMA456_FEAT_STEP_COUNTER_ENABLE_ACTIVITY</span>        <span class="o">=</span> <span class="mh">0x2000</span>
+    <span class="n">BMA456_FEAT_TAP_ENABLE</span>                          <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY</span>                     <span class="o">=</span> <span class="mh">0x000E</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_0</span>                   <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_1</span>                   <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_2</span>                   <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_3</span>                   <span class="o">=</span> <span class="mh">0x0006</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_4</span>                   <span class="o">=</span> <span class="mh">0x0008</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_5</span>                   <span class="o">=</span> <span class="mh">0x000A</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_6</span>                   <span class="o">=</span> <span class="mh">0x000C</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_7</span>                   <span class="o">=</span> <span class="mh">0x000E</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_LOWEST</span>              <span class="o">=</span> <span class="n">BMA456_FEAT_TAP_SENSITIVITY_7</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_HIGHEST</span>             <span class="o">=</span> <span class="n">BMA456_FEAT_TAP_SENSITIVITY_0</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_MIN_VAL</span>             <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_TAP_SENSITIVITY_MAX_VAL</span>             <span class="o">=</span> <span class="mi">7</span>
+    <span class="c1">#BMA456_FEAT_VAL_TO_TAP_SENSITIVITY(val)         ( (7 - ((val) &amp; = 0x07)) &lt;&lt; 1)</span>
+    <span class="c1"># By document rev 1.2</span>
+    <span class="c1">#BMA456_FEAT_WRIST_WAKEUP_ENABLE                 = 0x0001</span>
+    <span class="c1"># Reverse-engineered from driver source code</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_ENABLE</span>                 <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_ANGLE_LANDSCAPE_RIGHT</span>  <span class="o">=</span> <span class="mh">0x00FF</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_ANGLE_LANDSCAPE_LEFT</span>   <span class="o">=</span> <span class="mh">0xFF00</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_ANGLE_PORTRAIT_DOWN</span>    <span class="o">=</span> <span class="mh">0x00FF</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_ANGLE_PORTRAIT_UP</span>      <span class="o">=</span> <span class="mh">0xFF00</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_DURATION_MOVED</span>         <span class="o">=</span> <span class="mh">0x00FF</span>
+    <span class="n">BMA456_FEAT_WRIST_WAKEUP_DURATION_QUIET</span>         <span class="o">=</span> <span class="mh">0xFF00</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_ENABLE</span>                  <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_FACE_UPDOWN_ENABLE</span>      <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_MODE</span>                    <span class="o">=</span> <span class="mh">0x000C</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_MODE_SYMMETRIC</span>          <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_MODE_ASYMMETRIC_HI</span>      <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_MODE_ASYMMETRIC_LO</span>      <span class="o">=</span> <span class="mh">0x0008</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_BLOCKING</span>                <span class="o">=</span> <span class="mh">0x0030</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_BLOCKING_NONE</span>           <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_BLOCKING_SHOCK</span>          <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_BLOCKING_SHAKE</span>          <span class="o">=</span> <span class="mh">0x0020</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_BLOCKING_MOST</span>           <span class="o">=</span> <span class="mh">0x0030</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA</span>                   <span class="o">=</span> <span class="mh">0x0FC0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_MIN_DEG</span>           <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_MAX_DEG</span>           <span class="o">=</span> <span class="mi">45</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span>          <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_UNIT</span>              <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_MIN</span>               <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_MAX</span>               <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_0p0</span>           <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_MIN</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_7p1</span>           <span class="o">=</span> <span class="p">(</span><span class="mh">0x01</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_10p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x02</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_12p2</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x03</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_14p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x04</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_15p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x05</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_17p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x06</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_18p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x07</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_19p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x08</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_20p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x09</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_21p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x0A</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_22p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x0B</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_23p4</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x0C</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_24p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x0D</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_25p1</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x0E</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_25p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x0F</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_26p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x10</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_27p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x11</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_27p9</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x12</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_28p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x13</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_29p2</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x14</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_29p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x15</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_30p4</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x16</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_30p9</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x17</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_31p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x18</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_32p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x19</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_32p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x1A</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_33p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x1B</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_33p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x1C</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_33p9</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x1D</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_34p4</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x1E</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_34p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x1F</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_35p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x20</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_35p7</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x21</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_36p1</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x22</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_36p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x23</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_36p9</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x24</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_37p2</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x25</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_37p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x26</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_38p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x27</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_38p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x28</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_38p7</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x29</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_39p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x2A</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_39p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x2B</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_39p7</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x2C</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_40p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x2D</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_40p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x2E</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_40p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x2F</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_40p9</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x30</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_41p2</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x31</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_41p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x32</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_41p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x33</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_42p0</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x34</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_42p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x35</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_42p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x36</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_42p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x37</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_43p1</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x38</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_43p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x39</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_43p6</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x3A</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_43p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x3B</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_44p1</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x3C</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_44p3</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x3D</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_44p5</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x3E</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_44p8</span>          <span class="o">=</span> <span class="p">(</span><span class="mh">0x3F</span> <span class="o">&lt;&lt;</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_BITSHIFT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_0</span>             <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_0p0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_5</span>             <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_7p1</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_10</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_10p0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_15</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_15p6</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_20</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_19p5</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_25</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_25p1</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_30</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_29p8</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_35</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_34p8</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_40</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_40p0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_45</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_ORIENTATION_THETA_DEG_44p8</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_HYSTERESIS</span>              <span class="o">=</span> <span class="mh">0x07FF</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_HYSTERESIS_MIN_MG</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_ORIENTATION_HYSTERESIS_MAX_MG</span>       <span class="o">=</span> <span class="mi">1000</span>
+    <span class="c1">#BMA456_FEAT_MG_TO_ORIENTATION_HYSTERESIS(mg)    ((((mg) &lt;&lt; 1) + ((mg) * 6 + 62) / 125) &amp; BMA456_FEAT_ORIENTATION_HYSTERESIS)</span>
+    <span class="n">BMA456_FEAT_HILOW_G_SIG_THRESHOLD</span>               <span class="o">=</span> <span class="mh">0x7FFF</span>
+    <span class="n">BMA456_FEAT_HILOW_G_SIG_THRESHOLD_MIN_MG</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_HILOW_G_SIG_THRESHOLD_MAX_MG</span>        <span class="o">=</span> <span class="mi">16000</span>
+    <span class="n">BMA456_FEAT_LOW_G_THRESHOLD_RCMD_MIN_MG</span>         <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_LOW_G_THRESHOLD_RCMD_MAX_MG</span>         <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">BMA456_FEAT_HIGH_G_THRESHOLD_RCMD_MIN_MG</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_HIGH_G_THRESHOLD_RCMD_MAX_MG</span>        <span class="o">=</span> <span class="n">BMA456_FEAT_HILOW_G_SIG_THRESHOLD_MAX_MG</span>
+    <span class="c1">#BMA456_FEAT_MG_TO_HILOW_G_SIG_THRESHOLD(mg)     (((mg) &lt;&lt; 1) + ((mg) * 6 + 62)/ 125)</span>
+    <span class="n">BMA456_FEAT_HILOW_G_HYSTERESIS</span>                  <span class="o">=</span> <span class="mh">0x0FFF</span>
+    <span class="n">BMA456_FEAT_HILOW_G_HYSTERESIS_MIN_MG</span>           <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_HILOW_G_HYSTERESIS_MAX_MG</span>           <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">BMA456_FEAT_LOW_G_HYSTERESIS_RCMD_MIN_MG</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_LOW_G_HYSTERESIS_RCMD_MAX_MG</span>        <span class="o">=</span> <span class="mi">500</span>
+    <span class="n">BMA456_FEAT_HIGH_G_HYSTERESIS_RCMD_MIN_MG</span>       <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_HIGH_G_HYSTERESIS_RCMD_MAX_MG</span>       <span class="o">=</span> <span class="n">BMA456_FEAT_HILOW_G_HYSTERESIS_MAX_MG</span>
+    <span class="c1">#BMA456_FEAT_MG_TO_HILOW_G_HYSTERESIS(mg)        (((mg) &lt;&lt; 1) + ((mg) * 6 + 62)/ 125)</span>
+    <span class="n">BMA456_FEAT_LOW_G_ENABLE</span>                        <span class="o">=</span> <span class="mh">0x1000</span>
+    <span class="n">BMA456_FEAT_HIGH_G_ENABLE_X</span>                     <span class="o">=</span> <span class="mh">0x1000</span>
+    <span class="n">BMA456_FEAT_HIGH_G_ENABLE_Y</span>                     <span class="o">=</span> <span class="mh">0x2000</span>
+    <span class="n">BMA456_FEAT_HIGH_G_ENABLE_Z</span>                     <span class="o">=</span> <span class="mh">0x4000</span>
+    <span class="n">BMA456_FEAT_HIGH_G_ENABLE</span>                       <span class="o">=</span> <span class="mh">0x8000</span>
+    <span class="n">BMA456_FEAT_HILOW_G_DURATION</span>                    <span class="o">=</span> <span class="mh">0x0FFF</span>
+    <span class="n">BMA456_FEAT_HILOW_G_DURATION_MIN_MS</span>             <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_HILOW_G_DURATION_MAX_MS</span>             <span class="o">=</span> <span class="mi">81900</span>
+    <span class="c1">#BMA456_FEAT_MS_TO_HILOW_G_DURATION(ms)          (((ms) + 10) / 20)</span>
+    <span class="n">BMA456_FEAT_SKIP_TIME</span>                           <span class="o">=</span> <span class="mh">0x01FF</span>
+    <span class="n">BMA456_FEAT_SKIP_TIME_MIN_MS</span>                    <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_SKIP_TIME_MAX_MS</span>                    <span class="o">=</span> <span class="mi">10220</span>
+    <span class="c1">#BMA456_FEAT_MS_TO_SKIP_TIME(ms)                 (((ms) + 10) / 20)</span>
+    <span class="n">BMA456_FEAT_PROOF_TIME</span>                          <span class="o">=</span> <span class="mh">0x007F</span>
+    <span class="n">BMA456_FEAT_PROOF_TIME_MIN_MS</span>                   <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_PROOF_TIME_MAX_MS</span>                   <span class="o">=</span> <span class="mi">2540</span>
+    <span class="c1">#BMA456_FEAT_MS_TO_PROOF_TIME(ms)                (((ms) + 10) / 20)</span>
+    <span class="n">BMA456_FEAT_MULTITAP_SENSITIVITY</span>                <span class="o">=</span> <span class="mh">0xFFFF</span>
+    <span class="n">BMA456_FEAT_MULTITAP_SENSITIVITY_RCND_MIN_MG</span>    <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_MULTITAP_SENSITIVITY_RCMD_MAX_MG</span>    <span class="o">=</span> <span class="mi">1200</span>
+    <span class="c1">#BMA456_FEAT_MG_TO_MULTITAP_SENSITIVITY(mg)      ((((mg) &lt;&lt; 3) + 312) / 625)</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION</span>                   <span class="o">=</span> <span class="mh">0xFFFF</span>
+    <span class="c1">#BMA456_FEAT_MS_TO_MULTITAP_DURATION(ms)         (((ms) + 2) / 5)</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION_GEST_RCMD_MIN_MS</span>  <span class="o">=</span> <span class="mi">250</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION_GEST_RCMD_MAX_MS</span>  <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION_SHOCK_RCMD_MIN_MS</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION_SHOCK_RCMD_MAX_MS</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION_QUIET_RCMD_MIN_MS</span> <span class="o">=</span> <span class="mi">250</span>
+    <span class="n">BMA456_FEAT_MULTITAP_DURATION_QUIET_RCMD_MAX_MS</span> <span class="o">=</span> <span class="mi">500</span>
+    <span class="n">BMA456_FEAT_MULTITAP_TIMEOUT</span>                    <span class="o">=</span> <span class="mh">0xFFFF</span>
+    <span class="n">BMA456_FEAT_MULTITAP_TIMEOUT_ENABLE</span>             <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_MULTITAP_TIMEOUT_DISABLE</span>            <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_MULTITAP_AXIS_SELECT</span>                <span class="o">=</span> <span class="mh">0x0003</span>
+    <span class="n">BMA456_FEAT_MULTITAP_AXIS_SELECT_X</span>              <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_FEAT_MULTITAP_AXIS_SELECT_Y</span>              <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_MULTITAP_AXIS_SELECT_Z</span>              <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FEAT_MULTITAP_ENABLE_SINGLE_TAP</span>          <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_MULTITAP_ENABLE_DOUBLE_TAP</span>          <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FEAT_MULTITAP_ENABLE_TRIPLE_TAP</span>          <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FEAT_MULTITAP_ENABLE_AVERAGING2</span>          <span class="o">=</span> <span class="mh">0x0008</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_NO_MOTION</span>            <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_TIME_OUT</span>             <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_TIME_OUT_DURATION</span>    <span class="o">=</span> <span class="mh">0x0FFC</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_TIME_OUT_DURATION_MIN_MS</span>     <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_TIME_OUT_DURATION_MAX_MS</span>     <span class="o">=</span> <span class="mi">20460</span>
+    <span class="c1">#BMA456_FEAT_MS_TO_AUTO_LOW_POWER_TIME_OUT_DURATION(ms)  ((((ms) + 10) / 5) &amp; BMA456_FEAT_AUTO_LOW_POWER_TIME_OUT_DURATION)</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR</span>               <span class="o">=</span> <span class="mh">0x6000</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_1p5625</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_3p125</span>         <span class="o">=</span> <span class="mh">0x2000</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_6p25</span>          <span class="o">=</span> <span class="mh">0x4000</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_12p5</span>          <span class="o">=</span> <span class="mh">0x6000</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_MIN_HZ</span>        <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_MAX_HZ</span>        <span class="o">=</span> <span class="mi">13</span>
+    <span class="c1">#BMA456_FEAT_HZ_TO_AUTO_LOW_POWER_LP_ODR(hz)     (((hz) &lt;= 2) ? BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_1p5625 : \</span>
+    <span class="c1">#                                                        (((hz) &lt;= 4) ? BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_3p125 : \</span>
+    <span class="c1">#                                                        (((hz) &lt;= 9) ? BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_6p25 : \</span>
+    <span class="c1">#                                                        BMA456_FEAT_AUTO_LOW_POWER_LP_ODR_12p5 )))</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_MGT_AUTO</span>             <span class="o">=</span> <span class="mh">0x8000</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_MGT_AUTO_DISABLE</span>     <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_AUTO_LOW_POWER_MGT_AUTO_ENABLE</span>      <span class="o">=</span> <span class="n">BMA456_FEAT_AUTO_LOW_POWER_MGT_AUTO</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X</span>                        <span class="o">=</span> <span class="mh">0x0003</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_TO_X</span>                   <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_TO_Y</span>                   <span class="o">=</span> <span class="mh">0x0001</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_TO_Z</span>                   <span class="o">=</span> <span class="mh">0x0002</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN</span>                   <span class="o">=</span> <span class="mh">0x0004</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN_KEEP</span>              <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN_INVERT</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_X_STRAIGHT</span>               <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_X_TO_X</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN_KEEP</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y</span>                        <span class="o">=</span> <span class="mh">0x0018</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_X</span>                   <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_Y</span>                   <span class="o">=</span> <span class="mh">0x0008</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_Z</span>                   <span class="o">=</span> <span class="mh">0x0010</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN</span>                   <span class="o">=</span> <span class="mh">0x0020</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN_KEEP</span>              <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN_INVERT</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Y_STRAIGHT</span>               <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_Y</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN_KEEP</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z</span>                        <span class="o">=</span> <span class="mh">0x00C0</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_X</span>                   <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_Y</span>                   <span class="o">=</span> <span class="mh">0x0040</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_Z</span>                   <span class="o">=</span> <span class="mh">0x0080</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN</span>                   <span class="o">=</span> <span class="mh">0x0100</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN_KEEP</span>              <span class="o">=</span> <span class="mh">0x0000</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN_INVERT</span>            <span class="o">=</span> <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_Z_STRAIGHT</span>               <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_Z</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN_KEEP</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_STRAIGHT</span>                 <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_X_STRAIGHT</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Y_STRAIGHT</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Z_STRAIGHT</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_ALL_ON_X</span>                 <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_X_TO_X</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN_KEEP</span> <span class="o">|</span>
+                                                             <span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_X</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN_KEEP</span> <span class="o">|</span>
+                                                             <span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_X</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN_KEEP</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_ALL_ON_Y</span>                 <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_X_TO_Y</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN_KEEP</span> <span class="o">|</span>
+                                                             <span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_Y</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN_KEEP</span> <span class="o">|</span>
+                                                             <span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_Y</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN_KEEP</span><span class="p">)</span>
+    <span class="n">BMA456_FEAT_AXES_REMAP_ALL_ON_Z</span>                 <span class="o">=</span> <span class="p">(</span><span class="n">BMA456_FEAT_AXES_REMAP_X_TO_Z</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_X_SIGN_KEEP</span> <span class="o">|</span>
+                                                             <span class="n">BMA456_FEAT_AXES_REMAP_Y_TO_Z</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Y_SIGN_KEEP</span> <span class="o">|</span>
+                                                             <span class="n">BMA456_FEAT_AXES_REMAP_Z_TO_Z</span> <span class="o">|</span> <span class="n">BMA456_FEAT_AXES_REMAP_Z_SIGN_KEEP</span><span class="p">)</span>
+    
+    
+    
+    <span class="c1"># Other hardware-related definitions</span>
+    <span class="n">BMA456_TEMPERATURE_SHIFT</span>        <span class="o">=</span> <span class="mi">23</span>
+    
+    <span class="c1"># Self-test related constants</span>
+    <span class="n">BMA456_SELFTEST_RANGE</span>           <span class="o">=</span> <span class="mi">8000</span>    <span class="c1"># Measurement range in mg</span>
+    <span class="n">BMA456_SELFTEST_DELAY_CONFIG</span>    <span class="o">=</span> <span class="mi">2000</span>    <span class="c1"># Delay in microseconds [us]</span>
+    <span class="n">BMA456_SELFTEST_DELAY_MEASURE</span>   <span class="o">=</span> <span class="mi">50000</span>   <span class="c1"># Delay in microseconds [us]</span>
+    <span class="n">BMA456_SELFTEST_THRESHOLD</span>       <span class="o">=</span> <span class="mi">1800</span>    <span class="c1"># Self-test threshold in mg</span></div>
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

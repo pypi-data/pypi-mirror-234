@@ -1,0 +1,354 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.charger &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.charger</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract base types for implementations of battery chargers.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Status&quot;</span><span class="p">,</span> <span class="s2">&quot;DCStatus&quot;</span><span class="p">,</span> <span class="s2">&quot;PowerSrc&quot;</span><span class="p">,</span> <span class="s2">&quot;TemperatureRating&quot;</span><span class="p">,</span>\
+           <span class="s2">&quot;ChargerError&quot;</span><span class="p">,</span> <span class="s2">&quot;EventSource&quot;</span><span class="p">,</span> <span class="s2">&quot;EventContext&quot;</span><span class="p">,</span>\
+           <span class="s2">&quot;Charger&quot;</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">unique</span><span class="p">,</span> <span class="n">auto</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Flag</span>
+
+<span class="kn">from</span> <span class="nn">.battery</span> <span class="kn">import</span> <span class="n">Status</span> <span class="k">as</span> <span class="n">BatStatus</span>
+<span class="kn">from</span> <span class="nn">.interruptable</span> <span class="kn">import</span> <span class="n">EventContext</span> <span class="k">as</span> <span class="n">IntEventContext</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">Info</span>
+
+
+<div class="viewcode-block" id="Status"><a class="viewcode-back" href="../../philander.html#philander.charger.Status">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to describe the status or mode of a charging circuitry.\</span>
+<span class="sd">    This is mainly specified by the phase of a charging cycle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">off</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Charger is off.</span>
+    <span class="n">preCharge</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Pre-charge phase</span>
+    <span class="n">trickle</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Trickle charge</span>
+    <span class="n">fastCharge</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Fast charge in general</span>
+    <span class="n">fastChargeConstCurrent</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Fast charge, constant current phase</span>
+    <span class="n">fastChargeConstVoltage</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Fast charge, constant voltage phase</span>
+    <span class="n">topOff</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Top-off phase</span>
+    <span class="n">done</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Charging done</span>
+    <span class="n">unknown</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Status information unavailable, cannot be determined. </span></div>
+    
+<div class="viewcode-block" id="DCStatus"><a class="viewcode-back" href="../../philander.html#philander.charger.DCStatus">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">DCStatus</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper to hold status information of a DC supply.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">off</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Off, no input supply attached.</span>
+    <span class="n">undervoltage</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Input supply is present, but does not suffice to operate charging circuitry.</span>
+    <span class="n">valid</span>          <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># A valid input supply is attached, voltage within range.</span>
+    <span class="n">overvoltage</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Input supply present but voltage is way too high.</span>
+    <span class="n">unknown</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Status is unknown, cannot be determined</span></div>
+
+<div class="viewcode-block" id="PowerSrc"><a class="viewcode-back" href="../../philander.html#philander.charger.PowerSrc">[docs]</a><span class="k">class</span> <span class="nc">PowerSrc</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A power source describes a supplier of electrical energy that can\</span>
+<span class="sd">    be used, e.g. to drive the system.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">unknown</span>  <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Power source is unknown, unclear, cannot be determined</span>
+    <span class="n">dc</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># dc supply</span>
+    <span class="n">bat</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>  <span class="c1"># Battery</span>
+    <span class="n">dcBat</span>    <span class="o">=</span> <span class="n">dc</span> <span class="o">|</span> <span class="n">bat</span> <span class="c1"># Both, dc and Battery available</span></div>
+
+<div class="viewcode-block" id="TemperatureRating"><a class="viewcode-back" href="../../philander.html#philander.charger.TemperatureRating">[docs]</a><span class="k">class</span> <span class="nc">TemperatureRating</span><span class="p">(</span> <span class="n">Enum</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This type qualitatively describes a temperature, e.g. of a chip.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">cold</span>        <span class="o">=</span> <span class="mh">0x02</span>  <span class="c1"># Too cold</span>
+    <span class="n">cool</span>        <span class="o">=</span> <span class="mh">0x01</span>  <span class="c1"># Cool, but still operable</span>
+    <span class="n">ok</span>          <span class="o">=</span> <span class="mh">0x00</span>  <span class="c1"># Just fine.</span>
+    <span class="n">warm</span>        <span class="o">=</span> <span class="mh">0x10</span>  <span class="c1"># Warm, but still within the limits</span>
+    <span class="n">hot</span>         <span class="o">=</span> <span class="mh">0x20</span>  <span class="c1"># Too hot.</span>
+    <span class="n">coolOrWarm</span> <span class="o">=</span> <span class="p">(</span><span class="n">cool</span> <span class="o">|</span> <span class="n">warm</span><span class="p">)</span>    <span class="c1"># Not normal, but within range.</span>
+    <span class="n">coldOrHot</span>  <span class="o">=</span> <span class="p">(</span><span class="n">cold</span> <span class="o">|</span> <span class="n">hot</span><span class="p">)</span>     <span class="c1"># Outside the limits.</span>
+    <span class="n">unknown</span>      <span class="o">=</span> <span class="mh">0xFF</span>             <span class="c1"># Temperature is unknown, cannot be determined</span></div>
+    
+<div class="viewcode-block" id="ChargerError"><a class="viewcode-back" href="../../philander.html#philander.charger.ChargerError">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">ChargerError</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A type to describe the charger&#39;s error condition more precisely.</span>
+<span class="sd">    </span>
+<span class="sd">    This is to detail the reason, why charging was stopped or is not</span>
+<span class="sd">    going to start.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ok</span>           <span class="o">=</span> <span class="mi">0</span>   <span class="c1"># No error.</span>
+    <span class="n">config</span>       <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># General configuration error</span>
+    <span class="n">temp</span>         <span class="o">=</span> <span class="mi">20</span>  <span class="c1"># General temperature error</span>
+    <span class="n">tempChg</span>      <span class="o">=</span> <span class="mi">21</span>  <span class="c1"># Charger (die) temperature out of range</span>
+    <span class="n">tempBat</span>      <span class="o">=</span> <span class="mi">22</span>  <span class="c1"># Battery temperature out of range</span>
+    <span class="n">dc</span>           <span class="o">=</span> <span class="mi">30</span>  <span class="c1"># General voltage error</span>
+    <span class="n">dcHigh</span>       <span class="o">=</span> <span class="mi">32</span>  <span class="c1"># Voltage too high error</span>
+    <span class="n">dcLow</span>        <span class="o">=</span> <span class="mi">31</span>  <span class="c1"># Low or no voltage error</span>
+    <span class="n">bat</span>          <span class="o">=</span> <span class="mi">40</span>  <span class="c1"># General battery error</span>
+    <span class="n">batLow</span>       <span class="o">=</span> <span class="mi">41</span>  <span class="c1"># Battery level is too low</span>
+    <span class="n">batBroken</span>    <span class="o">=</span> <span class="mi">42</span>  <span class="c1"># Battery is damaged.</span>
+    <span class="n">batRemoved</span>   <span class="o">=</span> <span class="mi">43</span>  <span class="c1"># Battery is removed.</span>
+    <span class="n">timer</span>        <span class="o">=</span> <span class="mi">50</span>  <span class="c1"># General timer error.</span>
+    <span class="n">unknown</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EventSource"><a class="viewcode-back" href="../../philander.html#philander.charger.EventSource">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">EventSource</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Event source type to detail the reason for an interrupt occurrence.</span>
+<span class="sd">    </span>
+<span class="sd">    It&#39;s ok for an implementation to not support every type of interrupt.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">internal</span>                <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Internal fault, e.g. OTG fault or buck-boost fault.</span>
+    <span class="n">onOff</span>                   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Charger enable/disable state changed</span>
+    <span class="n">chargingPhase</span>           <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Charger phase/status changed, e.g. from pre- into fast-charge</span>
+    <span class="n">inputVoltage</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># e.g. Input voltage applied / switched off</span>
+    <span class="n">inputCurrentLimitOwn</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Own input current limit reached</span>
+    <span class="n">inputCurrentLimitSrc</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Input current limited by source; Voltage dropped.</span>
+    <span class="n">batteryTemperature</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Battery temperature outside limits</span>
+    <span class="n">batteryOvercurrent</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Discharge current exceeds limit</span>
+    <span class="n">systemUndervoltage</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># System voltage too low</span>
+    <span class="n">systemOvervoltage</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># System voltage applied to charger too high</span>
+    <span class="n">thermalShutdown</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">()</span> <span class="c1"># Charger temperature outside limits</span>
+    <span class="nb">all</span>                     <span class="o">=</span> <span class="mh">0x07FF</span>
+    <span class="n">none</span>                    <span class="o">=</span> <span class="mh">0x0000</span> <span class="c1"># No interrupt fired</span>
+    <span class="n">unknown</span>                 <span class="o">=</span> <span class="mh">0x8000</span> <span class="c1"># Unknown reason</span></div>
+    
+<div class="viewcode-block" id="EventContext"><a class="viewcode-back" href="../../philander.html#philander.charger.EventContext">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">EventContext</span><span class="p">(</span> <span class="n">IntEventContext</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class holding the context information of an event (interrupt).</span>
+<span class="sd">    </span>
+<span class="sd">    Use the :attr:`source` attribute to de-multiplex the inner data items.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source</span><span class="p">:</span>     <span class="n">EventSource</span> <span class="o">=</span> <span class="n">EventSource</span><span class="o">.</span><span class="n">none</span></div>
+    
+<div class="viewcode-block" id="Charger"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger">[docs]</a><span class="k">class</span> <span class="nc">Charger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class to describe a battery charger.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Charger.reset"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Soft resets the device.</span>
+<span class="sd">        </span>
+<span class="sd">        The device is in some default state, afterwards and must be</span>
+<span class="sd">        re-configured according to the application&#39;s needs.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="Charger.getInfo"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getInfo">[docs]</a>    <span class="k">def</span> <span class="nf">getInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves an information block from the charging device.</span>
+<span class="sd">        </span>
+<span class="sd">        Typically, this kind of information is rather static in that,</span>
+<span class="sd">        it does not change over time. Usually, this information is</span>
+<span class="sd">        somewhat unique for the charger origin, manufacturing date,</span>
+<span class="sd">        hardware/firmware revision, product/model ID, chip series and alike.</span>
+<span class="sd">        For that reason, this function can be used to see,</span>
+<span class="sd">        if communication works reliably.</span>
+
+<span class="sd">        :return: The information object and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Info, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">Info</span><span class="p">()</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">return</span> <span class="n">info</span><span class="p">,</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="Charger.isBatteryPresent"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.isBatteryPresent">[docs]</a>    <span class="k">def</span> <span class="nf">isBatteryPresent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks, if the battery is present.</span>
+<span class="sd">        </span>
+<span class="sd">        This does not tell anything about whether the battery is charged</span>
+<span class="sd">        or not.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns :attr:`ErrorCode.errOk` if a battery is present,</span>
+<span class="sd">        :attr:`ErrorCode.errUnavailable` if the battery is not present</span>
+<span class="sd">        and any other value to indicate the reason, why this information</span>
+<span class="sd">        could not be retrieved.</span>
+<span class="sd">        </span>
+<span class="sd">        See also: :meth:`getChgStatus`.</span>
+
+<span class="sd">        :return: An error code.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="Charger.getNumCells"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getNumCells">[docs]</a>    <span class="k">def</span> <span class="nf">getNumCells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the number of battery cells configured.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns the number of battery cells or a negative number if this</span>
+<span class="sd">        information could not be retrieved.</span>
+
+<span class="sd">        :return: The number of cells.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span></div>
+    
+<div class="viewcode-block" id="Charger.getBatStatus"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getBatStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getBatStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the battery status to tell about the health and state of the battery.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns one of the :class:`.battery.Status` values to indicate</span>
+<span class="sd">        battery voltage level or presence or health state.</span>
+
+<span class="sd">        :return: The battery state.</span>
+<span class="sd">        :rtype: battery.Status</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">BatStatus</span><span class="o">.</span><span class="n">unknown</span></div>
+    
+<div class="viewcode-block" id="Charger.getChgStatus"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getChgStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getChgStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the charging phase or status.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A charger status code to indicate the current charger status.</span>
+<span class="sd">        :rtype: charger.Status</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Status</span><span class="o">.</span><span class="n">unknown</span></div>
+    
+<div class="viewcode-block" id="Charger.getDCStatus"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getDCStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getDCStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the DC supply status.</span>
+
+<span class="sd">        :return: A status code to indicate the DC supply status.</span>
+<span class="sd">        :rtype: DCStatus</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">DCStatus</span><span class="o">.</span><span class="n">unknown</span></div>
+    
+<div class="viewcode-block" id="Charger.getPowerSrc"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getPowerSrc">[docs]</a>    <span class="k">def</span> <span class="nf">getPowerSrc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the power source, that presumably drives the\</span>
+<span class="sd">        system at the moment that this function is executed.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: A code to indicate the power source.</span>
+<span class="sd">        :rtype: PowerSrc</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">PowerSrc</span><span class="o">.</span><span class="n">unknown</span></div>
+
+<div class="viewcode-block" id="Charger.getChargerTempStatus"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getChargerTempStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getChargerTempStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the charger&#39;s temperature state.</span>
+
+<span class="sd">        :return: A rating code to indicate the temperature rating of the charger chip.</span>
+<span class="sd">        :rtype: TemperatureRating</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TemperatureRating</span><span class="o">.</span><span class="n">unknown</span></div>
+
+
+<div class="viewcode-block" id="Charger.getBatteryTempStatus"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getBatteryTempStatus">[docs]</a>    <span class="k">def</span> <span class="nf">getBatteryTempStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the battery&#39;s temperature status.</span>
+
+<span class="sd">        :return: A rating code to indicate the temperature rating of the battery element.</span>
+<span class="sd">        :rtype: TemperatureRating</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">TemperatureRating</span><span class="o">.</span><span class="n">unknown</span></div>
+
+<div class="viewcode-block" id="Charger.getError"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.getError">[docs]</a>    <span class="k">def</span> <span class="nf">getError</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determines the error state for the charger chip, if one.</span>
+
+<span class="sd">        :return: A charger error code to further describe reason for the error.</span>
+<span class="sd">        :rtype: ChargerError</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ChargerError</span><span class="o">.</span><span class="n">unknown</span></div>
+
+<div class="viewcode-block" id="Charger.restartCharging"><a class="viewcode-back" href="../../philander.html#philander.charger.Charger.restartCharging">[docs]</a>    <span class="k">def</span> <span class="nf">restartCharging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tries to restart the charging phase.</span>
+<span class="sd">        </span>
+<span class="sd">        This could be necessary, e.g. after recovering from a thermal</span>
+<span class="sd">        shutdown.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div></div>
+
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

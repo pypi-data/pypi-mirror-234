@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.sensor &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b3523f8e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=039e1c02" />
+    <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.sensor</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract sensor interface.</span>
+
+<span class="sd">Provide an API to abstract from any type of sensors. Only a very basic</span>
+<span class="sd">set of common types and functions is provided.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Calibration&quot;</span><span class="p">,</span> <span class="s2">&quot;CalibrationData&quot;</span><span class="p">,</span> <span class="s2">&quot;CalibrationType&quot;</span><span class="p">,</span> \
+           <span class="s2">&quot;SelfTest&quot;</span><span class="p">,</span> <span class="s2">&quot;Sensor&quot;</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">.configurable</span> <span class="kn">import</span> <span class="n">Configurable</span><span class="p">,</span> <span class="n">Configuration</span><span class="p">,</span> <span class="n">ConfigItem</span>
+<span class="kn">from</span> <span class="nn">.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span><span class="p">,</span> <span class="n">Info</span>
+
+
+<div class="viewcode-block" id="CalibrationType">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.CalibrationType">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">CalibrationType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mnemonic type to identify a specific calibration procedure.</span>
+<span class="sd">    </span>
+<span class="sd">    This is part of the information to be passed to a sensor when calling</span>
+<span class="sd">    its :meth:`Sensor.calibrate` method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">default</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Default calibration procedure. This may be a special</span>
+<span class="sd">    procedure of the sensor hardware, or simply the use of hard-coded</span>
+<span class="sd">    default calibration parameters. Depends on the sensor hardware</span>
+<span class="sd">    and/or driver implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zero</span>               <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single fix point *zero* calibration. No further calibration data</span>
+<span class="sd">    is needed. The current sensory exposure should map to exactly zero</span>
+<span class="sd">    (0) measurement units. May also be interpreted as *nothing detected*</span>
+<span class="sd">    or 0%.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">one</span>                <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single fix point *one* calibration. No further calibration data</span>
+<span class="sd">    needed. The current sensory exposure should map to exactly one (1)</span>
+<span class="sd">    measurement unit. For binary sensors, may also be interpreted as</span>
+<span class="sd">    *something detected*.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hundred</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single fix point *hundred* calibration. No further calibration</span>
+<span class="sd">    data is needed. The current sensory exposure should map to exactly</span>
+<span class="sd">    hundred (100) measurement units. For qualitative sensors, may also</span>
+<span class="sd">    be interpreted as *everything detected* or 100%.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trueValue</span>          <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single point calibration. The true measurement value of the</span>
+<span class="sd">    current exposure must be given as part of the calibration data</span>
+<span class="sd">    structure. The current sensory exposure should map to exactly the</span>
+<span class="sd">    value given in the calibration data and meant as measurement units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">expose1</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The first point in a two- or three point calibration, depending</span>
+<span class="sd">    on what the sensor implementation actually supports. The true</span>
+<span class="sd">    measurement value at this point is either given implicitly or</span>
+<span class="sd">    explicitly by further data of the calibration data structure. The</span>
+<span class="sd">    calibration procedure cannot be finished at this time. Instead, the</span>
+<span class="sd">    driver&#39;s calibration routine should expect to be called again with</span>
+<span class="sd">    one of the other ``calibExpose`` calibration types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">expose2</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The second point in a two- or three point calibration, depending</span>
+<span class="sd">    on what the sensor implementation actually supports. The true</span>
+<span class="sd">    measurement value at this point is either given implicitly or</span>
+<span class="sd">    explicitly by further data of the calibration data  structure. A</span>
+<span class="sd">    two-point calibration finishes at this point, while a 3-point</span>
+<span class="sd">    calibration should expect to be called once more.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">expose3</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The last point in a three point calibration. The true measurement</span>
+<span class="sd">    value at this point is either given implicitly or explicitly by</span>
+<span class="sd">    further data of the calibration data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">offset</span>             <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides the new, total offset, given in either analogue,</span>
+<span class="sd">    digitized or measurement units as part of the calibration data</span>
+<span class="sd">    structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shiftOffset</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The current offset is corrected by the shift given in analogue,</span>
+<span class="sd">    digitised or measurement units as part of the calibration data</span>
+<span class="sd">    structure. The shift adds to the current offset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">linear</span>             <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides a new pair of total offset and sensitivity/skew for</span>
+<span class="sd">    translating raw (analogue) values into measurement units. These</span>
+<span class="sd">    parameters must be given as part of the calibration data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">linearRel</span>          <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gives a pair of relative correctives to the current offset and</span>
+<span class="sd">    skew/sensitivity. This data must be part of the calibration data</span>
+<span class="sd">    structure. Note that the offset corrective must be given in either</span>
+<span class="sd">    analogue, digitised or measurement units and will be added to the</span>
+<span class="sd">    current offset. The sensitivity corrective is interpreted as a signed</span>
+<span class="sd">    percentage. It will be added to 100% and then applied to (multiplied</span>
+<span class="sd">    with) the current sensitivity. This is to allow the current sensitivity</span>
+<span class="sd">    being, e.g. increased by 3% or 5% and alike.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">param</span>              <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic calibration type to allow for a transfer of calibration</span>
+<span class="sd">    parameters. With this, the current parameters are no longer in</span>
+<span class="sd">    effect, but will be replaced by the data provided in the calibration</span>
+<span class="sd">    data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">paramRel</span>           <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shift or skew the current calibration parameters by the correctives</span>
+<span class="sd">    provided in the calibration data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trueMeasurement</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide a pair of ``(m,v)`` measured and true value to calculate</span>
+<span class="sd">    necessary corrections. This is a calibration with one fix point</span>
+<span class="sd">    similar to :attr:`trueValue`. The difference is, that the</span>
+<span class="sd">    measured value is not implicitly given by the current exposure, but</span>
+<span class="sd">    can be provided explicitly as part of the calibration data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trueMeasurement2</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides two pairs of ``(m,v)`` measured and true values to</span>
+<span class="sd">    calculate necessary corrections. This is a two-point calibration</span>
+<span class="sd">    and both points are given in the calibration data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">knownMeasurement</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;In contrast to :attr:`trueMeasurement`, calibration uses one</span>
+<span class="sd">    or more points ``(r,v)`` on the transfer function, where ``r`` is the</span>
+<span class="sd">    analogue or digitized raw value or voltage equivalent and ``v`` is</span>
+<span class="sd">    the true, resulting data. This is similar to :attr:`expose3`</span>
+<span class="sd">    etc. except, the primary measure is not given implicitly by the</span>
+<span class="sd">    current exposure, but is provided explicitly, instead. All this data</span>
+<span class="sd">    must be part of the calibration data structure. This is a generic</span>
+<span class="sd">    mnemonics. The actual number of points is given implicitly / at the</span>
+<span class="sd">    discretion of the implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">knownMeasurement1</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The same as :attr:`knownMeasurement`. One data point is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">knonwMeasurement2</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The same as :attr:`knownMeasurement`. Two data points are</span>
+<span class="sd">    used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">knonwMeasurement3</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The same as :attr:`knownMeasurement`. Three data points are</span>
+<span class="sd">    used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temperature</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-calibrate the temperature measurement, e.g. for sensors</span>
+<span class="sd">    involving temperature compensation.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_CalibrationData_linear</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper to wrap offset and slope, both given in measurement units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">offset</span><span class="p">:</span>             <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">sensitivity</span><span class="p">:</span>        <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+    
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_CalibrationData_iLinear</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper to wrap offset and slope, both given in (e.g. ADC-) raw</span>
+<span class="sd">    units.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">offset</span><span class="p">:</span>             <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">sensitivity</span><span class="p">:</span>        <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_CalibrationData_trueMeasurement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper to wrap a pair of an actual measurement result and its</span>
+<span class="sd">    related true value, both given in measurement units. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">measurement</span><span class="p">:</span>        <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">trueValue</span><span class="p">:</span>          <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+    
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_CalibrationData_knownMeasurement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper to wrap a list of raw measures given in raw units and a</span>
+<span class="sd">    list of their corresponding true values, given in measurement units. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">measure</span><span class="p">:</span>            <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span> <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+    <span class="n">trueValue</span><span class="p">:</span>          <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+    
+<div class="viewcode-block" id="CalibrationData">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.CalibrationData">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">CalibrationData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container type to encapsulate a calibrations pure data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">trueValue</span><span class="p">:</span>          <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;True measurement value related to the current exposure. Should</span>
+<span class="sd">    be used with</span>
+<span class="sd">    :attr:`CalibrationType.trueValue`,</span>
+<span class="sd">    :attr:`CalibrationType.expose1`,</span>
+<span class="sd">    :attr:`CalibrationType.expose2` and</span>
+<span class="sd">    :attr:`CalibrationType.expose3`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">offset</span><span class="p">:</span>             <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Either a new absolute offset, or the shift to correct the current</span>
+<span class="sd">    offset, given in measurement units. To be used with </span>
+<span class="sd">    :attr:`CalibrationType.offset` and</span>
+<span class="sd">    :attr:`CalibrationType.shiftOffset`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">iOffset</span><span class="p">:</span>            <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Either a new absolute offset, or the shift to correct the current</span>
+<span class="sd">    offset, given in analogue, digitised or abstract integer units. To be</span>
+<span class="sd">    used with :attr:`CalibrationType.offset` and</span>
+<span class="sd">    :attr:`CalibrationType.shiftOffset`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">linear</span><span class="p">:</span>             <span class="n">_CalibrationData_linear</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Either new linear calibration parameters to replace the current</span>
+<span class="sd">    ones, or corrective numbers to adjust the calibration parameters in</span>
+<span class="sd">    effect, both given in measurement units. To be used with</span>
+<span class="sd">    :attr:`CalibrationType.linear` and</span>
+<span class="sd">    :attr:`CalibrationType.linearRel`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">iLinear</span><span class="p">:</span>            <span class="n">_CalibrationData_iLinear</span><span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Either new linear calibration parameters to replace the current</span>
+<span class="sd">    ones, or corrective numbers to adjust the calibration parameters in</span>
+<span class="sd">    effect, both given in abstract integer units. To be used with</span>
+<span class="sd">    :attr:`CalibrationType.linear` and</span>
+<span class="sd">    :attr:`CalibrationType.linearRel`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">param</span><span class="p">:</span>              <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic set of parameters, stored separately. To be used with</span>
+<span class="sd">    :attr:`CalibrationType.param` and</span>
+<span class="sd">    :attr:`CalibrationType.paramRel`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trueMeasurement</span><span class="p">:</span>    <span class="n">_CalibrationData_trueMeasurement</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Pair of measured and true value to support a one-point-calibration.</span>
+<span class="sd">    Both values are given in measurement units. Note that the values do</span>
+<span class="sd">    not relate to the current exposure. To be used with</span>
+<span class="sd">    :attr:`CalibrationType.trueMeasurement`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">trueMeasurement2</span><span class="p">:</span>   <span class="n">_CalibrationData_trueMeasurement</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Two pairs of measured and true value to support a two-point-</span>
+<span class="sd">    calibration. All values are given in measurement units. To be used</span>
+<span class="sd">    with :attr:`CalibrationType.trueMeasurement2`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">knownMeasurement</span><span class="p">:</span>   <span class="n">List</span><span class="p">[</span><span class="n">_CalibrationData_knownMeasurement</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span> <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span> <span class="p">:</span>
+                                                                  <span class="p">[</span><span class="n">_CalibrationData_knownMeasurement</span><span class="p">(),</span>
+                                                                   <span class="n">_CalibrationData_knownMeasurement</span><span class="p">(),</span>
+                                                                   <span class="n">_CalibrationData_knownMeasurement</span><span class="p">()]</span> <span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Up to 3 pairs of raw measure and true value to support a</span>
+<span class="sd">    multi-point-calibration. The source (x)- values *measure* are meant</span>
+<span class="sd">    as ADC ticks or milli Volts. Up to 3 inputs are supported (x,y,z or</span>
+<span class="sd">    real/imaginary etc.).</span>
+<span class="sd">    The target (y)- values *trueValue* are given in measurement units.</span>
+<span class="sd">    To be used with</span>
+<span class="sd">    :attr:`CalibrationType.knownMeasurement`,</span>
+<span class="sd">    :attr:`CalibrationType.knownMeasurement1`,</span>
+<span class="sd">    :attr:`CalibrationType.calibKnownMeasurement2`,</span>
+<span class="sd">    :attr:`CalibrationType.calibKnownMeasuremen3`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">temp</span><span class="p">:</span>               <span class="n">_CalibrationData_iLinear</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Temperature calibration data. To be used with</span>
+<span class="sd">    :attr:`CalibrationType.temperature`.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Calibration">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Calibration">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Calibration</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container to wrap calibration type and data at the top level.</span>
+<span class="sd">    </span>
+<span class="sd">    This structure is to be passed in calls to :meth:`Sensor.calibrate`.</span>
+<span class="sd">    The interpretation of the data particles depends on the type of the</span>
+<span class="sd">    calibration as follows.</span>
+<span class="sd">    </span>
+<span class="sd">    =================    =========================</span>
+<span class="sd">    CalibrationType      CalibrationData particle</span>
+<span class="sd">    =================    =========================</span>
+<span class="sd">    default              *none* </span>
+<span class="sd">    zero                 *none*</span>
+<span class="sd">    one                  *none*</span>
+<span class="sd">    hundred              *none*</span>
+<span class="sd">    trueValue            trueValue</span>
+<span class="sd">    expose1              trueValue</span>
+<span class="sd">    expose2              trueValue</span>
+<span class="sd">    expose3              trueValue</span>
+<span class="sd">    offset               offset, iOffset</span>
+<span class="sd">    shiftOffset          offset, iOffset</span>
+<span class="sd">    linear               linear, iLinear</span>
+<span class="sd">    linearRel            linear, iLinear</span>
+<span class="sd">    param                param</span>
+<span class="sd">    paramRel             param</span>
+<span class="sd">    trueMeasurement      trueMeasurement</span>
+<span class="sd">    trueMeasurement2     trueMeasurement2</span>
+<span class="sd">    knownMeasurement     knownMeasurement</span>
+<span class="sd">    knownMeasurement1    knownMeasurement</span>
+<span class="sd">    knonwMeasurement2    knownMeasurement</span>
+<span class="sd">    knonwMeasurement3    knownMeasurement</span>
+<span class="sd">    temperature          temp</span>
+<span class="sd">    =================    =========================    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">type</span><span class="p">:</span>       <span class="n">CalibrationType</span> <span class="o">=</span> <span class="n">CalibrationType</span><span class="o">.</span><span class="n">default</span>
+    <span class="n">data</span><span class="p">:</span>       <span class="n">CalibrationData</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+        
+<div class="viewcode-block" id="SelfTest">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.SelfTest">[docs]</a>
+<span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">SelfTest</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bit mask type to designate the different types of self tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">CONNECTION</span>      <span class="o">=</span> <span class="mh">0x0001</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test physical connection, possibly by reading the chip ID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">FUNCTIONAL</span>      <span class="o">=</span> <span class="mh">0x0002</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Functional test, subject to the implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">SELFTEST_ALL</span>    <span class="o">=</span> <span class="mh">0xFFFF</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;All possible self tests.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+    
+<div class="viewcode-block" id="Sensor">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor">[docs]</a>
+<span class="k">class</span> <span class="nc">Sensor</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">Configurable</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class is meant to be sub-classed to define interfaces for\</span>
+<span class="sd">    more-specific categories of sensors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Initializes the sensor.</span>
+    <span class="c1">#</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">paramDict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">paramDict</span> <span class="p">)</span>
+        <span class="c1"># Create instance attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataRange</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRange&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span>  <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRate&quot;</span><span class="p">]</span>
+ 
+<div class="viewcode-block" id="Sensor.Params_init">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.Params_init">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes parameters to their default values.</span>
+<span class="sd">        Supported key names and their meanings / expected keys are:</span>
+<span class="sd">        </span>
+<span class="sd">        * ``Sensor.dataRange``: Upper/lower limit of expected measurements.\</span>
+<span class="sd">        Defaults to 1.</span>
+<span class="sd">        * ``Sensor.dataRate``: Measurement frequency, given in Hz.\</span>
+<span class="sd">        Default is 1.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see :meth:`.module.Module.Params_init`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Dictionary mapping option\</span>
+<span class="sd">        names to their respective values.</span>
+<span class="sd">        :returns: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Fill paramDict with defaults</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Sensor.dataRange&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRange&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Sensor.dataRate&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.open">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.open">[docs]</a>
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens an instance and puts it into a usable state.</span>
+<span class="sd">        </span>
+<span class="sd">        Configures the sensor by reading the supported parameters or</span>
+<span class="sd">        applying default values and calling :meth:`configure`.</span>
+<span class="sd">        Also see: :meth:`.module.Module.open`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as\</span>
+<span class="sd">        obtained from :meth:`.module.Module.Params_init`, possibly.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">defaults</span> <span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;Sensor.dataRange&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">(</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">range</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRange&quot;</span><span class="p">])</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span> <span class="n">cfg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRange&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRange&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;Sensor.dataRate&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">(</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">rate</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRate&quot;</span><span class="p">])</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span> <span class="n">cfg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRate&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+    
+<div class="viewcode-block" id="Sensor.selfTest">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.selfTest">[docs]</a>
+    <span class="k">def</span> <span class="nf">selfTest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tests</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Carry out a sensor self test.</span>
+<span class="sd">        </span>
+<span class="sd">        The aim of such tests is to verify the integrity and well-functioning</span>
+<span class="sd">        of the sensor device. The nature of these tests is solely specific</span>
+<span class="sd">        to the sensor type and implementation. So, a test may be a built-in</span>
+<span class="sd">        hardware test or some stress test or spot-check implemented in</span>
+<span class="sd">        software or a combination of both.</span>
+<span class="sd">        Depending on the underlying sensor type, a test may or may not be</span>
+<span class="sd">        finished when returning from this function.</span>
+<span class="sd">        </span>
+<span class="sd">        If the test finishes upon return, the test result is communicated</span>
+<span class="sd">        to the application via the return value. In that case, the sensor</span>
+<span class="sd">        device is assumed to be in the same or similar operating condition</span>
+<span class="sd">        as before entering this method.</span>
+<span class="sd">        </span>
+<span class="sd">        If, in the other case, the test is not finished before returning,</span>
+<span class="sd">        the sensor is assumed to be put in test mode and further action</span>
+<span class="sd">        of the application is necessary to elicit the test result. This</span>
+<span class="sd">        action could, for example, include reading sample data or retrieve</span>
+<span class="sd">        the information block. How to leave the self-test mode, depends</span>
+<span class="sd">        on the sensor implementation. Calling this function with the same</span>
+<span class="sd">        or complementing ``tests`` parameter or invoking</span>
+<span class="sd">        :meth:`Sensor.reset` or :meth:`Sensor.configure` are just a few</span>
+<span class="sd">        examples.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int tests: A bit mask to select the tests to be executed,\</span>
+<span class="sd">        in case several tests are available.\</span>
+<span class="sd">        Interpretation of this parameter is up to the specific sensor\</span>
+<span class="sd">        type and may include starting and stopping a certain test mode.</span>
+<span class="sd">        :return: An error code either indicating the test result or that\</span>
+<span class="sd">        starting/stopping test mode was successful or the reason why it\</span>
+<span class="sd">        failed.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">tests</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.reset">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Soft resets the sensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Depending on the actual sensor type, configuration may get lost.</span>
+<span class="sd">        So, the device is in some default state, afterwards and must be</span>
+<span class="sd">        re-configured according to the application&#39;s needs.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">defaults</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataRange</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRange&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Sensor.dataRate&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.configure">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.configure">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configData</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configures the sensor device as described by the given</span>
+<span class="sd">        configuration data.</span>
+<span class="sd">        </span>
+<span class="sd">        Note that the type of the provided data and its interpretation</span>
+<span class="sd">        will depend on the sensor implementation.</span>
+<span class="sd">        Also see: :class:`Configuration`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param .sensor.Configuration configData: Specific configuration information.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">range</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataRange</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">configData</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">ConfigItem</span><span class="o">.</span><span class="n">rate</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dataRate</span> <span class="o">=</span> <span class="n">configData</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.calibrate">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.calibrate">[docs]</a>
+    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calib</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calibrates the sensor device according to the given calibration data.</span>
+<span class="sd">        </span>
+<span class="sd">        Calibration may, for example, provide static offsets to adjust the</span>
+<span class="sd">        measurement&#39;s zero point or some sort of corrective coefficients</span>
+<span class="sd">        to account for the sensor&#39;s temperature drift.</span>
+<span class="sd">        The exact type of calibration along with additional data that is</span>
+<span class="sd">        possibly necessary, is passed in via the ``calib`` parameter.</span>
+<span class="sd">        Also see: :class:`Calibration`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param Calibration calib: The calibration data for that sensor.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">calib</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.getInfo">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.getInfo">[docs]</a>
+    <span class="k">def</span> <span class="nf">getInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves an information block from the sensor device.</span>
+<span class="sd">        </span>
+<span class="sd">        Typically, this kind of information is rather static in that,</span>
+<span class="sd">        it does not change (much) over time. Usually, it further describes</span>
+<span class="sd">        the sensor origin, manufacturing date, hardware/firmware revision,</span>
+<span class="sd">        product/model ID, self-identifying numbers and alike. Also, the</span>
+<span class="sd">        general operating mode or working conditions may be part of the</span>
+<span class="sd">        info block.</span>
+<span class="sd">        </span>
+<span class="sd">        For more dynamic meta-information see :meth:`getStatus`.</span>
+<span class="sd">        </span>
+<span class="sd">        The method returns both, an instance of :class:`Info`, carrying</span>
+<span class="sd">        the information block as well as an error code, indicating</span>
+<span class="sd">        success or failure. The info block shall be evaluated only, if</span>
+<span class="sd">        the method returned successfully.</span>
+<span class="sd">        Even then, the caller should still evaluate the ``validity``</span>
+<span class="sd">        attribute of the returned info block to find out, which of the</span>
+<span class="sd">        information is actually valid.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: The information object and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Info, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">Info</span><span class="p">()</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">return</span> <span class="n">info</span><span class="p">,</span> <span class="n">ret</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.getStatus">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.getStatus">[docs]</a>
+    <span class="k">def</span> <span class="nf">getStatus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statusID</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves status data from the sensor device.</span>
+<span class="sd">        </span>
+<span class="sd">        Typically, this kind of information is more dynamic in that, it</span>
+<span class="sd">        changes (much) over time. Usually, it further describes the</span>
+<span class="sd">        sensor&#39;s current shape and condition, such as the availability of</span>
+<span class="sd">        new measurement data, the cause of an interrupt or the status of</span>
+<span class="sd">        certain hardware functions. Also, secondary measurements such as</span>
+<span class="sd">        the die temperature could be subject to status data.</span>
+<span class="sd">        </span>
+<span class="sd">        For more static meta-information see :meth:`getInfo`.</span>
+<span class="sd">        </span>
+<span class="sd">        The given ``statusID`` parameter specifies, exactly which status</span>
+<span class="sd">        information should be retrieved. Its type and interpretation</span>
+<span class="sd">        depends on the sensor implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        The method returns both, resulting status data and an error code</span>
+<span class="sd">        indicating success or failure. The status data should be considered</span>
+<span class="sd">        valid only, if the error code indicates a successful execution</span>
+<span class="sd">        of this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The type and interpretation of the status data depends on the</span>
+<span class="sd">        specific sensor implementation.</span>
+
+<span class="sd">        :param int statusID: Identifies the status information to be retrieved.</span>
+<span class="sd">        :return: The status object and an error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">statusID</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span></div>
+
+
+
+<div class="viewcode-block" id="Sensor.getLatestData">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.getLatestData">[docs]</a>
+    <span class="k">def</span> <span class="nf">getLatestData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the most recent data available and returns immediately.</span>
+<span class="sd">        </span>
+<span class="sd">        This function will never block, but may read data that has been</span>
+<span class="sd">        read before, already. More precisely, the data returned was</span>
+<span class="sd">        valid / taken at a moment in the past, which is as close as</span>
+<span class="sd">        possible to the current point in time, (including right NOW).</span>
+<span class="sd">        </span>
+<span class="sd">        For sensors which deliver measurements continuously in time,</span>
+<span class="sd">        there is no semantic difference to :meth:`getNextData`.</span>
+<span class="sd">        </span>
+<span class="sd">        In contrast, for sensors, which provide measurements discretely</span>
+<span class="sd">        at certain time intervals, this function is expected to deliver</span>
+<span class="sd">        the last measurement point - without any waiting. Typically, this</span>
+<span class="sd">        requires some kind of buffering. at the sensor or driver side.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is synchronous in that, it hands out the resulting</span>
+<span class="sd">        data to the caller upon return. In fact, this method returns both,</span>
+<span class="sd">        the measurement result and an error code signaling success or</span>
+<span class="sd">        failure. The measurement data should be considered</span>
+<span class="sd">        valid only, if the error code indicates a successful execution</span>
+<span class="sd">        of this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The type and interpretation of the returned measurement data is</span>
+<span class="sd">        specific to the individual sensor and driver implementation. The</span>
+<span class="sd">        application may rely on values scaled to reasonable units, such</span>
+<span class="sd">        as temperatures in degree Celsius, distances in meters and</span>
+<span class="sd">        pressures in Pascal - or multiples and fractions thereof.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`getNextData`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: The measurement data object and an error code indicating\</span>
+<span class="sd">        either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span></div>
+
+    
+
+<div class="viewcode-block" id="Sensor.getNextData">
+<a class="viewcode-back" href="../../philander.html#philander.sensor.Sensor.getNextData">[docs]</a>
+    <span class="k">def</span> <span class="nf">getNextData</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the next data, possibly waiting for the current\</span>
+<span class="sd">        measurement interval to expire.</span>
+<span class="sd">        </span>
+<span class="sd">        This function may introduce a blocking wait, but always returns</span>
+<span class="sd">        with fresh, new data never read before. The measurement is</span>
+<span class="sd">        taken / valid either immediately or as early as possible in the</span>
+<span class="sd">        future.</span>
+<span class="sd">        </span>
+<span class="sd">        For sensors, that deliver data continuously in time, there is no</span>
+<span class="sd">        difference to :meth:`getLatestData`.</span>
+<span class="sd">        </span>
+<span class="sd">        For sensors that sample data at certain time intervals, this</span>
+<span class="sd">        function very likely includes some waiting delay until the next</span>
+<span class="sd">        measurement is due.</span>
+<span class="sd">        </span>
+<span class="sd">        In either case, this function blocks until the measurement is</span>
+<span class="sd">        retrieved and hands out data to the application upon return.</span>
+<span class="sd">        In that sense, this is a synchronous function.</span>
+<span class="sd">        </span>
+<span class="sd">        The return is twofold: the measurement result and an error code</span>
+<span class="sd">        signaling success or failure. The measurement data should be</span>
+<span class="sd">        considered valid only, if the error code indicates a successful</span>
+<span class="sd">        execution of this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The type and interpretation of the returned measurement data is</span>
+<span class="sd">        specific to the individual sensor and driver implementation. The</span>
+<span class="sd">        application may rely on values scaled to reasonable units or</span>
+<span class="sd">        multiples and fractions thereof.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`getLatestData`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: The measurement data object and an error code indicating\</span>
+<span class="sd">        either success or the reason of failure.</span>
+<span class="sd">        :rtype: Object, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotSupported</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.accelerometer &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.accelerometer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract interface for accelerometer sensors accessible via serial communication.</span>
+
+<span class="sd">Provide an API to abstract from acceleration measurement devices.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Activity&quot;</span><span class="p">,</span> <span class="s2">&quot;AxesSign&quot;</span><span class="p">,</span> <span class="s2">&quot;Orientation&quot;</span><span class="p">,</span> <span class="s2">&quot;Tap&quot;</span><span class="p">,</span>\
+           <span class="s2">&quot;SamplingMode&quot;</span><span class="p">,</span> \
+           <span class="s2">&quot;EventSource&quot;</span><span class="p">,</span> <span class="s2">&quot;EventContext&quot;</span><span class="p">,</span> <span class="s2">&quot;Configuration&quot;</span><span class="p">,</span> <span class="s2">&quot;StatusID&quot;</span><span class="p">,</span> <span class="s2">&quot;Data&quot;</span><span class="p">,</span>\
+           <span class="s2">&quot;Accelerometer&quot;</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Flag</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="kn">from</span> <span class="nn">.configurable</span> <span class="kn">import</span> <span class="n">Configuration</span>
+<span class="kn">from</span> <span class="nn">.interruptable</span> <span class="kn">import</span> <span class="n">EventContext</span> <span class="k">as</span> <span class="n">IntEventContext</span>
+<span class="kn">from</span> <span class="nn">.sensor</span> <span class="kn">import</span> <span class="n">Sensor</span>
+
+
+<div class="viewcode-block" id="Activity"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Activity">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">Activity</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Identifies general types of human walking activities, that an\</span>
+<span class="sd">    accelerometer is possibly able to detect or distinguish.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">unknown</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">still</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">walking</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">running</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="AxesSign"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.AxesSign">[docs]</a><span class="k">class</span> <span class="nc">AxesSign</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to name coordinate axes along with their positive or\</span>
+<span class="sd">    negative sign.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">y</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">z</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">sign</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">signPos</span>      <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">signNeg</span>      <span class="o">=</span> <span class="n">sign</span>
+    <span class="n">none</span>         <span class="o">=</span> <span class="mi">0</span>
+    <span class="nb">all</span>          <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">|</span> <span class="n">y</span> <span class="o">|</span> <span class="n">z</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Orientation"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Orientation">[docs]</a><span class="k">class</span> <span class="nc">Orientation</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to enumerate orientations that the device carrying the\</span>
+<span class="sd">    accelerometer may be in.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">standMask</span>     <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">portraitUp</span>    <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">portraitDown</span>  <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">landscapeLeft</span> <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">landscapeRight</span><span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">faceMask</span>      <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">faceUp</span>        <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">faceDown</span>      <span class="o">=</span> <span class="n">faceMask</span>
+    <span class="n">tiltMask</span>      <span class="o">=</span> <span class="mh">0x08</span>
+    <span class="n">tiltStand</span>     <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">tiltFlat</span>      <span class="o">=</span> <span class="n">tiltMask</span>
+    <span class="n">invalidMask</span>   <span class="o">=</span> <span class="mh">0xF0</span>
+    <span class="n">invalidStand</span>  <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">invalidFace</span>   <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">invalidTilt</span>   <span class="o">=</span> <span class="mh">0x40</span>
+    <span class="n">unknown</span>       <span class="o">=</span> <span class="mh">0xFF</span></div>
+
+<div class="viewcode-block" id="Tap"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Tap">[docs]</a><span class="nd">@unique</span>    
+<span class="k">class</span> <span class="nc">Tap</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to identify different types of tap.</span>
+<span class="sd">    </span>
+<span class="sd">    A tap should be understood as a quick finger tip onto some touch</span>
+<span class="sd">    screen to simulate the click of a mouse. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">none</span>         <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">single</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">double</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">triple</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="SamplingMode"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.SamplingMode">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">SamplingMode</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mnemonic type to identify different types of sampling techniques,\</span>
+<span class="sd">    such as averaging, normal or over-sampling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">average</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">normal</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">OSR2</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">OSR4</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="EventSource"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.EventSource">[docs]</a><span class="nd">@unique</span>    
+<span class="k">class</span> <span class="nc">EventSource</span><span class="p">(</span><span class="n">Flag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to hold known event (interrupt) sources.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">none</span>                <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">dataReady</span>           <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">fifoWatermark</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">fifoFull</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">lowG</span>                <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">lowGTime</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">highG</span>               <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">highGTime</span>           <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">lowSlope</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">lowSlopeTime</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">highSlope</span>           <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">highSlopeTime</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">significantMotion</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">tap</span>                 <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">step</span>                <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">gesture</span>             <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">activity</span>            <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">lyingFlat</span>           <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">orientation</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">error</span>               <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="nb">all</span>                 <span class="o">=</span> <span class="mh">0xFFFFFFFF</span></div>
+
+<div class="viewcode-block" id="Configuration"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Configuration">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Configuration</span><span class="p">(</span> <span class="n">Configuration</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to describe common configuration settings.</span>
+<span class="sd">    </span>
+<span class="sd">    Use the parental class :attr:`sensor.Configuration.type` attribute</span>
+<span class="sd">    to de-multiplex the inner data types.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        
+<div class="viewcode-block" id="Configuration.CfgRateMode"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Configuration.CfgRateMode">[docs]</a>    <span class="nd">@dataclass</span>
+    <span class="k">class</span> <span class="nc">CfgRateMode</span><span class="p">():</span>
+        <span class="n">mValue</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">control</span><span class="p">:</span> <span class="n">SamplingMode</span> <span class="o">=</span> <span class="n">SamplingMode</span><span class="o">.</span><span class="n">normal</span></div>
+
+<div class="viewcode-block" id="Configuration.CfgInterrupt"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Configuration.CfgInterrupt">[docs]</a>    <span class="nd">@dataclass</span>
+    <span class="k">class</span> <span class="nc">CfgInterrupt</span><span class="p">():</span>
+        <span class="n">delay</span><span class="p">:</span>      <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">thrshld</span><span class="p">:</span>    <span class="nb">int</span> <span class="o">=</span> <span class="mi">1500</span>
+        <span class="n">hysteresis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">axes</span><span class="p">:</span>       <span class="n">AxesSign</span> <span class="o">=</span> <span class="n">AxesSign</span><span class="o">.</span><span class="n">z</span>
+        <span class="n">event</span><span class="p">:</span>      <span class="n">EventSource</span> <span class="o">=</span> <span class="n">EventSource</span><span class="o">.</span><span class="n">dataReady</span></div>
+        
+    <span class="n">rateMode</span><span class="p">:</span>   <span class="n">CfgRateMode</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">eventCondition</span><span class="p">:</span> <span class="n">CfgInterrupt</span> <span class="o">=</span> <span class="kc">None</span></div>
+        
+<div class="viewcode-block" id="StatusID"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.StatusID">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">StatusID</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to comprise different types of status information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dieTemp</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">dataReady</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">interrupt</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">fifo</span>        <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">error</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">activity</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">stepCount</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">highG</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">highSlope</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">orientation</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">tap</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">NVM</span>         <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">sensorTime</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Data"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Data">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Data</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container type to wrap an accelerometer&#39;s primary measurement result.</span>
+<span class="sd">    </span>
+<span class="sd">    Measurement data should always be expressed as a signed value in</span>
+<span class="sd">    per-mille of the standard gravity milli-g [mg] along the three axes.</span>
+<span class="sd">    Of course::</span>
+<span class="sd">    </span>
+<span class="sd">        1000 mg = 1 g = 9,80665 m/s^2</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span><span class="p">:</span>  <span class="nb">int</span>
+    <span class="n">y</span><span class="p">:</span>  <span class="nb">int</span>
+    <span class="n">z</span><span class="p">:</span>  <span class="nb">int</span></div>
+
+<div class="viewcode-block" id="EventContext"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.EventContext">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">EventContext</span><span class="p">(</span> <span class="n">IntEventContext</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class holding the context information of an event (interrupt).</span>
+<span class="sd">    </span>
+<span class="sd">    Use the :attr:`source` attribute to de-multiplex the inner data items.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source</span><span class="p">:</span>     <span class="n">EventSource</span> <span class="o">=</span> <span class="n">EventSource</span><span class="o">.</span><span class="n">none</span>
+    <span class="n">data</span><span class="p">:</span>       <span class="n">Data</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">status</span><span class="p">:</span>     <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="Accelerometer"><a class="viewcode-back" href="../../philander.html#philander.accelerometer.Accelerometer">[docs]</a><span class="k">class</span> <span class="nc">Accelerometer</span><span class="p">(</span><span class="n">Sensor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for digital accelerometers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>    </div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

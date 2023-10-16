@@ -1,0 +1,555 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.simdev &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.simdev</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Serial device simulation module to support debugging and cross-platform development.</span>
+
+<span class="sd">This module provides a fake serial device implementation to virtualize serial</span>
+<span class="sd">communication. </span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SimDev&quot;</span><span class="p">,</span> <span class="s2">&quot;SimDevNull&quot;</span><span class="p">,</span> <span class="s2">&quot;SimDevMemory&quot;</span><span class="p">,</span> <span class="s2">&quot;MemoryType&quot;</span><span class="p">,</span> <span class="s2">&quot;Register&quot;</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">unique</span><span class="p">,</span> <span class="n">auto</span>
+
+<span class="kn">from</span> <span class="nn">.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+
+<div class="viewcode-block" id="SimDev"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev">[docs]</a><span class="k">class</span> <span class="nc">SimDev</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class to define the functionality of a simulated serial device.</span>
+<span class="sd">    </span>
+<span class="sd">    A sub class must overwrite at least the methods for reading and writing</span>
+<span class="sd">    a single byte. Implementation should use as least as possible dependencies</span>
+<span class="sd">    to other modules. Use of hardware-dependent drivers must be completely</span>
+<span class="sd">    avoided!</span>
+<span class="sd">    </span>
+<span class="sd">    Objects of this type (and its derivatives) shall be stored as the</span>
+<span class="sd">    ``sim`` attribute of a matching :class:`serialbus.SerialDevice` object.</span>
+<span class="sd">    Remember that each :class:`serialbus.SerialDevice` must be registered</span>
+<span class="sd">    with a :class:`serialbus.SerialBus` by calling its :meth:`serialbus.SerialBus.attach`</span>
+<span class="sd">    method. The simulative serial bus implementation uses the</span>
+<span class="sd">    :attr:`serialbus.SerialDevice.address` attribute to identify</span>
+<span class="sd">    the addressed device and then looks up its ``SerialBusDevice.sim``</span>
+<span class="sd">    attribute to retrieve the serial simulation for that device.</span>
+<span class="sd">    </span>
+<span class="sd">    For that reason, implementations do not have to care about the</span>
+<span class="sd">    address of the device - it&#39;s always the right one. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+<div class="viewcode-block" id="SimDev.readByteRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.readByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a single byte from a certain register.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is expected to deliver a register&#39;s content to the</span>
+<span class="sd">        caller.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the register to be read.</span>
+<span class="sd">        :return: A one-byte integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="SimDev.writeByteRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.writeByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a single byte value into a certain register.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is expected to store the given value to a register.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the register to receive the new value.</span>
+<span class="sd">        :param int data: The new value to store to that register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="SimDev.readWordRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.readWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a word from a certain register.</span>
+<span class="sd">        </span>
+<span class="sd">        The word is formed in little-endian order from the content of</span>
+<span class="sd">        the given register (low) and the content of the immediate</span>
+<span class="sd">        successor ``aReg+1`` of that register (high).</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the low-byte register to be read.</span>
+<span class="sd">        :return: A 16-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span><span class="n">aReg</span><span class="p">)</span>
+        <span class="n">hi</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span><span class="n">aReg</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">((</span><span class="n">hi</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">lo</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SimDev.writeWordRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.writeWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a double-byte (word) value into a certain register.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is expected to store the given value to a register or</span>
+<span class="sd">        pair of registers in little-endian order.</span>
+<span class="sd">        The low-part of the data16 item is stored at the given register,</span>
+<span class="sd">        while the high-part is put at ``aReg+1``.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the register to receive the\</span>
+<span class="sd">        low-part of the new value.</span>
+<span class="sd">        :param int data16: The new value to store to that (pair of) registers.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bVal</span> <span class="o">=</span> <span class="n">data16</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">aReg</span><span class="p">,</span> <span class="n">bVal</span><span class="p">)</span>
+        <span class="n">bVal</span> <span class="o">=</span> <span class="p">(</span><span class="n">data16</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">aReg</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">bVal</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SimDev.readDWordRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.readDWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a double word from a certain register.</span>
+<span class="sd">        </span>
+<span class="sd">        The dword is formed in little-endian order from the content of</span>
+<span class="sd">        the four registers, starting with the given address</span>
+<span class="sd">        ``aReg`` (low-byte of the low-word) and its successors</span>
+<span class="sd">        ``aReg+1`` (high-byte of the low-word),</span>
+<span class="sd">        ``aReg+2`` (low-byte of the high-word) and</span>
+<span class="sd">        ``aReg+3`` (high-byte of the high-word).</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the first (lowest-byte) register to be read.</span>
+<span class="sd">        :return: A 32-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">L</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="n">aReg</span> <span class="p">)</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="n">aReg</span><span class="o">+</span><span class="mi">2</span> <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">H</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="n">L</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SimDev.writeDWordRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.writeDWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a double-word (four bytes) value into a certain register.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is expected to store the given value to a quadruple of</span>
+<span class="sd">        registers in little-endian order.</span>
+<span class="sd">        The low-byte of the low word is stored at the given</span>
+<span class="sd">        register ``aReg``. The high-byte of the low-word goes to ``aReg+1``.</span>
+<span class="sd">        The low-part of the high-word is stored to ``aReg+2`` and the</span>
+<span class="sd">        high-part of the high-word is put at ``aReg+3``.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the first (lowest byte) register\</span>
+<span class="sd">        to receive part of the new value.</span>
+<span class="sd">        :param int data32: The new value to store to that quadruple of registers.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">data32</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="p">(</span><span class="n">data32</span> <span class="o">&amp;</span> <span class="mh">0xFFFF0000</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">L</span> <span class="p">)</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="n">aReg</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">H</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span></div>
+    
+<div class="viewcode-block" id="SimDev.readBufferRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.readBufferRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a block of data starting from the given register.</span>
+<span class="sd">        </span>
+<span class="sd">        Starting with the given Register address, ``length`` bytes are</span>
+<span class="sd">        read and returned. As with :meth:`readWordRegister` and</span>
+<span class="sd">        :meth:`readDWordRegister`, this implementation assumes an</span>
+<span class="sd">        auto-increment behavior of the target register. So, the returned</span>
+<span class="sd">        data buffer is read as follows:</span>
+<span class="sd">        </span>
+<span class="sd">            data[0] -&gt; aReg</span>
+<span class="sd">            data[1] -&gt; aReg + 1</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        If this doesn&#39;t match the actual chip behavior, a sub-class should</span>
+<span class="sd">        overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the first register to be read.</span>
+<span class="sd">        :param int length: The number of bytes to read.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: list(int), ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span><span class="n">aReg</span><span class="o">+</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SimDev.writeBufferRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDev.writeBufferRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a block of byte data into registers.</span>
+<span class="sd">        </span>
+<span class="sd">        As with :meth:`readBufferRegister` an auto-increment applies for</span>
+<span class="sd">        the target register.</span>
+<span class="sd">        The first byte - at index zero - is stored at the given register</span>
+<span class="sd">        ``aReg``, the next byte - at index 1 - is stored at ``aReg+1``</span>
+<span class="sd">        and so on. More formally::</span>
+<span class="sd">            </span>
+<span class="sd">            data[0] -&gt; aReg</span>
+<span class="sd">            data[1] -&gt; aReg + 1</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        The number of bytes written is determined implicitly by the length</span>
+<span class="sd">        of the ``data`` list.</span>
+<span class="sd">        If the auto-increment feature doesn&#39;t match the actual chip,</span>
+<span class="sd">        a sub-class should overwrite this method. </span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the first register to receive\</span>
+<span class="sd">        the block of data.</span>
+<span class="sd">        :param list data: List of bytes to be written. The length of the\</span>
+<span class="sd">        list determines the number of bytes to write. So, all values in\</span>
+<span class="sd">        the list will be transferred to the device.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">aReg</span><span class="o">+</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">err</span></div></div>
+
+<div class="viewcode-block" id="SimDevNull"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevNull">[docs]</a><span class="k">class</span> <span class="nc">SimDevNull</span><span class="p">(</span> <span class="n">SimDev</span><span class="p">,</span> <span class="n">Module</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slim-line serial device simulation. Reading retrieves always the same\</span>
+<span class="sd">    constant value, while writing is simply ignored. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">DEFAULT_READING</span> <span class="o">=</span> <span class="mh">0x3A</span>
+    
+<div class="viewcode-block" id="SimDevNull.Params_init"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevNull.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize configuration parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Any supported option missed in the dictionary handed in, will be</span>
+<span class="sd">        added upon return. Also see :meth:`.module.Module.Params_init`.</span>
+<span class="sd">        The following options are supported.</span>
+<span class="sd">        </span>
+<span class="sd">        ==================    =======    ==========================</span>
+<span class="sd">        Key                   Range      Default</span>
+<span class="sd">        ==================    =======    ==========================</span>
+<span class="sd">        SimDevNull.reading    integer    SimDevNull.DEFAULT_READING</span>
+<span class="sd">        ==================    =======    ==========================</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Dictionary mapping option names to their respective values.</span>
+<span class="sd">        :returns: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SimDevNull.reading&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SimDevNull.reading&quot;</span><span class="p">,</span> <span class="n">SimDevNull</span><span class="o">.</span><span class="n">DEFAULT_READING</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+    
+<div class="viewcode-block" id="SimDevNull.open"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevNull.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open the instance and prepare it for use.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see :meth:`.module.Module.open`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as\</span>
+<span class="sd">        obtained from :meth:`Params_init`, possibly.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SimDevNull.reading&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SimDevNull.reading&quot;</span><span class="p">,</span> <span class="n">SimDevNull</span><span class="o">.</span><span class="n">DEFAULT_READING</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reading</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SimDevNull.reading&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div>
+            
+<div class="viewcode-block" id="SimDevNull.readByteRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevNull.readByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a single byte.</span>
+<span class="sd">        </span>
+<span class="sd">        Independent of the given register, the delivered value will</span>
+<span class="sd">        always be the same. That delivered reading can be configured</span>
+<span class="sd">        using the SimDevNull.reading option when calling :meth:`open`.</span>
+
+<span class="sd">        :param int aReg: The address of the register to be read.\</span>
+<span class="sd">        Actually ignored.</span>
+<span class="sd">        :return: A one-byte integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">aReg</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reading</span><span class="p">,</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div>
+
+<div class="viewcode-block" id="SimDevNull.writeByteRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevNull.writeByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Write a single byte.</span>
+
+<span class="sd">        Actually, does nothing. Also see :meth:`SimDev.writeByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the register. Ignored.</span>
+<span class="sd">        :param int data: The new value to store to that register. Ignored.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div></div>
+
+<div class="viewcode-block" id="MemoryType"><a class="viewcode-back" href="../../philander.html#philander.simdev.MemoryType">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">MemoryType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enumeration to reflect the different types of memory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ROM</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">RAM</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">NVM</span>   <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">VOLATILE</span>  <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="Register"><a class="viewcode-back" href="../../philander.html#philander.simdev.Register">[docs]</a><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Register</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate a memory-based register.</span>
+<span class="sd">    </span>
+<span class="sd">    Depending on the type of memory, the register content can or cannot</span>
+<span class="sd">    be changed by simply writing to it.</span>
+<span class="sd">    Volatile registers are not writable. They may change their content</span>
+<span class="sd">    spontaneously or by mechanisms that cannot be controlled by the user. </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">address</span><span class="p">:</span>    <span class="nb">int</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The address to identify this register during read/write operations.&quot;&quot;&quot;</span>
+    <span class="n">content</span><span class="p">:</span>    <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The register content. Can be initialized, independently of the\</span>
+<span class="sd">    memory type of that register.&quot;&quot;&quot;</span>
+    <span class="nb">type</span><span class="p">:</span>       <span class="n">MemoryType</span> <span class="o">=</span> <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The type of memory for that register.&quot;&quot;&quot;</span></div>
+
+   
+<div class="viewcode-block" id="SimDevMemory"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevMemory">[docs]</a><span class="k">class</span> <span class="nc">SimDevMemory</span><span class="p">(</span> <span class="n">SimDev</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serial bus implementation to simulate a device that can be accessed\</span>
+<span class="sd">    through a set of memory-based registers. The list of registers\</span>
+<span class="sd">    must be provided during instantiation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_regs</span> <span class="o">=</span> <span class="n">regs</span>
+        
+    <span class="k">def</span> <span class="nf">_findReg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regAdr</span><span class="p">):</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span> <span class="p">(</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_regs</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">address</span><span class="o">==</span><span class="n">regAdr</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reg</span>
+                
+<div class="viewcode-block" id="SimDevMemory.readByteRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevMemory.readByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a register&#39;s content. To also simulate side effects\</span>
+<span class="sd">        of reading, the following steps are executed in sequence, no</span>
+<span class="sd">        matter what the memory type of the given register is:</span>
+<span class="sd">        </span>
+<span class="sd">        #. calling :meth:`._onPreRead`</span>
+<span class="sd">        #. reading the register content</span>
+<span class="sd">        #. calling :meth:`._onPostRead`</span>
+<span class="sd">        </span>
+<span class="sd">        Note that the return value is solely determined by what is read</span>
+<span class="sd">        from the register in step #2. It cannot be altered by :meth:`._onPostRead`,</span>
+<span class="sd">        anymore.</span>
+
+<span class="sd">        Also see :meth:`.simbus.SimDev.readByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the register to be read.</span>
+<span class="sd">        :return: A one-byte integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findReg</span><span class="p">(</span> <span class="n">aReg</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">reg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onPreRead</span><span class="p">(</span> <span class="n">reg</span> <span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">content</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_onPostRead</span><span class="p">(</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SimDevMemory.writeByteRegister"><a class="viewcode-back" href="../../philander.html#philander.simdev.SimDevMemory.writeByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">aReg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a single byte value into a certain register.</span>
+<span class="sd">        </span>
+<span class="sd">        Write attempts to registers with non-writable memory are ignored.</span>
+<span class="sd">        For registers with writable memory, the following sequence is</span>
+<span class="sd">        executed in order to give sub-classes the opportunity to simulate</span>
+<span class="sd">        side effects:</span>
+<span class="sd">        </span>
+<span class="sd">        #. calling :meth:`._onPreWrite`, may alter the intended data and\</span>
+<span class="sd">        returns the actual new content to write.</span>
+<span class="sd">        #. writing the new register content</span>
+<span class="sd">        #. calling :meth:`._onPostWrite`</span>
+<span class="sd">        </span>
+<span class="sd">        :param int aReg: The address of the register to receive the new value.</span>
+<span class="sd">        :param int data: The new value to store to that register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findReg</span><span class="p">(</span> <span class="n">aReg</span> <span class="p">)</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">reg</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MemoryType</span><span class="o">.</span><span class="n">RAM</span><span class="p">):</span>
+                <span class="n">newContent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onPreWrite</span><span class="p">(</span><span class="n">reg</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+                <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">newContent</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onPostWrite</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span></div>
+
+    <span class="k">def</span> <span class="nf">_onPreRead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface function that will be called right before a register\</span>
+<span class="sd">        is read.</span>
+<span class="sd">        </span>
+<span class="sd">        Can be used by sub-classes to simulate the exact hardware</span>
+<span class="sd">        behavior while reading a register. Modifying the register</span>
+<span class="sd">        content here, would highly affect the return value of the</span>
+<span class="sd">        surrounding :meth:`.readByteRegister` function.</span>
+<span class="sd">        </span>
+<span class="sd">        The return value is to indicate if the read operation will succeed.</span>
+<span class="sd">        </span>
+<span class="sd">        This implementation is simply empty.</span>
+
+<span class="sd">        :param Register reg: The register instance to be read.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">reg</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+    
+    <span class="k">def</span> <span class="nf">_onPostRead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface function that will be called right after a register\</span>
+<span class="sd">        was read.</span>
+<span class="sd">        </span>
+<span class="sd">        Can be used by sub-classes to simulate the exact hardware</span>
+<span class="sd">        behavior while reading a register. Any action in this routine</span>
+<span class="sd">        will not influence the return value of the (current call of the)</span>
+<span class="sd">        surrounding :meth:`.readByteRegister` function.</span>
+<span class="sd">        </span>
+<span class="sd">        This implementation increments the register content if</span>
+<span class="sd">        the register&#39;s memory type is :attr:`MemoryType.VOLATILE`.</span>
+
+<span class="sd">        :param Register reg: The register instance to be read.</span>
+<span class="sd">        :returns: None</span>
+<span class="sd">        :rtype: none</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MemoryType</span><span class="o">.</span><span class="n">VOLATILE</span><span class="p">):</span>
+            <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">reg</span><span class="o">.</span><span class="n">content</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+    <span class="k">def</span> <span class="nf">_onPreWrite</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">newData</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface function that will be called right before a register\</span>
+<span class="sd">        is written.</span>
+<span class="sd">        </span>
+<span class="sd">        Can be used by sub-classes to simulate the exact hardware</span>
+<span class="sd">        behavior while writing a register. The return value immediately</span>
+<span class="sd">        defines the actual content to be written. </span>
+<span class="sd">        </span>
+<span class="sd">        The current implementation just returns the `newData` argument.</span>
+
+<span class="sd">        :param Register reg: The register instance to write to.</span>
+<span class="sd">        :param int newData: The new value that is intended to be stored\</span>
+<span class="sd">        to that register.</span>
+<span class="sd">        :returns: The value that will actually be stored to the register.\</span>
+<span class="sd">        Possibly a modified variant of the `newData` parameter.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">reg</span>
+        <span class="k">return</span> <span class="n">newData</span>
+    
+    <span class="k">def</span> <span class="nf">_onPostWrite</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Interface function that will be called right after a register\</span>
+<span class="sd">        was written.</span>
+<span class="sd">        </span>
+<span class="sd">        Can be used by sub-classes to simulate the exact hardware</span>
+<span class="sd">        behavior while writing a register.</span>
+<span class="sd">        </span>
+<span class="sd">        The return value is to indicate if the write operation succeeded.        </span>
+<span class="sd">        </span>
+<span class="sd">        This implementation is simply empty.</span>
+
+<span class="sd">        :param Register reg: The register instance that was written.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">reg</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span></div>
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

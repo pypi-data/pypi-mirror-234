@@ -1,0 +1,1575 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.serialbus &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.serialbus</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Serial bus convergence layer for smbus, smbus2, periphery or simulative implementation.</span>
+
+<span class="sd">Provide a common API for serial bus communication (I2C / SPI).</span>
+<span class="sd">This interface is to to abstract from details of the implementation.</span>
+
+<span class="sd">Basically, there are two main classes: ``SerialBus`` and ``SerialBusDevice``.</span>
+<span class="sd">The ``SerialBus`` class unifies the implementations like smbus or periphery</span>
+<span class="sd">by providing similar communication functions, such as read/write byte,</span>
+<span class="sd">word and buffer data.</span>
+
+<span class="sd">The ``SerialBusDevice`` carries specific information for a specific bus</span>
+<span class="sd">participant, such as its address.</span>
+<span class="sd">For that reason, every read or write function of the ``SerialBus`` class needs</span>
+<span class="sd">an ``SerialBusDevice`` instance as a parameter. For convenience, read and</span>
+<span class="sd">write functions are also available at the ``SerialBusDevice`` class,</span>
+<span class="sd">delegating their calls to the matching functions in ``SerialBus`` along</span>
+<span class="sd">with their self-reference.</span>
+
+<span class="sd">For the sake of consistency, each ``SerialBusDevice`` must be mated with</span>
+<span class="sd">a certain ``SerialBus`` in order to work, properly. This process is called</span>
+<span class="sd">*attaching a device to a bus*. Several devices may be attached to the</span>
+<span class="sd">same bus. However, a single device may only attached to at most one bus.</span>
+<span class="sd">After attaching, the bus and device are double-linked to each other:</span>
+<span class="sd">The bus has a list of attached devices, while a device has a reference</span>
+<span class="sd">to the bus it is attached to.  </span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SerialBus&quot;</span><span class="p">,</span> <span class="s2">&quot;SerialBusDevice&quot;</span><span class="p">,</span> <span class="s2">&quot;SerialBusProvider&quot;</span><span class="p">,</span> <span class="s2">&quot;SerialBusType&quot;</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">unique</span><span class="p">,</span> <span class="n">auto</span><span class="p">,</span> <span class="n">Enum</span>
+
+<span class="kn">from</span> <span class="nn">.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">.simdev</span> <span class="kn">import</span> <span class="n">SimDevNull</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+
+<div class="viewcode-block" id="SerialBusDevice"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice">[docs]</a><span class="k">class</span> <span class="nc">SerialBusDevice</span><span class="p">(</span> <span class="n">Module</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reflect a specific device communicating over a serial bus.</span>
+<span class="sd">    </span>
+<span class="sd">    As its main information, an instance of ``SerialBusDevice`` is to</span>
+<span class="sd">    hold specific information of that single device, such as its unique</span>
+<span class="sd">    bus address. This class is meant to be sub-classed by implementations</span>
+<span class="sd">    for real devices.</span>
+<span class="sd">    </span>
+<span class="sd">    Before using a device for communication, it must be attached to a</span>
+<span class="sd">    bus by calling :meth:`SerialBus.attach`. However, a device&#39;s</span>
+<span class="sd">    :meth:`isAttached` function may be used to check, whether it has</span>
+<span class="sd">    been attached to a bus, already.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">DEFAULT_ADDRESS</span>     <span class="o">=</span> <span class="mh">0x21</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span>   <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">SerialBusDevice</span><span class="o">.</span><span class="n">DEFAULT_ADDRESS</span>
+
+<div class="viewcode-block" id="SerialBusDevice.Params_init"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the set of configuration parameters with supported options.</span>
+<span class="sd">        Supported configuration key names and their meanings are:</span>
+<span class="sd">        </span>
+<span class="sd">        * ``SerialBusDevice.address``: The address of the device.\</span>
+<span class="sd">        The value should be given as an integer number.\</span>
+<span class="sd">        Must be unique in that, a serial bus does not allow two devices\</span>
+<span class="sd">        with the same address being attached.\</span>
+<span class="sd">        Defaults to :attr:`DEFAULT_ADDRESS`.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see :meth:`.module.Module.Params_init`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Dictionary mapping option\</span>
+<span class="sd">        names to their respective values.</span>
+<span class="sd">        :returns: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">,</span> <span class="n">SerialBusDevice</span><span class="o">.</span><span class="n">DEFAULT_ADDRESS</span><span class="p">)</span>
+        <span class="n">SerialBus</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+    
+<div class="viewcode-block" id="SerialBusDevice.open"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens this serial device and puts it into a usable state.</span>
+<span class="sd">        </span>
+<span class="sd">        If this device has been attached to some bus, already, this method</span>
+<span class="sd">        returns an error code.</span>
+<span class="sd">        Otherwise, it tries to do this attachment as follows:</span>
+<span class="sd">        </span>
+<span class="sd">        * If the ``paramDict`` configuration parameters contain the\</span>
+<span class="sd">        ``SerialBusDevice.bus`` key, the associated value object is checked\</span>
+<span class="sd">        to be an instance of ``SerialBus``. If successful, this device\</span>
+<span class="sd">        is attached to that bus. Otherwise, an error code is returned.</span>
+<span class="sd">        * If no bus instance is passed in, one is created and opened\</span>
+<span class="sd">        using the same ``paramDict`` dictionary of options. If successful,\</span>
+<span class="sd">        this device gets attached to that new bus. Upon return, the caller\</span>
+<span class="sd">        might retrieve a reference to the new bus from the parameter\</span>
+<span class="sd">        dictionary entry with key ``SerialBusDevice.bus``, or by\</span>
+<span class="sd">        reading the :attr:`SerialBusDevice.serialBus` attribute.</span>
+<span class="sd">                </span>
+<span class="sd">        Also see: :meth:`.module.Module.open`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as\</span>
+<span class="sd">        obtained from :meth:`Params_init`, possibly.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">adr</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">,</span> <span class="n">SerialBusDevice</span><span class="o">.</span><span class="n">DEFAULT_ADDRESS</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adr</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">adr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">adr</span><span class="p">,</span> <span class="mi">0</span> <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">adr</span> <span class="o">=</span> <span class="n">SerialBusDevice</span><span class="o">.</span><span class="n">DEFAULT_ADDRESS</span>
+                    
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.address&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">adr</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">adr</span>
+            <span class="k">if</span> <span class="p">(</span><span class="s2">&quot;SerialBusDevice.bus&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+                <span class="n">sb</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.bus&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span><span class="p">(</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sb</span><span class="p">,</span> <span class="n">SerialBus</span><span class="p">)):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sb</span> <span class="o">=</span> <span class="n">SerialBus</span><span class="p">()</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">sb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errExhausted</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                    <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBusDevice.bus&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sb</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">sb</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.close"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shut down this instance and release associated hardware resources.</span>
+<span class="sd">        </span>
+<span class="sd">        If this instance is attached to some bus, it gets detached, before</span>
+<span class="sd">        the method returns.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.module.Module.close`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+    
+    
+<div class="viewcode-block" id="SerialBusDevice.isAttached"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.isAttached">[docs]</a>    <span class="k">def</span> <span class="nf">isAttached</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determines, if this instance is attached to some bus.</span>
+
+<span class="sd">        Also see: :meth:`SerialBus.isAttached`.</span>
+
+<span class="sd">        :return: An error code. :attr:`ErrorCode.errOk`, if the device\</span>
+<span class="sd">        is already attached to some bus; :attr:`ErrorCode.errUnavailable`,\</span>
+<span class="sd">        if it has not been attached before; Any other value to indicate\</span>
+<span class="sd">        the failure or reason, why this information could not be retrieved.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">return</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.readByteRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.readByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This method provides 8 bit register read access to a device.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBus.readByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The data to write to this device. This may be a\</span>
+<span class="sd">        register identification or some sort of command.</span>
+<span class="sd">        :return: A one-byte integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.writeByteRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.writeByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data8</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a byte register.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        The register value is written first, followed by the given data parameter.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBus.writeByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data8: The data to write to the addressed register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data8</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.readWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.readWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide register read access for 16 bit data words.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        After a byte is sent, two bytes are read from the device in</span>
+<span class="sd">        little endian order.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBus.readWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The register identification or command to write to this device.</span>
+<span class="sd">        :return: A 16-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.writeWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.writeWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a word register.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        The register ``reg`` value is written first, followed by the given</span>
+<span class="sd">        ``data16`` parameter in little-endian order.</span>
+
+<span class="sd">        Also see: :meth:`SerialBus.writeWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data16: The word to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.readDWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.readDWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide register read access for 32 bit data words.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        After a byte is sent, four bytes are read from the device in</span>
+<span class="sd">        little endian order.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBus.readDWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The register identification or command to write to this device.</span>
+<span class="sd">        :return: A 32-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.writeDWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.writeDWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a dword register.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        The register ``reg`` value is written first, followed by the given</span>
+<span class="sd">        ``data32`` parameter in little-endian order.</span>
+
+<span class="sd">        Also see: :meth:`SerialBus.writeDWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data32: The double-word to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">)</span></div>
+    
+<div class="viewcode-block" id="SerialBusDevice.readBufferRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.readBufferRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Multi-byte read access to a register-type serial bus device.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        </span>
+<span class="sd">        After sending one byte of command or register address, a number</span>
+<span class="sd">        of bytes is read back and returned.</span>
+<span class="sd">        </span>
+<span class="sd">        For SPI, the byte received during transmission of the ``reg``</span>
+<span class="sd">        byte is discarded. It does not appear in the response buffer.</span>
+<span class="sd">        Then, enough dummy traffic is generated to receive ``length``</span>
+<span class="sd">        number of bytes.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBus.readBufferRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The byte to send. May be a command or register\</span>
+<span class="sd">        address, depending on the protocol of the addressed device.</span>
+<span class="sd">        :param int length: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.writeBufferRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.writeBufferRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a buffer to a register.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        The register ``reg`` value is written first, followed by the given</span>
+<span class="sd">        ``buffer`` content.</span>
+
+<span class="sd">        Also see: :meth:`SerialBus.writeBufferRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int[] buffer: The data to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.readBuffer"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.readBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Directly reads multiple bytes from the given device.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        </span>
+<span class="sd">        Differently from :meth:`readBufferRegister`, this method does not</span>
+<span class="sd">        write any register information beforehand, but just starts reading.</span>
+<span class="sd">         </span>
+<span class="sd">        Also see: :meth:`SerialBus.readBuffer`, :meth:`readBufferRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int length: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBusDevice.writeBuffer"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.writeBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the given data to the device specified.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">        The buffer is not interpreted any further but is written as such,</span>
+<span class="sd">        no matter of a register information being present, or not.</span>
+<span class="sd">        In SPI mode, the data received during transmission, is discarded.</span>
+
+<span class="sd">        Also see: :meth:`SerialBus.writeBuffer`, :meth:`writeBufferRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int[] buffer: The data to store.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">)</span></div>
+    
+<div class="viewcode-block" id="SerialBusDevice.readWriteBuffer"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusDevice.readWriteBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes and reads a number of bytes.</span>
+<span class="sd">        </span>
+<span class="sd">        The call is delegated to the corresponding method at the bus that</span>
+<span class="sd">        this device is attached to.</span>
+<span class="sd">         </span>
+<span class="sd">        Also see: :meth:`SerialBus.readWriteBuffer`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int inLength: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :param int[] outBuffer: The data to write to the device.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialBus</span><span class="o">.</span><span class="n">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="SerialBusProvider"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusProvider">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">SerialBusProvider</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">NONE</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">AUTO</span>      <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">SMBUS</span>     <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">SMBUS2</span>    <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">PERIPHERY</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+    <span class="n">SIM</span>       <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SerialBusType"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBusType">[docs]</a><span class="nd">@unique</span>
+<span class="k">class</span> <span class="nc">SerialBusType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">I2C</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">SPI</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">UART</span><span class="o">=</span> <span class="mi">30</span></div>
+    
+<span class="k">class</span> <span class="nc">_SerialBusIface</span><span class="p">(</span> <span class="n">Module</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract interface to define a serial bus implementation.</span>
+
+<span class="sd">    A sub class must overwrite at least the methods for reading and writing</span>
+<span class="sd">    a single byte and buffer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">designator</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">NONE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">SerialBusType</span><span class="o">.</span><span class="n">I2C</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+        <span class="c1"># Fill paramDict with defaults</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;SerialBus.type&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SerialBusType</span><span class="o">.</span><span class="n">I2C</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;SerialBus.designator&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.designator&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/dev/i2c-1&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;SerialBus.provider&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.provider&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">AUTO</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="c1"># Retrieve defaults</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">defaults</span> <span class="p">)</span>
+        <span class="c1"># Scan parameters</span>
+        <span class="k">if</span> <span class="s2">&quot;SerialBus.provider&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.provider&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">NONE</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInvalidParameter</span>
+
+        <span class="k">if</span> <span class="s2">&quot;SerialBus.type&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.type&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;SerialBus.type&quot;</span><span class="p">]</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span>
+
+        <span class="k">if</span> <span class="s2">&quot;SerialBus.designator&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">designator</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.designator&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">designator</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;SerialBus.designator&quot;</span><span class="p">]</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.designator&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">designator</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shut down this implementation and release associated hardware resources.</span>
+<span class="sd">        </span>
+<span class="sd">        If this bus has some devices attached, they get detached, before</span>
+<span class="sd">        the method returns.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.module.Module.close`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="c1"># Detach all devices.</span>
+        <span class="k">for</span> <span class="n">device</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="p">:</span>
+            <span class="n">device</span><span class="o">.</span><span class="n">serialBus</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret</span>
+        
+    <span class="k">def</span> <span class="nf">attach</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attaches a device to this implementation.</span>
+<span class="sd">                </span>
+<span class="sd">        :param: SerialBusDevice device: The device to be attached.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">device</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">device</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+            
+    <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detach a device from this serial bus implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        :param: SerialBusDevice device: The device to be detached.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span> <span class="n">device</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">isAttached</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Determines, if the given device is already attached to this bus.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.isAttached`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code. :attr:`ErrorCode.errOk`, if the device\</span>
+<span class="sd">        is already attached to some bus; :attr:`ErrorCode.errUnavailable`,\</span>
+<span class="sd">        if it has not been attached before; Any other value to indicate\</span>
+<span class="sd">        the failure or reason, why this information could not be retrieved.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">device</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">isAnyAttached</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Determines, if there is any device attached to this bus implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code. :attr:`ErrorCode.errOk`, if there is at\</span>
+<span class="sd">        least one device attached to this bus;\</span>
+<span class="sd">        :attr:`ErrorCode.errUnavailable`,\</span>
+<span class="sd">        if no device has been attached before;\</span>
+<span class="sd">        Any other value to indicate the failure or reason, why this\</span>
+<span class="sd">        information could not be retrieved.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span> <span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a single byte from a certain register.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is expected to deliver a register&#39;s content to the</span>
+<span class="sd">        caller.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The data to write to this device. This may be a\</span>
+<span class="sd">        register identification or some sort of command.</span>
+<span class="sd">        :return: A one-byte integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a single byte value into a certain register.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The method is expected to store the given value to a register.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The address of the register to receive the new value.</span>
+<span class="sd">        :param int data: The new value to store to that register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a word from a certain register.\</span>
+<span class="sd">        A sub-class may overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        With this implementation, the word is formed from the content of</span>
+<span class="sd">        the given register (low) and the content of the immediate</span>
+<span class="sd">        successor ``reg+1`` of that register (high).</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The address of the register to be read.</span>
+<span class="sd">        :return: A 16-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span><span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">)</span>
+        <span class="n">hi</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span><span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">hi</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">lo</span><span class="p">),</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a double-byte (word) value into a certain register.\</span>
+<span class="sd">        A sub-class may overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        This implementation stores the given value to a pair of</span>
+<span class="sd">        registers. The low-part of the ``data16`` item is stored at the</span>
+<span class="sd">        given register, while the high-part is put at ``reg+1``.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The address of the register to receive\</span>
+<span class="sd">        the (low-part of) the new value.</span>
+<span class="sd">        :param int data16: The word to store to that register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bVal</span> <span class="o">=</span> <span class="n">data16</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">bVal</span><span class="p">)</span>
+        <span class="n">bVal</span> <span class="o">=</span> <span class="p">(</span><span class="n">data16</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">bVal</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a 32 bit double word from a certain register.\</span>
+<span class="sd">        A sub-class may overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        This implementation forms the dword from the content of the four</span>
+<span class="sd">        consecutive registers starting with the given address ``reg``</span>
+<span class="sd">        (low-byte of the low-word) and its successors</span>
+<span class="sd">        ``reg+1`` (high-byte of the low-word),</span>
+<span class="sd">        ``reg+2`` (low-byte of the high-word) and</span>
+<span class="sd">        ``reg+3`` (high-byte of the high-word).</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The address of the register to be read.</span>
+<span class="sd">        :return: A 32-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">L</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="n">H</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="o">+</span><span class="mi">2</span> <span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="p">(</span><span class="n">H</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="n">L</span>
+        <span class="k">return</span> <span class="n">ret</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a 32 bit double-word value into a certain register.\</span>
+<span class="sd">        A sub-class may overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        This implementation stores the given value to a quadruple of</span>
+<span class="sd">        registers. The low-byte of the low word is stored at the given</span>
+<span class="sd">        register ``reg``. The high-byte of the low-word goes to ``reg+1``.</span>
+<span class="sd">        The low-part of the high-word is stored to ``reg+2`` and the</span>
+<span class="sd">        high-part of the high-word is put at ``reg+3``.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data32: The double-word to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">data32</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span>
+        <span class="n">H</span> <span class="o">=</span> <span class="p">(</span><span class="n">data32</span> <span class="o">&amp;</span> <span class="mh">0xFFFF0000</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">L</span> <span class="p">)</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">H</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+    
+    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a block of data starting from the given register.\</span>
+<span class="sd">        A sub-class may overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        Starting with the given Register address, ``length`` bytes are</span>
+<span class="sd">        read byte-wise.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The address of the first register to be read.</span>
+<span class="sd">        :param int length: The number of bytes to read. Should be greater than zero.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">length</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span><span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="o">+</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a block of byte data to a register.\</span>
+<span class="sd">        A sub-class may overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        This implementation stores the first byte - at index zero - at</span>
+<span class="sd">        the given register ``reg``, the next byte - at index 1 - at</span>
+<span class="sd">        ``reg+1`` and so on. More formally::</span>
+<span class="sd">            </span>
+<span class="sd">            data[0] -&gt; reg</span>
+<span class="sd">            data[1] -&gt; reg + 1</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        The number of bytes written is determined implicitly by the length</span>
+<span class="sd">        of the ``data`` list. </span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int reg: The address of the register to receive the block\</span>
+<span class="sd">        of data.</span>
+<span class="sd">        :param int[] data: List of bytes to be written. The length of the\</span>
+<span class="sd">        list determines the number of bytes to write. So, all values in\</span>
+<span class="sd">        the list will be transferred to the device.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="o">+</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Directly reads multiple bytes from the given device.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int length: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the given data to the device specified.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        The buffer is not interpreted any further but is written as such,</span>
+<span class="sd">        no matter of a register information being present, or not.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int[] buffer: The data to store.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes and reads a number of bytes.\</span>
+<span class="sd">        A sub-class must overwrite this method.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int devAdr: The device address uniquely identifying the\</span>
+<span class="sd">        affected bus participant.</span>
+<span class="sd">        :param int inLength: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :param int[] outBuffer: The data to write to the device.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    
+<span class="c1"># *** SMBus implementation ***</span>
+<span class="k">class</span> <span class="nc">_SerialBus_SMBus</span><span class="p">(</span> <span class="n">_SerialBusIface</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SMBUS serial bus implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+        <span class="c1"># Scan the parameters</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">==</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SMBUS</span><span class="p">):</span>
+                    <span class="kn">from</span> <span class="nn">smbus</span> <span class="kn">import</span> <span class="n">SMBus</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">provider</span> <span class="o">==</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SMBUS2</span><span class="p">):</span>
+                    <span class="kn">from</span> <span class="nn">smbus2</span> <span class="kn">import</span> <span class="n">SMBus</span><span class="p">,</span> <span class="n">i2c_msg</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">i2c_msg</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bus</span> <span class="o">=</span> <span class="n">SMBus</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">designator</span> <span class="p">)</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errInternal</span>
+                <span class="k">raise</span> <span class="ne">SystemError</span><span class="p">(</span><span class="s2">&quot;Couldn&#39;t initialize serial bus [&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">designator</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;]. Designator right? Access to interface granted?&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret</span>
+    
+    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">read_byte_data</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">write_byte_data</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">read_word_data</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">write_word_data</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="mi">32</span> <span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">read_i2c_block_data</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="p">[</span><span class="n">reg</span><span class="p">]</span> <span class="p">)</span>
+                <span class="n">msg2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">read</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">length</span> <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">i2c_rdwr</span><span class="p">(</span> <span class="n">msg1</span><span class="p">,</span> <span class="n">msg2</span> <span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">msg2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">32</span> <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">write_i2c_block_data</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bdata</span> <span class="o">=</span> <span class="n">data</span>
+                <span class="n">bdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">bdata</span> <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">i2c_rdwr</span><span class="p">(</span> <span class="n">msg</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">):</span>
+        <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">_SerialBus_Periphery</span><span class="p">(</span> <span class="n">_SerialBusIface</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Periphery serial bus implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+        <span class="c1"># Scan the parameters</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">periphery</span> <span class="kn">import</span> <span class="n">I2C</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">designator</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+    
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">ret</span>
+    
+    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="mh">0x00</span><span class="p">],</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">,</span> <span class="n">data</span><span class="p">])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">,</span> <span class="p">(</span><span class="n">data16</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">),</span> <span class="p">(</span><span class="n">data16</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">|</span> <span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">,</span> <span class="p">(</span><span class="n">data32</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">),</span> <span class="p">(</span><span class="n">data32</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">),</span> <span class="p">(</span><span class="n">data32</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">),</span> <span class="p">(</span><span class="n">data32</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)])]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+    
+    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">([</span><span class="n">reg</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="n">ba</span><span class="p">,</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">bdata</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">bdata</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span> <span class="n">bdata</span> <span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="n">ba</span><span class="p">,</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">msgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span> <span class="n">buffer</span> <span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">err</span>
+    
+    <span class="k">def</span> <span class="nf">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">inLength</span><span class="p">)</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="n">outBuffer</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">Message</span><span class="p">(</span><span class="n">ba</span><span class="p">,</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">_transfer</span><span class="p">(</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">msgs</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">msgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+<span class="k">class</span> <span class="nc">_SerialBus_Sim</span><span class="p">(</span> <span class="n">_SerialBusIface</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulative serial bus implementation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">_findSim</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attachedDevices</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">address</span> <span class="o">==</span> <span class="n">devAdr</span><span class="p">):</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="s1">&#39;sim&#39;</span><span class="p">)):</span>
+                    <span class="n">sim</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">sim</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_defaultSim</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">sim</span>
+    
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+        <span class="c1"># Scan the parameters</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defaultSim</span> <span class="o">=</span> <span class="n">SimDevNull</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defaultSim</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+    
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_defaultSim</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">err</span>
+        
+    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">readDWordRegister</span><span class="p">(</span> <span class="n">reg</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">writeDWordRegister</span><span class="p">(</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+    
+    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">readBufferRegister</span><span class="p">(</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">):</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findSim</span><span class="p">(</span><span class="n">devAdr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sim</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">writeBufferRegister</span><span class="p">(</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errFailure</span>
+        <span class="k">return</span> <span class="n">err</span>
+
+    <span class="k">def</span> <span class="nf">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+        <span class="k">pass</span>
+    
+    <span class="k">def</span> <span class="nf">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">devAdr</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">):</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="SerialBus"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus">[docs]</a><span class="k">class</span> <span class="nc">SerialBus</span><span class="p">(</span> <span class="n">_SerialBusIface</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convergence layer to abstract from multiple implementations of\</span>
+<span class="sd">    serial communication (I2C, SPI), such as smbus or periphery.</span>
+<span class="sd">    </span>
+<span class="sd">    This class represents the serial bus as such, without any participating</span>
+<span class="sd">    device. For communicating with a specific device, a corresponding</span>
+<span class="sd">    instance of ``SerialBusDevice`` must be provided to the read/write</span>
+<span class="sd">    method of interest.</span>
+<span class="sd">    </span>
+<span class="sd">    The implementation currently supports the following serial communication</span>
+<span class="sd">    packages in the given order of priority:</span>
+<span class="sd">    </span>
+<span class="sd">    * smbus2</span>
+<span class="sd">    * smbus</span>
+<span class="sd">    * periphery</span>
+<span class="sd">    * simulated devices</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">_STATUS_FREE</span>		<span class="o">=</span> <span class="mi">1</span>
+    <span class="n">_STATUS_OPEN</span>		<span class="o">=</span> <span class="mi">2</span>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Internal helpers</span>
+    <span class="c1">#</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_FREE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="o">=</span> <span class="kc">None</span>
+        
+    <span class="k">def</span> <span class="nf">_detectProvider</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">busType</span> <span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">NONE</span>
+        <span class="k">if</span> <span class="n">busType</span> <span class="o">==</span> <span class="n">SerialBusType</span><span class="o">.</span><span class="n">I2C</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span> <span class="nn">smbus2</span> <span class="kn">import</span> <span class="n">SMBus</span><span class="p">,</span> <span class="n">i2c_msg</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SMBUS2</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">from</span> <span class="nn">smbus</span> <span class="kn">import</span> <span class="n">SMBus</span><span class="p">,</span> <span class="n">i2c_msg</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SMBUS</span>
+                <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="kn">from</span> <span class="nn">periphery</span> <span class="kn">import</span> <span class="n">I2C</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">PERIPHERY</span>
+                    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                        <span class="n">ret</span> <span class="o">=</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SIM</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Currently, only I2C is supported!&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Module API</span>
+    <span class="c1">#</span>
+    
+
+<div class="viewcode-block" id="SerialBus.Params_init"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize parameters with default values.</span>
+<span class="sd">        Supported key names and their meanings are:</span>
+<span class="sd">        </span>
+<span class="sd">        * ``SerialBus.type``: A :class:`SerialBusType` to indicate the\</span>
+<span class="sd">        serial protocol. The default is :attr:`SerialBusType.I2C`.</span>
+<span class="sd">        * ``SerialBus.designator``: A string or number to identify\</span>
+<span class="sd">        the bus port, such as &quot;/dev/i2c-3&quot; or 1. Defaults to &quot;/dev/i2c-1&quot;.</span>
+<span class="sd">        * ``SerialBus.provider``: A :class:`SerialBusProvider` indicating the\</span>
+<span class="sd">        implementation to use. Defaults to :attr:`SerialBusProvider.AUTO`.</span>
+
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as obtained from :meth:`Params_init`, possibly.</span>
+<span class="sd">        :return: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_SerialBusIface</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="SerialBus.open"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Open a new serial bus and apply the given configuration.</span>
+<span class="sd">        </span>
+<span class="sd">        If this instance was opened before, already, this method returns</span>
+<span class="sd">        an error code. The same is true, when the same physical bus was</span>
+<span class="sd">        opened before, possible using another instance.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`Params_init`, :meth:`.module.Module.open`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Configuration parameters as\</span>
+<span class="sd">        obtained from :meth:`Params_init`, possibly.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">==</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_OPEN</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Retrieve defaults</span>
+            <span class="n">defaults</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">defaults</span> <span class="p">)</span>
+            <span class="c1"># Scan parameters</span>
+            <span class="k">if</span> <span class="s2">&quot;SerialBus.provider&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+                <span class="n">provider</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.provider&quot;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">provider</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;SerialBus.provider&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">provider</span> <span class="o">==</span> <span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">AUTO</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s2">&quot;SerialBus.type&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">:</span>
+                    <span class="n">busType</span> <span class="o">=</span> <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.type&quot;</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">busType</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;SerialBus.type&quot;</span><span class="p">]</span>
+                <span class="n">provider</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detectProvider</span><span class="p">(</span> <span class="n">busType</span> <span class="p">)</span>
+                <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;SerialBus.provider&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">provider</span>
+            
+    
+            <span class="c1"># Multiplex the different implementations depending on the provider module</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">provider</span><span class="o">==</span><span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SMBUS</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">provider</span><span class="o">==</span><span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SMBUS2</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="o">=</span> <span class="n">_SerialBus_SMBus</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">provider</span><span class="o">==</span><span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">PERIPHERY</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="o">=</span> <span class="n">_SerialBus_Periphery</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">provider</span><span class="o">==</span><span class="n">SerialBusProvider</span><span class="o">.</span><span class="n">SIM</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="o">=</span> <span class="n">_SerialBus_Sim</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Driver module &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">provider</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; is not supported.&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Allocate resources</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">paramDict</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_OPEN</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="SerialBus.close"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shut down this bus and release associated hardware resources.</span>
+<span class="sd">        </span>
+<span class="sd">        If this bus has some devices attached, they get detached, before</span>
+<span class="sd">        the method returns.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.module.Module.close`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="c1"># Actually close the bus</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">!=</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_FREE</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Detach all devices.</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_FREE</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="SerialBus.setRunLevel"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.setRunLevel">[docs]</a>    <span class="k">def</span> <span class="nf">setRunLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Switch the bus into some operating or power-saving mode.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.module.Module.setRunLevel`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param RunLevel level: The level to switch to.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">==</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_OPEN</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">setRunLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">return</span> <span class="n">err</span></div>
+
+<div class="viewcode-block" id="SerialBus.isOpen"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.isOpen">[docs]</a>    <span class="k">def</span> <span class="nf">isOpen</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine, if the given bus is already open.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: :attr:`ErrorCode.errOk`, if the bus is already open;\</span>
+<span class="sd">        :attr:`ErrorCode.errUnavailable`, if it has not been opened before;\</span>
+<span class="sd">        Any other value to indicate the failure or reason, why this\</span>
+<span class="sd">        information could not be retrieved.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">==</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_OPEN</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SerialBus.attach"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.attach">[docs]</a>    <span class="k">def</span> <span class="nf">attach</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Attaches a device to this serial bus.</span>
+<span class="sd">        </span>
+<span class="sd">        If this bus is not open, yet, then it will get opened, now. If</span>
+<span class="sd">        the same device has been attached before, the method will just</span>
+<span class="sd">        return successfully.</span>
+<span class="sd">        </span>
+<span class="sd">        :param: SerialBusDevice device: The device to be attached.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">serialBus</span> <span class="o">==</span> <span class="bp">self</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">serialBus</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Check if bus is open, already</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">isOpen</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span><span class="p">):</span>
+                <span class="n">params</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="c1"># Attach it to the implementation</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">attach</span><span class="p">(</span> <span class="n">device</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="c1"># Mark the device as being attached</span>
+                <span class="n">device</span><span class="o">.</span><span class="n">serialBus</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+            
+<div class="viewcode-block" id="SerialBus.detach"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.detach">[docs]</a>    <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detach a device from this serial bus.</span>
+<span class="sd">        </span>
+<span class="sd">        If this is the last device on the bus, the bus is closed,</span>
+<span class="sd">        automatically.</span>
+<span class="sd">        </span>
+<span class="sd">        :param: SerialBusDevice device: The device to be detached.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">serialBus</span> <span class="o">==</span> <span class="bp">self</span><span class="p">):</span>
+            <span class="n">device</span><span class="o">.</span><span class="n">serialBus</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">==</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_OPEN</span><span class="p">):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">detach</span><span class="p">(</span> <span class="n">device</span> <span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">isAnyAttached</span><span class="p">()</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errUnavailable</span> <span class="p">):</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="SerialBus.isAttached"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.isAttached">[docs]</a>    <span class="k">def</span> <span class="nf">isAttached</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Determines, if the given device is already attached to this bus.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.isAttached`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code. :attr:`ErrorCode.errOk`, if the device\</span>
+<span class="sd">        is already attached to some bus; :attr:`ErrorCode.errUnavailable`,\</span>
+<span class="sd">        if it has not been attached before; Any other value to indicate\</span>
+<span class="sd">        the failure or reason, why this information could not be retrieved.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">==</span> <span class="n">SerialBus</span><span class="o">.</span><span class="n">_STATUS_OPEN</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">isAttached</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+            
+<div class="viewcode-block" id="SerialBus.readByteRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.readByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This method provides 8 bit register read access to a device.</span>
+<span class="sd">        </span>
+<span class="sd">        First, the ``reg`` byte is sent to the device. This may address</span>
+<span class="sd">        the register to be read out or be some sort of command.</span>
+<span class="sd">        Then, one byte is read back from the device. Depending on the</span>
+<span class="sd">        device protocol semantics, this may be the register content or</span>
+<span class="sd">        the command response.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.readByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The data to write to this device. This may be a\</span>
+<span class="sd">        register identification or some sort of command.</span>
+<span class="sd">        :return: A one-byte integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">readByteRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.writeByteRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.writeByteRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeByteRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data8</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a byte register.</span>
+<span class="sd">        </span>
+<span class="sd">        The register value is written first, followed by the given data</span>
+<span class="sd">        parameter.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.writeByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data8: The data to write to the addressed register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">writeByteRegister</span><span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data8</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.readWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.readWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Provide register read access for 16 bit data words.</span>
+<span class="sd">        </span>
+<span class="sd">        After a byte is sent, two bytes are read from the device.</span>
+<span class="sd">        The word is always read in little endian order, i.e. the least</span>
+<span class="sd">        significant low-byte first, the highes-significant high-byte second.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.readByteRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The register identification or command to write\</span>
+<span class="sd">        to this device.</span>
+<span class="sd">        :return: A 16-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">readWordRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.writeWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.writeWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a word register.</span>
+<span class="sd">        </span>
+<span class="sd">        The register ``reg`` value is written first, followed by the given</span>
+<span class="sd">        ``data16`` parameter in little-endian order.</span>
+
+<span class="sd">        Also see: :meth:`SerialBusDevice.writeWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data16: The word to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">writeWordRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data16</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.readDWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.readDWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a 32-bit word from the given register.</span>
+<span class="sd">        </span>
+<span class="sd">        After the ``reg`` byte is sent, four bytes are read from the device.</span>
+<span class="sd">        The 32 bit double-word is always read in little endian order,</span>
+<span class="sd">        i.e. the least significant low-byte first, the highes-significant</span>
+<span class="sd">        high-byte last.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.readDWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The register identification or command to write\</span>
+<span class="sd">        to this device.</span>
+<span class="sd">        :return: A 32-bit integer representing the response of the device\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int, ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">readDWordRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.writeDWordRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.writeDWordRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeDWordRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a 32 bit double-word to the given register.</span>
+<span class="sd">        </span>
+<span class="sd">        The register ``reg`` value is written first, followed by the given</span>
+<span class="sd">        ``data32`` parameter in little-endian order.</span>
+
+<span class="sd">        Also see: :meth:`SerialBusDevice.writeDWordRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int data32: The dword to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">writeDWordRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">data32</span> <span class="p">)</span></div>
+    
+<div class="viewcode-block" id="SerialBus.readBufferRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.readBufferRegister">[docs]</a>    <span class="k">def</span> <span class="nf">readBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Multi-byte read access to a register-type serial bus device.</span>
+<span class="sd">        </span>
+<span class="sd">        After sending one byte of command or register address, a number</span>
+<span class="sd">        of bytes is read back and returned.</span>
+<span class="sd">        </span>
+<span class="sd">        For SPI, the byte received during transmission of the ``reg``</span>
+<span class="sd">        byte is discarded. It does not appear in the response buffer.</span>
+<span class="sd">        Then, enough dummy traffic is generated to receive ``length``</span>
+<span class="sd">        number of bytes.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.readBufferRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The byte to send. May be a command or register\</span>
+<span class="sd">        address, depending on the protocol of the addressed device.</span>
+<span class="sd">        :param int length: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">readBufferRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">length</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.writeBufferRegister"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.writeBufferRegister">[docs]</a>    <span class="k">def</span> <span class="nf">writeBufferRegister</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assuming a register-type access, this function writes a buffer\</span>
+<span class="sd">        to a register.</span>
+<span class="sd">        </span>
+<span class="sd">        The register ``reg`` value is written first, followed by the given</span>
+<span class="sd">        ``buffer`` content.</span>
+
+<span class="sd">        Also see: :meth:`SerialBusDevice.writeBufferRegister`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int reg: The register number. This addresses the place\</span>
+<span class="sd">        where to put the content. Depending on the device, this could\</span>
+<span class="sd">        also be some kind of command.</span>
+<span class="sd">        :param int buffer: The data to store to the given register.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">writeBufferRegister</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">reg</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.readBuffer"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.readBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">readBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">length</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Directly reads multiple bytes from the given device.</span>
+
+<span class="sd">        Also see: :meth:`SerialBusDevice.readBuffer`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int length: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">readBuffer</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">length</span> <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SerialBus.writeBuffer"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.writeBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">writeBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes the given data to the device specified.</span>
+<span class="sd">        </span>
+<span class="sd">        The buffer is not interpreted any further but is written as such,</span>
+<span class="sd">        no matter of a register information being present, or not.</span>
+
+<span class="sd">        Also see: :meth:`SerialBusDevice.writeBuffer`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int[] buffer: The data to store.</span>
+<span class="sd">        :return: An error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">writeBuffer</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">buffer</span> <span class="p">)</span></div>
+    
+<div class="viewcode-block" id="SerialBus.readWriteBuffer"><a class="viewcode-back" href="../../philander.html#philander.serialbus.SerialBus.readWriteBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">readWriteBuffer</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Writes and reads a number of bytes.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`SerialBusDevice.readWriteBuffer`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param SerialBusDevice device: The device to communicate with.</span>
+<span class="sd">        :param int inLength: The number of bytes to read from the device.\</span>
+<span class="sd">        Should be greater than zero.</span>
+<span class="sd">        :param int[] outBuffer: The data to write to the device.</span>
+<span class="sd">        :return: A buffer of the indicated length holding the response\</span>
+<span class="sd">        and an error code indicating success or the reason of failure.</span>
+<span class="sd">        :rtype: int[], ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_impl</span><span class="o">.</span><span class="n">readWriteBuffer</span><span class="p">(</span> <span class="n">device</span><span class="o">.</span><span class="n">address</span><span class="p">,</span> <span class="n">inLength</span><span class="p">,</span> <span class="n">outBuffer</span> <span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

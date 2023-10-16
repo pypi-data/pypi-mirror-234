@@ -1,0 +1,232 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.actuator &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.actuator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract actuator interface.</span>
+
+<span class="sd">Provide an API to abstract from any type of actuators. Only a very basic</span>
+<span class="sd">set of common types and functions is provided.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Direction&quot;</span><span class="p">,</span> <span class="s2">&quot;Actuator&quot;</span><span class="p">]</span>
+
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+<div class="viewcode-block" id="Direction"><a class="viewcode-back" href="../../philander.html#philander.actuator.Direction">[docs]</a><span class="k">class</span> <span class="nc">Direction</span><span class="p">(</span> <span class="n">Enum</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data class to represent the direction that an actuator can move to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">positive</span>            <span class="o">=</span>  <span class="mi">1</span>
+    <span class="n">negative</span>            <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">counterclockwise</span>    <span class="o">=</span> <span class="n">positive</span>
+    <span class="n">clockwise</span>           <span class="o">=</span> <span class="n">negative</span>
+    <span class="n">left</span>                <span class="o">=</span> <span class="n">positive</span>
+    <span class="n">right</span>               <span class="o">=</span> <span class="n">negative</span>
+    <span class="n">forth</span>               <span class="o">=</span> <span class="n">positive</span>
+    <span class="n">back</span>                <span class="o">=</span> <span class="n">negative</span>
+    <span class="n">up</span>                  <span class="o">=</span> <span class="n">positive</span>
+    <span class="n">down</span>                <span class="o">=</span> <span class="n">negative</span></div>
+
+<div class="viewcode-block" id="Actuator"><a class="viewcode-back" href="../../philander.html#philander.actuator.Actuator">[docs]</a><span class="k">class</span> <span class="nc">Actuator</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unified interface to parts and subsystems with mechanical capabilities.</span>
+<span class="sd">    </span>
+<span class="sd">    This may involve some sort of motor to execute mechanical work, such as in</span>
+<span class="sd">    gears, drives or stimulators. However, also other physical media like</span>
+<span class="sd">    electricity (taser) or light (laser) might be the functional basis of an</span>
+<span class="sd">    actuator.</span>
+<span class="sd">    </span>
+<span class="sd">    An actuator is meant to reflect the most atomic component of a mechanical</span>
+<span class="sd">    device. Several actuators may compose a more complex subsystem,</span>
+<span class="sd">    such as a steering axis of a rover.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Actuator.startOperation"><a class="viewcode-back" href="../../philander.html#philander.actuator.Actuator.startOperation">[docs]</a>    <span class="k">def</span> <span class="nf">startOperation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="n">Direction</span><span class="o">.</span><span class="n">positive</span><span class="p">,</span>
+                       <span class="n">strengthIntensity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">onSpeedDuty</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ctrlInterval</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                       <span class="n">durationLengthCycles</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start a continuous or lengthy operation of this actuator instance.</span>
+<span class="sd">        </span>
+<span class="sd">        Begin an operation, such as running a motor. The operation may</span>
+<span class="sd">        or may not end automatically. In any case, the operation can be</span>
+<span class="sd">        stopped intentionally by calling :meth:`stopOperation`.</span>
+
+<span class="sd">        The optional ``direction`` parameter may be used to indicate the</span>
+<span class="sd">        direction of the operation. Interpretation of left/right or</span>
+<span class="sd">        positive/negative etc. is up to the implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        The ``strengthIntensity`` parameter may be used to set the drive</span>
+<span class="sd">        strength or intensity of a movement.</span>
+<span class="sd">        The strength should be given in a meaningful physical unit.</span>
+<span class="sd">        If meant as an intensity, it should be an integer percentage in</span>
+<span class="sd">        the range [0...100].</span>
+<span class="sd">        In the context of PWM control, this parameter may be interpreted</span>
+<span class="sd">        as the voltage amplitude applied, expressed in milli Volt.</span>
+<span class="sd">        This parameter is optional.</span>
+<span class="sd">        </span>
+<span class="sd">        The optional parameter ``onSpeedDuty`` may indicate the speed of</span>
+<span class="sd">        the movement or the length of the ON phase in a rectangular</span>
+<span class="sd">        control signal.</span>
+<span class="sd">        If interpreted as a speed, it should be given either as a value</span>
+<span class="sd">        in meters per second (m/s) or as an integer percentage related</span>
+<span class="sd">        to some maximum possible or reference speed.</span>
+<span class="sd">        When controlling a PWM device, this is the duty cycle expressed</span>
+<span class="sd">        as a percentage.</span>
+
+<span class="sd">        The ``ctrlInterval`` parameter gives the total length of a</span>
+<span class="sd">        periodic control interval, e.g. for PWM control. It is expressed</span>
+<span class="sd">        in milliseconds.</span>
+<span class="sd">        This parameter is optional.</span>
+<span class="sd">        </span>
+<span class="sd">        The parameter ``durationLengthCycles`` is optional.</span>
+<span class="sd">        It  and may be interpreted as a run time duration, preferably</span>
+<span class="sd">        expressed as a number in milliseconds (ms).</span>
+<span class="sd">        Alternatively, this parameter may also be interpreted as a way</span>
+<span class="sd">        length for the actuator to go, preferably expressed as a number</span>
+<span class="sd">        in millimeters (mm).</span>
+<span class="sd">        Finally, this can also be the number of cycles to last, e.g.</span>
+<span class="sd">        when controlling a PWM device. Then, this is a unitless integer</span>
+<span class="sd">        number. </span>
+<span class="sd">        </span>
+<span class="sd">        See also: :meth:`stopOperation`.</span>
+<span class="sd">        </span>
+<span class="sd">        :param Direction direction: The direction to move the actuator in.</span>
+<span class="sd">        :param int strengthIntensity: The speed or intensity of the movement.</span>
+<span class="sd">        :param int durationLengthCycles: The duration, length or number of cycles to move.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">direction</span><span class="p">,</span> <span class="n">strengthIntensity</span><span class="p">,</span> <span class="n">onSpeedDuty</span><span class="p">,</span> <span class="n">ctrlInterval</span><span class="p">,</span> \
+            <span class="n">durationLengthCycles</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="Actuator.stopOperation"><a class="viewcode-back" href="../../philander.html#philander.actuator.Actuator.stopOperation">[docs]</a>    <span class="k">def</span> <span class="nf">stopOperation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Immediately stops the current operation.</span>
+<span class="sd">        </span>
+<span class="sd">        See also: :meth:`startOperation`.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="Actuator.action"><a class="viewcode-back" href="../../philander.html#philander.actuator.Actuator.action">[docs]</a>    <span class="k">def</span> <span class="nf">action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes a predefined action or movement pattern with this actuator.</span>
+<span class="sd">        </span>
+<span class="sd">        Runs an action on this actuator instance. The type of action</span>
+<span class="sd">        can be specified further using the optional ``pattern`` parameter.</span>
+<span class="sd">        In most cases, this will be an integer number designating one</span>
+<span class="sd">        or the other pre-defined / default movement.</span>
+<span class="sd">        If applicable, the value zero (0) shall encode a</span>
+<span class="sd">        &quot;move to home/rest/parking position&quot; action. Also &quot;switch off&quot;</span>
+<span class="sd">        could be a valid interpretation.</span>
+<span class="sd">        A value of one (1) shall be used for &quot;the standard/default movement&quot;.</span>
+<span class="sd">        The interpretation of other values is at the discretion of the</span>
+<span class="sd">        implementation.</span>
+<span class="sd">        </span>
+<span class="sd">        :param int pattern: The action pattern to execute.</span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">del</span> <span class="n">pattern</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div></div>
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

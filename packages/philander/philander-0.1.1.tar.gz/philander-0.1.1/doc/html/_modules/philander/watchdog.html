@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.watchdog &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.watchdog</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Module to describe objects that provide wath dog capabilities.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Watchdog&quot;</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+
+<div class="viewcode-block" id="Watchdog"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog">[docs]</a><span class="k">class</span> <span class="nc">Watchdog</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interface to define watch dog related methods.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">INTERVAL_MS_DEFAULT</span> <span class="o">=</span> <span class="mi">1000</span>  <span class="c1"># Default time interval in milliseconds</span>
+    
+<div class="viewcode-block" id="Watchdog.Params_init"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize parameters with their defaults.</span>
+
+<span class="sd">        If the implementing class supports the :class:`.Module` interface,</span>
+<span class="sd">        it can use this method to fill commonly supported options. </span>
+<span class="sd">        </span>
+<span class="sd">        The following settings are supported:</span>
+<span class="sd">        </span>
+<span class="sd">        =============================    ==========================================================================================================</span>
+<span class="sd">        Key name                         Value type, meaning and default</span>
+<span class="sd">        =============================    ==========================================================================================================</span>
+<span class="sd">        Watchdog.Interval                ``int`` Watch dog interval in milliseconds; default is :attr:`INTERVAL_MS_DEFAULT`.</span>
+<span class="sd">        =============================    ==========================================================================================================</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Module.Params_init`. </span>
+<span class="sd">        </span>
+<span class="sd">        :param dict(str, object) paramDict: Dictionary mapping option\</span>
+<span class="sd">        names to their respective values.</span>
+<span class="sd">        :returns: none</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Watchdog.Interval&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Watchdog.Interval&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Watchdog</span><span class="o">.</span><span class="n">INTERVAL_MS_DEFAULT</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+                                
+
+
+<div class="viewcode-block" id="Watchdog.enableWatchdog"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.enableWatchdog">[docs]</a>    <span class="k">def</span> <span class="nf">enableWatchdog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable and restart the watch dog.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="Watchdog.disableWatchdog"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.disableWatchdog">[docs]</a>    <span class="k">def</span> <span class="nf">disableWatchdog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Disable the watch dog and stop it from running, immediately.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+    
+<div class="viewcode-block" id="Watchdog.isWatchdogRunning"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.isWatchdogRunning">[docs]</a>    <span class="k">def</span> <span class="nf">isWatchdogRunning</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check, whether the watchdog is currently running or not.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns :attr:`.ErrorCode.errOk`, if the watch dog is running,</span>
+<span class="sd">        :attr:`.ErrorCode.errUnavailable`, if it is not running and</span>
+<span class="sd">        any other value to indicate the reason, why this information</span>
+<span class="sd">        could not be retrieved.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating the result.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+
+<div class="viewcode-block" id="Watchdog.clearWatchdog"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.clearWatchdog">[docs]</a>    <span class="k">def</span> <span class="nf">clearWatchdog</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear the watch dog.</span>
+<span class="sd">        </span>
+<span class="sd">        This is the implementation of the acknowledge mechanism.</span>
+<span class="sd">        Calling this function is necessary for an application to prevent</span>
+<span class="sd">        the watch dog from elapsing.</span>
+<span class="sd">        Note that this method does not start the watch dog, when it is</span>
+<span class="sd">        disabled.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+
+<div class="viewcode-block" id="Watchdog.isWatchdogElapsed"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.isWatchdogElapsed">[docs]</a>    <span class="k">def</span> <span class="nf">isWatchdogElapsed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check, whether the configured time interval has expired, or not.</span>
+<span class="sd">        </span>
+<span class="sd">        By calling this function, an application may observe the</span>
+<span class="sd">        expiration without using the interrupt mechanism.</span>
+<span class="sd">        Note, that this flag is not cleared automatically. The caller</span>
+<span class="sd">        would have to use :meth:`clearWatchdogElapsed` for this purpose.</span>
+
+<span class="sd">        Returns :attr:`.ErrorCode.errOk`, if the watch dog has elapsed,</span>
+<span class="sd">        :attr:`.ErrorCode.errUnavailable`, if it is not elapsed, yet, and</span>
+<span class="sd">        any other value to indicate the reason, why this information</span>
+<span class="sd">        could not be retrieved.</span>
+<span class="sd">        </span>
+<span class="sd">        :return: An error code indicating the result.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div>
+
+<div class="viewcode-block" id="Watchdog.clearWatchdogElapsed"><a class="viewcode-back" href="../../philander.html#philander.watchdog.Watchdog.clearWatchdogElapsed">[docs]</a>    <span class="k">def</span> <span class="nf">clearWatchdogElapsed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear the elapsed flag.</span>
+<span class="sd">        </span>
+<span class="sd">        The application should call this function after it observed that</span>
+<span class="sd">        the watch dog interval time expired.</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`isWatchdogElapsed`.</span>
+
+<span class="sd">        :return: An error code indicating either success or the reason of failure.</span>
+<span class="sd">        :rtype: ErrorCode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errNotImplemented</span></div></div>
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,880 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.max77960_reg &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.max77960_reg</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Register definition for the MAX77960 USB battery charger.</span>
+<span class="sd">    </span>
+<span class="sd">Definition of registers, content masks and default values for the</span>
+<span class="sd">above mentioined chip.</span>
+<span class="sd">Externalized, just for clarity of the source code.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MAX77960_Reg&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="MAX77960_Reg"><a class="viewcode-back" href="../../philander.html#philander.max77960_reg.MAX77960_Reg">[docs]</a><span class="k">class</span> <span class="nc">MAX77960_Reg</span><span class="p">:</span>
+
+    <span class="c1"># Definition of registers and register content.</span>
+    <span class="c1"># TOP</span>
+    <span class="n">REG_CID</span>          <span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">_CID_REVISION</span>     <span class="o">=</span> <span class="mh">0xE0</span> <span class="c1"># Silicon Revision</span>
+    <span class="n">_CID_VERSION</span>      <span class="o">=</span> <span class="mh">0x1F</span> <span class="c1"># OTP Recipe Version</span>
+    <span class="n">_CID_REV_5</span>        <span class="o">=</span> <span class="mh">0xA0</span> <span class="c1"># silicon revision = 5</span>
+    <span class="n">_CID_REV_6</span>        <span class="o">=</span> <span class="mh">0xC0</span> <span class="c1"># silicon revision = 6</span>
+    <span class="n">_CID_REV_MIN</span>      <span class="o">=</span> <span class="n">_CID_REV_5</span> <span class="c1"># Minimum known silicon revision that this driver is made for.</span>
+    <span class="n">_CID_REV_MAX</span>      <span class="o">=</span> <span class="n">_CID_REV_6</span> <span class="c1"># Maximum known silicon revision that this driver is made for.</span>
+    <span class="n">_CID_MAX7796x</span>     <span class="o">=</span> <span class="n">_CID_REV_5</span> <span class="c1"># MAX77960</span>
+    <span class="n">_CID_MAX7796xB</span>    <span class="o">=</span> <span class="n">_CID_REV_6</span> <span class="c1"># MAX77960B</span>
+    
+    <span class="n">_REG_SWRST</span>        <span class="o">=</span> <span class="mh">0x01</span>
+    <span class="n">_SWRST_TYPE_O</span>     <span class="o">=</span> <span class="mh">0xA5</span> <span class="c1"># Reset Type O registers</span>
+    <span class="n">_SWRST_NONE</span>       <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># No reset</span>
+    <span class="n">_SWRST_DEFAULT</span>    <span class="o">=</span> <span class="n">_SWRST_NONE</span>
+    
+    <span class="n">_REG_TOP_INT</span>      <span class="o">=</span> <span class="mh">0x02</span>
+    <span class="n">_TSHDN_I</span>          <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Thermal shutdown interrupt</span>
+    <span class="n">_SYSOVLO_I</span>        <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># SYSOVLO interrupt</span>
+    <span class="n">_SYSUVLO_I</span>        <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># SYSUVLO interrupt</span>
+    
+    <span class="n">_REG_TOP_INT_MASK</span> <span class="o">=</span> <span class="mh">0x03</span>
+    <span class="n">_TSHDN_M</span>          <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Thermal shutdown interrupt masked</span>
+    <span class="n">_SYSOVLO_M</span>        <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># SYSOVLO interrupt masked</span>
+    <span class="n">_SYSUVLO_M</span>        <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># SYSUVLO interrupt masked</span>
+    <span class="n">_TOP_INT_MASK_ALL</span> <span class="o">=</span> <span class="mh">0x07</span>
+    <span class="n">_TOP_INT_MASK_NONE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">_TOP_INT_MASK_DEFAULT</span> <span class="o">=</span> <span class="mh">0xFF</span>
+    
+    <span class="n">_REG_TOP_INT_OK</span>   <span class="o">=</span> <span class="mh">0x04</span>
+    <span class="n">_TSHDN_OK</span>         <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Device in thermal shutdown</span>
+    <span class="n">_SYSOVLO_OK</span>       <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># SYS voltage above (0) / below (1) SYSOVLO</span>
+    <span class="n">_SYSUVLO_OK</span>       <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># SYS coltage below (0) / above (1) SYSUVLO</span>
+
+    <span class="c1"># CHARGER_FUNC</span>
+    <span class="n">_REG_CHG_INT</span>      <span class="o">=</span> <span class="mh">0x10</span>
+    <span class="n">_AICL_I</span>           <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># AICL interrupt; AICL_OK changed since last read</span>
+    <span class="n">_CHGIN_I</span>          <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># CHGIN interrupt; CHGIN_OK changed</span>
+    <span class="n">_B2SOVRC_I</span>        <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># B2SOVRC interrupt; B2SOVRC changed</span>
+    <span class="n">_CHG_I</span>            <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># Charger interrupt; CHG_OK changed</span>
+    <span class="n">_BAT_I</span>            <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Battery interrupt; BAT_OK changed</span>
+    <span class="n">_CHGINLIM_I</span>       <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># CHGINLIM interrupt; CHGINLIM_OK changed</span>
+    <span class="n">_DISQBAT_I</span>        <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># DISQBAT interrupt; DISQBAT_OK changed</span>
+    <span class="n">_OTG_PLIM_I</span>       <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># OTG/PLIM interrupt; OTG_OK (Mode=0xA) or PLIM_OK changed</span>
+    
+    <span class="n">_REG_CHG_INT_MASK</span> <span class="o">=</span> <span class="mh">0x11</span>
+    <span class="n">_AICL_M</span>           <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># AICL interrupt masked</span>
+    <span class="n">_CHGIN_M</span>          <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># CHGIN interrupt masked</span>
+    <span class="n">_B2SOVRC_M</span>        <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># B2SOVRC interrupt masked</span>
+    <span class="n">_CHG_M</span>            <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># Charger interrupt masked</span>
+    <span class="n">_BAT_M</span>            <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Battery interrupt masked</span>
+    <span class="n">_CHGINLIM_M</span>       <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># CHGINLIM interrupt masked</span>
+    <span class="n">_DISQBAT_M</span>        <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># DISQBAT interrupt masked</span>
+    <span class="n">_OTG_PLIM_M</span>       <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># OTG/PLIM interrupt masked</span>
+    <span class="n">_CHG_INT_MASK_ALL</span> <span class="o">=</span> <span class="mh">0xFF</span>
+    <span class="n">_CHG_INT_MASK_NONE</span><span class="o">=</span> <span class="mh">0x00</span>
+    <span class="n">_CHG_INT_MASK_DEFAULT</span> <span class="o">=</span> <span class="mh">0xFF</span>
+    
+    <span class="n">_REG_CHG_INT_OK</span>   <span class="o">=</span> <span class="mh">0x12</span>
+    <span class="n">_AICL_OK</span>          <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># Not in AICL mode</span>
+    <span class="n">_CHGIN_OK</span>         <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># CHGIN input valid; CHGIN_DTLS=3</span>
+    <span class="n">_B2SOVRC_OK</span>       <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># BATT to SYS within current limit</span>
+    <span class="n">_CHG_OK</span>           <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># Charger OK or off</span>
+    <span class="n">_BAT_OK</span>           <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Battery OK; BAT_DTLS=0x03 or 0x07</span>
+    <span class="n">_CHGINLIM_OK</span>      <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># CHGIN input within current limit</span>
+    <span class="n">_DISQBAT_OK</span>       <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># DISQBAT low and DISIBS is 0 while QBAT is not disabled</span>
+    <span class="n">_OTG_PLIM_OK</span>      <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># OTG operation OK (Mode=0x0A); Buck-boost within current limit.</span>
+    
+    <span class="n">_REG_CHG_DETAILS_00</span> <span class="o">=</span> <span class="mh">0x13</span>
+    <span class="n">_CHGIN_DTLS</span>       <span class="o">=</span> <span class="mh">0x60</span> <span class="c1"># CHGIN Details as follows:</span>
+    <span class="n">_CHGIN_DTLS_TOO_LOW</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># VBUS is invalid; V_CHGIN &lt; V_CHGIN_UVLO</span>
+    <span class="n">_CHGIN_DTLS_RSVD</span>  <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># Reserved</span>
+    <span class="n">_CHGIN_DTLS_TOO_HIGH</span><span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># VBUS is invalid; V_CHGIN &gt; V_CHGIN_OVLO</span>
+    <span class="n">_CHGIN_DTLS_GOOD</span>  <span class="o">=</span> <span class="mh">0x60</span> <span class="c1"># VBUS is valid; V_CHGIN_UVLO &lt; V_CHGIN &lt; V_CHGIN_OVLO</span>
+    <span class="n">_OTG_DTLS</span>         <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># OTG Details as follows:</span>
+    <span class="n">_OTG_DTLS_UNDERVOLT</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># OTG output in undervoltage; V_CHGIN &lt; V_OTG_UVLO</span>
+    <span class="n">_OTG_DTLS_OTG_GOOD</span>  <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># OTG output within limit OTG_ILIM</span>
+    <span class="n">_OTG_DTLS_OVERVOLT</span><span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># OTG output in overvoltage; V_CHGIN &gt; V_OTG_OVLO</span>
+    <span class="n">_OTG_DTLS_ILIM</span>    <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># OTG disabled or output is valid but not in current limit.</span>
+    <span class="n">_QB_DTLS</span>          <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># QBAT details</span>
+    <span class="n">_QB_DTLS_ON</span>       <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># QBAT is on.</span>
+    <span class="n">_QB_DTLS_OFF</span>      <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># QBAT is off.</span>
+    
+    <span class="n">_REG_CHG_DETAILS_01</span> <span class="o">=</span> <span class="mh">0x14</span>
+    <span class="n">_TREG</span>             <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># Temperature regulation status </span>
+    <span class="n">_TREG_HIGH</span>        <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># Junction temperature higher than REGTEMP; folding back charge current </span>
+    <span class="n">_TREG_GOOD</span>        <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Junction temperature less than REGTEMP</span>
+    <span class="n">_BAT_DTLS</span>         <span class="o">=</span> <span class="mh">0x70</span> <span class="c1"># Battery details as follows:</span>
+    <span class="n">_BAT_DTLS_REMOVAL</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Battery removal detected on THM pin.</span>
+    <span class="n">_BAT_DTLS_BELOW_PREQ</span><span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># V_BATT &lt; V_PRECHG; below prequal.</span>
+    <span class="n">_BAT_DTLS_TIME_OUT</span><span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># Charging takes longer than expected. Possibly due to high system currents, old/damaged battery. Charging suspended.</span>
+    <span class="n">_BAT_DTLS_OK</span>      <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># Battery OK and (VSYSMIN - 500mV) &lt; VBATT, QBAT is on and VSYS is approximately equal to VBATT.</span>
+    <span class="n">_BAT_DTLS_LOW_VOLT</span><span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># Battery OK but its voltage is low: VPRECHG &lt; VBATT &lt; VSYSMIN - 500mV.</span>
+    <span class="n">_BAT_DTLS_OVR_VOLT</span><span class="o">=</span> <span class="mh">0x50</span> <span class="c1"># Battery voltage has been greater than the battery overvoltage threshold (CHG_CV_PRM + 240mV/cell) for the last 30ms. Valid input.</span>
+    <span class="n">_BAT_DTLS_OVR_CURR</span><span class="o">=</span> <span class="mh">0x60</span> <span class="c1"># Battery has been overcurrent for at least 3ms since the last time this register has been read.</span>
+    <span class="n">_BAT_DTLS_NO_LEVEL</span><span class="o">=</span> <span class="mh">0x70</span> <span class="c1"># Battery level not available. In battery only mode, all battery comparators are off except for B2SOVRC.</span>
+    <span class="n">_CHG_DTLS</span>         <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># Charger details as follows:</span>
+    <span class="n">_CHG_DTLS_PRECHRG</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Charger is in precharge or trickle charge mode CHG_OK = 1 and VBATT &lt; VSYSMIN - 500mV and TJ &lt; TSHDN</span>
+    <span class="n">_CHG_DTLS_FAST_CURR</span> <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Charger is in fast-charge constant current mode CHG_OK = 1 and VBATT &lt; VBATTREG and TJ &lt; TSHDN</span>
+    <span class="n">_CHG_DTLS_FAST_VOLT</span> <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># Charger is in fast-charge constant voltage mode CHG_OK = 1 and VBATT = VBATTREG and TJ &lt; TSHDN</span>
+    <span class="n">_CHG_DTLS_TOP_OFF</span> <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># Charger is in top-off mode CHG_OK = 1 and VBATT = VBATTREG and TJ &lt; TSHDN</span>
+    <span class="n">_CHG_DTLS_DONE</span>    <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Charger is in done mode CHG_OK = 0 and VBATT &gt; VBATTREG - VRSTRT and TJ &lt; TSHDN</span>
+    <span class="n">_CHG_DTLS_OFF_RESIST</span><span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># Charger is off because at least one pin of INLIM, ITO, ISET, or VSET has invalid resistance. CHG_OK = 0</span>
+    <span class="n">_CHG_DTLS_E_TIMER</span> <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># Charger is in timer fault mode. CHG_OK = 0 and if BAT_DTLS = 0b001 then VBATT &lt; VSYSMIN - 500mV or VBATT &lt; VPRECHG and TJ &lt; TSHDN</span>
+    <span class="n">_CHG_DTLS_SUSP_QBAT</span> <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># Charger is suspended because QBAT is disabled (DISQBAT = high or DISIBS = 1) CHG_OK = 0</span>
+    <span class="n">_CHG_DTLS_OFF_CHGIN</span> <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Charger is off, charger input invalid and/or charger is disabled CHG_OK = 1</span>
+    <span class="c1">#_CHG_DTLS_RSV_9   = 0x09 # Reserved.</span>
+    <span class="n">_CHG_DTLS_OFF_TEMP</span><span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># Charger is off and the junction temperature is &gt; TSHDN CHG_OK = 0</span>
+    <span class="n">_CHG_DTLS_OFF_WDOG</span><span class="o">=</span> <span class="mh">0x0B</span> <span class="c1"># Charger is off because the watchdog timer expired CHG_OK = 0</span>
+    <span class="n">_CHG_DTLS_SUSP_JEITA</span><span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># Charger is suspended or charge current or voltage is reduced based on JEITA control. This condition is also reported in THM_DTLS. CHG_OK = 0</span>
+    <span class="n">_CHG_DTLS_SUSP_NOBAT</span><span class="o">=</span> <span class="mh">0x0D</span> <span class="c1"># Charger is suspended because battery removal is detected on THM pin. This condition is also reported in THM_DTLS. CHG_OK = 0</span>
+    <span class="c1">#_CHG_DTLS_RSV_E   = 0x0E # Reserved.</span>
+    <span class="c1">#_CHG_DTLS_RSV_F   = 0x0F # Reserved.</span>
+
+    <span class="n">_REG_CHG_DETAILS_02</span> <span class="o">=</span> <span class="mh">0x15</span>
+    <span class="n">_THM_DTLS</span>         <span class="o">=</span> <span class="mh">0x70</span> <span class="c1"># Thermistor status details as follows:</span>
+    <span class="n">_THM_DTLS_COLD</span>    <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Low temperature and charging suspended</span>
+    <span class="n">_THM_DTLS_COOL</span>    <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># Low temperature charging</span>
+    <span class="n">_THM_DTLS_NORMAL</span>  <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># Normal temperature charging</span>
+    <span class="n">_THM_DTLS_WARM</span>    <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># High temperature charging</span>
+    <span class="n">_THM_DTLS_HOT</span>     <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># High temperature and charging suspended</span>
+    <span class="n">_THM_DTLS_BAT_RMVD</span><span class="o">=</span> <span class="mh">0x50</span> <span class="c1"># Battery removal detected on THM pin</span>
+    <span class="n">_THM_DTLS_DISABLED</span><span class="o">=</span> <span class="mh">0x60</span> <span class="c1"># Thermistor monitoring is disabled</span>
+    <span class="c1">#_THM_DTLS_RSV_7   = 0x70 # Reserved.</span>
+    <span class="n">_APP_MODE_DTLS</span>    <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Application mode status as follows:</span>
+    <span class="n">_APP_MODE_DTLS_CONV</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Operate as a standalone DC-DC converter</span>
+    <span class="n">_APP_MODE_DTLS_CHRG</span> <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Operate as a charger.</span>
+    <span class="n">_FSW_DTLS</span>         <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># Programmed switching frequency details as follows:</span>
+    <span class="n">_FSW_DTLS_600K</span>    <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 600 kHz</span>
+    <span class="n">_FSW_DTLS_1200K</span>   <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 1.2 MHz; only from silicon rev. 6 on (MAX7796xB)</span>
+    <span class="c1">#_FSW_DTLS_RSV_2   = 0x04 # Reserved.</span>
+    <span class="c1">#_FSW_DTLS_RSV_3   = 0x06 # Reserved.</span>
+    <span class="n">_NUM_CELL_DTLS</span>    <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Number of serially connected battery cells as follows:</span>
+    <span class="n">_NUM_CELL_DTLS_2</span>  <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 2-cell battery</span>
+    <span class="n">_NUM_CELL_DTLS_3</span>  <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 3-cell battery</span>
+    
+    <span class="n">_REG_CHG_CNFG_00</span>    <span class="o">=</span> <span class="mh">0x16</span>
+    <span class="n">_COMM_MODE</span>          <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># I2C enable</span>
+    <span class="n">_COMM_MODE_AUTO</span>     <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Autonomous Mode defined by external resistors on INLIM, ISET, VSET and ITO pins. Writing 0 to COMM_MODE is ignored.</span>
+    <span class="n">_COMM_MODE_I2C</span>      <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># I2C enabled. CHGIN_ILIM, CHGCC, CHG_CV_PRM and TO_ITH registers are programmed by I2C. Writing 1 to COMM_MODE is allowed.</span>
+    <span class="n">_COMM_MODE_DEFAULT</span>  <span class="o">=</span> <span class="n">_COMM_MODE_AUTO</span>
+    <span class="n">_DISIBS</span>             <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># BATT to SYS FET Disable Control Read back value of DISIBS register bit reflects the actual DISIBS command or DISQBAT PIN state.</span>
+    <span class="n">_DISIBS_FET_PPSM</span>    <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># BATT to SYS FET is controlled by the power path state machine.</span>
+    <span class="n">_DISIBS_FET_OFF</span>     <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># BATT to SYS FET is forced off.</span>
+    <span class="n">_DISIBS_DEFAULT</span>     <span class="o">=</span> <span class="n">_DISIBS_FET_PPSM</span>
+    <span class="n">_STBY_EN</span>            <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># CHGIN Standby Enable Read back value of the STBY_EN register bit reflects the actual CHGIN standby setting.</span>
+    <span class="n">_STBY_EN_DCDC_PPSM</span>  <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># DC-DC is controlled by the power path state machine.</span>
+    <span class="n">_STBY_EN_DCDC_OFF</span>   <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># Force DC-DC off. Device goes to CHGIN low quiescent current standby.</span>
+    <span class="n">_STBY_EN_DCDC_DEFAULT</span> <span class="o">=</span> <span class="n">_STBY_EN_DCDC_PPSM</span>
+    <span class="n">_WDTEN</span>              <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># Watchdog Timer Enable.</span>
+    <span class="n">_WDTEN_OFF</span>          <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Watchdog timer disabled</span>
+    <span class="n">_WDTEN_ON</span>           <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># Watchdog timer enabled</span>
+    <span class="n">_WDTEN_DEFAULT</span>      <span class="o">=</span> <span class="n">_WDTEN_OFF</span>
+    <span class="n">_MODE</span>               <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># Smart Power Selector Configuration as follows:</span>
+    <span class="n">_MODE_ALL_OFF</span>       <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Charger = off, OTG = off, DC-DC = off. When the QBAT switch is on (DISQBAT = low and DISIBS = 0), the battery powers the system.</span>
+    <span class="n">_MODE_ALL_OFF_1</span>     <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Same as 0x00</span>
+    <span class="n">_MODE_ALL_OFF_2</span>     <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># Same as 0x00</span>
+    <span class="n">_MODE_ALL_OFF_3</span>     <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># Same as 0x00</span>
+    <span class="n">_MODE_DCDC_ONLY</span>     <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Charger = off, OTG = off, DC-DC = on. When there is a valid input, the DC-DC converter regulates the system voltage to be the maximum of (VSYSMIN and VBATT + 4%).</span>
+    <span class="n">_MODE_CHRG_DCDC</span>     <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># Charger = on,OTG = off, DC-DC = on. When there is a valid input, the battery is charging. VSYS is the larger of VSYSMIN and ~VBATT + IBATT x RBAT2SYS.</span>
+    <span class="n">_MODE_CHRG_DCDC_6</span>   <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># Same as 0x05</span>
+    <span class="n">_MODE_CHRG_DCDC_7</span>   <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># Same as 0x05</span>
+    <span class="c1">#_MODE_RSV_8         = 0x08 # Reserved.</span>
+    <span class="c1">#_MODE_RSV_9         = 0x09 # Reserved.</span>
+    <span class="n">_MODE_OTG_ONLY</span>      <span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># Charger = off, OTG = on, DC-DC = off. QBAT is on to allow the battery to support the system, the charger&#39;s DC-DC operates in reverse mode as a buck converter.</span>
+    <span class="c1">#_MODE_RSV_11        = 0x0B # Reserved.</span>
+    <span class="c1">#_MODE_RSV_12        = 0x0C # Reserved.</span>
+    <span class="c1">#_MODE_RSV_13        = 0x0D # Reserved.</span>
+    <span class="c1">#_MODE_RSV_14        = 0x0E # Reserved.</span>
+    <span class="c1">#_MODE_RSV_15        = 0x0F # Reserved.</span>
+    <span class="n">_MODE_DEFAULT</span>       <span class="o">=</span> <span class="n">_MODE_CHRG_DCDC</span>
+
+    <span class="n">_REG_CHG_CNFG_01</span>    <span class="o">=</span> <span class="mh">0x17</span>
+    <span class="n">_PQEN</span>               <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># Low-Battery Prequalification Mode Enable</span>
+    <span class="n">_PQEN_OFF</span>           <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Low-Battery Prequalification mode is disabled.</span>
+    <span class="n">_PQEN_ON</span>            <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># Low-Battery Prequalification mode is enabled.</span>
+    <span class="n">_PQEN_DEFAULT</span>       <span class="o">=</span> <span class="n">_PQEN_ON</span>
+    <span class="n">_LPM</span>                <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># Low Power Mode control</span>
+    <span class="n">_LPM_NORMAL</span>         <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># QBAT charge pump runs in Normal mode.</span>
+    <span class="n">_LPM_ON</span>             <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># QBAT charge pump is in Low Power Mode.</span>
+    <span class="n">_LPM_DEFAULT</span>        <span class="o">=</span> <span class="n">_LPM_NORMAL</span>
+    <span class="n">_CHG_RSTRT</span>          <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># Charger Restart Threshold</span>
+    <span class="n">_CHG_RSTRT_100</span>      <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 100mV/cell below the value programmed by CHG_CV_PRM</span>
+    <span class="n">_CHG_RSTRT_150</span>      <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 150mV/cell below the value programmed by CHG_CV_PRM</span>
+    <span class="n">_CHG_RSTRT_200</span>      <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 200mV/cell below the value programmed by CHG_CV_PRM</span>
+    <span class="n">_CHG_RSTRT_DISABLED</span> <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># Disabled.</span>
+    <span class="n">_CHG_RSTRT_MIN</span>      <span class="o">=</span> <span class="n">_CHG_RSTRT_100</span>
+    <span class="n">_CHG_RSTRT_MAX</span>      <span class="o">=</span> <span class="n">_CHG_RSTRT_200</span>
+    <span class="n">_CHG_RSTRT_DEFAULT</span>  <span class="o">=</span> <span class="n">_CHG_RSTRT_150</span>
+    <span class="n">_STAT_EN</span>            <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Charge Indicator Output Enable</span>
+    <span class="n">_STAT_EN_OFF</span>        <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Disable STAT output</span>
+    <span class="n">_STAT_EN_ON</span>         <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Enable STAT output</span>
+    <span class="n">_STAT_EN_DEFAULT</span>    <span class="o">=</span> <span class="n">_STAT_EN_ON</span>
+    <span class="n">_FCHGTIME</span>           <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># Fast-Charge Timer setting (tFC, hrs)</span>
+    <span class="n">_FCHGTIME_DISABLED</span>  <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Disabled.</span>
+    <span class="n">_FCHGTIME_3H</span>        <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 3 hours.</span>
+    <span class="n">_FCHGTIME_4H</span>        <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 4 hours.</span>
+    <span class="n">_FCHGTIME_5H</span>        <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 5 hours.</span>
+    <span class="n">_FCHGTIME_6H</span>        <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 6 hours.</span>
+    <span class="n">_FCHGTIME_7H</span>        <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 7 hours.</span>
+    <span class="n">_FCHGTIME_8H</span>        <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 8 hours.</span>
+    <span class="n">_FCHGTIME_10H</span>       <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 10 hours.</span>
+    <span class="n">_FCHGTIME_MIN</span>       <span class="o">=</span> <span class="n">_FCHGTIME_3H</span>
+    <span class="n">_FCHGTIME_MAX</span>       <span class="o">=</span> <span class="n">_FCHGTIME_10H</span>
+    <span class="n">_FCHGTIME_DEFAULT</span>   <span class="o">=</span> <span class="n">_FCHGTIME_3H</span>
+    
+    <span class="n">_REG_CHG_CNFG_02</span>    <span class="o">=</span> <span class="mh">0x18</span>
+    <span class="n">_CHGCC</span>              <span class="o">=</span> <span class="mh">0x3F</span> <span class="c1"># Fast-Charge Current Selection (mA).</span>
+    <span class="n">_CHGCC_100</span>          <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 100 mA</span>
+    <span class="n">_CHGCC_150</span>          <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 150 mA</span>
+    <span class="n">_CHGCC_200</span>          <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 200 mA</span>
+    <span class="n">_CHGCC_250</span>          <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 250 mA</span>
+    <span class="n">_CHGCC_300</span>          <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 300 mA</span>
+    <span class="n">_CHGCC_350</span>          <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 350 mA</span>
+    <span class="n">_CHGCC_400</span>          <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 400 mA</span>
+    <span class="n">_CHGCC_450</span>          <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 450 mA</span>
+    <span class="n">_CHGCC_500</span>          <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 500 mA</span>
+    <span class="n">_CHGCC_600</span>          <span class="o">=</span> <span class="mh">0x09</span> <span class="c1"># 600 mA</span>
+    <span class="n">_CHGCC_700</span>          <span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># 700 mA</span>
+    <span class="n">_CHGCC_800</span>          <span class="o">=</span> <span class="mh">0x0B</span> <span class="c1"># 800 mA</span>
+    <span class="n">_CHGCC_900</span>          <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># 900 mA</span>
+    <span class="n">_CHGCC_1000</span>         <span class="o">=</span> <span class="mh">0x0D</span> <span class="c1"># 1000 mA</span>
+    <span class="n">_CHGCC_1100</span>         <span class="o">=</span> <span class="mh">0x0E</span> <span class="c1"># 1100 mA</span>
+    <span class="n">_CHGCC_1200</span>         <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># 1200 mA</span>
+    <span class="n">_CHGCC_1300</span>         <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 1300 mA</span>
+    <span class="n">_CHGCC_1400</span>         <span class="o">=</span> <span class="mh">0x11</span> <span class="c1"># 1400 mA</span>
+    <span class="n">_CHGCC_1500</span>         <span class="o">=</span> <span class="mh">0x12</span> <span class="c1"># 1500 mA</span>
+    <span class="n">_CHGCC_1600</span>         <span class="o">=</span> <span class="mh">0x13</span> <span class="c1"># 1600 mA</span>
+    <span class="n">_CHGCC_1700</span>         <span class="o">=</span> <span class="mh">0x14</span> <span class="c1"># 1700 mA</span>
+    <span class="n">_CHGCC_1800</span>         <span class="o">=</span> <span class="mh">0x15</span> <span class="c1"># 1800 mA</span>
+    <span class="n">_CHGCC_1900</span>         <span class="o">=</span> <span class="mh">0x16</span> <span class="c1"># 1900 mA</span>
+    <span class="n">_CHGCC_2000</span>         <span class="o">=</span> <span class="mh">0x17</span> <span class="c1"># 2000 mA</span>
+    <span class="n">_CHGCC_2100</span>         <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 2100 mA</span>
+    <span class="n">_CHGCC_2200</span>         <span class="o">=</span> <span class="mh">0x19</span> <span class="c1"># 2200 mA</span>
+    <span class="n">_CHGCC_2300</span>         <span class="o">=</span> <span class="mh">0x1A</span> <span class="c1"># 2300 mA</span>
+    <span class="n">_CHGCC_2400</span>         <span class="o">=</span> <span class="mh">0x1B</span> <span class="c1"># 2400 mA</span>
+    <span class="n">_CHGCC_2500</span>         <span class="o">=</span> <span class="mh">0x1C</span> <span class="c1"># 2500 mA</span>
+    <span class="n">_CHGCC_2600</span>         <span class="o">=</span> <span class="mh">0x1D</span> <span class="c1"># 2600 mA</span>
+    <span class="n">_CHGCC_2700</span>         <span class="o">=</span> <span class="mh">0x1E</span> <span class="c1"># 2700 mA</span>
+    <span class="n">_CHGCC_2800</span>         <span class="o">=</span> <span class="mh">0x1F</span> <span class="c1"># 2800 mA</span>
+    <span class="n">_CHGCC_2900</span>         <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 2900 mA</span>
+    <span class="n">_CHGCC_3000</span>         <span class="o">=</span> <span class="mh">0x21</span> <span class="c1"># 3000 mA</span>
+    <span class="n">_CHGCC_3100</span>         <span class="o">=</span> <span class="mh">0x22</span> <span class="c1"># 3100 mA</span>
+    <span class="n">_CHGCC_3200</span>         <span class="o">=</span> <span class="mh">0x23</span> <span class="c1"># 3200 mA</span>
+    <span class="n">_CHGCC_3300</span>         <span class="o">=</span> <span class="mh">0x24</span> <span class="c1"># 3300 mA</span>
+    <span class="n">_CHGCC_3400</span>         <span class="o">=</span> <span class="mh">0x25</span> <span class="c1"># 3400 mA</span>
+    <span class="n">_CHGCC_3500</span>         <span class="o">=</span> <span class="mh">0x26</span> <span class="c1"># 3500 mA</span>
+    <span class="n">_CHGCC_3600</span>         <span class="o">=</span> <span class="mh">0x27</span> <span class="c1"># 3600 mA</span>
+    <span class="n">_CHGCC_3700</span>         <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 3700 mA</span>
+    <span class="n">_CHGCC_3800</span>         <span class="o">=</span> <span class="mh">0x29</span> <span class="c1"># 3800 mA</span>
+    <span class="n">_CHGCC_3900</span>         <span class="o">=</span> <span class="mh">0x2A</span> <span class="c1"># 3900 mA</span>
+    <span class="n">_CHGCC_4000</span>         <span class="o">=</span> <span class="mh">0x2B</span> <span class="c1"># 4000 mA</span>
+    <span class="n">_CHGCC_4100</span>         <span class="o">=</span> <span class="mh">0x2C</span> <span class="c1"># 4100 mA</span>
+    <span class="n">_CHGCC_4200</span>         <span class="o">=</span> <span class="mh">0x2D</span> <span class="c1"># 4200 mA</span>
+    <span class="n">_CHGCC_4300</span>         <span class="o">=</span> <span class="mh">0x2E</span> <span class="c1"># 4300 mA</span>
+    <span class="n">_CHGCC_4400</span>         <span class="o">=</span> <span class="mh">0x2F</span> <span class="c1"># 4400 mA</span>
+    <span class="n">_CHGCC_4500</span>         <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 4500 mA</span>
+    <span class="n">_CHGCC_4600</span>         <span class="o">=</span> <span class="mh">0x31</span> <span class="c1"># 4600 mA</span>
+    <span class="n">_CHGCC_4700</span>         <span class="o">=</span> <span class="mh">0x32</span> <span class="c1"># 4700 mA</span>
+    <span class="n">_CHGCC_4800</span>         <span class="o">=</span> <span class="mh">0x33</span> <span class="c1"># 4800 mA</span>
+    <span class="n">_CHGCC_4900</span>         <span class="o">=</span> <span class="mh">0x34</span> <span class="c1"># 4900 mA</span>
+    <span class="n">_CHGCC_5000</span>         <span class="o">=</span> <span class="mh">0x35</span> <span class="c1"># 5000 mA</span>
+    <span class="n">_CHGCC_5100</span>         <span class="o">=</span> <span class="mh">0x36</span> <span class="c1"># 5100 mA</span>
+    <span class="n">_CHGCC_5200</span>         <span class="o">=</span> <span class="mh">0x37</span> <span class="c1"># 5200 mA</span>
+    <span class="n">_CHGCC_5300</span>         <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 5300 mA</span>
+    <span class="n">_CHGCC_5400</span>         <span class="o">=</span> <span class="mh">0x39</span> <span class="c1"># 5400 mA</span>
+    <span class="n">_CHGCC_5500</span>         <span class="o">=</span> <span class="mh">0x3A</span> <span class="c1"># 5500 mA</span>
+    <span class="n">_CHGCC_5600</span>         <span class="o">=</span> <span class="mh">0x3B</span> <span class="c1"># 5600 mA</span>
+    <span class="n">_CHGCC_5700</span>         <span class="o">=</span> <span class="mh">0x3C</span> <span class="c1"># 5700 mA</span>
+    <span class="n">_CHGCC_5800</span>         <span class="o">=</span> <span class="mh">0x3D</span> <span class="c1"># 5800 mA</span>
+    <span class="n">_CHGCC_5900</span>         <span class="o">=</span> <span class="mh">0x3E</span> <span class="c1"># 5900 mA</span>
+    <span class="n">_CHGCC_6000</span>         <span class="o">=</span> <span class="mh">0x3F</span> <span class="c1"># 6000 mA</span>
+    <span class="n">_CHGCC_MIN</span>          <span class="o">=</span> <span class="n">_CHGCC_100</span>
+    <span class="n">_CHGCC_MAX</span>          <span class="o">=</span> <span class="n">_CHGCC_6000</span>
+    <span class="n">_CHGCC_DEFAULT</span>      <span class="o">=</span> <span class="n">_CHGCC_450</span>
+    
+    <span class="n">_REG_CHG_CNFG_03</span>    <span class="o">=</span> <span class="mh">0x19</span>
+    <span class="n">_SYS_TRACK_DIS</span>      <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># SYS Tracking Disable Control</span>
+    <span class="n">_SYS_TRACK_ENABLED</span>  <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># SYS tracking enabled. SYS regulated to MAX(VBATT + 4%, VSYSMIN), even in Charge Done state.</span>
+    <span class="n">_SYS_TRACK_DISABLED</span> <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># SYS tracking is disabled. SYS is regulated to VCHG_CV_PRM.</span>
+    <span class="n">_SYS_TRACK_DEFAULT</span>  <span class="o">=</span> <span class="n">_SYS_TRACK_DISABLED</span>
+    <span class="n">_B2SOVRC_DTC</span>        <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># Battery to SYS Overcurrent Debounce Time Control.</span>
+    <span class="n">_B2SOVRC_DTC_6_MS</span>   <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># tOCP = 6 ms</span>
+    <span class="n">_B2SOVRC_DTC_100_MS</span> <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># tOCP = 100 ms</span>
+    <span class="n">_B2SOVRC_DTC_MIN</span>    <span class="o">=</span> <span class="n">_B2SOVRC_DTC_6_MS</span>
+    <span class="n">_B2SOVRC_DTC_MAX</span>    <span class="o">=</span> <span class="n">_B2SOVRC_DTC_100_MS</span>
+    <span class="n">_B2SOVRC_DTC_DEFAULT</span><span class="o">=</span> <span class="n">_B2SOVRC_DTC_6_MS</span>
+    <span class="n">_TO_TIME</span>            <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># Top-Off Timer Setting</span>
+    <span class="n">_TO_TIME_30_SEC</span>     <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 30 seconds</span>
+    <span class="n">_TO_TIME_10_MIN</span>     <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 10 minutes</span>
+    <span class="n">_TO_TIME_20_MIN</span>     <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 20 minutes</span>
+    <span class="n">_TO_TIME_30_MIN</span>     <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 30 minutes</span>
+    <span class="n">_TO_TIME_40_MIN</span>     <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 40 minutes</span>
+    <span class="n">_TO_TIME_50_MIN</span>     <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 50 minutes</span>
+    <span class="n">_TO_TIME_60_MIN</span>     <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 60 minutes</span>
+    <span class="n">_TO_TIME_70_MIN</span>     <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 70 minutes</span>
+    <span class="n">_TO_TIME_MIN</span>        <span class="o">=</span> <span class="n">_TO_TIME_30_SEC</span>
+    <span class="n">_TO_TIME_MAX</span>        <span class="o">=</span> <span class="n">_TO_TIME_70_MIN</span>
+    <span class="n">_TO_TIME_DEFAULT</span>    <span class="o">=</span> <span class="n">_TO_TIME_30_MIN</span>
+    <span class="n">_TO_ITH</span>             <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># Top-Off Current Threshold (mA).</span>
+    <span class="n">_TO_ITH_100</span>         <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 100 mA</span>
+    <span class="n">_TO_ITH_200</span>         <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 200 mA</span>
+    <span class="n">_TO_ITH_300</span>         <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 300 mA</span>
+    <span class="n">_TO_ITH_400</span>         <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 400 mA</span>
+    <span class="n">_TO_ITH_500</span>         <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 500 mA</span>
+    <span class="n">_TO_ITH_600</span>         <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 600 mA</span>
+    <span class="n">_TO_ITH_600_6</span>       <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 600 mA</span>
+    <span class="n">_TO_ITH_600_7</span>       <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 600 mA</span>
+    <span class="n">_TO_ITH_MIN</span>         <span class="o">=</span> <span class="n">_TO_ITH_100</span>
+    <span class="n">_TO_ITH_MAX</span>         <span class="o">=</span> <span class="n">_TO_ITH_600</span>
+    <span class="n">_TO_ITH_DEFAULT</span>     <span class="o">=</span> <span class="n">_TO_ITH_100</span>
+    
+    <span class="n">_REG_CHG_CNFG_04</span>    <span class="o">=</span> <span class="mh">0x1A</span>
+    <span class="n">_CHG_CV_PRM</span>         <span class="o">=</span> <span class="mh">0x3F</span> <span class="c1"># Charge Termination Voltage Setting (mV).</span>
+    <span class="c1"># 2 cells:</span>
+    <span class="n">_CHG_CV_PRM_2C_8000</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 8000 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8020</span> <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 8020 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8040</span> <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 8040 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8060</span> <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 8060 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8080</span> <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 8080 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8100</span> <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 8100 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8120</span> <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 8120 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8140</span> <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 8140 mV </span>
+    <span class="n">_CHG_CV_PRM_2C_8160</span> <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 8160 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8180</span> <span class="o">=</span> <span class="mh">0x09</span> <span class="c1"># 8180 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8200</span> <span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># 8200 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8220</span> <span class="o">=</span> <span class="mh">0x0B</span> <span class="c1"># 8220 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8240</span> <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># 8240 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8260</span> <span class="o">=</span> <span class="mh">0x0D</span> <span class="c1"># 8260 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8280</span> <span class="o">=</span> <span class="mh">0x0E</span> <span class="c1"># 8280 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8300</span> <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># 8300 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8320</span> <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 8320 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8340</span> <span class="o">=</span> <span class="mh">0x11</span> <span class="c1"># 8340 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8360</span> <span class="o">=</span> <span class="mh">0x12</span> <span class="c1"># 8360 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8380</span> <span class="o">=</span> <span class="mh">0x13</span> <span class="c1"># 8380 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8400</span> <span class="o">=</span> <span class="mh">0x14</span> <span class="c1"># 8400 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8420</span> <span class="o">=</span> <span class="mh">0x15</span> <span class="c1"># 8420 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8440</span> <span class="o">=</span> <span class="mh">0x16</span> <span class="c1"># 8440 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8460</span> <span class="o">=</span> <span class="mh">0x17</span> <span class="c1"># 8460 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8480</span> <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 8480 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8500</span> <span class="o">=</span> <span class="mh">0x19</span> <span class="c1"># 8500 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8520</span> <span class="o">=</span> <span class="mh">0x1A</span> <span class="c1"># 8520 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8540</span> <span class="o">=</span> <span class="mh">0x1B</span> <span class="c1"># 8540 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8560</span> <span class="o">=</span> <span class="mh">0x1C</span> <span class="c1"># 8560 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8580</span> <span class="o">=</span> <span class="mh">0x1D</span> <span class="c1"># 8680 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8600</span> <span class="o">=</span> <span class="mh">0x1E</span> <span class="c1"># 8600 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8620</span> <span class="o">=</span> <span class="mh">0x1F</span> <span class="c1"># 8620 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8640</span> <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 8640 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8660</span> <span class="o">=</span> <span class="mh">0x21</span> <span class="c1"># 8660 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8680</span> <span class="o">=</span> <span class="mh">0x22</span> <span class="c1"># 8680 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8700</span> <span class="o">=</span> <span class="mh">0x23</span> <span class="c1"># 8700 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8720</span> <span class="o">=</span> <span class="mh">0x24</span> <span class="c1"># 8720 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8740</span> <span class="o">=</span> <span class="mh">0x25</span> <span class="c1"># 8740 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8760</span> <span class="o">=</span> <span class="mh">0x26</span> <span class="c1"># 8760 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8780</span> <span class="o">=</span> <span class="mh">0x27</span> <span class="c1"># 8780 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8800</span> <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 8800 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8820</span> <span class="o">=</span> <span class="mh">0x29</span> <span class="c1"># 8820 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8840</span> <span class="o">=</span> <span class="mh">0x2A</span> <span class="c1"># 8840 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8860</span> <span class="o">=</span> <span class="mh">0x2B</span> <span class="c1"># 8860 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8880</span> <span class="o">=</span> <span class="mh">0x2C</span> <span class="c1"># 8880 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8900</span> <span class="o">=</span> <span class="mh">0x2D</span> <span class="c1"># 8900 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8920</span> <span class="o">=</span> <span class="mh">0x2E</span> <span class="c1"># 8920 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8940</span> <span class="o">=</span> <span class="mh">0x2F</span> <span class="c1"># 8940 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8960</span> <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 8960 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_8980</span> <span class="o">=</span> <span class="mh">0x31</span> <span class="c1"># 8980 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9000</span> <span class="o">=</span> <span class="mh">0x32</span> <span class="c1"># 9000 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9020</span> <span class="o">=</span> <span class="mh">0x33</span> <span class="c1"># 9020 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9040</span> <span class="o">=</span> <span class="mh">0x34</span> <span class="c1"># 9040 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9060</span> <span class="o">=</span> <span class="mh">0x35</span> <span class="c1"># 9060 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9080</span> <span class="o">=</span> <span class="mh">0x36</span> <span class="c1"># 9080 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9100</span> <span class="o">=</span> <span class="mh">0x37</span> <span class="c1"># 9100 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9120</span> <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 9120 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9140</span> <span class="o">=</span> <span class="mh">0x39</span> <span class="c1"># 9140 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9160</span> <span class="o">=</span> <span class="mh">0x3A</span> <span class="c1"># 9160 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9180</span> <span class="o">=</span> <span class="mh">0x3B</span> <span class="c1"># 9180 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9200</span> <span class="o">=</span> <span class="mh">0x3C</span> <span class="c1"># 9200 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9220</span> <span class="o">=</span> <span class="mh">0x3D</span> <span class="c1"># 9220 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9240</span> <span class="o">=</span> <span class="mh">0x3E</span> <span class="c1"># 9240 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_9260</span> <span class="o">=</span> <span class="mh">0x3F</span> <span class="c1"># 9260 mV</span>
+    <span class="n">_CHG_CV_PRM_2C_MIN</span>  <span class="o">=</span> <span class="n">_CHG_CV_PRM_2C_8000</span>
+    <span class="n">_CHG_CV_PRM_2C_MAX</span>  <span class="o">=</span> <span class="n">_CHG_CV_PRM_2C_9260</span>
+    <span class="n">_CHG_CV_PRM_2C_DEFAULT</span> <span class="o">=</span> <span class="n">_CHG_CV_PRM_2C_8000</span>
+    <span class="c1"># 3 cells:</span>
+    <span class="n">_CHG_CV_PRM_3C_12000</span><span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 12000 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12030</span><span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 12030 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12060</span><span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 12060 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12090</span><span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 12090 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12120</span><span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 12120 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12150</span><span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 12150 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12180</span><span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 12180 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12210</span><span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 12210 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12240</span><span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 12240 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12270</span><span class="o">=</span> <span class="mh">0x09</span> <span class="c1"># 12270 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12300</span><span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># 12300 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12330</span><span class="o">=</span> <span class="mh">0x0B</span> <span class="c1"># 12330 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12360</span><span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># 12360 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12390</span><span class="o">=</span> <span class="mh">0x0D</span> <span class="c1"># 12390 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12420</span><span class="o">=</span> <span class="mh">0x0E</span> <span class="c1"># 12420 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12450</span><span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># 12450 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12480</span><span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 12480 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12510</span><span class="o">=</span> <span class="mh">0x11</span> <span class="c1"># 12510 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12540</span><span class="o">=</span> <span class="mh">0x12</span> <span class="c1"># 12540 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12570</span><span class="o">=</span> <span class="mh">0x13</span> <span class="c1"># 12570 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12600</span><span class="o">=</span> <span class="mh">0x14</span> <span class="c1"># 12600 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12630</span><span class="o">=</span> <span class="mh">0x15</span> <span class="c1"># 12630 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12660</span><span class="o">=</span> <span class="mh">0x16</span> <span class="c1"># 12660 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12690</span><span class="o">=</span> <span class="mh">0x17</span> <span class="c1"># 12690 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12720</span><span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 12720 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12750</span><span class="o">=</span> <span class="mh">0x19</span> <span class="c1"># 12750 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12780</span><span class="o">=</span> <span class="mh">0x1A</span> <span class="c1"># 12780 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12810</span><span class="o">=</span> <span class="mh">0x1B</span> <span class="c1"># 12810 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12840</span><span class="o">=</span> <span class="mh">0x1C</span> <span class="c1"># 12840 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12870</span><span class="o">=</span> <span class="mh">0x1D</span> <span class="c1"># 12870 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12900</span><span class="o">=</span> <span class="mh">0x1E</span> <span class="c1"># 12900 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12930</span><span class="o">=</span> <span class="mh">0x1F</span> <span class="c1"># 12930 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12960</span><span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 12960 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_12990</span><span class="o">=</span> <span class="mh">0x21</span> <span class="c1"># 12990 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_13020</span><span class="o">=</span> <span class="mh">0x22</span> <span class="c1"># 13020 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_13050</span><span class="o">=</span> <span class="mh">0x23</span> <span class="c1"># 13050 mV</span>
+    <span class="n">_CHG_CV_PRM_3C_MIN</span>  <span class="o">=</span> <span class="n">_CHG_CV_PRM_3C_12000</span>
+    <span class="n">_CHG_CV_PRM_3C_MAX</span>  <span class="o">=</span> <span class="n">_CHG_CV_PRM_3C_13050</span>
+    <span class="n">_CHG_CV_PRM_3C_DEFAULT</span> <span class="o">=</span> <span class="n">_CHG_CV_PRM_3C_12000</span>
+    <span class="n">_CHG_CV_PRM_DEFAULT</span> <span class="o">=</span> <span class="n">_CHG_CV_PRM_2C_DEFAULT</span>
+    
+    <span class="n">_REG_CHG_CNFG_05</span>    <span class="o">=</span> <span class="mh">0x1B</span>
+    <span class="n">_ITRICKLE</span>           <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># Trickle Charge Current Selection (mA)</span>
+    <span class="n">_ITRICKLE_100</span>       <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 100 mA</span>
+    <span class="n">_ITRICKLE_200</span>       <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 200 mA</span>
+    <span class="n">_ITRICKLE_300</span>       <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 300 mA</span>
+    <span class="n">_ITRICKLE_400</span>       <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 400 mA</span>
+    <span class="n">_ITRICKLE_MIN</span>       <span class="o">=</span> <span class="n">_ITRICKLE_100</span>
+    <span class="n">_ITRICKLE_MAX</span>       <span class="o">=</span> <span class="n">_ITRICKLE_400</span>
+    <span class="n">_ITRICKLE_DEFAULT</span>   <span class="o">=</span> <span class="n">_ITRICKLE_100</span>
+    <span class="n">_B2SOVRC</span>            <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># BATT to SYS Overcurrent Threshold (mA)</span>
+    <span class="n">_B2SOVRC_DISABLED</span>   <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Disabled</span>
+    <span class="n">_B2SOVRC_3000</span>       <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 3000 mA</span>
+    <span class="n">_B2SOVRC_3500</span>       <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 3500 mA</span>
+    <span class="n">_B2SOVRC_4000</span>       <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 4000 mA</span>
+    <span class="n">_B2SOVRC_4500</span>       <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 4500 mA</span>
+    <span class="n">_B2SOVRC_5000</span>       <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 5000 mA</span>
+    <span class="n">_B2SOVRC_5500</span>       <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 5500 mA</span>
+    <span class="n">_B2SOVRC_6000</span>       <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 6000 mA</span>
+    <span class="n">_B2SOVRC_6500</span>       <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 6500 mA</span>
+    <span class="n">_B2SOVRC_7000</span>       <span class="o">=</span> <span class="mh">0x09</span> <span class="c1"># 7000 mA</span>
+    <span class="n">_B2SOVRC_7500</span>       <span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># 7500 mA</span>
+    <span class="n">_B2SOVRC_8000</span>       <span class="o">=</span> <span class="mh">0x0B</span> <span class="c1"># 8000 mA</span>
+    <span class="n">_B2SOVRC_8500</span>       <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># 8500 mA</span>
+    <span class="n">_B2SOVRC_9000</span>       <span class="o">=</span> <span class="mh">0x0D</span> <span class="c1"># 9000 mA</span>
+    <span class="n">_B2SOVRC_9500</span>       <span class="o">=</span> <span class="mh">0x0E</span> <span class="c1"># 9500 mA</span>
+    <span class="n">_B2SOVRC_10000</span>      <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># 10000 mA</span>
+    <span class="n">_B2SOVRC_MIN</span>        <span class="o">=</span> <span class="n">_B2SOVRC_3000</span>
+    <span class="n">_B2SOVRC_MAX</span>        <span class="o">=</span> <span class="n">_B2SOVRC_10000</span>
+    <span class="n">_B2SOVRC_DEFAULT</span>    <span class="o">=</span> <span class="n">_B2SOVRC_4500</span>
+    
+    <span class="n">_REG_CHG_CNFG_06</span>    <span class="o">=</span> <span class="mh">0x1C</span>
+    <span class="n">_CHGPROT</span>            <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># Charger Settings Protection Bits</span>
+    <span class="n">_CHGPROT_LOCK</span>       <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Write capability locked.</span>
+    <span class="n">_CHGPROT_LOCK_4</span>     <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Write capability locked.</span>
+    <span class="n">_CHGPROT_LOCK_8</span>     <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># Write capability locked.</span>
+    <span class="n">_CHGPROT_UNLOCK</span>     <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># Write capability unlocked.</span>
+    <span class="n">_CHGPROT_DEFAULT</span>    <span class="o">=</span> <span class="n">_CHGPROT_LOCK</span>
+    <span class="n">_WDTCLR</span>             <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># Watchdog Timer Clear Bits</span>
+    <span class="n">_WDTCLR_DO_NOT_TOUCH</span><span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Watchdog is not cleared.</span>
+    <span class="n">_WDTCLR_DO_CLEAR</span>    <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Watchdog is cleared.</span>
+    <span class="n">_WDTCLR_DO_NOT_TOUCH_2</span><span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># Watchdog is not cleared.</span>
+    <span class="n">_WDTCLR_DO_NOT_TOUCH_3</span><span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># Watchdog is not cleared.</span>
+    <span class="n">_WDTCLR_DEFAULT</span>     <span class="o">=</span> <span class="n">_WDTCLR_DO_NOT_TOUCH</span>
+    
+    <span class="n">_REG_CHG_CNFG_07</span>    <span class="o">=</span> <span class="mh">0x1D</span>
+    <span class="n">_JEITA_EN</span>           <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># JEITA Enable</span>
+    <span class="n">_JEITA_EN_OFF</span>       <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># JEITA disabled. Fast-charge current and charge termination voltage do not change based on thermistor temperature.</span>
+    <span class="n">_JEITA_EN_ON</span>        <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># JEITA enabled. Fast-charge current and charge termination voltage change based on thermistor temperature.</span>
+    <span class="n">_JEITA_EN_DEFAULT</span>   <span class="o">=</span> <span class="n">_JEITA_EN_OFF</span>
+    <span class="n">_REGTEMP</span>            <span class="o">=</span> <span class="mh">0x78</span> <span class="c1"># Junction Temperature Thermal Regulation (deg. C).</span>
+    <span class="n">_REGTEMP_85</span>         <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 85 deg. Celsius</span>
+    <span class="n">_REGTEMP_90</span>         <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 90 deg. Celsius</span>
+    <span class="n">_REGTEMP_95</span>         <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 95 deg. Celsius</span>
+    <span class="n">_REGTEMP_100</span>        <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 100 deg. Celsius</span>
+    <span class="n">_REGTEMP_105</span>        <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 105 deg. Celsius</span>
+    <span class="n">_REGTEMP_110</span>        <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 110 deg. Celsius</span>
+    <span class="n">_REGTEMP_115</span>        <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 115 deg. Celsius</span>
+    <span class="n">_REGTEMP_120</span>        <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 120 deg. Celsius</span>
+    <span class="n">_REGTEMP_125</span>        <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># 125 deg. Celsius</span>
+    <span class="n">_REGTEMP_130</span>        <span class="o">=</span> <span class="mh">0x48</span> <span class="c1"># 130 deg. Celsius</span>
+    <span class="n">_REGTEMP_MIN</span>        <span class="o">=</span> <span class="n">_REGTEMP_85</span>
+    <span class="n">_REGTEMP_MAX</span>        <span class="o">=</span> <span class="n">_REGTEMP_130</span>
+    <span class="n">_REGTEMP_DEFAULT</span>    <span class="o">=</span> <span class="n">_REGTEMP_115</span>
+    <span class="n">_VCHGCV_COOL</span>        <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># JEITA-Controlled Battery Termination Voltage When Thermistor Temperature is Between TCOLD and TCOOL</span>
+    <span class="n">_VCHGCV_COOL_NORMAL</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Battery termination voltage is set by CHG_CV_PRM.</span>
+    <span class="n">_VCHGCV_COOL_REDUCED</span><span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># Battery termination voltage is set by (CHG_CV_PRM - 180mV/cell).</span>
+    <span class="n">_VCHGCV_COOL_DEFAULT</span><span class="o">=</span> <span class="n">_VCHGCV_COOL_NORMAL</span>
+    <span class="n">_ICHGCC_COOL</span>        <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># JEITA-Controlled Battery Fast-Charge Current When Thermistor Temperature is Between TCOLD and TCOOL</span>
+    <span class="n">_ICHGCC_COOL_NORMAL</span> <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Battery fast-charge current is set by CHGCC</span>
+    <span class="n">_ICHGCC_COOL_REDUCED</span><span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># Battery fast-charge current is reduced to 50% of CHGCC</span>
+    <span class="n">_ICHGCC_COOL_DEFAULT</span><span class="o">=</span> <span class="n">_ICHGCC_COOL_REDUCED</span>
+    <span class="n">_FSHIP_MODE</span>         <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Factory Ship Mode Enable</span>
+    <span class="n">_FSHIP_MODE_OFF</span>     <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Disable factory ship mode</span>
+    <span class="n">_FSHIP_MODE_ON</span>      <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Enable factory ship mode</span>
+    <span class="n">_FSHIP_MODE_DEFAULT</span> <span class="o">=</span> <span class="n">_FSHIP_MODE_OFF</span>
+    
+    <span class="n">_REG_CHG_CNFG_08</span>    <span class="o">=</span> <span class="mh">0x1E</span>
+    <span class="n">_CHGIN_ILIM</span>         <span class="o">=</span> <span class="mh">0x7F</span> <span class="c1"># CHGIN Input Current Limit (mA).</span>
+    <span class="n">_CHGIN_ILIM_100</span>     <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 100 mA</span>
+    <span class="n">_CHGIN_ILIM_100_1</span>   <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 100 mA</span>
+    <span class="n">_CHGIN_ILIM_100_2</span>   <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 100 mA</span>
+    <span class="n">_CHGIN_ILIM_100_3</span>   <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 100 mA</span>
+    <span class="n">_CHGIN_ILIM_150</span>     <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 150 mA</span>
+    <span class="n">_CHGIN_ILIM_200</span>     <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 200 mA</span>
+    <span class="n">_CHGIN_ILIM_250</span>     <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 250 mA</span>
+    <span class="n">_CHGIN_ILIM_300</span>     <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 300 mA</span>
+    <span class="n">_CHGIN_ILIM_350</span>     <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 350 mA</span>
+    <span class="n">_CHGIN_ILIM_400</span>     <span class="o">=</span> <span class="mh">0x09</span> <span class="c1"># 400 mA</span>
+    <span class="n">_CHGIN_ILIM_450</span>     <span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># 450 mA</span>
+    <span class="n">_CHGIN_ILIM_500</span>     <span class="o">=</span> <span class="mh">0x0B</span> <span class="c1"># 500 mA</span>
+    <span class="n">_CHGIN_ILIM_550</span>     <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># 550 mA</span>
+    <span class="n">_CHGIN_ILIM_600</span>     <span class="o">=</span> <span class="mh">0x0D</span> <span class="c1"># 600 mA</span>
+    <span class="n">_CHGIN_ILIM_650</span>     <span class="o">=</span> <span class="mh">0x0E</span> <span class="c1"># 650 mA</span>
+    <span class="n">_CHGIN_ILIM_700</span>     <span class="o">=</span> <span class="mh">0x0F</span> <span class="c1"># 700 mA</span>
+    <span class="n">_CHGIN_ILIM_750</span>     <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 750 mA</span>
+    <span class="n">_CHGIN_ILIM_800</span>     <span class="o">=</span> <span class="mh">0x11</span> <span class="c1"># 800 mA</span>
+    <span class="n">_CHGIN_ILIM_850</span>     <span class="o">=</span> <span class="mh">0x12</span> <span class="c1"># 850 mA</span>
+    <span class="n">_CHGIN_ILIM_900</span>     <span class="o">=</span> <span class="mh">0x13</span> <span class="c1"># 900 mA</span>
+    <span class="n">_CHGIN_ILIM_950</span>     <span class="o">=</span> <span class="mh">0x14</span> <span class="c1"># 950 mA</span>
+    <span class="n">_CHGIN_ILIM_1000</span>    <span class="o">=</span> <span class="mh">0x15</span> <span class="c1"># 1000 mA</span>
+    <span class="n">_CHGIN_ILIM_1050</span>    <span class="o">=</span> <span class="mh">0x16</span> <span class="c1"># 1050 mA</span>
+    <span class="n">_CHGIN_ILIM_1100</span>    <span class="o">=</span> <span class="mh">0x17</span> <span class="c1"># 1100 mA</span>
+    <span class="n">_CHGIN_ILIM_1150</span>    <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 1150 mA</span>
+    <span class="n">_CHGIN_ILIM_1200</span>    <span class="o">=</span> <span class="mh">0x19</span> <span class="c1"># 1200 mA</span>
+    <span class="n">_CHGIN_ILIM_1250</span>    <span class="o">=</span> <span class="mh">0x1A</span> <span class="c1"># 1250 mA</span>
+    <span class="n">_CHGIN_ILIM_1300</span>    <span class="o">=</span> <span class="mh">0x1B</span> <span class="c1"># 1300 mA</span>
+    <span class="n">_CHGIN_ILIM_1350</span>    <span class="o">=</span> <span class="mh">0x1C</span> <span class="c1"># 1350 mA</span>
+    <span class="n">_CHGIN_ILIM_1400</span>    <span class="o">=</span> <span class="mh">0x1D</span> <span class="c1"># 1400 mA</span>
+    <span class="n">_CHGIN_ILIM_1450</span>    <span class="o">=</span> <span class="mh">0x1E</span> <span class="c1"># 1450 mA</span>
+    <span class="n">_CHGIN_ILIM_1500</span>    <span class="o">=</span> <span class="mh">0x1F</span> <span class="c1"># 1500 mA</span>
+    <span class="n">_CHGIN_ILIM_1550</span>    <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 1550 mA</span>
+    <span class="n">_CHGIN_ILIM_1600</span>    <span class="o">=</span> <span class="mh">0x21</span> <span class="c1"># 1600 mA</span>
+    <span class="n">_CHGIN_ILIM_1650</span>    <span class="o">=</span> <span class="mh">0x22</span> <span class="c1"># 1650 mA</span>
+    <span class="n">_CHGIN_ILIM_1700</span>    <span class="o">=</span> <span class="mh">0x23</span> <span class="c1"># 1700 mA</span>
+    <span class="n">_CHGIN_ILIM_1750</span>    <span class="o">=</span> <span class="mh">0x24</span> <span class="c1"># 1750 mA</span>
+    <span class="n">_CHGIN_ILIM_1800</span>    <span class="o">=</span> <span class="mh">0x25</span> <span class="c1"># 1800 mA</span>
+    <span class="n">_CHGIN_ILIM_1850</span>    <span class="o">=</span> <span class="mh">0x26</span> <span class="c1"># 1850 mA</span>
+    <span class="n">_CHGIN_ILIM_1900</span>    <span class="o">=</span> <span class="mh">0x27</span> <span class="c1"># 1900 mA</span>
+    <span class="n">_CHGIN_ILIM_1950</span>    <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 1950 mA</span>
+    <span class="n">_CHGIN_ILIM_2000</span>    <span class="o">=</span> <span class="mh">0x29</span> <span class="c1"># 2000 mA</span>
+    <span class="n">_CHGIN_ILIM_2050</span>    <span class="o">=</span> <span class="mh">0x2A</span> <span class="c1"># 2050 mA</span>
+    <span class="n">_CHGIN_ILIM_2100</span>    <span class="o">=</span> <span class="mh">0x2B</span> <span class="c1"># 2100 mA</span>
+    <span class="n">_CHGIN_ILIM_2150</span>    <span class="o">=</span> <span class="mh">0x2C</span> <span class="c1"># 2150 mA</span>
+    <span class="n">_CHGIN_ILIM_2200</span>    <span class="o">=</span> <span class="mh">0x2D</span> <span class="c1"># 2200 mA</span>
+    <span class="n">_CHGIN_ILIM_2250</span>    <span class="o">=</span> <span class="mh">0x2E</span> <span class="c1"># 2250 mA</span>
+    <span class="n">_CHGIN_ILIM_2300</span>    <span class="o">=</span> <span class="mh">0x2F</span> <span class="c1"># 2300 mA</span>
+    <span class="n">_CHGIN_ILIM_2350</span>    <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 2350 mA</span>
+    <span class="n">_CHGIN_ILIM_2400</span>    <span class="o">=</span> <span class="mh">0x31</span> <span class="c1"># 2400 mA</span>
+    <span class="n">_CHGIN_ILIM_2450</span>    <span class="o">=</span> <span class="mh">0x32</span> <span class="c1"># 2450 mA</span>
+    <span class="n">_CHGIN_ILIM_2500</span>    <span class="o">=</span> <span class="mh">0x33</span> <span class="c1"># 2500 mA</span>
+    <span class="n">_CHGIN_ILIM_2550</span>    <span class="o">=</span> <span class="mh">0x34</span> <span class="c1"># 2550 mA</span>
+    <span class="n">_CHGIN_ILIM_2600</span>    <span class="o">=</span> <span class="mh">0x35</span> <span class="c1"># 2600 mA</span>
+    <span class="n">_CHGIN_ILIM_2650</span>    <span class="o">=</span> <span class="mh">0x36</span> <span class="c1"># 2650 mA</span>
+    <span class="n">_CHGIN_ILIM_2700</span>    <span class="o">=</span> <span class="mh">0x37</span> <span class="c1"># 2700 mA</span>
+    <span class="n">_CHGIN_ILIM_2750</span>    <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 2750 mA</span>
+    <span class="n">_CHGIN_ILIM_2800</span>    <span class="o">=</span> <span class="mh">0x39</span> <span class="c1"># 2800 mA</span>
+    <span class="n">_CHGIN_ILIM_2850</span>    <span class="o">=</span> <span class="mh">0x3A</span> <span class="c1"># 2850 mA</span>
+    <span class="n">_CHGIN_ILIM_2900</span>    <span class="o">=</span> <span class="mh">0x3B</span> <span class="c1"># 2900 mA</span>
+    <span class="n">_CHGIN_ILIM_2950</span>    <span class="o">=</span> <span class="mh">0x3C</span> <span class="c1"># 2950 mA</span>
+    <span class="n">_CHGIN_ILIM_3000</span>    <span class="o">=</span> <span class="mh">0x3D</span> <span class="c1"># 3000 mA</span>
+    <span class="n">_CHGIN_ILIM_3050</span>    <span class="o">=</span> <span class="mh">0x3E</span> <span class="c1"># 3050 mA</span>
+    <span class="n">_CHGIN_ILIM_3100</span>    <span class="o">=</span> <span class="mh">0x3F</span> <span class="c1"># 3100 mA</span>
+    <span class="n">_CHGIN_ILIM_3150</span>    <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># 3150 mA</span>
+    <span class="n">_CHGIN_ILIM_3200</span>    <span class="o">=</span> <span class="mh">0x41</span> <span class="c1"># 3200 mA</span>
+    <span class="n">_CHGIN_ILIM_3250</span>    <span class="o">=</span> <span class="mh">0x42</span> <span class="c1"># 3250 mA</span>
+    <span class="n">_CHGIN_ILIM_3300</span>    <span class="o">=</span> <span class="mh">0x43</span> <span class="c1"># 3300 mA</span>
+    <span class="n">_CHGIN_ILIM_3350</span>    <span class="o">=</span> <span class="mh">0x44</span> <span class="c1"># 3350 mA</span>
+    <span class="n">_CHGIN_ILIM_3400</span>    <span class="o">=</span> <span class="mh">0x45</span> <span class="c1"># 3400 mA</span>
+    <span class="n">_CHGIN_ILIM_3450</span>    <span class="o">=</span> <span class="mh">0x46</span> <span class="c1"># 3450 mA</span>
+    <span class="n">_CHGIN_ILIM_3500</span>    <span class="o">=</span> <span class="mh">0x47</span> <span class="c1"># 3500 mA</span>
+    <span class="n">_CHGIN_ILIM_3550</span>    <span class="o">=</span> <span class="mh">0x48</span> <span class="c1"># 3550 mA</span>
+    <span class="n">_CHGIN_ILIM_3600</span>    <span class="o">=</span> <span class="mh">0x49</span> <span class="c1"># 3600 mA</span>
+    <span class="n">_CHGIN_ILIM_3650</span>    <span class="o">=</span> <span class="mh">0x4A</span> <span class="c1"># 3650 mA</span>
+    <span class="n">_CHGIN_ILIM_3700</span>    <span class="o">=</span> <span class="mh">0x4B</span> <span class="c1"># 3700 mA</span>
+    <span class="n">_CHGIN_ILIM_3750</span>    <span class="o">=</span> <span class="mh">0x4C</span> <span class="c1"># 3750 mA</span>
+    <span class="n">_CHGIN_ILIM_3800</span>    <span class="o">=</span> <span class="mh">0x4D</span> <span class="c1"># 3800 mA</span>
+    <span class="n">_CHGIN_ILIM_3850</span>    <span class="o">=</span> <span class="mh">0x4E</span> <span class="c1"># 3850 mA</span>
+    <span class="n">_CHGIN_ILIM_3900</span>    <span class="o">=</span> <span class="mh">0x4F</span> <span class="c1"># 3900 mA</span>
+    <span class="n">_CHGIN_ILIM_3950</span>    <span class="o">=</span> <span class="mh">0x50</span> <span class="c1"># 3950 mA</span>
+    <span class="n">_CHGIN_ILIM_4000</span>    <span class="o">=</span> <span class="mh">0x51</span> <span class="c1"># 4000 mA</span>
+    <span class="n">_CHGIN_ILIM_4050</span>    <span class="o">=</span> <span class="mh">0x52</span> <span class="c1"># 4050 mA</span>
+    <span class="n">_CHGIN_ILIM_4100</span>    <span class="o">=</span> <span class="mh">0x53</span> <span class="c1"># 4100 mA</span>
+    <span class="n">_CHGIN_ILIM_4150</span>    <span class="o">=</span> <span class="mh">0x54</span> <span class="c1"># 4150 mA</span>
+    <span class="n">_CHGIN_ILIM_4200</span>    <span class="o">=</span> <span class="mh">0x55</span> <span class="c1"># 4200 mA</span>
+    <span class="n">_CHGIN_ILIM_4250</span>    <span class="o">=</span> <span class="mh">0x56</span> <span class="c1"># 4250 mA</span>
+    <span class="n">_CHGIN_ILIM_4300</span>    <span class="o">=</span> <span class="mh">0x57</span> <span class="c1"># 4300 mA</span>
+    <span class="n">_CHGIN_ILIM_4350</span>    <span class="o">=</span> <span class="mh">0x58</span> <span class="c1"># 4350 mA</span>
+    <span class="n">_CHGIN_ILIM_4400</span>    <span class="o">=</span> <span class="mh">0x59</span> <span class="c1"># 4400 mA</span>
+    <span class="n">_CHGIN_ILIM_4450</span>    <span class="o">=</span> <span class="mh">0x5A</span> <span class="c1"># 4450 mA</span>
+    <span class="n">_CHGIN_ILIM_4500</span>    <span class="o">=</span> <span class="mh">0x5B</span> <span class="c1"># 4500 mA</span>
+    <span class="n">_CHGIN_ILIM_4550</span>    <span class="o">=</span> <span class="mh">0x5C</span> <span class="c1"># 4550 mA</span>
+    <span class="n">_CHGIN_ILIM_4600</span>    <span class="o">=</span> <span class="mh">0x5D</span> <span class="c1"># 4600 mA</span>
+    <span class="n">_CHGIN_ILIM_4650</span>    <span class="o">=</span> <span class="mh">0x5E</span> <span class="c1"># 4650 mA</span>
+    <span class="n">_CHGIN_ILIM_4700</span>    <span class="o">=</span> <span class="mh">0x5F</span> <span class="c1"># 4700 mA</span>
+    <span class="n">_CHGIN_ILIM_4750</span>    <span class="o">=</span> <span class="mh">0x60</span> <span class="c1"># 4750 mA</span>
+    <span class="n">_CHGIN_ILIM_4800</span>    <span class="o">=</span> <span class="mh">0x61</span> <span class="c1"># 4800 mA</span>
+    <span class="n">_CHGIN_ILIM_4850</span>    <span class="o">=</span> <span class="mh">0x62</span> <span class="c1"># 4850 mA</span>
+    <span class="n">_CHGIN_ILIM_4900</span>    <span class="o">=</span> <span class="mh">0x63</span> <span class="c1"># 4900 mA</span>
+    <span class="n">_CHGIN_ILIM_4950</span>    <span class="o">=</span> <span class="mh">0x64</span> <span class="c1"># 4950 mA</span>
+    <span class="n">_CHGIN_ILIM_5000</span>    <span class="o">=</span> <span class="mh">0x65</span> <span class="c1"># 5000 mA</span>
+    <span class="n">_CHGIN_ILIM_5050</span>    <span class="o">=</span> <span class="mh">0x66</span> <span class="c1"># 5050 mA</span>
+    <span class="n">_CHGIN_ILIM_5100</span>    <span class="o">=</span> <span class="mh">0x67</span> <span class="c1"># 5100 mA</span>
+    <span class="n">_CHGIN_ILIM_5150</span>    <span class="o">=</span> <span class="mh">0x68</span> <span class="c1"># 5150 mA</span>
+    <span class="n">_CHGIN_ILIM_5200</span>    <span class="o">=</span> <span class="mh">0x69</span> <span class="c1"># 5200 mA</span>
+    <span class="n">_CHGIN_ILIM_5250</span>    <span class="o">=</span> <span class="mh">0x6A</span> <span class="c1"># 5250 mA</span>
+    <span class="n">_CHGIN_ILIM_5300</span>    <span class="o">=</span> <span class="mh">0x6B</span> <span class="c1"># 5300 mA</span>
+    <span class="n">_CHGIN_ILIM_5350</span>    <span class="o">=</span> <span class="mh">0x6C</span> <span class="c1"># 5350 mA</span>
+    <span class="n">_CHGIN_ILIM_5400</span>    <span class="o">=</span> <span class="mh">0x6D</span> <span class="c1"># 5400 mA</span>
+    <span class="n">_CHGIN_ILIM_5450</span>    <span class="o">=</span> <span class="mh">0x6E</span> <span class="c1"># 5450 mA</span>
+    <span class="n">_CHGIN_ILIM_5500</span>    <span class="o">=</span> <span class="mh">0x6F</span> <span class="c1"># 5500 mA</span>
+    <span class="n">_CHGIN_ILIM_5550</span>    <span class="o">=</span> <span class="mh">0x70</span> <span class="c1"># 5550 mA</span>
+    <span class="n">_CHGIN_ILIM_5600</span>    <span class="o">=</span> <span class="mh">0x71</span> <span class="c1"># 5600 mA</span>
+    <span class="n">_CHGIN_ILIM_5650</span>    <span class="o">=</span> <span class="mh">0x72</span> <span class="c1"># 5650 mA</span>
+    <span class="n">_CHGIN_ILIM_5700</span>    <span class="o">=</span> <span class="mh">0x73</span> <span class="c1"># 5700 mA</span>
+    <span class="n">_CHGIN_ILIM_5750</span>    <span class="o">=</span> <span class="mh">0x74</span> <span class="c1"># 5750 mA</span>
+    <span class="n">_CHGIN_ILIM_5800</span>    <span class="o">=</span> <span class="mh">0x75</span> <span class="c1"># 5800 mA</span>
+    <span class="n">_CHGIN_ILIM_5850</span>    <span class="o">=</span> <span class="mh">0x76</span> <span class="c1"># 5850 mA</span>
+    <span class="n">_CHGIN_ILIM_5900</span>    <span class="o">=</span> <span class="mh">0x77</span> <span class="c1"># 5900 mA</span>
+    <span class="n">_CHGIN_ILIM_5950</span>    <span class="o">=</span> <span class="mh">0x78</span> <span class="c1"># 5950 mA</span>
+    <span class="n">_CHGIN_ILIM_6000</span>    <span class="o">=</span> <span class="mh">0x79</span> <span class="c1"># 6000 mA</span>
+    <span class="n">_CHGIN_ILIM_6050</span>    <span class="o">=</span> <span class="mh">0x7A</span> <span class="c1"># 6050 mA</span>
+    <span class="n">_CHGIN_ILIM_6100</span>    <span class="o">=</span> <span class="mh">0x7B</span> <span class="c1"># 6100 mA</span>
+    <span class="n">_CHGIN_ILIM_6150</span>    <span class="o">=</span> <span class="mh">0x7C</span> <span class="c1"># 6150 mA</span>
+    <span class="n">_CHGIN_ILIM_6200</span>    <span class="o">=</span> <span class="mh">0x7D</span> <span class="c1"># 6200 mA</span>
+    <span class="n">_CHGIN_ILIM_6250</span>    <span class="o">=</span> <span class="mh">0x7E</span> <span class="c1"># 6250 mA</span>
+    <span class="n">_CHGIN_ILIM_6300</span>    <span class="o">=</span> <span class="mh">0x7F</span> <span class="c1"># 6300 mA</span>
+    <span class="n">_CHGIN_ILIM_MIN</span>     <span class="o">=</span> <span class="n">_CHGIN_ILIM_100</span>
+    <span class="n">_CHGIN_ILIM_MAX</span>     <span class="o">=</span> <span class="n">_CHGIN_ILIM_6300</span>
+    <span class="n">_CHGIN_ILIM_DEFAULT</span> <span class="o">=</span> <span class="n">_CHGIN_ILIM_500</span>
+    <span class="n">_CHGIN_ILIM_DEFAULT_VALUE</span> <span class="o">=</span> <span class="mi">500</span>
+    
+    <span class="n">_REG_CHG_CNFG_09</span>    <span class="o">=</span> <span class="mh">0x1F</span>
+    <span class="n">_INLIM_CLK</span>          <span class="o">=</span> <span class="mh">0xC0</span> <span class="c1"># Input Current Limit Soft-Start Period (micro seconds) Between Consecutive Increments of 25mA</span>
+    <span class="n">_INLIM_CLK_8</span>        <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 8 us</span>
+    <span class="n">_INLIM_CLK_256</span>      <span class="o">=</span> <span class="mh">0x40</span> <span class="c1"># 256 us</span>
+    <span class="n">_INLIM_CLK_1024</span>     <span class="o">=</span> <span class="mh">0x80</span> <span class="c1"># 1024 us ~ 1 ms</span>
+    <span class="n">_INLIM_CLK_4096</span>     <span class="o">=</span> <span class="mh">0xC0</span> <span class="c1"># 4096 us ~ 4 ms</span>
+    <span class="n">_INLIM_CLK_MIN</span>      <span class="o">=</span> <span class="n">_INLIM_CLK_8</span>
+    <span class="n">_INLIM_CLK_MAX</span>      <span class="o">=</span> <span class="n">_INLIM_CLK_4096</span>
+    <span class="n">_INLIM_CLK_DEFAULT</span>  <span class="o">=</span> <span class="n">_INLIM_CLK_1024</span>
+    <span class="n">_OTG_ILIM</span>           <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># OTG Mode Current Limit Setting (mA)</span>
+    <span class="n">_OTG_ILIM_500</span>       <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 500 mA</span>
+    <span class="n">_OTG_ILIM_900</span>       <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 900 mA</span>
+    <span class="n">_OTG_ILIM_1200</span>      <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 1200 mA</span>
+    <span class="n">_OTG_ILIM_1500</span>      <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 1500 mA</span>
+    <span class="n">_OTG_ILIM_2000</span>      <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 2000 mA</span>
+    <span class="n">_OTG_ILIM_2250</span>      <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 2250 mA</span>
+    <span class="n">_OTG_ILIM_2500</span>      <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 2500 mA</span>
+    <span class="n">_OTG_ILIM_3000</span>      <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 3000 mA</span>
+    <span class="n">_OTG_ILIM_MIN</span>       <span class="o">=</span> <span class="n">_OTG_ILIM_500</span>
+    <span class="n">_OTG_ILIM_MAX</span>       <span class="o">=</span> <span class="n">_OTG_ILIM_3000</span>
+    <span class="n">_OTG_ILIM_DEFAULT</span>   <span class="o">=</span> <span class="n">_OTG_ILIM_1500</span>
+    <span class="n">_MINVSYS</span>            <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># Minimum System Regulation Voltage (mV)</span>
+    <span class="c1"># 2 cells:</span>
+    <span class="n">_MINVSYS_2C_5535</span>    <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 5535 mV</span>
+    <span class="n">_MINVSYS_2C_5740</span>    <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 5740 mV</span>
+    <span class="n">_MINVSYS_2C_5945</span>    <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 5945 mV</span>
+    <span class="n">_MINVSYS_2C_6150</span>    <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 6150 mV</span>
+    <span class="n">_MINVSYS_2C_6355</span>    <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 6355 mV</span>
+    <span class="n">_MINVSYS_2C_6560</span>    <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 6560 mV</span>
+    <span class="n">_MINVSYS_2C_6765</span>    <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 6765 mV</span>
+    <span class="n">_MINVSYS_2C_6970</span>    <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 6970 mV</span>
+    <span class="n">_MINVSYS_2C_MIN</span>     <span class="o">=</span> <span class="n">_MINVSYS_2C_5535</span>
+    <span class="n">_MINVSYS_2C_MAX</span>     <span class="o">=</span> <span class="n">_MINVSYS_2C_6970</span>
+    <span class="n">_MINVSYS_2C_DEFAULT</span> <span class="o">=</span> <span class="n">_MINVSYS_2C_6150</span>
+    <span class="c1"># 3 cells:</span>
+    <span class="n">_MINVSYS_3C_8303</span>    <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 8303 mV</span>
+    <span class="n">_MINVSYS_3C_8610</span>    <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># 8610 mV</span>
+    <span class="n">_MINVSYS_3C_8918</span>    <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 8918 mV</span>
+    <span class="n">_MINVSYS_3C_9225</span>    <span class="o">=</span> <span class="mh">0x03</span> <span class="c1"># 9225 mV</span>
+    <span class="n">_MINVSYS_3C_9533</span>    <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 9533 mV</span>
+    <span class="n">_MINVSYS_3C_9840</span>    <span class="o">=</span> <span class="mh">0x05</span> <span class="c1"># 9840 mV</span>
+    <span class="n">_MINVSYS_3C_10148</span>   <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 10148 mV</span>
+    <span class="n">_MINVSYS_3C_10455</span>   <span class="o">=</span> <span class="mh">0x07</span> <span class="c1"># 10455 mV</span>
+    <span class="n">_MINVSYS_3C_MIN</span>     <span class="o">=</span> <span class="n">_MINVSYS_3C_8303</span>
+    <span class="n">_MINVSYS_3C_MAX</span>     <span class="o">=</span> <span class="n">_MINVSYS_3C_10455</span>
+    <span class="n">_MINVSYS_3C_DEFAULT</span> <span class="o">=</span> <span class="n">_MINVSYS_3C_9225</span>
+    <span class="n">_MINVSYS_DEFAULT</span>    <span class="o">=</span> <span class="n">_MINVSYS_2C_DEFAULT</span>
+    
+    <span class="n">_REG_CHG_CNFG_10</span>    <span class="o">=</span> <span class="mh">0x20</span>
+    <span class="n">_VCHGIN_REG</span>         <span class="o">=</span> <span class="mh">0x3E</span> <span class="c1"># CHGIN Voltage Regulation Threshold (mV)</span>
+    <span class="n">_VCHGIN_REG_4025</span>    <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># 4025 mV</span>
+    <span class="n">_VCHGIN_REG_4200</span>    <span class="o">=</span> <span class="mh">0x02</span> <span class="c1"># 4200 mV</span>
+    <span class="n">_VCHGIN_REG_4375</span>    <span class="o">=</span> <span class="mh">0x04</span> <span class="c1"># 4375 mV</span>
+    <span class="n">_VCHGIN_REG_4550</span>    <span class="o">=</span> <span class="mh">0x06</span> <span class="c1"># 4550 mV</span>
+    <span class="n">_VCHGIN_REG_4725</span>    <span class="o">=</span> <span class="mh">0x08</span> <span class="c1"># 4725 mV</span>
+    <span class="n">_VCHGIN_REG_4900</span>    <span class="o">=</span> <span class="mh">0x0A</span> <span class="c1"># 4900 mV</span>
+    <span class="n">_VCHGIN_REG_5425</span>    <span class="o">=</span> <span class="mh">0x0C</span> <span class="c1"># 5425 mV</span>
+    <span class="n">_VCHGIN_REG_5950</span>    <span class="o">=</span> <span class="mh">0x0E</span> <span class="c1"># 5950 mV</span>
+    <span class="n">_VCHGIN_REG_6475</span>    <span class="o">=</span> <span class="mh">0x10</span> <span class="c1"># 6475 mV</span>
+    <span class="n">_VCHGIN_REG_7000</span>    <span class="o">=</span> <span class="mh">0x12</span> <span class="c1"># 7000 mV</span>
+    <span class="n">_VCHGIN_REG_7525</span>    <span class="o">=</span> <span class="mh">0x14</span> <span class="c1"># 7525 mV</span>
+    <span class="n">_VCHGIN_REG_8050</span>    <span class="o">=</span> <span class="mh">0x16</span> <span class="c1"># 8050 mV</span>
+    <span class="n">_VCHGIN_REG_8575</span>    <span class="o">=</span> <span class="mh">0x18</span> <span class="c1"># 8575 mV</span>
+    <span class="n">_VCHGIN_REG_9100</span>    <span class="o">=</span> <span class="mh">0x1A</span> <span class="c1"># 9100 mV</span>
+    <span class="n">_VCHGIN_REG_9625</span>    <span class="o">=</span> <span class="mh">0x1C</span> <span class="c1"># 9625 mV</span>
+    <span class="n">_VCHGIN_REG_10150</span>   <span class="o">=</span> <span class="mh">0x1E</span> <span class="c1"># 10150 mV</span>
+    <span class="n">_VCHGIN_REG_10675</span>   <span class="o">=</span> <span class="mh">0x20</span> <span class="c1"># 10675 mV</span>
+    <span class="n">_VCHGIN_REG_10950</span>    <span class="o">=</span> <span class="mh">0x22</span> <span class="c1"># 10950 mV</span>
+    <span class="n">_VCHGIN_REG_11550</span>    <span class="o">=</span> <span class="mh">0x24</span> <span class="c1"># 11550 mV</span>
+    <span class="n">_VCHGIN_REG_12150</span>    <span class="o">=</span> <span class="mh">0x26</span> <span class="c1"># 12150 mV</span>
+    <span class="n">_VCHGIN_REG_12750</span>    <span class="o">=</span> <span class="mh">0x28</span> <span class="c1"># 12750 mV</span>
+    <span class="n">_VCHGIN_REG_13350</span>    <span class="o">=</span> <span class="mh">0x2A</span> <span class="c1"># 13350 mV</span>
+    <span class="n">_VCHGIN_REG_13950</span>    <span class="o">=</span> <span class="mh">0x2C</span> <span class="c1"># 13950 mV</span>
+    <span class="n">_VCHGIN_REG_14550</span>    <span class="o">=</span> <span class="mh">0x2E</span> <span class="c1"># 14550 mV</span>
+    <span class="n">_VCHGIN_REG_15150</span>    <span class="o">=</span> <span class="mh">0x30</span> <span class="c1"># 15150 mV</span>
+    <span class="n">_VCHGIN_REG_15750</span>    <span class="o">=</span> <span class="mh">0x32</span> <span class="c1"># 15750 mV</span>
+    <span class="n">_VCHGIN_REG_16350</span>    <span class="o">=</span> <span class="mh">0x34</span> <span class="c1"># 16350 mV</span>
+    <span class="n">_VCHGIN_REG_16950</span>    <span class="o">=</span> <span class="mh">0x36</span> <span class="c1"># 16950 mV</span>
+    <span class="n">_VCHGIN_REG_17550</span>    <span class="o">=</span> <span class="mh">0x38</span> <span class="c1"># 17550 mV</span>
+    <span class="n">_VCHGIN_REG_18150</span>    <span class="o">=</span> <span class="mh">0x3A</span> <span class="c1"># 18150 mV</span>
+    <span class="n">_VCHGIN_REG_18750</span>    <span class="o">=</span> <span class="mh">0x3C</span> <span class="c1"># 18750 mV</span>
+    <span class="n">_VCHGIN_REG_19050</span>    <span class="o">=</span> <span class="mh">0x3E</span> <span class="c1"># 19050 mV</span>
+    <span class="n">_VCHGIN_REG_MIN</span>      <span class="o">=</span> <span class="n">_VCHGIN_REG_4025</span>
+    <span class="n">_VCHGIN_REG_MAX</span>      <span class="o">=</span> <span class="n">_VCHGIN_REG_19050</span>
+    <span class="n">_VCHGIN_REG_DEFAULT</span>  <span class="o">=</span> <span class="n">_VCHGIN_REG_4725</span>
+    <span class="n">_DISKIP</span>              <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Charger Skip Mode Disable</span>
+    <span class="n">_DISKIP_AUTO</span>         <span class="o">=</span> <span class="mh">0x00</span> <span class="c1"># Autoskip mode</span>
+    <span class="n">_DISKIP_DISABLED</span>     <span class="o">=</span> <span class="mh">0x01</span> <span class="c1"># Disable skip mode</span>
+    <span class="n">_DISKIP_DEFAULT</span>      <span class="o">=</span> <span class="n">_DISKIP_AUTO</span>
+
+    <span class="c1">#</span>
+    <span class="c1"># Register / Content descriptions</span>
+    <span class="c1">#</span>
+    
+    <span class="n">_registerMap</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">[</span><span class="n">REG_CID</span><span class="p">,</span> <span class="s1">&#39;CID&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_CID_REVISION</span><span class="p">,</span> <span class="s1">&#39;REV&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CID_VERSION</span><span class="p">,</span> <span class="s1">&#39;VER&#39;</span><span class="p">],</span> <span class="p">[</span><span class="mh">0xFF</span><span class="p">,</span> <span class="s1">&#39;ID&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_SWRST</span><span class="p">,</span> <span class="s1">&#39;SWRST&#39;</span><span class="p">,</span> <span class="p">()],</span>
+        <span class="p">[</span><span class="n">_REG_TOP_INT</span><span class="p">,</span> <span class="s1">&#39;TOP_INT&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_TSHDN_I</span><span class="p">,</span> <span class="s1">&#39;TSHDN_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_SYSOVLO_I</span><span class="p">,</span> <span class="s1">&#39;SYSOVLO_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_SYSUVLO_I</span><span class="p">,</span> <span class="s1">&#39;SYSUVLO_I&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_TOP_INT_MASK</span><span class="p">,</span> <span class="s1">&#39;TOP_INT_MASK&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_TSHDN_M</span><span class="p">,</span> <span class="s1">&#39;TSHDN_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_SYSOVLO_M</span><span class="p">,</span> <span class="s1">&#39;SYSOVLO_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_SYSUVLO_M</span><span class="p">,</span> <span class="s1">&#39;SYSUVLO_M&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_TOP_INT_OK</span><span class="p">,</span> <span class="s1">&#39;TOP_INT_OK&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_TSHDN_OK</span><span class="p">,</span> <span class="s1">&#39;TSHDN_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_SYSOVLO_OK</span><span class="p">,</span> <span class="s1">&#39;SYSOVLO_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_SYSUVLO_OK</span><span class="p">,</span> <span class="s1">&#39;SYSUVLO_OK&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_INT</span><span class="p">,</span> <span class="s1">&#39;CHG_INT&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_AICL_I</span><span class="p">,</span> <span class="s1">&#39;AICL_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHGIN_I</span><span class="p">,</span> <span class="s1">&#39;CHGIN_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_B2SOVRC_I</span><span class="p">,</span> <span class="s1">&#39;B2SOVRC_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHG_I</span><span class="p">,</span> <span class="s1">&#39;_CHG_I&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">_BAT_I</span><span class="p">,</span> <span class="s1">&#39;BAT_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHGINLIM_I</span><span class="p">,</span> <span class="s1">&#39;CHGINLIM_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_DISQBAT_I</span><span class="p">,</span> <span class="s1">&#39;DISQBAT_I&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_OTG_PLIM_I</span><span class="p">,</span> <span class="s1">&#39;OTG_PLIM_I&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_INT_MASK</span><span class="p">,</span> <span class="s1">&#39;CHG_INT_MASK&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_AICL_M</span><span class="p">,</span> <span class="s1">&#39;AICL_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHGIN_M</span><span class="p">,</span> <span class="s1">&#39;CHGIN_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_B2SOVRC_M</span><span class="p">,</span> <span class="s1">&#39;B2SOVRC_M&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">_CHG_M</span><span class="p">,</span> <span class="s1">&#39;CHG_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_BAT_M</span><span class="p">,</span> <span class="s1">&#39;BAT_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHGINLIM_M</span><span class="p">,</span> <span class="s1">&#39;CHGINLIM_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_DISQBAT_M</span><span class="p">,</span> <span class="s1">&#39;DISQBAT_M&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_OTG_PLIM_M</span><span class="p">,</span> <span class="s1">&#39;OTG_PLIM_M&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_INT_OK</span><span class="p">,</span> <span class="s1">&#39;CHG_INT_OK&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_AICL_OK</span><span class="p">,</span> <span class="s1">&#39;AICL_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHGIN_OK</span><span class="p">,</span> <span class="s1">&#39;CHGIN_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_B2SOVRC_OK</span><span class="p">,</span> <span class="s1">&#39;B2SOVRC_OK&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">_CHG_OK</span><span class="p">,</span> <span class="s1">&#39;CHG_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_BAT_OK</span><span class="p">,</span> <span class="s1">&#39;BAT_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHGINLIM_OK</span><span class="p">,</span> <span class="s1">&#39;CHGINLIM_OK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_DISQBAT_OK</span><span class="p">,</span> <span class="s1">&#39;DISQBAT_OK&#39;</span><span class="p">],</span>
+            <span class="p">[</span><span class="n">_OTG_PLIM_OK</span><span class="p">,</span> <span class="s1">&#39;OTG_PLIM_OK&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_DETAILS_00</span><span class="p">,</span> <span class="s1">&#39;CHG_DETAILS_00&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_CHGIN_DTLS</span><span class="p">,</span> <span class="s1">&#39;CHGIN_DTLS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_OTG_DTLS</span><span class="p">,</span> <span class="s1">&#39;OTG_DTLS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_QB_DTLS</span><span class="p">,</span> <span class="s1">&#39;QB_DTLS&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_DETAILS_01</span><span class="p">,</span> <span class="s1">&#39;CHG_DETAILS_01&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_TREG</span><span class="p">,</span> <span class="s1">&#39;TREG&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_BAT_DTLS</span><span class="p">,</span> <span class="s1">&#39;BAT_DTLS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHG_DTLS</span><span class="p">,</span> <span class="s1">&#39;CHG_DTLS&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_DETAILS_02</span><span class="p">,</span> <span class="s1">&#39;CHG_DETAILS_02&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_THM_DTLS</span><span class="p">,</span> <span class="s1">&#39;THM_DTLS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_APP_MODE_DTLS</span><span class="p">,</span> <span class="s1">&#39;APP_MODE_DTLS&#39;</span><span class="p">],</span>
+                                                 <span class="p">[</span><span class="n">_FSW_DTLS</span><span class="p">,</span> <span class="s1">&#39;FSW_DTLS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_NUM_CELL_DTLS</span><span class="p">,</span> <span class="s1">&#39;NUM_CELL_DTLS&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_00</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_00&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_COMM_MODE</span><span class="p">,</span> <span class="s1">&#39;COMM_MODE&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_DISIBS</span><span class="p">,</span> <span class="s1">&#39;DISIBS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_STBY_EN</span><span class="p">,</span> <span class="s1">&#39;STBY_EN&#39;</span><span class="p">],</span>
+                                           <span class="p">[</span><span class="n">_WDTEN</span><span class="p">,</span> <span class="s1">&#39;WDTEN&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_MODE</span><span class="p">,</span> <span class="s1">&#39;MODE&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_01</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_01&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_PQEN</span><span class="p">,</span> <span class="s1">&#39;PQEN&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_LPM</span><span class="p">,</span> <span class="s1">&#39;LPM&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_CHG_RSTRT</span><span class="p">,</span> <span class="s1">&#39;CHG_RSTRT&#39;</span><span class="p">],</span> 
+                                           <span class="p">[</span><span class="n">_STAT_EN</span><span class="p">,</span> <span class="s1">&#39;STAT_EN&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_FCHGTIME</span><span class="p">,</span> <span class="s1">&#39;FCHGTIME&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_02</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_02&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_CHGCC</span><span class="p">,</span> <span class="s1">&#39;CHGCC&#39;</span><span class="p">],)],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_03</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_03&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_SYS_TRACK_DIS</span><span class="p">,</span> <span class="s1">&#39;SYS_TRACK_DIS&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_B2SOVRC_DTC</span><span class="p">,</span> <span class="s1">&#39;B2SOVRC_DTC&#39;</span><span class="p">],</span>
+                                           <span class="p">[</span><span class="n">_TO_TIME</span><span class="p">,</span> <span class="s1">&#39;TO_TIME&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_TO_ITH</span><span class="p">,</span> <span class="s1">&#39;TO_ITH&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_04</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_04&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_CHG_CV_PRM</span><span class="p">,</span> <span class="s1">&#39;CHG_CV_PRM&#39;</span><span class="p">],)],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_05</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_05&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_ITRICKLE</span><span class="p">,</span> <span class="s1">&#39;ITRICKLE&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_B2SOVRC</span><span class="p">,</span> <span class="s1">&#39;B2SOVRC&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_06</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_06&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_CHGPROT</span><span class="p">,</span> <span class="s1">&#39;CHGPROT&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_WDTCLR</span><span class="p">,</span> <span class="s1">&#39;WDTCLR&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_07</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_07&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_JEITA_EN</span><span class="p">,</span> <span class="s1">&#39;JEITA_EN&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_REGTEMP</span><span class="p">,</span> <span class="s1">&#39;REGTEMP&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_VCHGCV_COOL</span><span class="p">,</span> <span class="s1">&#39;VCHGCV_COOL&#39;</span><span class="p">],</span>
+                                           <span class="p">[</span><span class="n">_ICHGCC_COOL</span><span class="p">,</span> <span class="s1">&#39;ICHGCC_COOL&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_FSHIP_MODE</span><span class="p">,</span> <span class="s1">&#39;FSHIP_MODE&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_08</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_08&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_CHGIN_ILIM</span><span class="p">,</span> <span class="s1">&#39;CHGIN_ILIM&#39;</span><span class="p">],)],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_09</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_09&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_INLIM_CLK</span><span class="p">,</span> <span class="s1">&#39;INLIM_CLK&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_OTG_ILIM</span><span class="p">,</span> <span class="s1">&#39;OTG_ILIM&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_MINVSYS</span><span class="p">,</span> <span class="s1">&#39;MINVSYS&#39;</span><span class="p">])],</span>
+        <span class="p">[</span><span class="n">_REG_CHG_CNFG_10</span><span class="p">,</span> <span class="s1">&#39;CHG_CNFG_10&#39;</span><span class="p">,</span> <span class="p">([</span><span class="n">_VCHGIN_REG</span><span class="p">,</span> <span class="s1">&#39;VCHGIN_REG&#39;</span><span class="p">],</span> <span class="p">[</span><span class="n">_DISKIP</span><span class="p">,</span> <span class="s1">&#39;DISKIP&#39;</span><span class="p">])],</span>
+    <span class="p">]</span></div>
+    
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

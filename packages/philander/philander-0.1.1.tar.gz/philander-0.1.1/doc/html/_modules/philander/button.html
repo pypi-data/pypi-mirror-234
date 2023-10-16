@@ -1,0 +1,227 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>philander.button &#8212; philander 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for philander.button</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module to provide access to and control over push buttons.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Oliver Maye&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Button&quot;</span><span class="p">]</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">from</span> <span class="nn">pymitter</span> <span class="kn">import</span> <span class="n">EventEmitter</span>
+
+<span class="kn">from</span> <span class="nn">.gpio</span> <span class="kn">import</span> <span class="n">GPIO</span>
+<span class="kn">from</span> <span class="nn">.module</span> <span class="kn">import</span> <span class="n">Module</span>
+<span class="kn">from</span> <span class="nn">.systypes</span> <span class="kn">import</span> <span class="n">ErrorCode</span>
+
+
+
+<div class="viewcode-block" id="Button"><a class="viewcode-back" href="../../philander.html#philander.button.Button">[docs]</a><span class="k">class</span> <span class="nc">Button</span><span class="p">(</span> <span class="n">Module</span><span class="p">,</span> <span class="n">EventEmitter</span> <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic push button driver class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">LABEL_DEFAULT</span> <span class="o">=</span> <span class="s2">&quot;Button&quot;</span>
+    <span class="n">_POLL_TIMEOUT</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">_DEBOUNCE_MS</span>  <span class="o">=</span> <span class="mi">2000</span>
+    
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the instance with defaults.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">Button</span><span class="o">.</span><span class="n">LABEL_DEFAULT</span>
+        <span class="n">EventEmitter</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_handleInterrupt</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Button &lt;</span><span class="si">%s</span><span class="s1">&gt; emitted event.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+        
+    <span class="c1">#</span>
+    <span class="c1"># Module API</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="Button.Params_init"><a class="viewcode-back" href="../../philander.html#philander.button.Button.Params_init">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">Params_init</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes configuration parameters with defaults.</span>
+<span class="sd">        </span>
+<span class="sd">        The following settings are supported:</span>
+<span class="sd">        </span>
+<span class="sd">        =============================    =====================================================================================================</span>
+<span class="sd">        Key name                         Value type, meaning and default</span>
+<span class="sd">        =============================    =====================================================================================================</span>
+<span class="sd">        Button.label                     ``str``; A descriptive string label; :attr:`LABEL_DEFAULT`.</span>
+<span class="sd">        All Button.gpio.* settings as documented at :meth:`.GPIO.Params_init`.</span>
+<span class="sd">        ======================================================================================================================================</span>
+<span class="sd">        </span>
+<span class="sd">        Also see: :meth:`.Module.Params_init`, :meth:`.GPIO.Params_init`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Button.label&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Button</span><span class="o">.</span><span class="n">LABEL_DEFAULT</span>
+        <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.gpio.direction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">DIRECTION_IN</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Button.gpio.bounce&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.gpio.bounce&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Button</span><span class="o">.</span><span class="n">_DEBOUNCE_MS</span>
+        <span class="n">gpioParams</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span> <span class="n">gpioParams</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">gpioParams</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">bkey</span> <span class="o">=</span> <span class="s2">&quot;Button.&quot;</span> <span class="o">+</span> <span class="n">key</span>
+            <span class="k">if</span> <span class="ow">not</span><span class="p">(</span> <span class="n">bkey</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+                <span class="n">paramDict</span><span class="p">[</span><span class="n">bkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Button.open"><a class="viewcode-back" href="../../philander.html#philander.button.Button.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paramDict</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpio</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">defaults</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">Button</span><span class="o">.</span><span class="n">Params_init</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">paramDict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="s2">&quot;Button.label&quot;</span><span class="p">,</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Button.label&quot;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.gpio.direction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Button.gpio.direction&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;Button.gpio.bounce&quot;</span> <span class="ow">in</span> <span class="n">paramDict</span><span class="p">):</span>
+                <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.gpio.bounce&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;Button.gpio.bounce&quot;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span> <span class="o">=</span> <span class="n">GPIO</span><span class="p">()</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">paramDict</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span><span class="p">):</span>
+                <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span><span class="o">.</span><span class="n">registerInterruptHandler</span><span class="p">(</span> \
+                                <span class="n">GPIO</span><span class="o">.</span><span class="n">EVENT_DEFAULT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> \
+                                <span class="bp">self</span><span class="o">.</span><span class="n">_handleInterrupt</span> <span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Button &lt;</span><span class="si">%s</span><span class="s1">&gt; created, pin:</span><span class="si">%s</span><span class="s1">, trigger:</span><span class="si">%d</span><span class="s1">, returns: </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+                      <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.gpio.pinDesignator&quot;</span><span class="p">],</span>
+                      <span class="n">paramDict</span><span class="p">[</span><span class="s2">&quot;Button.gpio.trigger&quot;</span><span class="p">],</span> <span class="n">ret</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+            
+<div class="viewcode-block" id="Button.close"><a class="viewcode-back" href="../../philander.html#philander.button.Button.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpio</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span><span class="o">.</span><span class="n">registerInterruptHandler</span><span class="p">(</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span> <span class="p">)</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Button &lt;</span><span class="si">%s</span><span class="s1">&gt; closed, returns </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">ret</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="Button.setRunLevel"><a class="viewcode-back" href="../../philander.html#philander.button.Button.setRunLevel">[docs]</a>    <span class="k">def</span> <span class="nf">setRunLevel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpio</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errResourceConflict</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span><span class="o">.</span><span class="n">setRunLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+    
+    <span class="c1">#</span>
+    <span class="c1"># Specific Button API</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="Button.get"><a class="viewcode-back" href="../../philander.html#philander.button.Button.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpio</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Reading Button &lt;</span><span class="si">%s</span><span class="s1">&gt; returns </span><span class="si">%s</span><span class="s1">.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+    
+<div class="viewcode-block" id="Button.setLabel"><a class="viewcode-back" href="../../philander.html#philander.button.Button.setLabel">[docs]</a>    <span class="k">def</span> <span class="nf">setLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">ErrorCode</span><span class="o">.</span><span class="n">errOk</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Renaming Button &lt;</span><span class="si">%s</span><span class="s1">&gt; into &lt;</span><span class="si">%s</span><span class="s1">&gt;.&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">label</span>
+        <span class="k">return</span> <span class="n">ret</span></div></div>
+        
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">philander</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">philander</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Oliver Maye.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
