@@ -1,0 +1,15 @@
+<div {% include "django/forms/widgets/attrs.html" %}></div>
+<script>
+    (function () {
+        var context = {{ widget|json_script|cut:'<script type="application/json">'|cut:'</script>' }}
+        function mount() {
+            if (!window.vueMount) return
+            try { window.vueMount(context) } catch (err) { err }
+            return true
+        }
+        if (mount()) return
+        var interval = setInterval(function() {
+            mount() && clearInterval(interval)
+        }, 100)
+    })()
+</script>

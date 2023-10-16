@@ -1,0 +1,21 @@
+<div class="m-filter flex items-center">
+{% if spec.autocomplete_field %}
+<h3 class="!p-0 !m-0 !mr-2">{{ title }}</h3>
+<div class="related-widget-wrapper">
+    {{ spec.autocomplete_field }}
+    <span class="small quiet" style="padding-left:8px;"><a href="?{% if cl.is_popup %}_popup=1{% endif %}">全部</a></span>
+</div>
+{% else %}
+<h3 class="!p-0 !m-0 !mr-2">{{ title }}</h3>
+<div class="m-filter-btn px-3 h-[28px] min-w-[52px] rounded border border-[--border-color] cursor-pointer flex items-center gap-x-1 text-[--body-quiet-color]">
+    {% for choice in choices %}
+        <div class="m-option grow text-center" {% if not choice.selected %}style="display:none;" data-uncheck="1" {% endif %} value="{{ choice.query_string|iriencode }}">
+            {{ choice.display }}
+        </div>
+    {% endfor %}
+    <svg class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+        <path d="M509.884314 631.965256 205.503932 327.58385 170.311409 362.776374 510.263961 702.728926 850.216513 362.776374 814.644343 327.205227Z" fill="rgb(115,169,196)"></path>
+    </svg>
+</div>
+{% endif %}
+</div>
