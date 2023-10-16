@@ -1,0 +1,211 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Modoboa App
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - 'modoboa/**.po'
+      - 'frontend/**'
+      - 'doc/**'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - 'modoboa/**.po'
+      - 'frontend/**'
+      - 'doc/**'
+  release:
+    branches: [ master ]
+    types: [ published ]
+
+env:
+  POSTGRES_HOST: localhost
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:12
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+        # will assign a random free host port
+        - 5432/tcp
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_USER: modoboa
+          MYSQL_PASSWORD: modoboa
+          MYSQL_DATABASE: modoboa
+        ports:
+          - 3306/tcp
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis
+        ports:
+          - 6379/tcp
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      openldap:
+        image: docker.pkg.github.com/modoboa/docker-openldap/docker-openldap
+        ports:
+          - 389/tcp
+        env:
+          LDAP_DOMAIN: example.com
+          LDAP_ADMIN_PASSWORD: test
+        credentials:
+          username: tonioo
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+    strategy:
+      matrix:
+        database: ['postgres', 'mysql']
+        python-version: [3.8, 3.9, '3.10', '3.11']
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y \
+          && sudo apt-get install -y \
+            postfix librrd-dev rrdtool libldap2-dev libsasl2-dev libssl-dev redis-server
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r ldap-requirements.txt
+          pip install -r test-requirements.txt
+          python setup.py develop
+          echo "Testing redis connection"
+          redis-cli -h $REDIS_HOST -p $REDIS_PORT ping
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+      - name: Install postgres requirements
+        if: ${{ matrix.database == 'postgres' }}
+        run: |
+          pip install -r postgresql-requirements.txt
+          pip install coverage
+          echo "DB=postgres" >> $GITHUB_ENV
+      - name: Install mysql requirements
+        if: ${{ matrix.database == 'mysql' }}
+        run: |
+          pip install -r mysql-requirements.txt
+          echo "DB=mysql" >> $GITHUB_ENV
+      - name: Test with pytest
+        if: ${{ matrix.python-version != '3.10' || matrix.database != 'postgres' }}
+        run: |
+          python ./tests.py
+          cd test_project
+          python3 manage.py test modoboa
+        env:
+          # use localhost for the host here because we are running the job on the VM.
+          # If we were running the job on in a container this would be postgres
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
+          MYSQL_USER: root
+          REDIS_HOST: localhost
+          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+          LDAP_SERVER_PORT: ${{ job.services.openldap.ports[389] }}
+
+      - name: Test with pytest and coverage
+        if: ${{ matrix.python-version == '3.10' && matrix.database == 'postgres' }}
+        run: |
+          python ./tests.py
+          cd test_project
+          coverage run manage.py test modoboa
+          coverage combine
+          coverage xml
+          coverage report
+        env:
+          # use localhost for the host here because we are running the job on the VM.
+          # If we were running the job on in a container this would be postgres
+          POSTGRES_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: ${{ job.services.mysql.ports[3306] }} # get randomly assigned published port
+          MYSQL_USER: root
+          REDIS_HOST: localhost
+          REDIS_PORT: ${{ job.services.redis.ports[6379] }}
+          LDAP_SERVER_PORT: ${{ job.services.openldap.ports[389] }}
+      - name: Upload coverage result
+        if: ${{ matrix.python-version == '3.10' && matrix.database == 'postgres' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-results
+          path: test_project/coverage.xml
+
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download coverage results
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-results
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+
+  release:
+    if: github.event_name != 'pull_request'
+    needs: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Build frontend
+        shell: bash -l {0}
+        run: |
+          sudo apt-get install gettext
+          cd frontend
+          nvm install 14
+          yarn install
+          make translations
+          yarn build
+          cd ..
+      - name: Build packages
+        run: |
+          sudo apt-get install librrd-dev rrdtool libssl-dev
+          python -m pip install --upgrade pip build
+          pip install -r requirements.txt
+          cd modoboa
+          django-admin compilemessages
+          cd ..
+          python -m build
+      - name: Publish to Test PyPI
+        if: endsWith(github.event.ref, '/master')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.test_pypi_password }}
+          repository_url: https://test.pypi.org/legacy/
+          skip_existing: true
+      - name: Publish distribution to PyPI
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}
+          skip_existing: true
