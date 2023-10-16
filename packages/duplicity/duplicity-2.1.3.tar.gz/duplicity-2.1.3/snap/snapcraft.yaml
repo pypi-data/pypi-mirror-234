@@ -1,0 +1,115 @@
+name: duplicity
+version: 2.1.3
+license: GPL-2.0
+summary: Efficient, encrypted backup to local or remote hosts
+description: |
+  Duplicity backs directories by producing encrypted tar-format volumes and uploading
+  them to a remote or local file server. Because duplicity uses librsync, the incremental
+  archives are space efficient and only record the parts of files that have changed since
+  the last backup. Because duplicity uses GnuPG to encrypt and/or sign these archives,
+  they will be safe from spying and/or modification by the server.
+
+grade: stable
+confinement: classic
+base: core20
+
+apps:
+    duplicity:
+        command: bin/duplicity.sh
+        environment:
+            # setup path to find and use packaged python3 in snap
+            PATH: "$SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH:/snap/core20/current/usr/bin"
+            # fixup pythonpath to find modules, for some reason
+            # 'lib/python3.8/site-packages' is not added by default
+            # add two more host paths for users to install modules in
+            PYTHONPATH: "$SNAP/lib/python3.8/site-packages:\
+                         $HOME/.local/lib/python3.8/site-packages:\
+                         /lib/python3.8/site-packages"
+    # printing env in snap for debug purposes, help's pinning snap startup issues (missing libs, _rsync ...)
+    debug:
+        command: bin/debug.sh
+    debug2:
+        command: bin/debug.sh
+        environment:
+            # see above
+            PATH: "$SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/sbin:$SNAP/bin:$PATH:/snap/core20/current/usr/bin"
+            PYTHONPATH: "$SNAP/lib/python3.8/site-packages:\
+                         $HOME/.local/lib/python3.8/site-packages:\
+                         /lib/python3.8/site-packages"
+
+parts:
+    duplicity:
+        plugin: python
+        requirements:
+            - requirements.txt
+        override-pull: |
+            snapcraftctl pull
+        override-build: |
+            # add pip upgrade install location to path
+            export PATH="$SNAPCRAFT_PART_INSTALL/usr/local/bin/:$PATH"
+            # show env vars for debugging
+            #env
+            # upgrade pip to latest
+            apt install curl -y
+            curl -s https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+            python3 get-pip.py
+            snapcraftctl build
+            # Some python modules cause snap build to import argparse from pypi.
+            # argparse in pypi supports <= 3.4 so we need the distribution version.
+            # Let pip remove that version since the new one is in the distribution.
+            python3 -m pip uninstall -y argparse
+            # python module tahoe-lafs dies trying to compile really old pycddl 
+            # on other archs than amd64, as python plugin does not support 
+            # conditions we only include it in amd64 snaps manually here
+            if [ "$SNAPCRAFT_BUILD_FOR" != "amd64" ]; then
+                echo "Skipping tahoe-lafs integration on arch '$SNAPCRAFT_BUILD_FOR'!='amd64'"
+            else
+                pip install tahoe-lafs
+            fi
+            rm -rfv "$SNAPCRAFT_PART_INSTALL/usr/lib/python3.9"
+        override-prime: |
+            snapcraftctl prime
+            cp -v "$SNAPCRAFT_PROJECT_DIR"/snap/local/launcher.sh "$SNAPCRAFT_PRIME"/bin/duplicity.sh
+            cp -v "$SNAPCRAFT_PROJECT_DIR"/snap/local/debug.sh "$SNAPCRAFT_PRIME"/bin/
+        build-environment:
+            - PYTHONPATH: "$SNAPCRAFT_PART_INSTALL/usr/lib/python3.8/dist-packages:\
+                           $SNAPCRAFT_PART_INSTALL/usr/lib/python3/dist-packages:\
+                           $PYTHONPATH"
+        build-packages:
+            - build-essential
+            - ieee-data
+            - intltool
+            - librsync-dev
+            - python3-dev
+            # dependencies needed to build missing pip wheels on non amd64 archs
+            - cargo
+            - libffi-dev
+            - libxslt1-dev
+            - libxml2-dev
+            - libssl-dev
+            - python3-cryptography
+            - python3-openssl
+            - pkg-config
+        stage-packages:
+            - gnupg
+            - lftp
+            - libatm1
+            - libpython3-stdlib
+            - libpython3.8-minimal
+            - libpython3.8-stdlib
+            - librsync2
+            - ncftp
+            - openssh-client
+            - python3-dev
+            - python3-distutils
+            - python3-gi
+            - python3-minimal
+            - python3-venv
+            - python3.8-minimal
+            - rclone
+            - rsync
+            # some libraries needed on non amd64 archs
+            - libicu66
+            - libxml2
+            - libxslt1.1
+        source: .
