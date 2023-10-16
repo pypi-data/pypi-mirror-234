@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+
+{% macro write_dict(d) %}
+<dl>
+{% for k in d %}
+<dt style="margin-left: 20px">{{k}}</dt><dd  style="margin-left: 20px">{% if d[k] is mapping %} {{write_dict(d[k])}} {% else %}  {{ d[k] }} {% endif %}</dd>
+{% endfor %}
+</dl>
+{% endmacro %}
+
+<table>
+{% for q in questions %}
+<tr><td>
+<hr>
+    <table>
+    {% for t in questions[q]['tests'] %}
+
+        <tr>
+<td> {{t}}</td><td>
+{% set test = questions[q]['tests'][t] %}
+<table border="1">
+{% for k in test %}
+<tr><td>{{k}} </td><td>{{ test[k]}} </td></tr>
+    {% endfor %}
+    </table>
+</td>
+</tr>
+        {% endfor %}
+        </table>
+ </td></tr>
+{% endfor %}
+</table>
+<hr>
+<h4> Content of diskcache DB file</h4>
+{{ write_dict(db) }}
+
+{% endblock %}
