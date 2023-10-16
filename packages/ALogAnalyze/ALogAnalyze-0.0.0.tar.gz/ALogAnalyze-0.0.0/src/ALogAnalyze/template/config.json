@@ -1,0 +1,145 @@
+{
+    "version": "0.0.1",
+    "default": 2,
+    "templates": [
+        {
+            "name":         "zcv",
+            "filePath":     "template/zcv.txt",
+            "regex":        "(\\d+)\\s+(\\d+)\\s+(\\d+)",
+            "xAxis":        "",
+            "dataIndex":    "0, 1, 2"
+        },
+        {
+            "name":         "wakeup",
+            "filePath":     "template/AndroidSystemWakeup.curf",
+            "regex":        "(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend",
+            "xAxis":        "0",
+            "dataIndex":    "0"
+        },
+        {
+            "name":         "wakeup with value",
+            "filePath":     "template/AndroidSystemWakeup.curf",
+            "regex":        "(\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: In wakeup_callback: resumed from suspend (\\d+)",
+            "xAxis":        "0",
+            "dataIndex":    "0, 1"
+        }
+    ],
+    "regexGenerator": [
+        {
+            "name": "kernel settings",
+            "inputData": [
+                "15932.513576 : 1138-android.bg      : AP_Launch: com.android.settings/.FallbackHome 756ms"
+            ],
+            "regex": "(\\d+.\\d+)\\s+:(.*):\\s+(\\w*):\\s*(.*)",
+            "dataIndex": "0, 1"
+        },
+        {
+            "name": "kernel batttery",
+            "inputData": [
+                "<5>[  313.509051]  (0)[235:battery_thread]car[-30,251,-251,50,-259] tmp:30 soc:100 uisoc:97 vbat:4297 ibat:-2762 algo:0 gm3:0 0 0 0,boot:0"
+            ],
+            "regex": "\\[\\s*(\\d*\\.\\d*)\\].*\\d*\\:battery_thread.*tmp:(\\d*) soc:(\\d*) uisoc:(\\d*) vbat:(\\d*) ibat:([-]?\\d*)",
+            "dataIndex": "0, 1, 2"
+        },
+        {
+            "name": "logcat onPause",
+            "inputData": [
+                "06-29 09:37:46.551252  2283  2283 I DebugLoggerUI/MainActivity: onPause"
+            ],
+            "regex": "(\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+(.*)",
+            "dataIndex": "0, 1, 2"
+        },
+        {
+            "name": "logcat proximity",
+            "inputData": [
+                "09-19 14:19:17.183  1027  1110 I DisplayPowerController[0]: No longer ignoring proximity [1]"
+            ],
+            "regex": "(\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+.*: No longer ignoring proximity \\[(\\d)\\]",
+            "dataIndex": "0, 1, 2"
+        },
+        {
+            "name": "logcat Light",
+            "inputData": [
+                "09-09 18:24:12.680436   571   628 I Light   : event->word[0]=400,  event->word[1]=0,event->word[2]=0"
+            ],
+            "regex": "(\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2}:\\d{2}\\.\\d*)\\s+\\d+\\s+\\d+\\s+\\w+\\s+Light\\s*:\\s.*=(\\d*),\\s*.*=(\\d*),\\s*.*=(\\d*)",
+            "dataIndex": "0, 1, 2"
+        },
+        {
+            "name": "zcv",
+            "inputData": [
+                "2705    42248   1025"
+            ],
+            "regex": "(\\d+)\\s+(\\d+)\\s+(\\d+)",
+            "dataIndex": "0, 1, 2"
+        },
+        {
+            "name": "frame",
+            "inputData": [
+                "Signed image is stored at /home/zengjf/zengjf/android/xxxxxx/xbl.elf",
+                "Processing 1/25: /home/zengjf/zengjf/android/xxxxxx/xbl.elf"
+            ],
+            "regex": "(Signed image is stored at (.*)|Processing \\d*/\\d*: (.*))",
+            "dataIndex": "0"
+        },
+        {
+            "name": "xyz",
+            "inputData": [
+                "2022-01-29 21:11:55.441 7271-7542/com.google.mediapipe.apps.hands I/MonitorLandMark: x=-0.003885, y=0.100523, z=-0.008288"
+            ],
+            "regex": "x\\s*=\\s*([-]?\\d.\\d+),\\s*y\\s*=\\s*([-]?\\d.\\d+),\\s*z\\s*=\\s*([-]?\\d.\\d+)",
+            "dataIndex": "0, 1, 2"
+        }
+    ],
+    "Data3D": [
+        {
+            "name": "line",
+            "File Path": "template/hands.txt",
+            "Data Regex": "x\\s*=\\s*([-]?\\d.\\d+),\\s*y\\s*=\\s*([-]?\\d.\\d+),\\s*z\\s*=\\s*([-]?\\d.\\d+)",
+            "Data Index": "0, 1, 2"
+        },
+        {
+            "name": "acc",
+            "File Path": "template/acc.log",
+            "Data Regex": "x\\s*=\\s*([-]?\\d.\\d+),\\s*y\\s*=\\s*([-]?\\d.\\d+),\\s*z\\s*=\\s*([-]?\\d.\\d+)",
+            "Data Index": "0, 1, 2"
+        }
+    ],
+    "DiffFrame": [
+        {
+            "name": "kernel",
+            "File Path": "template/usb_connect.txt",
+            "Data Regex": [
+                "\\[\\s*(\\d*\\.\\d*)\\].*(mtk_extcon_tcpc_notifier, Type-C SINK plug in)",
+                "\\[\\s*(\\d*\\.\\d*)\\].*mt_usb_connect \\d*: (\\[MUSB\\] USB connect)",
+                "\\[\\s*(\\d*\\.\\d*)\\].*android_work: (sent uevent USB_STATE=CONFIGURED)"
+            ],
+            "Time Index": "0",
+            "Tag Index": "1",
+            "Frame First": "True"
+        },
+        {
+            "name": "logcat",
+            "File Path": "template/bluetooth.txt",
+            "Data Regex": [
+                "(\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+).*(BluetoothManagerService: enable returning)",
+                "(\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+).*BluetoothAdapter: isLeEnabled\\(\\): (BLE_TURNING_ON)",
+                "(\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+).*BluetoothAdapter: enable\\(\\): (BT already enabled!)"
+            ],
+            "Time Index": "0",
+            "Tag Index": "1",
+            "Frame First": "True"
+        }
+    ],
+    "DataLive": [
+        {
+            "name": "logcat",
+            "cmd": "adb shell logcat",
+            "Data Regex": [
+                "(\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+).*(BluetoothManagerService: enable returning)",
+                "(\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+).*BluetoothAdapter: isLeEnabled\\(\\): (BLE_TURNING_ON)",
+                "(\\d+-\\d+ \\d+:\\d+:\\d+\\.\\d+).*BluetoothAdapter: enable\\(\\): (BT already enabled!)"
+            ]
+        }
+    ]
+}
