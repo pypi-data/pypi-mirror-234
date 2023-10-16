@@ -1,0 +1,317 @@
+[tool.poetry]
+name = "singer-sdk"
+version = "0.33.0b1"
+description = "A framework for building Singer taps"
+authors = ["Meltano Team and Contributors <hello@meltano.com>"]
+maintainers = ["Meltano Team and Contributors <hello@meltano.com>"]
+readme = "README.md"
+homepage = "https://sdk.meltano.com/en/latest/"
+repository = "https://github.com/meltano/sdk"
+documentation = "https://sdk.meltano.com/en/latest/"
+keywords = [
+    "Meltano",
+    "Singer",
+    "Meltano SDK",
+    "Singer SDK",
+    "ELT",
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+license = "Apache-2.0"
+
+[tool.poetry.urls]
+"Issue Tracker" = "https://github.com/meltano/sdk/issues"
+"Twitter" = "https://twitter.com/meltanodata/"
+"Changelog" = "https://github.com/meltano/sdk/blob/main/CHANGELOG.md"
+"Slack" = "https://meltano.com/slack"
+"Youtube" = "https://www.youtube.com/meltano"
+
+[tool.poetry.dependencies]
+python = ">=3.7.1,<4"
+backoff = ">=2.0.0"
+pendulum = ">=2.1.0"
+click = "~=8.0"
+fs = ">=2.4.16"
+PyJWT = "~=2.4"
+requests = ">=2.25.1"
+cryptography = ">=3.4.6,<42.0.0"
+importlib-metadata = {version = "<7.0.0", markers = "python_version < \"3.8\""}
+importlib-resources = {version = ">=5.12.0", markers = "python_version < \"3.9\""}
+memoization = ">=0.3.2,<0.5.0"
+jsonpath-ng = ">=1.5.3"
+joblib = ">=1.0.1"
+inflection = ">=0.5.1"
+sqlalchemy = ">=1.4,<3.0"
+python-dotenv = ">=0.20,<0.22"
+typing-extensions = ">=4.2.0"
+simplejson = ">=3.17.6"
+jsonschema = ">=4.16.0"
+packaging = ">=23.1"
+pytz = ">=2022.2.1,<2024.0.0"
+PyYAML = ">=6.0"
+# urllib3 2.0 is not compatible with botocore
+urllib3 = ">=1.26,<2"
+
+# Sphinx dependencies installed as optional 'docs' extras
+# https://github.com/readthedocs/readthedocs.org/issues/4912#issuecomment-664002569
+sphinx = {version = ">=4.5", optional = true}
+furo = {version = ">=2022.12.7", optional = true}
+sphinx-copybutton = {version = ">=0.3.1", optional = true}
+myst-parser = {version = ">=1", optional = true}
+sphinx-autobuild = {version = ">=2021.3.14", optional = true}
+sphinx-reredirects = {version = ">=0.1.1", optional = true}
+sphinx-inline-tabs = {version = ">=2023.4.21", optional = true, markers = "python_version >= \"3.8\""}
+
+# File storage dependencies installed as optional 'filesystem' extras
+fs-s3fs = {version = ">=1.1.1", optional = true}
+
+# Testing dependencies installed as optional 'testing' extras
+pytest = {version=">=7.2.1", optional = true}
+pytest-durations = {version = ">=1.2.0", optional = true}
+
+[tool.poetry.extras]
+docs = [
+    "sphinx",
+    "furo",
+    "sphinx-copybutton",
+    "myst-parser",
+    "sphinx-autobuild",
+    "sphinx-reredirects",
+    "sphinx-inline-tabs",
+]
+s3 = ["fs-s3fs"]
+testing = [
+    "pytest",
+    "pytest-durations"
+]
+
+[tool.poetry.group.dev.dependencies]
+# snowflake-connector-python = "2.0.4" # Removed: Too many version conflicts!
+cookiecutter = ">=2.1.1"
+coverage = {extras = ["toml"], version = ">=7.2"}
+duckdb = ">=0.8.0"
+duckdb-engine = ">=0.9.2"
+mypy = ">=1.0"
+numpy = [
+    { version = "<1.22", python = "<3.8" },
+    { version = ">=1.22", python = ">=3.8" },
+]
+pyarrow = ">=11,<13"
+pytest-snapshot = ">=0.9.0"
+requests-mock = ">=1.10.0"
+time-machine = ">=2.10.0"
+types-jsonschema = ">=4.17.0.6"
+types-python-dateutil = ">=2.8.19"
+types-pytz = ">=2022.7.1.2"
+types-requests = ">=2.28.11"
+types-simplejson = ">=3.18.0"
+types-PyYAML = ">=6.0.12"
+xdoctest = ">=1.1.1"
+
+[tool.black]
+exclude = ".*simpleeval.*"
+
+[tool.pytest.ini_options]
+addopts = '-vvv --ignore=singer_sdk/helpers/_simpleeval.py -m "not external"'
+markers = [
+    "external: Tests relying on external resources",
+    "windows: Tests that only run on Windows",
+    "snapshot: Tests that use pytest-snapshot",
+]
+testpaths = ["tests"]
+norecursedirs = "cookiecutter"
+
+[tool.commitizen]
+name = "cz_version_bump"
+version = "0.33.0b1"
+changelog_merge_prerelease = true
+prerelease_offset = 1
+tag_format = "v$major.$minor.$patch$prerelease"
+version_files = [
+    "docs/conf.py:^release =",
+    "pyproject.toml:^version =",
+    "cookiecutter/tap-template/{{cookiecutter.tap_id}}/pyproject.toml:singer-sdk",
+    "cookiecutter/target-template/{{cookiecutter.target_id}}/pyproject.toml:singer-sdk",
+    "cookiecutter/mapper-template/{{cookiecutter.mapper_id}}/pyproject.toml:singer-sdk",
+    ".github/ISSUE_TEMPLATE/bug.yml:^      placeholder:",
+]
+
+[tool.coverage.paths]
+source = [
+    "singer_sdk/",
+    "*/singer_sdk",
+]
+tests = [
+    "tests/",
+    "*/tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["singer_sdk", "tests"]
+omit = [
+    "tests/*",
+    "samples/*",
+    "singer_sdk/helpers/_compat.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    '''class .*\bProtocol\):''',
+    '''@(abc\.)?abstractmethod''',
+    '''if (t\.)?TYPE_CHECKING:''',
+]
+fail_under = 82
+
+[tool.mypy]
+exclude = "tests"
+files = "singer_sdk"
+python_version = "3.8"
+warn_unused_configs = true
+warn_unused_ignores = true
+warn_return_any = true
+
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = [
+    "bcrypt.*",
+    "joblib.*",
+    "pyarrow.*",
+    "jsonpath_ng.*",
+    "samples.*",
+    "sqlalchemy.*",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+pytest11 = { reference = "singer_sdk:testing.pytest_plugin", extras = ["testing"], type = "console" }
+
+[tool.ruff]
+exclude = [
+    "cookiecutter/*",
+    "singer_sdk/helpers/_simpleeval.py",
+    "tests/core/test_simpleeval.py",
+]
+ignore = [
+    "ANN101",  # Missing type annotation for `self` in method
+    "ANN102",  # Missing type annotation for `cls` in class method
+    "N818",    # Exception name should be named with an Error suffix
+]
+line-length = 88
+select = [
+    "F",    # Pyflakes
+    "E",    # pycodestyle (error)
+    "W",    # pycodestyle (warning)
+    "C90",  # mccabe
+    "I",    # isort
+    "N",    # pep8-naming
+    "D",    # pydocstyle/flake8-docstrings
+    "UP",   # pyupgrade
+    "YTT",  # flake8-2020
+    "ANN",  # flake8-annotations
+    "S",    # flake8-bandit
+    "BLE",  # flake8-blind-except
+    "FBT",  # flake8-boolean-trap
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "COM",  # flake8-commas
+    "C4",   # flake8-comprehensions
+    "DTZ",  # flake8-datetimezs
+    "T10",  # flake8-debugger
+    "EM",   # flake8-errmsg
+    "FA",   # flake8-future-annotations
+    "ISC",  # flake8-implicit-str-concat
+    "ICN",  # flake8-import-conventions
+    "G",    # flake8-logging-format
+    "INP",  # flake8-no-pep420
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PT",   # flake8-pytest-style
+    "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    # "SLF",  # flake8-self
+    "SIM",  # flake8-simplify
+    "TID",  # flake8-tidy-imports
+    "TCH",  # flake8-type-checking
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "PGH",  # pygrep-hooks
+    "PLC",  # pylint (convention)
+    "PLE",  # pylint (error)
+    "PLR",  # pylint (refactor)
+    "PLW",  # pylint (warning)
+    "PERF", # perflint
+    "RUF",  # ruff
+]
+src = ["samples", "singer_sdk", "tests"]
+target-version = "py37"
+unfixable = [
+    "ERA",  # Don't remove commented out code
+]
+
+[tool.ruff.per-file-ignores]
+"docs/conf.py" = [
+    "D",      # pydocstyle/flake8-docstrings
+    "I002",   # isort: missing-required-import
+    "INP001", # flake8-no-pep420: implicit-namespace-package
+]
+"noxfile.py" = ["ANN"]
+"tests/*" = ["ANN", "D1", "D2", "FBT001", "FBT003", "PLR2004", "S101"]
+# Disabled some checks in samples code
+"samples/*" = ["ANN", "D"]
+# Don't require docstrings conventions or type annotations in private modules
+"singer_sdk/helpers/_*.py" = ["ANN", "D105"]
+# Templates support a generic resource of type Any.
+"singer_sdk/testing/*.py" = ["S101"]
+"singer_sdk/testing/templates.py" = ["ANN401"]
+
+[tool.ruff.flake8-annotations]
+allow-star-arg-any = true
+mypy-init-return = true
+suppress-dummy-args = true
+
+[tool.ruff.flake8-import-conventions]
+banned-from = ["typing"]
+
+[tool.ruff.flake8-import-conventions.extend-aliases]
+typing = "t"
+
+[tool.ruff.flake8-pytest-style]
+fixture-parentheses = false
+parametrize-names-type = "csv"
+
+[tool.ruff.isort]
+known-first-party = ["singer_sdk", "samples", "tests"]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.pep8-naming]
+classmethod-decorators = [
+    "singer_sdk.cli.plugin_cli",
+]
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.pylint]
+max-args = 9
