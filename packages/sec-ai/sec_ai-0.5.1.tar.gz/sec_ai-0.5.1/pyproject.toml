@@ -1,0 +1,127 @@
+[tool.poetry]
+name = "sec-ai"
+version = "0.5.1"
+description = "A comprehensive open-source toolkit for AI-powered analysis and interpretation of SEC EDGAR filings, providing valuable insights for investors, fintech developers, and researchers."
+authors = ["Alphanome.AI <info@alphanome.ai>"]
+readme = "README.md"
+repository = "https://github.com/alphanome-ai/sec-ai"
+license = "MIT"
+classifiers = [
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    # NOTE: After changing Development Status here, also change it in the README.md badge
+    "Development Status :: 2 - Pre-Alpha",
+    "Natural Language :: English",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.9.7 || >3.9.7,<4.0"
+python-dotenv = "^1.0.0"
+streamlit = "^1.27.1"
+streamlit-antd-components = "^0.2.1"
+streamlit-pills = "^0.3.0"
+sec-parser = "^0.11.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.2"
+mypy = "^1.5.1"
+commitizen = "^3.8.1"
+pre-commit = "^3.4.0"
+ruff = "^0.0.287"
+pytest-cov = "^4.1.0"
+pytest-watch = "^4.2.0"
+
+
+
+[tool.poetry.group.doc.dependencies]
+sphinx = "^7.2.6"
+sphinx-autobuild = "^2021.3.14"
+myst-parser = "^2.0.0"
+nbsphinx = "^0.9.3"
+sphinx-autoapi = "^3.0.0"
+sphinx-rtd-theme = "^1.3.0"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_scheme = "pep440"
+version_provider = "poetry"
+update_changelog_on_bump = true
+major_version_zero = true
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.coverage.run]
+source = ["sec_ai"]
+
+
+[tool.ruff]
+select = ["ALL"]
+ignore = [
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D107",    # Missing docstring in __init__
+    "D203",    # 1 blank line required before class docstring
+    "D205",    # 1 blank line required between summary line and description
+    "D212",    # Multi-line docstring summary should start at the first line
+    "ANN101",  # Missing type annotation for self in method
+    "ANN102",  # Missing type annotation for cls in classmethod
+    ]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    ]
+
+# Same as Black.
+line-length = 88
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Python 3.9 is the minimum supported version.
+target-version = "py39"
+
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
