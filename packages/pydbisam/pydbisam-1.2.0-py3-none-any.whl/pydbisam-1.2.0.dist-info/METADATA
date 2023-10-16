@@ -1,0 +1,75 @@
+Metadata-Version: 2.1
+Name: pydbisam
+Version: 1.2.0
+Summary: Read DBISAM database tables.
+Author-email: Aaron Linville <aaron@linville.org>
+License: Copyright (c) 2022, Aaron Linville <aaron@linville.org>
+        
+        Permission to use, copy, modify, and/or distribute this software for any
+        purpose with or without fee is hereby granted, provided that the above
+        copyright notice and this permission notice appear in all copies.
+        
+        THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+        WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+        MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+        ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+        WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+        ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+        OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+        
+Project-URL: Homepage, https://github.com/linville/pydbisam/
+Keywords: dbisam
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: ISC License (ISCL)
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Database
+Classifier: Topic :: Utilities
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Provides-Extra: dev
+Requires-Dist: black ==23.9.* ; extra == 'dev'
+Requires-Dist: build ==1.0.* ; extra == 'dev'
+Requires-Dist: ruff ; extra == 'dev'
+Requires-Dist: twine ==4.0.* ; extra == 'dev'
+
+PyDBISAM
+========
+
+PyDBISAM is a pure Python module to read and export data from DBISAM tables (from their `.dat` files). The scope of PyDBISAM is _not_ to provide a full database framework but merely to provide the ability to read the table structure and the raw table data.
+
+DBISAM is an on-disk database with one file per table. The file format is proprietary. The basic structure is [documented here](NOTES.md).
+
+
+CLI Usage
+---------
+PyDBISAM includes a simple CLI that can be used to dump the table structure or export the data to various formats (e.g.: CSV).
+
+```shell
+# pydbisam --dump-structure path/to/file.dat
+
+# pydbisam --dump-csv path/to/file.dat
+```
+
+
+Code Usage
+----------
+The PyDBISAM class can be used for read-only access to the tables.
+```python
+from pydbisam import PyDBISAM
+
+with PyDBISAM("path/to/file.dat") as db:
+	print(", ".join(db.fields()))
+	for row in db.rows():
+		print(", ".join(map(str, row)))
+```
+
+
+Similar Projects
+----------------
+
+- [DBISAM-to-JSON](https://github.com/KrijnL/DBISAM-to-JSON)
+  - Python 2/3 script to convert DBISAM to JSON (limited support for various column types).
