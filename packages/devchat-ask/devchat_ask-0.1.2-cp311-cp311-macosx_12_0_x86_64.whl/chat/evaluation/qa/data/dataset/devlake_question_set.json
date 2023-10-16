@@ -1,0 +1,286 @@
+{
+    "name": "DevLake",
+    "description": "Example Quesetions and Answers for DevLake",
+    "repo_url": "https://github.com/apache/incubator-devlake.git",
+    "cases": [
+        {
+            "id": "devlake-01",
+            "question": "How is the lead time for changes calculated?",
+            "reference_answer": "The lead time for changes is calculated in the `CalculateChangeLeadTime` function by following these steps:\n\n1. Get pull requests by the project name.\n2. For each pull request, get the first commit and calculate the PR coding time as the time span between the first commit's authored date and the pull request's created date.\n3. Get the first review for the pull request (excluding comments from the PR creator) and calculate the PR pickup time as the time span between the pull request's created date and the first review's created date. Calculate the PR review time as the time span between the first review's created date and the pull request's merged date.\n4. Get the deployment for the pull request using the merge commit SHA and calculate the PR deploy time as the time span between the pull request's merged date and the deployment's finished date.\n5. Calculate the PR cycle time by adding the PR coding time, PR during time (time span between the pull request's created date and merged date), and PR deploy time.\n\nThe function returns a `ProjectPrMetric` object containing the calculated lead times for each pull request in the project.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-02",
+            "question": "Why can the lead time for changes metric be null sometimes?",
+            "reference_answer": "The lead time for changes metric can be null sometimes because some of the time spans used to calculate it might be null. In the `CalculateChangeLeadTime` function, the PR coding time, PR pickup time, PR review time, and PR deploy time are calculated. If any of these time spans are null or have negative values, the final PR cycle time (lead time for changes) might not be calculated, resulting in a null value.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-03",
+            "question": "Can you provide a high-level description of DevLake's architecture?",
+            "reference_answer": "DevLake consists of these main components: \n\n1. Config UI, \n\n2. API Server, \n\n3. Runner, \n\n4. Database, \n\n5. Plugins, \n\n6. Dashboards. Its data flow has three laysers: \n\n1. Raw layer, \n\n2, Tool layer, \n\n3. Domain layer. For detailed explanations, please refer to this doc: https://devlake.apache.org/docs/Overview/Architecture",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "devlake-04",
+            "question": "What data does the Azure DevOps plugin collect?",
+            "reference_answer": "The Azure DevOps plugin collects data related to Git repositories, Git pull requests, Git pull request commits, builds, and jobs. Specifically, it collects information such as:\n\n1. GitPullRequests: Base repository ID, head repository ID, status, original status, title, description, URL, author name, author ID, pull request key, created date, merged date, closed date, type, component, merge commit SHA, head reference, base reference, head commit SHA, and base commit SHA.\n\n2. GitPullRequestCommits: Commit SHA (commit_id), pull request ID, commit author name (author_name), commit author email (author_email), and commit authored date (author_date).\n\n3. Builds: Build's name, status, created date, finished date, result, duration in seconds, environment, type, and other related details like commit SHA, branch, repository ID, and repository URL.\n\n4. Jobs: Job ID, name, build ID, status, start time, finish time, result, type, duration in seconds, environment, and CICD scope ID.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-05",
+            "question": "What are the features of DevLake?",
+            "reference_answer": "Apache DevLake is an open-source dev data platform to ingest, analyze, and visualize fragmented data from DevOps tools, extracting insights for engineering excellence, developer experience, and community growth. For a complete list of features, please visit the Apache DevLake website or provide more information.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-08",
+            "question": "Does DevLake's GitHub plugin support incremental sync?",
+            "reference_answer": "Yes. DevLake's GitHub plugin supports incremental sync. In the code, you can see the following line:\n\n`incremental := collectorWithState.IsIncremental()`\n\nThis line checks if the collector is running in incremental mode.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-09",
+            "question": "How can I create DevLake plugins in Python?",
+            "reference_answer": "To create a DevLake plugin in Python, follow these steps:\n\n1. Make sure you have [Poetry](https://python-poetry.org/docs/#installation) installed.\n2. Move to `python/plugins` and execute `poetry new myplugin`. This will generate a new directory for your plugin.\n3. In the `pyproject.toml` file, add the following line at the end of the `[tool.poetry.dependencies]` section:\n```\npydevlake = { path = \"../../pydevlake\", develop = true }\n```\n4. Run `poetry install`.\n5. Create a `main.py` file with the necessary content, including classes for connection, transformation rule, tool scope, and plugin.\n6. Create shell scripts `build.sh` and `run.sh` in the plugin root directory to build and run the plugin.\n7. Define connection parameters, transformation rule parameters, and tool scope type.\n8. Implement methods like `domain_scopes`, `remote_scope`, `remote_scope_groups`, and `test_connection`.\n9. Add a new data stream by creating a tool model, stream class, and API wrapper.\n10. Implement methods like `collect`, `extract`, and `convert` for the stream class.\n11. If needed, create substreams for hierarchical data sources.\n12. Test the plugin standalone using the `main.py` file with different commands.\n13. Write unit-tests for your plugin code, with test files ending in `_test.py`.\n\nHere's a general outline of a DevLake plugin class:\n\n```python\nfrom pydevlake.plugin import Plugin\n\nclass MyDevLakePlugin(Plugin):\n    # Implement required properties and methods here\n    # e.g., name, description, connection_type, tool_scope_type, transformation_rule_type, streams, etc.\n```\n\nYou would then need to implement the required properties and methods for your specific plugin, such as `name`, `description`, `connection_type`, `tool_scope_type`, `transformation_rule_type`, and `streams`. You can refer to the provided code's test functions (e.g., `assert_valid_name`, `assert_valid_description`, `assert_valid_connection_type`, etc.) to understand the requirements and constraints for each property and method.\n\nOnce you have implemented your plugin, you can use the provided test functions to validate your plugin and ensure it works correctly.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-10",
+            "question": "How do I resolve the `panic: invalid encKey` error?",
+            "reference_answer": "To resolve the 'panic: invalid encKey' error, you need to ensure that you have a valid encryption key set in your environment or configuration. Here are some steps you can follow:\n\n1. Make sure you have a valid encryption key and it's being correctly fetched using the `plugin.EncodeKeyEnvStr` constant or a similar method in your code.\n2. If you are using a randomly generated encryption key, make sure to store it securely and use the same key for both encryption and decryption processes.\n3. Check that the environment variable specified by `plugin.EncodeKeyEnvStr` or a similar method is set with a valid encryption key.\n4. Verify that the encKey is being set and saved to the config properly using `v.Set(plugin.EncodeKeyEnvStr, encKey)` and `config.WriteConfig(v)` or similar methods in your code.\n\nIf the issue persists, you may need to provide more context or refer to the documentation of the specific software you are working with.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-11",
+            "question": "How does DevLake generate a pipeline based on a blueprint's setting?",
+            "reference_answer": "DevLake generates a pipeline based on a blueprint's setting through the following steps:\n\n1. The blueprint settings are defined in a JSON format, which includes the version, connections, plugin, connectionId, and scopes.\n\n2. The `PluginBlueprintV200.MakePipelinePlan` function is called with an array of scopes. The plugin returns a `PipelinePlan` in JSON format and an array of `Scope` for project_mapping.\n\n3. The framework maintains the project_mapping table based on the `[]Scope` array.\n\nThese steps help DevLake generate a pipeline plan based on the blueprint's settings, which can be used to execute the pipeline and collect data from various sources.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-12",
+            "question": "How does DevLake delete a project?",
+            "reference_answer": "DevLake deletes a project by following these steps:\n\n1. Verify the input project name is not empty.\n2. Begin a database transaction.\n3. Get the project by its name using the `getProjectByName` function.\n4. Delete the project from the `models.Project` table using the project name.\n5. Delete the project mapping from the `crossdomain.ProjectMapping` table using the project name.\n6. Delete the project metric setting from the `models.ProjectMetricSetting` table using the project name.\n7. Delete the project PR metric from the `crossdomain.ProjectPrMetric` table using the project name.\n8. Delete the project issue metric from the `crossdomain.ProjectIssueMetric` table using the project name.\n9. Commit the transaction.\n10. Get the blueprint associated with the project name using the `bpManager.GetDbBlueprintByProjectName` function.\n11. Delete the blueprint using the `bpManager.DeleteBlueprint` function with the blueprint ID.",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "devlake-13",
+            "question": "How does DevLake generate the template `user_account_mapping.csv` file?",
+            "reference_answer": "DevLake generates the template user_account_mapping.csv file using the GetUserAccountMapping function. This function retrieves all user/account mappings from the store, marshals them into CSV format using gocsv.MarshalBytes(accounts), and returns the CSV data as an OutputFile with ContentType \"text/csv\".",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "devlake-14",
+            "question": "How is the `findAllAccounts` function implemented?",
+            "reference_answer": "",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-15",
+            "question": "How is the `h.store.findAllAccounts` function implemented?",
+            "reference_answer": "The h.store.findAllAccounts function is implemented as follows:\n\n```go\nfunc (d *dbStore) findAllAccounts() ([]account, errors.Error) {\n\tvar aa []crossdomain.Account\n\terr := d.db.All(&aa)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tvar ua []crossdomain.UserAccount\n\terr = d.db.All(&ua)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tvar a *account\n\treturn a.fromDomainLayer(aa, ua), nil\n}\n```\n\nIt retrieves all accounts and user accounts from the database, and then calls the fromDomainLayer function to convert them into the appropriate format.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-16",
+            "question": "How is the `fromDomainLayer` method of the account type implemented?",
+            "reference_answer": "",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-17",
+            "question": "Is the information collected from all branches from git?",
+            "reference_answer": "The git extractor plugin collects commits on all branches.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-18",
+            "question": "Does DevLake support PostgreSQL?",
+            "reference_answer": "Yes, PostgreSQL is supported for all versions from v0.11 up, but the pre-built Grafana dashboards only support MySQL. PostgreSQL support is not being removed entirely, but the related information has been temporarily removed due to the partial compatibility with Grafana dashboards. Users who want to use PostgreSQL with DevLake can still do so, but they may need to convert the MySQL queries provided by DevLake to PostgreSQL.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-19",
+            "question": "Why is it that not all organisations in my Github are being shown?",
+            "reference_answer": "If you're not seeing all of your GitHub orgs, please check if your GitHub org has allowed PAT access.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-20",
+            "question": "Is it possible to consume events/data from a stream instead of pulling an API?",
+            "reference_answer": "DevLake doesn’t have full-blown support for consuming events/data from a stream as of right now.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-23",
+            "question": "Does Apache Devlake supports deployment metrics from CloudBuild, Cloud Deploy and Anthos Config Management?",
+            "reference_answer": "DevLake hasn't supported CloudBuild, Cloud deploy and ACM yet.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-24",
+            "question": "I have set up DevLake only to collect the DORA metrics using helm but it is opening the DevLake UI without any authentication, i.e. no username and password. As I am entering the IP it is taking me to Devlake dashboard without asking any username and password. Is it the correct behaviour?",
+            "reference_answer": "There are values to set user/password in the helm chart. By default, they are not set.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-26",
+            "question": "We have dozens of GitHub organizations and hundreds of repositories to track. At that scale it is difficult to manage using the Project interface and UI. Has anyone tried to use DevLake to work with anything close to that kind of scale?",
+            "reference_answer": "In Config UI, you can try selecting the org to select all repositories under that org. But if you need to add a large number of repositories under different orgs to a project, the action will be inevitably cumbersome in the current DevLake.",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "devlake-27",
+            "question": "I want to define some commits as deployment jobs, such as commit messages starting with “merge..” or some specific account like admin. How can I do this?",
+            "reference_answer": "If I understand correctly, you would like to register deployments with commits filtered by their commit messages. This is not supported natively by DevLake. But a potential workaround is to write a script that takes your git repo as input, filter the commits with your rules, and send POST requests to DevLake to register the deployments using DevLake's incoming webhook for deployments: https://devlake.apache.org/docs/next/Plugins/webhook",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "devlake-28",
+            "question": "Does Lead Time for Changes support trunk-based development?",
+            "reference_answer": "The current lead time for changes is PR-based and would need some adjustment for direct push into trunk.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-29",
+            "question": "How can I deploy DevLake with 5k+ repositories without constantly hitting the rate limit problem?",
+            "reference_answer": "1. DevLake's GitHub plugin does incremental sync for most entities. To see the behavior of other plugins, check out the Collection Mode column here: https://devlake.apache.org/docs/next/Overview/SupportedDataSources 2. Providing multiple GitHub PATs from different users would multiply your rate limit. 3. There's an open PR for supporting GitHub app, which may enhance the rate limit for larger orgs.",
+            "answer_properties": [],
+            "notes": {
+                "level": "high"
+            }
+        },
+        {
+            "id": "devlake-30",
+            "question": "When creating teams, if I have a hierarchy of parents and sub-teams, do I need to put the sub-team members in both parents and sub-teams, or just sub-teams?",
+            "reference_answer": "Teams within DevLake don't have hierarchies. So you probably want to put the sub-team members in both the parent and sub-team.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-31",
+            "question": "Is SSO supported for the DevLake UI and the dashboards?",
+            "reference_answer": "SSO is not supported currently.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-32",
+            "question": "I entered a GitHub token but it showed `INVALID TOKEN`. What could be the causes?",
+            "reference_answer": "Please refer to our docs for what permissions of GitHub tokens are required: https://devlake.apache.org/docs/Configuration/GitHub",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-33",
+            "question": "Can I filter out GitHub issues created by bots?",
+            "reference_answer": "Unfortunately, there is no built-in capability within DevLake to auto-filter bot activities. But a work-around solution is to slightly modify the SQL query in Grafana dashboards to filter issues/PRs by their authors.",
+            "answer_properties": [],
+            "notes": {
+                "level": "mid"
+            }
+        },
+        {
+            "id": "devlake-34",
+            "question": "How do I login to Grafana to access the dashboards",
+            "reference_answer": "By default the user and password are set to admin.",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-35",
+            "question": "Is it possible to modify a blueprint with an additional integration after its been created?",
+            "reference_answer": "Yes, from v0.17 you can add more data connections to an existing blueprint",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        },
+        {
+            "id": "devlake-36",
+            "question": "When should I use advanced mode for a blueprint?",
+            "reference_answer": "Advanced mode allows users to create any pipeline by writing JSON. This is useful for users who want to collect multiple GitHub/GitLab repos or Jira projects within a single pipeline, have fine-grained control over what entities to collect or what subtasks to run for each plugin, and orchestrate a complex pipeline that consists of multiple stages of plugins. You can refer to our doc for more details: https://devlake.apache.org/docs/Configuration/AdvancedMode",
+            "answer_properties": [],
+            "notes": {
+                "level": "low"
+            }
+        }
+    ]
+}
