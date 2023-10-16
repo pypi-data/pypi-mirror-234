@@ -1,0 +1,101 @@
+Metadata-Version: 2.1
+Name: tap-dbf
+Version: 0.1.0b2
+Summary: Singer tap for .DBF files
+Home-page: https://github.com/edgarrmondragon/tap-dbf
+License: Apache-2.0
+Keywords: ELT,singer.io,dbf,dBase
+Author: Edgar R. Mondragón
+Author-email: edgarrm358@gmail.com
+Requires-Python: >=3.8,<3.12
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Database
+Provides-Extra: s3
+Requires-Dist: dbfread (>=2.0.7,<2.1.0)
+Requires-Dist: fsspec (>=2023.9.2,<2023.10.0)
+Requires-Dist: s3fs (>=2023.9.2,<2023.10.0) ; extra == "s3"
+Requires-Dist: singer-sdk (>=0.32.0,<0.33.0)
+Project-URL: Documentation, https://github.com/edgarrmondragon/tap-dbf#readme
+Project-URL: Repository, https://github.com/edgarrmondragon/tap-dbf
+Description-Content-Type: text/markdown
+
+# tap-dbf
+
+Singer tap for the [dBase file format](https://en.wikipedia.org/wiki/.dbf).
+
+## Configuration
+
+| Key                       | Description                                                                                     | Type    | Required | Default |
+|---------------------------|-------------------------------------------------------------------------------------------------|---------|----------|---------|
+| `path`                    | Glob expression where the files are located. Stream names will be extracted from the file name. | string  | yes      |         |
+| `ignore_missing_memofile` | Whether to proceed reading the file even if the [memofile] is not present                       | boolean | no       | false   |
+
+### JSON example
+
+```json
+{
+  "path": "tests/data/files/*.dbf",
+  "ignore_missing_memofile": true
+}
+```
+
+## Filesystems
+
+### Local
+
+Example configuration:
+
+```json
+{
+  "path": "/files/*.dbf",
+  "fs_root": "file://data",
+  "ignore_missing_memofile": true
+}
+```
+
+The `fs_root` key is optional and defaults to the current working directory:
+
+```json
+{
+  "path": "data/files/*.dbf",
+  "ignore_missing_memofile": true
+}
+```
+
+### S3
+
+You need to install the package with the `s3` extra:
+
+```shell
+pip install 'tap-dbf[s3]'
+```
+
+Example configuration:
+
+```json
+{
+  "path": "/*.dbf",
+  "fs_root": "s3://files",
+  "ignore_missing_memofile": true,
+  "s3": {
+    "key": "someKey",
+    "secret": "someSecret",
+    "endpoint_url": "http://localhost:9000"
+  }
+}
+```
+
+## Roadmap
+
+- Google Drive filesystem
+- Dropbox filesystem
+
+[memofile]: https://en.wikipedia.org/wiki/.dbf#Memo_fields_and_the_.DBT_file
+
