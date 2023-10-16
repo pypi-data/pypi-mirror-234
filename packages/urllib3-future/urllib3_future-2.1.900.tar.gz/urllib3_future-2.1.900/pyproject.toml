@@ -1,0 +1,131 @@
+# This file is protected via CODEOWNERS
+
+[build-system]
+requires = ["hatchling>=1.6.0,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "urllib3-future"
+description = "Fork of mainstream urllib3 but ahead of his time"
+readme = "README.md"
+keywords = ["urllib", "httplib", "threadsafe", "filepost", "http", "https", "ssl", "pooling"]
+authors = [
+  {name = "Andrey Petrov", email = "andrey.petrov@shazow.net"}
+]
+maintainers = [
+  {name = "Ahmed R. TAHRI", email="ahmed.tahri@cloudnursery.dev"},
+]
+classifiers = [
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Internet :: WWW/HTTP",
+  "Topic :: Software Development :: Libraries",
+]
+requires-python = ">=3.7"
+dynamic = ["version"]
+dependencies = [
+  "qh3>=0.11.3,<1.0.0; (platform_system == 'Darwin' or platform_system == 'Windows' or platform_system == 'Linux') and (platform_python_implementation == 'CPython' or (platform_python_implementation == 'PyPy' and python_version >= '3.8'))",
+  "h11>=0.11.0,<1.0.0",
+  "h2>=4.0.0,<5.0.0",
+]
+
+[project.optional-dependencies]
+brotli = [
+  "brotli>=1.0.9; platform_python_implementation == 'CPython'",
+  "brotlicffi>=0.8.0; platform_python_implementation != 'CPython'"
+]
+zstd = [
+  "zstandard>=0.18.0",
+]
+secure = []
+socks = [
+  "PySocks>=1.5.6,<2.0,!=1.5.7",
+]
+qh3 = [
+  "qh3>=0.11.2,<1.0.0",
+]
+
+[project.urls]
+"Changelog" = "https://github.com/urllib3/urllib3/blob/main/CHANGES.rst"
+"Documentation" = "https://urllib3.readthedocs.io"
+"Code" = "https://github.com/urllib3/urllib3"
+"Issue tracker" = "https://github.com/urllib3/urllib3/issues"
+
+[tool.hatch.version]
+path = "src/urllib3/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/docs",
+  "/dummyserver",
+  "/src",
+  "/test",
+  "/dev-requirements.txt",
+  "/CHANGES.rst",
+  "/README.md",
+  "/LICENSE.txt",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/urllib3",
+]
+
+[tool.pytest.ini_options]
+xfail_strict = true
+python_classes = ["Test", "*TestCase"]
+markers = ["limit_memory"]
+log_level = "DEBUG"
+filterwarnings = [
+    "error",
+    '''default:urllib3 v2.0 only supports OpenSSL 1.1.1+.*''',
+    '''default:'urllib3\[secure\]' extra is deprecated and will be removed in urllib3 v2\.1\.0.*:DeprecationWarning''',
+    '''default:No IPv6 support. Falling back to IPv4:urllib3.exceptions.HTTPWarning''',
+    '''default:No IPv6 support. skipping:urllib3.exceptions.HTTPWarning''',
+    '''default:ssl\.TLSVersion\.TLSv1 is deprecated:DeprecationWarning''',
+    '''default:ssl\.PROTOCOL_TLS is deprecated:DeprecationWarning''',
+    '''default:ssl\.PROTOCOL_TLSv1 is deprecated:DeprecationWarning''',
+    '''default:ssl\.TLSVersion\.TLSv1_1 is deprecated:DeprecationWarning''',
+    '''default:ssl\.PROTOCOL_TLSv1_1 is deprecated:DeprecationWarning''',
+    '''default:ssl\.PROTOCOL_TLSv1_2 is deprecated:DeprecationWarning''',
+    '''default:unclosed .*:ResourceWarning''',
+    '''default:ssl NPN is deprecated, use ALPN instead:DeprecationWarning''',
+    # https://github.com/pytest-dev/pytest/issues/10977
+    '''default:ast\.(Num|NameConstant|Str) is deprecated and will be removed in Python 3\.14; use ast\.Constant instead:DeprecationWarning:_pytest''',
+    '''default:Attribute s is deprecated and will be removed in Python 3\.14; use value instead:DeprecationWarning:_pytest''',
+]
+
+[tool.isort]
+profile = "black"
+add_imports = "from __future__ import annotations"
+
+[tool.mypy]
+mypy_path = "src"
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+no_implicit_reexport = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
