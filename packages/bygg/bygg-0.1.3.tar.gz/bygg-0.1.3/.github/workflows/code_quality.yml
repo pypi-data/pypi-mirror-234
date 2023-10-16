@@ -1,0 +1,50 @@
+name: Code quality
+on:
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  nox:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python interpreters
+        uses: actions/setup-python@v4
+        with:
+          python-version: |
+            3.11
+            3.12
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pipx install nox
+      - name: Test with nox
+        run: |
+          nox
+
+  pyright:
+    strategy:
+      matrix:
+        python_version: ["3.11", "3.12"]
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python_version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements.txt -r requirements-dev.txt
+      - name: Type check with Pyright
+        run: |
+          . .venv/bin/activate
+          pyright examples/ src/ tests/
