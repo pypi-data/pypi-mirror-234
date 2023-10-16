@@ -1,0 +1,14 @@
+from pingsafe_cli.psgraph.terraform.checks.resource.aws import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.gcp import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.azure import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.github import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.gitlab import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.linode import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.oci import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.openstack import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.panos import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.digitalocean import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.alicloud import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.kubernetes import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.yandexcloud import *  # noqa
+from pingsafe_cli.psgraph.terraform.checks.resource.ncp import *  # noqa
