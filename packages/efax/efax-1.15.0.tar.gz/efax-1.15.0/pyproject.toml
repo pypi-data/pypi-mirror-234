@@ -1,0 +1,174 @@
+[build-system]
+requires = ['setuptools', 'poetry_core>=1.0']
+build-backend = 'poetry.core.masonry.api'
+
+[tool.poetry]
+name = 'efax'
+version = "1.15.0"
+description = "Exponential families for JAX"
+license = 'MIT'
+authors = ['Neil Girdhar <mistersheik@gmail.com>']
+readme = 'README.rst'
+repository = 'https://github.com/NeilGirdhar/efax'
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Science/Research',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Typing :: Typed',
+    'License :: OSI Approved :: MIT License']
+
+[tool.poetry.dependencies]
+python = '>=3.9,<3.13'
+jax = '>=0.4.14'
+numpy = '>=1.22'
+scipy = '^1.4'
+tensorflow_probability = '>=0.15'
+tjax = '>=0.29.7'
+
+[tool.poetry.group.dev.dependencies]
+isort = '>=5.8'
+jupyter = '>=1'
+mypy = '>=1.0'
+pylint = '>=2.12'
+pyright = ">=0.0.13"
+pytest = '^7'
+pytest-xdist = {version = '>=3', extras = ['psutil']}
+ruff = '>=0'
+
+[tool.isort]
+line_length = 100
+multi_line_output = 0
+skip_glob = ['.pytype/*.py']
+
+[tool.pylint.master]
+jobs = 0
+extension-pkg-whitelist = [
+    'mypy.plugins.dataclasses']
+
+[tool.pylint.messages_control]
+disable = [
+    'abstract-method',
+    'arguments-differ',
+    'duplicate-code',
+    'invalid-name',
+    'invalid-unary-operand-type',
+    'line-too-long',
+    'missing-docstring',
+    'no-member',
+    'too-few-public-methods',
+    'too-many-ancestors',
+    'too-many-arguments',
+    'too-many-branches',
+    'too-many-instance-attributes',
+    'too-many-locals',
+    'too-many-return-statements',
+    'too-many-statements',
+    'unused-argument',
+    'unused-import']
+enable= [
+    'useless-suppression',
+    'use-symbolic-message-instead']
+
+[tool.pylint.reports]
+output-format = 'colorized'
+
+[tool.pylint.similarities]
+min-similarity-lines = 10
+ignore-imports = 'yes'
+
+[tool.pyright]
+include = ["efax", "tests", "examples"]
+exclude = ["efax/_src/gamma_generator.py"]
+stubPath = ""
+enableTypeIgnoreComments = false
+reportCallInDefaultInitializer = true
+reportImplicitOverride = true
+reportIncompatibleMethodOverride = true
+reportIncompatibleVariableOverride = true
+reportInconsistentConstructor = true
+reportMatchNotExhaustive = true
+reportMissingParameterType = true
+reportMissingSuperCall = true
+reportMissingTypeArgument = true
+reportOverlappingOverload = true
+reportPrivateImportUsage = true
+reportShadowedImports = true
+reportUninitializedInstanceVariable = true
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportUnknownMemberType = false
+reportUnknownParameterType = false
+reportUnknownVariableType = false
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportUnnecessaryContains = true
+reportUnnecessaryIsInstance = true
+reportUnnecessaryTypeIgnoreComment = true
+reportUntypedBaseClass = true
+reportUntypedClassDecorator = true
+reportUntypedFunctionDecorator = true
+reportUntypedNamedTuple = true
+
+[tool.mypy]
+files = ["efax", "tests", "examples"]
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+# disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+pretty = true
+show_error_codes = true
+show_error_context = true
+strict_equality = true
+warn_redundant_casts = true
+# warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+exclude = ["efax/_src/gamma_generator.py"]
+
+[[tool.mypy.overrides]]
+module = ['efax._src.gamma_generator']
+follow_imports = 'skip'
+
+[[tool.mypy.overrides]]
+module = ['scipy', 'scipy.optimize', 'scipy.special', 'scipy.stats',
+       'tensorflow_probability.substrates']
+ignore_missing_imports = true
+
+[tool.ruff]
+select = ["ALL"]
+ignore = ["B011", "D100", "D101", "D102", "D107", "D103", "D105", "S101", "ANN101",
+       "ANN102", "ANN401", "TID252", "FBT003", "I001", "G004", "PT015", "PGH003", "COM812",
+       "Q000", "TCH001", "TCH002", "TCH003", "ERA001", "ARG001", "ARG002", "ARG003", "ARG004",
+       "FIX002", "TD", "PD008"]
+line-length = 100
+target-version = "py39"
+extend-exclude = ["__init__.py", "examples"]
+exclude = ["efax/_src/gamma_generator.py"]
+
+[tool.ruff.flake8-annotations]
+mypy-init-return = true
+
+[tool.ruff.flake8-errmsg]
+max-string-length = 40
+
+[tool.ruff.isort]
+combine-as-imports = true
+
+[tool.ruff.pydocstyle]
+# Use Google-style docstrings.
+convention = "google"
+
+[tool.ruff.pylint]
+max-args = 8
