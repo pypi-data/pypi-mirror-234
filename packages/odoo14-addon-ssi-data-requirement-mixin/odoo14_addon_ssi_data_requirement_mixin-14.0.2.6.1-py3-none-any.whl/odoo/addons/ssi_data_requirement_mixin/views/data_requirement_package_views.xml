@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl). -->
+<odoo>
+<record id="data_requirement_package_view_search" model="ir.ui.view">
+    <field name="name">data_requirement_package - search</field>
+    <field name="model">data_requirement_package</field>
+    <field
+            name="inherit_id"
+            ref="ssi_transaction_mixin.mixin_transaction_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+        </data>
+    </field>
+</record>
+
+<record id="data_requirement_package_view_tree" model="ir.ui.view">
+    <field name="name">data_requirement_package - tree</field>
+    <field name="model">data_requirement_package</field>
+    <field name="mode">primary</field>
+    <field name="inherit_id" ref="ssi_transaction_mixin.mixin_transaction_view_tree" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="title" />
+                <field name="type_id" />
+                <field name="date" />
+                <field name="date_commitment" />
+                <field name="data_requirement_status" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="data_requirement_package_view_form" model="ir.ui.view">
+    <field name="name">data_requirement_package - form</field>
+    <field name="model">data_requirement_package</field>
+    <field name="mode">primary</field>
+    <field name="inherit_id" ref="ssi_transaction_mixin.mixin_transaction_view_form" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//group[@name='header_right']" position="inside">
+                <field name="type_id" />
+                <field name="upload_url" widget="url" />
+                <field name="date" />
+                <field name="duration_id" />
+                <field name="date_commitment" />
+            </xpath>
+            <xpath expr="//group[@name='header_center']" position="inside">
+                <field name="title" />
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page name="detail" string="Details">
+                    <button
+                            name="action_reload_detail"
+                            string="Reload Detail"
+                            type="object"
+                            icon="fa-refresh"
+                            class="oe_highlight"
+                            attrs="{'invisible':[('state','!=','draft')]}"
+                            style="margin-right:4px"
+                        />
+                    <button
+                            name="action_create_data_requirement"
+                            string="Create Data Requirement"
+                            type="object"
+                            icon="fa-gear"
+                            class="oe_highlight"
+                            attrs="{'invisible':[('state','!=','draft')]}"
+                        />
+
+                    <group name="detail_1" colspan="4" col="2">
+                        <field name="data_requirement_status" />
+                    </group>
+                    <field name="detail_ids">
+                        <tree editable="top">
+                            <field name="sequence" widget="handle" />
+                            <field name="type_id" />
+                            <field name="data_id" />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="data_requirement_package_action" model="ir.actions.act_window">
+    <field name="name">Data Requirement Packages</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">data_requirement_package</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="data_requirement_package_menu"
+        name="Data Requirement Packages"
+        parent="menu_root_data_requirement"
+        action="data_requirement_package_action"
+        groups="data_requirement_package_viewer_group"
+        sequence="120"
+    />
+
+</odoo>
