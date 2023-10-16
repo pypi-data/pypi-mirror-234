@@ -1,0 +1,77 @@
+[build-system]
+requires = ["maturin>=1.0.0"]
+build-backend = "maturin"
+
+[project]
+name = "prelude-parser"
+requires-python = ">=3.8"
+description = "Parses XML files exported from Prelude EDC into formats usable by Python."
+authors = [{name = "Paul Sanders", email = "paul@pbsdatasolutions.com"}]
+keywords = ["parser", "prelude-edc", "xml", "pandas", "polars"]
+classifiers = [
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Typing :: Typed",
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+repository = "https://github.com/pbs-data-solutions/prelude-parser"
+homepage = "https://github.com/pbs-data-solutions/prelude-parser"
+documentation = "https://github.com/pbs-data-solutions/prelude-parser"
+dependencies = ["camel-converter>=3.0.0"]
+
+[project.optional-dependencies]
+pandas = ['pandas>=2.1.0; python_version>"3.8"']
+polars = ["polars>=0.17.14"]
+all = ['pandas>=2.1.0; python_version>"3.8"', "polars>=0.17.14"]
+
+[tool.maturin]
+module-name = "prelude_parser._prelude_parser"
+binding = "pyo3"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.egg
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.nox
+  | \.tox
+  | \.venv
+  | \venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | setup.py
+)/
+'''
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov=prelude_parser --cov-report term-missing --no-cov-on-fail"
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+
+[tool.ruff]
+select=["E", "F", "UP", "I001", "T201", "T203"]
+ignore=["E501"]
+line-length = 100
+target-version = "py38"
+fix = true
