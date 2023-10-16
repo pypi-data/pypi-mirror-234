@@ -1,0 +1,85 @@
+Metadata-Version: 2.1
+Name: excursor
+Version: 0.1.1
+Summary: 
+License: Apache-2.0
+Author: Sean Toner
+Author-email: placeoftheway@gmail.com
+Requires-Python: >=3.11,<3.13
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Provides-Extra: data
+Provides-Extra: ml
+Provides-Extra: serve
+Provides-Extra: viz
+Requires-Dist: daak (>=0.1.1,<0.2.0)
+Requires-Dist: duckdb (>=0.9.0,<0.10.0) ; extra == "data"
+Requires-Dist: fastapi (>=0.101.1,<0.102.0) ; extra == "serve"
+Requires-Dist: httpx (>=0.24,<0.25) ; extra == "serve"
+Requires-Dist: ipykernel (>=6.25.2,<7.0.0)
+Requires-Dist: ipywidgets (>=8.0,<9.0) ; extra == "viz"
+Requires-Dist: jupyterlab (>=4.0,<5.0) ; extra == "viz"
+Requires-Dist: numpy (>=1.26,<2.0)
+Requires-Dist: plotly (>=5.15,<6.0) ; extra == "viz"
+Requires-Dist: polars[numpy,pandas,pyarrow] (>=0.18.4,<0.19.0) ; extra == "data"
+Requires-Dist: pyarrow (>=13.0.0,<14.0.0) ; extra == "data"
+Requires-Dist: pydantic (>=2.4,<3.0) ; extra == "serve"
+Requires-Dist: sympy (>=1.12,<2.0)
+Requires-Dist: torch (>=2.1.0,<3.0.0) ; extra == "ml"
+Requires-Dist: uvicorn[standard] (>=0.23.2,<0.24.0) ; extra == "serve"
+Description-Content-Type: text/markdown
+
+# excursor
+
+excursor means to scout or spy in latin.  excursor is a tool to learn python, mojo, and machine learning. It does so by
+building up some projects and notebooks to introduce concepts
+
+## Installing Prerequisites
+
+excursor comes with an installer module to install the development tools that will be needed.  You will need at a 
+minimum the following installed:
+
+- git
+- python 3.9+
+- pip
+
+First, create a virtual environment
+
+```bash
+git clone https://github.com/rarebreed/excursor.git
+cd excursor
+```
+
+This will clone excursor on your system.  Then run the following commands:
+
+- Install python devel deps: `python3 -m excursor.core.installer sys`
+- Install asdf python manager: `python3 -m excursor.core.installer asdf`
+- Activate asdf: `source ~/.zshrc`
+- Install poetry project manager: `python3 -m excursor.core.installer poetry`
+- Install virtualenv: `python3 -m excursor.core.installer venv`
+- Optional (if you want python 3.9.x): `asdf install python 3.9.18`
+    - And to make it the default: `asdf global python 3.9.18`
+
+You can also run the commands all at once, but on the first run through, it is recommended to install each one at a time
+
+```bash
+python3 -m excursor.core.installer sys asdf poetry venv
+```
+
+Once all the features are installed, you can install the full excursor dependencies using `poetry`
+
+```bash
+poetry install --all-extras --with dev
+```
+
+Skip any of the commands above if you already have asdf, poetry, or virtualenv already installed.
+
+## Uninstalling a feature
+
+You can also uninstall a feature by appending with a `-c` or `--clean` at the end.  It is recommended to uninstall in
+the reverse order as above (eg, clean venv, then poetry, then asdf)
+
+```bash
+python3 -m excursor.core.installer venv poetry asdf -c
+```
