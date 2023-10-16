@@ -1,0 +1,84 @@
+[tool.poetry]
+name = "nua"
+version = "0.5.42"
+description = "Command line interface for the Nua self-hosted PaaS (Platform as a Service)"
+authors = ["Stefane Fermigier <sf@abilian.com>"]
+
+license = "Apache-2.0"
+
+readme = "README.md"
+documentation = "https://nua.rocks/"
+repository = "https://github.com/abilian/nua"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+packages = [
+  { include = "nua_cli", from = "src" }
+]
+
+[tool.poetry.scripts]
+nua = "nua_cli.main:main"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+tomli = "^2.0.1"
+fabric = "~3.0"
+decorator = "^5.1.1"
+snoop = "*"
+cleez = "^0.1.9"
+
+[tool.poetry.group.dev.dependencies]
+urllib3 = "<2.0"
+abilian-devtools = "*"
+devtools = "*"
+types-setuptools = "^68.0.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# ------------------------------------------------------------------------------
+
+[tool.ruff]
+extend-ignore = [
+    "S101", # Use of 'assert'
+    # TODO: fix these
+    "UP007", # Use `X | Y` for type annotations
+]
+extend-exclude = [
+    ".nox"
+]
+
+# ------------------------------------------------------------------------------
+
+[tool.pyright]
+exclude = [
+    '.nox',
+    'tests',
+    'noxfile.py',
+]
+
+# ------------------------------------------------------------------------------
+
+[tool.deptry]
+exclude = [
+    '.nox', 'noxfile.py', 'tests',
+]
+ignore_unused = [
+    "decorator",
+]
+ignore_missing = [
+]
+ignore_transitive = [
+    "nua_cli",
+    "invoke",
+]
