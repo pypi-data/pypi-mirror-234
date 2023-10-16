@@ -1,0 +1,795 @@
+#!/usr/bin/env python3
+
+import importlib
+
+dependencies = ["requests", "argparse", "bs4", "textwrap"]
+
+for package in dependencies:
+    try:
+        importlib.import_module(package)
+    except ImportError:
+        print(f"\033[33;1m!\033[0m Error: {package} is not installed. Please install it using pip or your package manager.")
+        exit()
+
+import os
+import sys
+import datetime
+import csv
+import requests
+import argparse
+import subprocess
+import shutil
+import time
+import textwrap
+import webbrowser
+from bs4 import BeautifulSoup
+import signal
+import asyncio
+
+config_dir = os.path.expanduser("~/.config/strimdb/")
+
+def create_config_directory():
+    os.makedirs(config_dir, exist_ok=True)
+    
+create_config_directory()
+
+def check_terminal_size():
+    terminal_width = shutil.get_terminal_size().columns
+    if terminal_width < 80:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\033[A\033[33;1m!\033[0m Terminal too narrow (min. 75 columns).")
+        return False
+    return True
+
+def wait_for_terminal_size():
+    try:
+        while not check_terminal_size():
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        print('\033[;0fQuitting strimdb.\033[K')
+        sys.exit(0)
+
+wait_for_terminal_size()
+
+reviews_page = False
+
+def signal_handler(signal, frame):
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print('Quitting strimdb.')
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+    
+def clear_view():
+    if shutil.which("clear") or shutil.which("cls"):
+        os.system('cls' if os.name == 'nt' else 'clear')
+    else:
+        printf("\033[0;0f\033[2J")
+    
+def get_api_key():
+    api_key_file = os.path.join(config_dir, "api_key.txt")
+    if os.path.exists(api_key_file):
+       with open(api_key_file, "r") as f:
+           return f.read()
+    api_key = input("Enter your OMDB API key (free'get one at https://www.omdbapi.com/apikey.aspx), e.g., ccb3c5f6 (for demonstration only): ")
+    with open(api_key_file, "w") as f:
+        f.write(api_key)
+    return api_key
+ 
+def search_movies(include_rating=False, keyword=None):
+    favourites_path = os.path.join(config_dir, "favourites.csv")
+    try:
+        with open(favourites_path, "r") as f:
+            favourites = f.read().splitlines()
+    except FileNotFoundError:
+        open(favourites_path, "w").close()
+        favourites = []
+
+    # Runtime options that should quit the program
+    if importcsv:
+        import_from_csv(importcsv)
+    if list_genres:
+       print("Action, Adventure, Animation, Biography, Comedy, Crime, Documentary, Drama, Family, Fantasy, Film Noir, History, Horror, Music, Musical, Mystery, Romance, Sci-Fi, Short, Sport, Superhero, Thriller, War, Western")
+       sys.exit(0)
+
+    # Prompt user for keyword and show active filters
+    os.system('cls' if os.name == 'nt' else 'clear')
+    filters = "none"
+    if formattype:
+        filters = f"{formattype}"
+    elif genre:
+        filters = f"{genre}"
+    elif favourites_flag:
+        filters = "favourites"
+    elif formattype and genre:
+        filters = f"type = {formattype}, genre = {genre}"
+    elif formattype and favourites_flag:
+        filters = f"favourites, type = {formattype}"
+    elif genre and favourites_flag:
+        filters = f"favourites, genre = {genre}"
+    elif formattype and genre and favourites_flag:
+        filters = f"favourites, type = {formattype}, genre = {genre}"
+
+    num_results = args.number or 10
+    keyword = args.search or None
+    include_rating = args.rating or False
+    favourites_path = os.path.join(config_dir, "favourites.csv")
+    if keyword:
+        print(f"\033[32;1m>_ Search term:\033[0m {keyword}")        
+    elif favourites_flag and keyword:
+        num_results = int(os.popen(f"wc -l '{favourites_path}'").read().split()[0])
+        print(f"\033[32;1m>_ Search term:\033[0m {keyword}")
+    elif favourites_flag and keyword == "":
+        num_results = int(os.popen(f"wc -l '{favourites_path}'").read().split()[0])
+        keyword = input("\033[32;1m>_ Search term:\033[0m ")
+    elif favourites_flag is None and keyword is None:
+        keyword = input("\033[32;1m>_ Search term:\033[0m ")
+    else:
+        keyword = input("\033[32;1m>_ Search term:\033[0m ")
+
+    print(f"\033[;2mFilters: {filters}\033[0m")
+    return keyword, favourites_flag, include_rating, num_results, filters
+    fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match)
+
+def print_page(movies, favourites_flag, include_rating, num_results, page, total_results, total_pages, exact_match, genre, formattype):
+    # Print the movies
+    favourites_path = os.path.join(config_dir, "favourites.csv")
+    favourites = open(favourites_path, "r").read().splitlines()
+    for i, movie in enumerate(movies):
+        index = str(i + (page - 1) * num_results + 1).rjust(len(str(num_results * page)), ' ')
+        suffix = ""
+        if favourites_flag is False:
+            if include_rating:
+                url = f"http://www.omdbapi.com/?apikey={api_key}&i={movie['imdbID']}&plot=full"
+                response = requests.get(url)
+                data = response.json()
+                if "imdbRating" in data:
+                    rating = data["imdbRating"] + "/10" 
+                else:
+                    rating = "N/A"
+                suffix = "- \033[;2m{var}\033[0m".format(var=rating)
+            if any(line.startswith(movie["imdbID"]) for line in favourites):
+                print(f"\033[35;1m{index}\033[0m. ✯ {movie['Title']} ({movie['Year']}) {suffix}")
+            else:
+                print(f"\033[35;1m{index}\033[0m. {movie['Title']} ({movie['Year']}) {suffix}")
+    if favourites_flag is False:
+        print(f"\033[;2mPage {page}/{total_pages}\033[0m")
+    
+    if favourites_flag is True:
+        total_favourites = int(os.popen(f"wc -l '{favourites_path}'").read().split()[0])
+        num_matches = int(0)
+#        num_results = args.number or 50
+        for i, fav in enumerate(favourites):
+            fav = fav.split(";")
+            i = i + 1
+            if total_favourites > 999:
+                if i < 10:
+                    i = "   {var}".format(var=i)
+                elif 9 < i < 100:
+                    i = "  {var}".format(var=i)                
+                elif 99 < i < 1000:
+                    i = " {var}".format(var=i)
+                elif i > 999:
+                    i = "{var}".format(var=i)
+            elif total_favourites > 99:
+                if i < 10:
+                    i = "  {var}".format(var=i)
+                elif 9 < i < 100:
+                    i = " {var}".format(var=i)                
+                elif i > 99:
+                    i = "{var}".format(var=i)
+            elif total_favourites > 9:
+                if i < 10:
+                    i = " {var}".format(var=i)
+            if keyword:
+                if keyword.lower() in fav[1].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+#                if keyword == "*":
+#                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+#                    num_matches += 1
+            if genre:
+                if genre.lower() in fav[4].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+            if formattype:
+                if formattype.lower() in fav[5].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+            if keyword and genre:
+                if keyword.lower() in fav[1].lower() and genre.lower() in fav[4].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+            if keyword and formattype:
+                if keyword.lower() in fav[1].lower() and formattype.lower() in fav[5].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+            if genre and formattype:
+                if genre.lower() in fav[4].lower() and formattype.lower() in fav[5].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+            if keyword and genre and formattype:
+                if keyword.lower() in fav[1].lower() and genre.lower() in fav[4].lower() and formattype.lower() in fav[5].lower():
+                    print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+                    num_matches += 1
+                #fav = fav[:num_results]
+            suffix = "- \033[;2m{var}/10\033[0m".format(var=fav[3])
+            if include_rating: # Update ratings from the web; these will be saved per match only if toggling favourite status on and off
+                url = f"http://www.omdbapi.com/?apikey={api_key}&i={fav[0]}&plot=full"
+                response = requests.get(url)
+                data = response.json()
+                if "imdbRating" in data:
+                    rating = data["imdbRating"] + "/10" 
+                else:
+                    rating = ""
+                suffix = "- \033[;2m{var}\033[0m".format(var=rating)
+                print(f"\033[35;1m{i}\033[0m. ✯ {fav[1]} ({fav[2]}) {suffix}")
+ 
+        print(f"\033[;2m{num_matches} matches among {total_favourites} favourites\033[0m")
+    
+def fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match):
+    # Request results from the OMDB API
+    querypage = (page - 1) * (num_results // 10) + 1
+    if keyword == "":
+        return
+    elif len(keyword) < 3:
+        movies = None
+        selection = None
+        show_details(movies, selection, page, keyword, formattype, exact_match)
+    else:
+        url = f"http://www.omdbapi.com/?apikey={api_key}&s={keyword}&r=json&page={querypage}&plot=full&type={formattype}" # Search by keyword
+    response = requests.get(url)
+    data = response.json()
+    total_results = int(data.get("totalResults", 0))
+    total_pages = total_results // num_results + 1
+    
+    # Check if the response contains any results
+    if "Error" in data:
+        print(data["Error"])
+        answer = input("\033[32;1m>_ New search:\033[0m ")
+        keyword = answer
+        page = 1
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(f"\033[32;1m>_ Search term:\033[0m {keyword}")
+        print(f"\033[;2mFilters: {filters}\033[0m")
+        fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match)
+        return
+
+    # Check if the requested page is within the available range
+    if page > total_pages:
+        page = total_pages
+
+    # Calculate the query page based on the requested page and num_results
+    if num_results <= 10:
+        querypage = page
+    else:
+        if page < total_pages:
+            querypage = (page - 1) * (num_results // 10) + 1
+        else:
+            # Last page may have fewer than 10 results
+            num_remaining = total_results - (total_pages - 1) * num_results
+            querypage = num_results // 10 * total_pages - 1 + (num_results - num_remaining) // 10
+
+    # Collect the results from each page until enough results are found
+    movies = []
+    while len(movies) < num_results and querypage <= total_results // 10 + 1:
+        if querypage > total_pages * (num_results // 10):
+            break
+        else:
+            url = f"http://www.omdbapi.com/?apikey={api_key}&s={keyword}&r=json&page={querypage}&plot=full&type={formattype}"
+            response = requests.get(url)
+            data = response.json()
+            if "Error" in data:
+                print(data["Error"])
+                return
+            if "Search" in data:
+                movies.extend(data["Search"])
+            querypage += 1
+
+    # Trim the movie list to the requested number of results
+    movies = movies[:num_results]
+
+    # Print the movies
+    print_page(movies, favourites_flag, include_rating, num_results, page, total_results, total_pages, exact_match, genre, formattype)
+    handle_page_answer(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, movies, total_results, total_pages)
+
+def handle_page_answer(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, movies, total_results, total_pages):
+    while True:
+        try:
+            oldpage = page
+            current_page_results = min(num_results, total_results - (page - 1) * num_results)
+            if keyword == "":
+                answer = input(f"\033[A\r\033[32;1m>_ Search term:\033[0m ")
+            else:
+                answer = input("\033[32;1m>_ Type result \033[0;1mnumber\033[32;1m, go to \033[0;1mp\033[32;1mrev/\033[0;1mn\033[32;1mext or \033[0;1mpnumber\033[32;1m page, or search new term:\033[0m ")
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print(f"\033[32;1m>_ Search term:\033[0m {keyword}")
+            print(f"\033[;2mFilters: {filters}\033[0m")
+            if answer == 'n' or answer == ']':
+                if page < total_pages:
+                    page += 1
+            elif answer == 'p' or answer == '[':
+                if page > 1:
+                    page -= 1
+            elif answer.startswith('p') and answer[1:].isdigit():
+                if int(answer[1:]) <= total_pages and int(answer[1:]) > 0:
+                    page = int(answer[1:])
+            elif answer.isdigit() and int(answer) in range((page - 1) * num_results + 1, (page - 1) * num_results + current_page_results + 1):
+                selection = int(answer) - 1 - (page - 1) * num_results
+                if selection in range(0, current_page_results):
+                    show_details(movies, selection, page, keyword, formattype, exact_match)
+                else:
+                    raise ValueError
+            elif answer == "":
+                page = 1
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"\033[32;1m>_ Search term:\033[0m ")
+                print(f"\033[;2mFilters: {filters}\033[0m")
+                keyword = input(f"\033[A\r\033[A\r\033[32;1m>_ Search term:\033[0m ")
+            else:
+                keyword = answer
+                page = 1
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"\033[32;1m>_ Search term:\033[0m {keyword}")
+                print(f"\033[;2mFilters: {filters}\033[0m")
+            fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match)
+        except ValueError:
+            print_page(movies, favourites_flag, include_rating, num_results, page, total_results, total_pages, exact_match)
+            print("\n\n\033[33;1m!\033[0m Invalid number. If this was a new search, leave results page first with Enter.", end ='\033[A\033[A\r\033')
+            continue
+
+def get_trailer_url(movie_id):
+    # Get the HTML content of the IMDB page
+    url = f"https://www.imdb.com/title/{movie_id}/videogallery/content_type-trailer/?ref_=ttvi_ref_typ"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # Find the first video on the page
+    video = soup.find("div", {"class": "slate"})
+
+    #Check if the movie has a trailer button
+    if video is None:
+        trailer_url = None
+    else:
+        # Extract the direct video URL
+        trailer_url = video.find("a", {"class": "video-modal"})["href"]
+    return trailer_url
+
+def deobfstr_stream_url(hash, key):
+    url = ''
+    for i in range(0, len(hash), 2):
+        substring = hash[i:i+2]
+        url += chr(int(substring, 16) ^ ord(key[i // 2 % len(key)]))
+    return url
+
+async def ini(webplayer): # Thanks Enimax for figuring this out!
+    html = requests.get(webplayer).text
+    main_dom = BeautifulSoup(html, 'html.parser')
+    iframe_hash = main_dom.select_one(".active_source")["data-hash"]
+    rcp_url = f"https://rcp.vidsrc.me/rcp/{iframe_hash}"
+    iframe_html = requests.get(rcp_url, headers={"referer": webplayer}).text
+    iframe_dom = BeautifulSoup(iframe_html, 'html.parser')
+
+    data_h = iframe_dom.select_one("#hidden")["data-h"]
+    data_i = iframe_dom.find("body")["data-i"]
+    url = deobfstr_stream_url(data_h, data_i)
+
+    if url.startswith("//"):
+        url = f"https:{url}"
+
+    player_html = requests.get(url, headers={"referer": rcp_url}).text
+
+    stream_url_parts = player_html.split(".m3u8")
+
+    if len(stream_url_parts) > 1:
+        stream_url = stream_url_parts[0].split("\"")[-1] + ".m3u8"
+    else:
+        stream_url = None
+    return stream_url
+    
+def fetch_reviews(reviews_url, movies, selection, page, keyword, formattype, exact_match):
+    response = requests.get(reviews_url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    reviews = soup.find_all('div', class_='imdb-user-review')
+
+    pager_title = ''
+    pager_rating_and_date = ''
+    pager_text = ''
+    for review in reviews:
+        reviewtitle = review.find('a', class_='title').text.strip()
+        rating_element = review.find('span', class_='rating-other-user-rating')
+        if rating_element is None:
+            continue
+        rating = rating_element.text.strip()
+        date = review.find('span', class_='review-date').text.strip()
+        content = review.find('div', class_='text')
+
+        pager_rating_and_date += f"\033[35;1m\n{rating}\033[0m \033[0m· {date}\n"
+        pager_rating_and_date += '\n\n--newreview--\n\n'
+        pager_title += f"\033[0;1m\n{reviewtitle}"
+        pager_title += '\n\n--newreview--\n\n'
+        pager_text += f"\033[0;0m\n{content}\033[0m"
+        pager_text += '\n\n--newreview--\n\n'
+
+    if pager_text == '':
+        print(f"\n\033[33;21m!\033[0m No review available.\033[0J",
+              end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0 ;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+    else:
+        rating_and_dates_list = pager_rating_and_date.split('\n\n--newreview--\n\n')
+        titles_list = pager_title.split('\n\n--newreview--\n\n')
+        reviews_list = pager_text.split('\n\n--newreview--\n\n')
+        num_reviews = len(reviews_list)
+        current_review = 0
+
+        while True:
+            os.system('cls' if os.name == 'nt' else 'clear')
+            terminal_width = shutil.get_terminal_size().columns
+            rating_and_date = rating_and_dates_list[current_review].strip()
+            title = titles_list[current_review].strip()
+            review_paragraphs = reviews_list[current_review].split('<br/><br/>')
+            review_text = []
+            for paragraph in review_paragraphs:
+                paragraph = paragraph.replace('<div class="text show-more__control">', '').replace('</div>', '')
+                wrapped_lines = textwrap.wrap(paragraph, width=terminal_width, break_long_words=True, break_on_hyphens=False, replace_whitespace=False)
+                wrapped_paragraph = "\n".join(wrapped_lines)
+                review_text.append(wrapped_paragraph)
+            title_lines = textwrap.wrap(title, width=terminal_width, break_long_words=True, break_on_hyphens=True, replace_whitespace=False)
+            title_wrapped = '\n'.join(title_lines)
+            review_wrapped= '\n\n'.join(review_text)
+            print(f"\033[32;1m>_ Show \033[0;1mp\033[32;1mrev/\033[0;1mn\033[32;1mext featured review, or go \033[0;1mb\033[32;1mack:\033[0m  \033[1D")
+            print(f"\033[2;0f\033[;2mReview {current_review + 1}/{num_reviews - 1}\033[0m")
+            print(rating_and_date)
+            print(title_wrapped)
+            print(review_wrapped)
+
+            choice = input("\033[1;48f")
+            if (choice == 'n' or choice == ']') and current_review + 1 < num_reviews - 1:
+                current_review += 1
+            elif (choice == 'p' or choice == '[') and current_review > 0:
+                current_review -= 1  
+            elif (choice == 'b' or choice == 'q' or choice == ""):
+                show_details(movies, selection, page, keyword, formattype, exact_match)
+                
+def actions(trailer_url, movie_id, title, year, rating, genre, mediatype, imdburl, page, movies, selection, filters, keyword, exact_match, reviews_url):
+    prompt_shown = False
+    while True:
+        if not prompt_shown:
+            answer = input(f"\n\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m ")
+            prompt_shown = True
+        else:
+            answer = input()
+        if answer == 't':
+            if not trailer_url:
+                print(f"\n\033[33;1m!\033[0m No trailer available.\033[0J",
+                      end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+            else:
+                if shutil.which("mpv") is None and shutil.which("yt-dlp") is None:   
+                    print(f"\n\033[33;1m!\033[0m mpv and yt-dlp not found, install them to play the trailer out of the browser.",
+                          end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                    import webbrowser
+                    webbrowser.open(f"https://www.imdb.com{trailer_url}")
+                elif shutil.which("mpv") is None:
+                    print(f"\n\033[33;1m!\033[0m mpv not found, install it to play the trailer out of the browser.\033[0J",
+                          end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                    import webbrowser
+                    webbrowser.open(f"https://www.imdb.com{trailer_url}")
+                elif shutil.which("yt-dlp") is None:
+                    print(f"\n\033[33;1m!\033[0m yt-dlp not found, install it to play the trailer out of the browser.\033[0J",
+                          end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                    import webbrowser
+                    webbrowser.open(f"https://www.imdb.com{trailer_url}")
+                else:
+                    print(f"\n   Buffering trailer…\033[0J",
+                          end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                    subprocess.call(f"mpv https://www.imdb.com{trailer_url} > /dev/null 2>&1", shell=True)
+                    print(f"\n\n\033[0J",
+                          end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                    continue
+        elif answer == 's':
+            print(f"\n\n\033[0J",
+                  end = f'\033[A')
+            if mediatype == 'series':
+                padding = "\033[5A"
+                br = "\n"
+                season = input(f"\033[0J\033[32;1m - Season:\033[0m ")
+                if not season.isdigit():
+                    print(f"\n\033[2A\033[33;1m!\033[0m Invalid season number.\033[0J",
+                          end = f'\033[2A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                elif int(season) < 10:
+                    season = f'0{season}'
+                    episode = input(f"\033[A\r\033[32;1m - Season:\033[0m {season}\033[32;1m, Episode:\033[0m ")
+                    if not episode.isdigit():
+                        print(f"\n\033[2A\033[33;1m!\033[0m Invalid episode number.\033[0J",
+                              end = f'\033[2A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                    elif int(episode) < 10:
+                        episode = f'0{episode}'
+                        print(f"\033[A\r\033[32;1m - Season:\033[0m {season}\033[32;1m, Episode:\033[0m {episode}")
+            elif mediatype == 'movie':
+                padding = "\033[4A"        
+            if ('season' not in locals() and 'episode' not in locals()) or (season.isdigit() and episode.isdigit()):
+                protocol = input(f"\033[32;1m - Stream from \033[0;1md\033[32;1mirect link or \033[0;1mt\033[32;1morrents?\033[0m ")
+                if protocol == 't':
+                    if shutil.which("torrenter") is None:
+                        print(f"\n\033[33;1m!\033[0m torrenter not found, install it from https://github.com/Based-Programmer/torrenter\033[0J",
+                              end = f'{padding}\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                        continue
+                    elif mediatype == 'series':
+                        try:
+                            print("")
+                            subprocess.check_call("torrenter %s %s %s" % ('-m', f'{title}', f's{season}e{episode}'), shell=True)
+                        except subprocess.CalledProcessError as e:
+                            print("torrenter failed with exit code:", e.returncode)
+                            input("Press Enter to continue…")
+                        except Exception as e:
+                            # Catch other exceptions if they occur.
+                            print("torrenter error:", str(e))
+                            input("Press Enter to continue…")
+                    elif mediatype == 'movie':
+                        try:
+                            print("")
+                            subprocess.check_call("torrenter %s %s %s" % ('-m', f'{title}', f'{year}'), shell=True)
+                        except subprocess.CalledProcessError as e:
+                            print("torrenter failed with exit code:", e.returncode)
+                            input("Press Enter to continue…")
+                        except Exception as e:
+                            # Catch other exceptions if they occur.
+                            print("torrenter error:", str(e))
+                            input("Press Enter to continue…")
+                    show_details(movies, selection, page, keyword, formattype, exact_match)
+                elif protocol == 'd':
+                    if mediatype == 'series':
+                        import webbrowser
+                        webplayer = f"https://vidsrc.xyz/embed/tv?imdb={movie_id}&season={season}&episode={episode}"
+                    elif mediatype == 'movie':
+                        import webbrowser
+                        webplayer = f"https://vidsrc.xyz/embed/movie?imdb={movie_id}"
+                    if shutil.which("mpv") is None and shutil.which("yt-dlp") is None:
+                        print(f"\n\n\033[A\033[33;1m!\033[0m mpv and yt-dlp not found, install them to stream out of the browser.\033[0J",
+                              end = f'{padding}\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                        webbrowser.open(webplayer)
+                    elif shutil.which("mpv") is None:
+                        print(f"\n\n\033[A\033[33;1m!\033[0m mpv not found, install it to stream out of the browser.\033[0J",
+                              end = f'{padding}\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                        webbrowser.open(webplayer)
+                    elif shutil.which("yt-dlp") is None:
+                        print(f"\n\n\033[A\033[33;1m!\033[0m yt-dlp not found, install it to stream out of the browser.\033[0J",
+                              end = f'{padding}\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                        webbrowser.open(webplayer)
+                    else:
+                        print(f"\n   Buffering stream…\033[0J",
+                              end = f'{padding}\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                        try:
+                            stream_url = asyncio.run(ini(webplayer))
+                            if stream_url is None:
+                                print(f"{br}\n\n\n\n\n\033[A\033[33;1m   !\033[0m No source found at {webplayer}, try torrents.\033[0J",
+                                      end = f'{padding}\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                                continue
+                            else:
+                                subprocess.call(f"mpv --http-header-fields='Origin: https://vidsrc.stream' --http-header-fields='Referer: https://vidsrc.stream/' {stream_url} > /dev/null 2>&1", shell=True)
+                        except subprocess.CalledProcessError as e:
+                            print("Streaming failed with exit code:", e.returncode)
+                        except Exception as e:
+                            # Catch other exceptions if they occur.
+                            print("Streaming error:", str(e))
+                        print(f"\n\n\033[0J\n\n\033[0J",
+                              end = f'\033[4A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                        continue
+                else:
+                    print(f"\n\n\033[A\r\033[0J\033[A{padding}\033[0J\033[A")
+                    actions(trailer_url, movie_id, title, year, rating, genre, mediatype, imdburl, page, movies, selection, filters, keyword, exact_match, reviews_url)
+        elif answer == 'r':
+            fetch_reviews(reviews_url, movies, selection, page, keyword, formattype, exact_match)
+        elif answer == 'f':
+            add_to_favourites(movie_id, title, year, rating, genre, mediatype, imdburl, exact_match)
+        elif answer == "b" or answer == "":
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print(f"\033[32;1m>_ Search term:\033[0m {keyword}")
+            print(f"\033[;2mFilters: {filters}\033[0m")
+            if exact_match is True:
+                page = 1
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"\033[32;1m>_ Search term:\033[0m ")
+                print(f"\033[;2mFilters: {filters}\033[0m")
+                keyword = input(f"\033[A\r\033[A\r\033[32;1m>_ Search term:\033[0m ")
+            fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match)
+        else:
+            keyword = answer
+            page = 1
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print(f"\033[32;1m>_ Search term:\033[0m {keyword}")
+            print(f"\033[;2mFilters: {filters}\033[0m")
+            fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match)
+        
+def add_to_favourites(movie_id, title, year, rating, genre, mediatype, imdburl, exact_match):
+    importcsv = args.csv or None
+    favourites_path = os.path.join(config_dir, "favourites.csv")
+    if not os.path.exists(favourites_path):
+        open(favourites_path, "w").close()
+        
+    # Check if the match ID is already in the favourites list
+    with open(favourites_path, "r") as f:
+        favourites = f.read().splitlines()
+        for i, line in enumerate(favourites):
+            fields = line.split(";")
+            if fields[0] == movie_id and importcsv is None:
+                favourites.pop(i)
+                sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (0, 0, "·"))
+                sys.stdout.flush()
+                print(f"\n\033[;2m✫\033[0m Removed from favourites.\033[0J",
+                      end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+                break
+        else:
+            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            favourites.append(f"{movie_id};{title};{year};{rating};{genre};{mediatype};{imdburl};{current_date}")
+            if importcsv is None:
+                sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (0, 0, "✯"))
+                sys.stdout.flush()
+                print(f"\n\033[32;1m✯\033[0m Added to favourites.\033[0J",
+                      end = f'\033[A\033[A\r\033[32;1m>_ Show \033[0;1mt\033[32;1mrailer, \033[0;1ms\033[32;1mtream, \033[0;1mr\033[32;1meviews, toggle \033[0;1mf\033[32;1mavourite, go \033[0;1mb\033[32;1mack, or search new term:\033[0m  \033[1D')
+    with open(favourites_path, "w") as f:
+        f.write("\n".join(favourites))
+        
+    # Remove duplicates after importing
+    favourites_path = os.path.join(config_dir, "favourites.csv")
+    with open(favourites_path, "r") as f:
+        favourites = f.read().splitlines()
+        seen = set() # Create an empty set to store the unique values
+        for i, line in enumerate(favourites):
+            fields = line.split(';')
+            if fields[0] in seen: # If the first field is already seen
+                favourites.pop(i) # Remove the duplicate line
+            else:
+                seen.add(fields[0]) # Add the first field to the set of seen values
+    with open(favourites_path, "w") as f:
+        f.write("\n".join(favourites))
+
+def show_details(movies, selection, page, keyword, formattype, exact_match):    
+    # Request details of the selected movie from the OMDB API
+    if keyword == "":
+        return
+    elif 0 < len(keyword) < 3:
+        url = f"http://www.omdbapi.com/?apikey={api_key}&t={keyword}&plot=full&type={formattype}"        
+        response = requests.get(url)
+        data = response.json()
+        movie_id = data["imdbID"]
+        exact_match = True
+    else:
+        movie_id = movies[selection]["imdbID"]
+        url = f"http://www.omdbapi.com/?apikey={api_key}&i={movie_id}&plot=full"
+        response = requests.get(url)
+        data = response.json()
+
+    imdburl = f"https://www.imdb.com/title/{movie_id}"
+    reviews_url = f"https://www.imdb.com/title/{movie_id}/reviews"
+    trailer_url = get_trailer_url(movie_id)
+    title = data["Title"]
+    release_date = data["Released"]
+    year = data["Year"]
+    genre = data["Genre"]
+    if "imdbRating" in data:
+        rating = data["imdbRating"] + "/10" 
+    votes = data["imdbVotes"]
+    runtime = data["Runtime"]
+    director = data["Director"]
+    plot = data["Plot"]
+    actors = data["Actors"]
+    awards = data["Awards"]
+    mediatype = data["Type"]
+    
+    # Print details of the selected movie
+    os.system('cls' if os.name == 'nt' else 'clear')
+    favourites_path = os.path.join(config_dir, "favourites.csv")
+    with open(favourites_path, "r") as f:
+        favourites = f.read().splitlines()
+        if any(line.startswith(movie_id) for line in favourites):
+            print(f"✯ \033[35;1m{title} ({year})\033[0m\n")
+        else:
+            print(f"· \033[35;1m{title} ({year})\033[0m\n")
+        print(f"\033[;2mRating:\033[0m {rating}", f"({votes})")
+        print(f"\033[;2mType:\033[0m {mediatype.title():<20} \033[;2mGenre(s):\033[0m {genre}")
+        print(f"\033[;2mRelease:\033[0m {release_date:<17} \033[;2mRuntime:\033[0m {runtime}")
+        print(f"\033[;2mDirector:\033[0m {director}")
+        print(f"\033[;2mActors:\033[0m {actors}")
+        print(f"\033[;2mAwards:\033[0m {awards}")
+        print(f"\033[;2mURL:\033[0m https://www.imdb.com/title/{movie_id}")
+
+        # Get the initial terminal width
+        terminal_width = shutil.get_terminal_size().columns
+        # Create a TextWrapper object for the first line
+        first_line_wrapper = textwrap.TextWrapper(width=terminal_width - 6, break_long_words=True, break_on_hyphens=True)
+        # Create a TextWrapper object for the subsequent lines
+        subsequent_lines_wrapper = textwrap.TextWrapper(width=terminal_width, break_long_words=True, break_on_hyphens=True)
+        # Wrap the first line
+        first_line = first_line_wrapper.wrap(plot)[0]
+        # Wrap the subsequent lines
+        subsequent_lines = subsequent_lines_wrapper.wrap(plot)
+        # Print the wrapped text
+        print(f"\033[;2mPlot:\033[0m {first_line}\n" + '\n'.join(subsequent_lines))
+
+        while True:
+            # Check if the terminal width has changed
+            new_terminal_width = shutil.get_terminal_size().columns - 1
+            if new_terminal_width != terminal_width:
+                # If the width has changed, re-wrap the plot
+                terminal_width = new_terminal_width
+                plot_lines = textwrap.wrap(plot, width=terminal_width, break_long_words=True, break_on_hyphens=True)
+                plot_wrapped = '\n'.join(plot_lines)
+
+            actions(trailer_url, movie_id, title, year, rating, genre, mediatype, imdburl, page, movies, selection, filters, keyword, exact_match, reviews_url)
+
+def import_from_csv(importcsv):
+    # Read the CSV file
+    with(open(importcsv, "r")) as f:
+        reader = csv.reader(f)
+        next(reader)  # Skip the header row
+        for row in reader:
+            movie_id = row[1]
+            title = row[5]
+            rating = row[8]
+            year = row[10]
+            genre = row[11]
+            imdburl = row[6]
+            mediatype = row[7]
+            # Add to favourites, avoiding duplicates with pre-existing favourites
+            add_to_favourites(movie_id, title, year, rating, genre, mediatype, imdburl, exact_match)
+        print("Successfully imported the list to favourites.")
+        sys.exit(0)
+
+
+if __name__ == '__main__':
+    try:
+        custom_description = """
+         888            d8b                    888 888
+         888            Y8P                    888 888
+         888                                   888 888
+.d8888b  888888 888d888 888 88888b.d88b.   .d88888 88888b.
+88K      888    888P"   888 888 "888 "88b d88" 888 888 "88b
+"Y8888b. 888    888     888 888  888  888 888  888 888  888
+     X88 Y88b.  888     888 888  888  888 Y88b 888 888 d88P
+ 88888P'  "Y888 888     888 A TUI to search IMDb, and more. 
+                             ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅ ̅  
+"""
+        parser = argparse.ArgumentParser(add_help=False)
+
+        parser.add_argument('-r', '--rating', action='store_true', help='include ratings in search results (slower)')
+        parser.add_argument('-s', '--search', type=str, help='search a term directly (use quotes if multiple words)')
+        parser.add_argument('-n', '--number', type=int, help='maximum number of results to show (a multiple of 10)')
+        parser.add_argument('-f', '--favourites', action='store_true', help='restrict the search to favourites (partially functional)')
+        parser.add_argument('-t', '--type', type=str, help='restrict the search to type "movie" or "series"')
+        parser.add_argument('-g', '--genre', type=str, help='restrict the search to a genre (not functional yet)')
+        parser.add_argument('-l', '--list-genres', action='store_true', help='list possible genres')
+        parser.add_argument('-i', '--import', dest='csv', type=str, help='import favourites from an IMDb list exported as csv')
+        parser.add_argument('-v', '--version', action='store_true', help='show version and exit')
+    
+        args, remaining_args = parser.parse_known_args()
+            
+        include_rating = args.rating
+        keyword = args.search or None
+        favourites_flag = args.favourites
+        formattype = args.type or ""
+        genre = args.genre or None
+        list_genres = args.list_genres
+        importcsv = args.csv or None
+        version = args.version
+        if version:
+            print("strimdb v1.0.5 (master)")
+            sys.exit(0)
+        num_results = args.number or 10
+        if num_results % 10 != 0:
+            print("\033[33;1m!\033[0m Invalid argument: NUMBER must be a multiple of 10.")
+            sys.exit(0)
+        exact_match = False
+        if '--help' in remaining_args or '-h' in remaining_args:
+            print(custom_description)
+            print(parser.format_help())
+            exit(0)
+
+        while True:
+            api_key = get_api_key()
+            page = int(1)
+            keyword, favourites, include_rating, num_results, filters = search_movies()
+            results = fetch_movies(keyword, favourites_flag, include_rating, num_results, page, filters, formattype, exact_match)
+
+    except KeyboardInterrupt:
+        signal_handler()
