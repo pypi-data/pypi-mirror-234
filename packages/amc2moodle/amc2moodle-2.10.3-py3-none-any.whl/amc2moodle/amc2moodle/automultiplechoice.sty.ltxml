@@ -1,0 +1,167 @@
+package LaTeXML::Package::pool;  # to put new subs & variables in common pool
+use LaTeXML::Package;            # to load these definitions
+use strict;                      # good style
+use warnings;
+
+# def les notes, comparer avec les arguemens optionnels etc
+# comment ajouter des tags?
+# comment imposer de neester les environenements?
+# ici pas de mise en forme, jsute des changement de case.
+# \usepackage[francais,bloc,completemulti]{automultiplechoice}
+
+DefMacro('\@ifundefined{}{}{}','');
+
+DefMacro('\cleargroup','');
+DefMacro('\AMCcleardoublepage','');
+DefMacro('\AMCform','');
+DefMacro('\AMCformBegin','');
+DefMacro('\AMCnobloc','');
+DefMacro('\multiSymbole','');
+# Create an environement to ignore LaTeX content for moodle export
+DefEnvironment('{ignoreForMoodle}{}',"");
+
+# Load "anotherpackage"
+# RequirePackage('anotherpackage');
+#
+# A simple macro, just like in TeX
+#DefMacro('\thesection', '\thechapter.\roman{section}');
+
+
+
+# A constructor defines how a control sequence generates XML:
+
+# ===================================================================
+# TRADUCTION ET EQUIVALENCE
+# a faire voir automultiplechoice.sty...
+
+# ===================================================================
+# BAREME
+# % e=incohérence; b=bonne; m=mauvaise; p planché (on ne descent pas en dessous)
+DefConstructor('\bareme{}',"<ltx:note class='amc_bareme'>#1</ltx:note>"); # dans question
+DefConstructor('\scoring{}',"<ltx:note class='amc_bareme'>#1</ltx:note>"); # dans question
+
+DefConstructor('\baremeDefautS{}',"<ltx:note class='amc_baremeDefautS'>#1</ltx:note>"); # début document
+DefConstructor('\scoringDefaultS{}',"<ltx:note class='amc_baremeDefautS'>#1</ltx:note>"); # début document
+
+DefConstructor('\baremeDefautM{}',"<ltx:note class='amc_baremeDefautM'>#1</ltx:note>"); #début document
+DefConstructor('\scoringDefaultM{}',"<ltx:note class='amc_baremeDefautM'>#1</ltx:note>"); #début document
+
+# Dans le cas où la question posée est juste informative et ne doit pas contribuer à la note de l'étudiant, on utilisera la commande \QuestionIndicative, comme dans l'exemple suivant :
+DefConstructor('\QuestionIndicative',"<ltx:note class='amc_bareme'>e=0,b=0,m=0,v=0</ltx:note>");
+
+DefConstructor('\exemplaire{}{}',"");   # on supprime la partie construction du sujet si présente
+DefConstructor('\onecopy{}{}',"");
+DefConstructor('\AMCcode{}{}',"");
+
+DefConstructor('\element{}{}',"<ltx:note class='amc_categorie'>#1</ltx:note>#2");   # create the category container, keep the name pop everything else!
+#DefConstructor('\includesounds{}',"<ltx:ressource src='#1' type='mp3'>");   # on cree les categories
+#DefConstructor('\includesounds{}',"<ltx:text class='sound'>#1</ltx:text>");   # on cree les categories
+DefConstructor('\includesounds{}',"<ltx:graphics graphic='#1' options='sound'></ltx:graphics>");   # on cree les categories
+
+
+# ===================================================================
+# QUESTIONS
+# Set counter 'questions' for question
+# Close the curent _logical_ paragraph before. Needed if other content is present in the body of element, since it just 'pop' everything else.
+NewCounter('questions', 'document');
+# question simple
+DefEnvironment('{question}{}',"<ltx:note class='amc_question' role='#1'><ltx:inline-para>#body</ltx:inline-para></ltx:note>",
+               properties => sub { StepCounter('questions') }, beforeConstruct => sub { $_[0]->maybeCloseElement('ltx:para'); });
+# question multiple
+DefEnvironment('{questionmult}{}',"<ltx:note class='amc_questionmult' role='#1'><ltx:inline-para>#body</ltx:inline-para></ltx:note>",
+               properties => sub { StepCounter('questions') }, beforeConstruct => sub { $_[0]->maybeCloseElement('ltx:para'); });
+# questionmultx is the same as questionmult, except it does not display \multiSymbole
+DefEnvironment('{questionmultx}{}',"<ltx:note class='amc_questionmult' role='#1'><ltx:inline-para>#body</ltx:inline-para></ltx:note>",
+               properties => sub { StepCounter('questions') }, beforeConstruct => sub { $_[0]->maybeCloseElement('ltx:para'); });
+
+DefEnvironment('{examcopy}[]',"");   # alternative to onecopy, # on supprime la partie construction du sujet si présente
+
+# ===================================================================
+# REPONSE
+# Pas exploité, simple copie
+DefEnvironment('{reponses}[]', "?#1(<ltx:note class='amc_choices_options'>#1</ltx:note>)#body");
+DefEnvironment('{choices}[]', "?#1(<ltx:note class='amc_choices_options'>#1</ltx:note>)#body");
+
+DefEnvironment('{reponseshoriz}[]', "?#1(<ltx:note class='amc_choices_options'>#1</ltx:note>)#body");
+DefEnvironment('{choiceshoriz}[]', "?#1(<ltx:note class='amc_choices_options'>#1</ltx:note>)#body");
+
+DefConstructor('\bonne{}',"<ltx:note class='amc_bonne'>#1</ltx:note>"); # possible child bareme
+DefConstructor('\correctchoice{}',"<ltx:note class='amc_bonne'>#1</ltx:note>"); # possible child bareme
+
+DefConstructor('\mauvaise{}','<ltx:note class="amc_mauvaise">#1</ltx:note>');
+DefConstructor('\wrongchoice{}','<ltx:note class="amc_mauvaise">#1</ltx:note>');
+
+DefConstructor('\AMCnumericChoices{}{}', '<ltx:note class="amc_numeric_choices" role="#2">#1</ltx:note>');
+DefConstructor('\AMCOpen{}{}', '<ltx:note class="amc_open" role="#1">#2</ltx:note>');
+
+DefConstructor('\explain{}', '<ltx:note class="amc_explain">#1</ltx:note>');
+
+# ===================================================================
+# OPTIONS
+#DefConstructor('\SetOption{}{}',"<ltx:note class='amc_options' role='#1'>#2</ltx:note>");
+#DefConstructor('\SetQuizOption{}{}',"<ltx:note class='amc_quiz_options' role='#1'>#2</ltx:note>");
+DefConstructor('\SetOption Undigested Digested',"<ltx:note class='amc_options' role='#1'>#2</ltx:note>");
+DefConstructor('\SetQuizOption Undigested Digested',"<ltx:note class='amc_quiz_options' role='#1'>#2</ltx:note>");
+
+# Add html text element `tag` to XML tree. May be included in question (Q) or answer (A) level
+# \AddXML*Element{tag}{text content}
+DefConstructor('\AddXMLQElement{}{}',"<ltx:note class='amc_XMLQElement' role='#1'>#2</ltx:note>"); 
+DefConstructor('\AddXMLAElement{}{}',"<ltx:note class='amc_XMLAElement' role='#1'>#2</ltx:note>"); 
+
+
+# ===================================================================
+# MISE EN FORME PAPIER
+# Section etc. and starred version. Known by LaTeXML but redifined here to simplify transformation
+# and avoid nesting
+DefMacro('\section', '\@ifstar{\@section}{\@section}');
+DefConstructor('\@section{}',"<ltx:note class='amc_section'>#1</ltx:note>"); 
+DefMacro('\subsection', '\@ifstar{\@subsection}{\@subsection}');
+DefConstructor('\@subsection{}',"<ltx:note class='amc_subsection'>#1</ltx:note>");
+DefMacro('\subsubsection', '\@ifstar{\@subsubsection}{\@subsubsection}');
+DefConstructor('\@subsubsection{}',"<ltx:note class='amc_subsubsection'>#1</ltx:note>");
+
+#DefMacro('\raggedright','');
+#DefMacro('\raggedleft','');
+DefEnvironment('{multicols}{}',"#body");     # on supprime la mise en forme sur plusieurs colonnes pour les réponses, possible side effect in table
+
+DefConstructor('\AMCBoxedAnswers',"");     # on ne gère pas les pb de saut de colonne (lié à multicols)
+
+DefConstructor('\AMCidsPosition{}',"");
+DefConstructor('\AMCboxDimensions{}',"");  # dimension box à cocher
+DefConstructor('\AMCboxColor{}',"");       # couleur case
+DefConstructor('\AMCtext{}{}',"");         # Text par défaut question etc...
+DefConstructor('\AMCboxStyle{}',"");       # couleur case
+
+
+DefConstructor('\melangegroupe{}',"");         # mélange
+DefConstructor('\shufflegroup{}',"");         # mélange
+
+DefConstructor('\restituegroupe{}',"");       # restitution
+DefConstructor('\insertgroup{}',"");         # restitution
+
+DefConstructor('\cleargroup{}',"");         # purge
+DefConstructor('\copygroup{}{}',"");        # copy
+
+DefConstructor('\champnom{}',"");         # copy
+DefConstructor('\namefield{}',"");         # copy
+DefMacro('\namefielddots','');         # amc / pdfform
+
+DefConstructor('\AMCrandomseed{}',"");
+DefConstructor('\setdefaultgroupmode{}',"");
+DefConstructor('\AMCaddpagesto{}',"");
+
+DefConstructor('\setgroupmode{}{}',"");
+DefConstructor('\setdefaultgroupmode{}',"");
+
+
+# define some length already defined in automultiplechoice.sty
+DefMacro('\AMCinterIrep', '\newdimen\AMCinterIrep'); #% entre les réponses
+DefMacro('\AMCinterBrep', '\newdimen\AMCinterBrep'); #% entre les blocs de réponses
+DefMacro('\AMCinterIquest', '\newdimen\AMCinterIquest');
+DefMacro('\AMCinterBquest', '\newdimen\AMCinterBquest');
+
+
+
+
+# Don't forget this, so perl knows the package loaded.
+1;
