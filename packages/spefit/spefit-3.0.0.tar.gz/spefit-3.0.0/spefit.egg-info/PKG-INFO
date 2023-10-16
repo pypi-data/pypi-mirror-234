@@ -1,0 +1,129 @@
+Metadata-Version: 2.1
+Name: spefit
+Version: 3.0.0
+Summary: Fitting of Single Photoelectron Spectra.
+Author-email: Jason Watson <jason.watson@desy.de>
+License: BSD 3-Clause License
+        
+        Copyright (c) 2020, Jason Watson
+        All rights reserved.
+        
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions are met:
+        
+        1. Redistributions of source code must retain the above copyright notice, this
+           list of conditions and the following disclaimer.
+        
+        2. Redistributions in binary form must reproduce the above copyright notice,
+           this list of conditions and the following disclaimer in the documentation
+           and/or other materials provided with the distribution.
+        
+        3. Neither the name of the copyright holder nor the names of its
+           contributors may be used to endorse or promote products derived from
+           this software without specific prior written permission.
+        
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+        DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+        SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+        CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+        OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+        OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        
+Project-URL: Homepage, https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy~=1.20
+Requires-Dist: scipy~=1.11
+Requires-Dist: matplotlib~=3.7
+Requires-Dist: tqdm~=4.66
+Requires-Dist: numba~=0.57
+Requires-Dist: iminuit~=2.24
+Provides-Extra: test
+Requires-Dist: black~=23.9; extra == "test"
+Requires-Dist: pytest~=7.1.2; extra == "test"
+
+# spefit 
+
+[![pipeline status](https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit/badges/master/pipeline.svg)](https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit/-/commits/master) [![coverage report](https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit/badges/master/coverage.svg)](https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit/-/commits/master) <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a> [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/git/https%3A%2F%2Fgitlab.cta-observatory.org%2Fcta-consortium%2Faswg%2Ftools%2Fspefit/master?filepath=tutorials)
+
+Optimised framework for the fitting of [Single Photoelectron Spectra](https://github.com/watsonjj/spefit/wiki/Single-Photoelectron-spectra) (SPE) in order to characterize the properties of photomultipliers which influence the measured illumination response.
+
+* Supported Python versions: 3.9+
+* Supported platforms: Linux, OSX
+* Source: <https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit>
+* License: [BSD-3-Clause](LICENSE)
+* Citation: _pending_
+
+## Package Features
+
+* Basic [numpy](https://numpy.org/) API
+* Runtime-selectable Probability Density Functions (PDFs), optimised using [numba](http://numba.pydata.org/)
+* PDFs for the SPE spectra of both Photomultiplier Tubes and Silicon Photomultipliers
+* Configuration of PDFs for the case where no pedestal peak exists (e.g. dark counting)
+* Estimation of SPE parameters for improved initial fit values
+* Runtime-selectable minimization cost definitions, optimised using numba
+* Simultaneous fitting of multiple datasets (e.g. containing different average illuminations) for better parameter constraining
+* Minimization provided by [iminuit](https://github.com/scikit-hep/iminuit) - Python frontend to the MINUIT2 C++ library
+* Calculation of parameter errors and resulting p-value
+* Extendable to allow the inclusion of any additional SPE description and minimization cost definitions
+* Compatible with other minimization routines
+* Convenience class provided for the parallel processing of cameras containing multiple photomultiplier pixels
+
+## Currently Implemented:
+### SPE formula:
+
+- PMT Single Gaussian
+- SiPM Gentile
+- SiPM Modified Poisson
+
+### Minimization Cost functions:
+
+- Unbinned Negative Log-likelihood
+- Binned Negative Log-likelihood
+- Least Squares
+
+## Installation
+
+The package is available via pypi:
+```
+pip install spefit
+```
+
+Alternatively, this package is installable via pip directly from this repository (via https or ssh), e.g.:
+```
+pip install 'git+https://gitlab.cta-observatory.org/cta-consortium/aswg/tools/spefit.git#egg=spefit'
+```
+Also see the [Makefile](Makefile) for development commands.
+
+## Optional Dependencies
+
+Utilisation of Intel's short vector math library (SVML) for improved performance provided by numba:
+```
+conda install -c numba icc_rt
+```
+
+## Usage
+
+With a numpy array of size (n_events) called `charge_array`, containing the measured charges from the low illumination of a photomultiplier, the parameters of the SPE spectra can be extracted with:
+
+```python
+from spefit.dataset import Dataset
+from spefit.pdf import PMTSingleGaussian
+from spefit.cost import BinnedNLL
+from spefit.fitter import minimize_with_iminuit
+
+charges = [Dataset(charge_array, n_bins=100, range_=(-3, 6))]
+pdf = PMTSingleGaussian()
+cost = BinnedNLL(pdf, charges)
+values, errors = minimize_with_iminuit(cost)
+```
+
+Jupyter notebook demonstrations are provided in [tutorials](tutorials).
