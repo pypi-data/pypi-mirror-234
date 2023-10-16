@@ -1,0 +1,114 @@
+Metadata-Version: 2.1
+Name: cdktf-github-actions
+Version: 0.0.264
+Summary: @awlsring/cdktf-github-actions
+Home-page: https://github.com/awlsring/cdktf-github-actions.git
+Author: awlsring<mattcanemail@gmail.com>
+License: Apache-2.0
+Project-URL: Source, https://github.com/awlsring/cdktf-github-actions.git
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: JavaScript
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Typing :: Typed
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved
+Requires-Python: ~=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# cdktf-github-actions
+
+This is a library to help define GitHub Actions workflows using CDKTF. This package vends constructs for defining a workflow that will be synthesized to a workflow yaml file in your repos `.github/workflows` directory.
+
+## Development
+
+This project is in early development. The constructs are likely to change as the needs of the project evolve.
+
+A few items I'm currently working towards:
+
+* [ ] More github resource synthesis
+* [ ] Higher test coverage
+* [ ] More indepth documentation
+
+## Usage
+
+### Example
+
+```python
+import { Construct } from 'constructs';
+import { App, TerraformStack } from 'cdktf';
+import { Workflow, Job } from 'cdktf-github-actions';
+
+const app = new App();
+
+class MyWorkflowStack executes TerraformStack {
+  constructor(scope: Construct, name: string) {
+    super(scope, name);
+
+    let echoJob = new Job(this, 'build-job', {
+      steps: [
+        {
+          name: 'echo',
+          run: 'echo "Hello World"',
+        },
+      ],
+    });
+
+    const wf = new Workflow(this, 'workflow', {
+      repoName: 'my-repo',
+      jobs: [echoJob],
+    });
+  }
+}
+
+const stack = new MyWorkflowStack(app, 'test');
+app.synth();
+```
+
+The constructs support the ability to define github resources and create them using the github terrafrom provider. The following example shows how to create a create a workflow with secrets that will be stored in the repository.
+
+```python
+import { Construct } from 'constructs';
+import { App, TerraformStack } from 'cdktf';
+import { Workflow, Job } from 'cdktf-github-actions';
+
+const app = new App();
+
+class MyWorkflowStack executes TerraformStack {
+  constructor(scope: Construct, name: string) {
+    super(scope, name);
+
+    let echoJob = new Job(this, 'build-job', {
+      steps: [
+        {
+          name: 'echo',
+          run: 'echo "Hello World"',
+          withSecrets: [
+            {
+              referencedName: 'token',
+              secretName: 'MY_SECRET',
+              secretValue: '123',
+            },
+          ],
+        },
+      ],
+    });
+
+    const wf = new Workflow(this, 'workflow', {
+      repoName: 'my-repo',
+      jobs: [echoJob],
+    });
+  }
+}
+
+const stack = new MyWorkflowStack(app, 'test');
+app.synth();
+```
+
+The example above will create a secret with the name `MY_SECRET` and the value `123` in the repository. The secret will be referenced in the workflow using the name `token`.
