@@ -1,0 +1,136 @@
+site_name: Spyglass
+site_url: https://lorenfranklab.github.io/spyglass
+site_description: Spyglass Documentation
+site_author: CBroz1
+
+repo_url: https://github.com/LorenFrankLab/spyglass
+docs_dir: ./src/
+edit_uri: blob/main/docs/src/
+
+copyright: Copyright (c) 2020-present Loren Frank
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: images/FrankLab.png
+  favicon: images/Spyglass.svg
+  features:
+    - toc.follow
+    # - navigation.expand # CBroz1: removed bc long tutorial list hides rest
+    # - toc.integrate
+    # - navigation.sections
+    - navigation.top
+    - navigation.instant # saves loading time - 1 browser page
+    - navigation.tracking # even with above, changes URL by section
+    - navigation.top
+    - search.suggest
+    - search.share
+    - navigation.footer
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: auto
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: slate)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  disable_nav_previous_next: true
+  disable_nav_search: false
+  navigation_depth: 2
+  locale: en
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Miscellaneous:
+    - FigURL: misc/figurl_views.md
+    - Session Groups: misc/session_groups.md
+    - Insert Data: misc/insert_data.md
+    - Merge Tables: misc/merge_tables.md
+  - Tutorials:
+    - General:
+      - Setup: notebooks/00_Setup.ipynb
+      - Insert Data: notebooks/01_Insert_Data.ipynb
+      - Data Sync: notebooks/02_Data_Sync.ipynb
+    - Ephys: 
+      - Spike Sorting: notebooks/10_Spike_Sorting.ipynb
+      - Curation: notebooks/11_Curation.ipynb
+      - LFP: notebooks/12_LFP.ipynb
+      - Theta: notebooks/14_Theta.ipynb
+    - Position: 
+      - Position Trodes: notebooks/20_Position_Trodes.ipynb
+      - Position DLC 1: notebooks/21_Position_DLC_1.ipynb
+      - Position DLC 2: notebooks/22_Position_DLC_2.ipynb
+      - Linearization: notebooks/24_Linearization.ipynb
+    - Combined: 
+      - Ripple Detection: notebooks/30_Ripple_Detection.ipynb
+      - Extract Mark Indicators: notebooks/31_Extract_Mark_Indicators.ipynb
+      - Decoding with GPUs: notebooks/32_Decoding_with_GPUs.ipynb
+      - Decoding Clusterless: notebooks/33_Decoding_Clusterless.ipynb
+  - API Reference: api/ # defer to gen-files + literate-nav
+  - How to Contribute: contribute.md
+  - Change Log: CHANGELOG.md
+  - Copyright: LICENSE.md
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - exclude:
+      glob:
+        - "temp*"
+        - "0*yaml"
+  - mike:
+      canonical_version: latest
+      css_dir: stylesheets
+  - mkdocstrings:
+      enabled: true # Set to false to reduce build time
+      default_handler: python
+      handlers:
+        python:
+          options:
+            members_order: source
+            group_by_category: false
+            line_length: 80
+            docstring_style: numpy
+      watch:
+        - src/spyglass/
+  - literate-nav:
+      nav_file: navigation.md
+  - exclude-search:
+      exclude:
+        - "*/navigation.md"
+  - gen-files:
+      scripts:
+        - ./src/api/make_pages.py
+  - mkdocs-jupyter: # Comment this block during dev to reduce build time
+      ignore_h1_titles: True
+      ignore: ["*make_pages.py", "**checkpoints**"]
+
+markdown_extensions:
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+extra:
+  generator: false # Disable watermark
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/LorenFrankLab/spyglass
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/spyglass-neuro/
