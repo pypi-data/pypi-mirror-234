@@ -1,0 +1,177 @@
+Metadata-Version: 2.1
+Name: pytextrust
+Version: 0.7.4
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Programming Language :: Rust
+Requires-Dist: pydantic <2.0.0
+Requires-Dist: typing
+Requires-Dist: regex
+License-File: LICENSE
+Summary: Library designed as a python wrapper to unleash Rust text processing power combined with Python
+Keywords: text-processing,regex-matching,entity-system,literal-replacement
+Home-Page: https://gitlab.com/g6313/pytextrust
+Author: Guillermo Gonzalez <guillermogsjc@gmail.com>
+Author-email: Guillermo Gonzalez <guillermogsjc@gmail.com>
+License: MIT
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown; charset=UTF-8; variant=GFM
+Project-URL: Homepage, https://gitlab.com/g6313/pytextrust
+
+# PyTextRust
+
+- **main**:
+  - [![pipeline status](https://gitlab.com/g6313/pytextrust/badges/main/pipeline.svg)](https://gitlab.com/g6313/pytextrust/-/commits/main)
+  - [![coverage report](https://gitlab.com/g6313/pytextrust/badges/main/coverage.svg)](https://gitlab.com/g6313/pytextrust/-/commits/main)
+- **develop**:
+  - [![pipeline status](https://gitlab.com/g6313/pytextrust/badges/develop/pipeline.svg)](https://gitlab.com/g6313/pytextrust/-/commits/develop)
+  - [![coverage report](https://gitlab.com/g6313/pytextrust/badges/develop/coverage.svg)](https://gitlab.com/g6313/pytextrust/-/commits/develop)
+
+Library defined to achieve easily high performance on regex and text processing inside Python, being built as a direct Wrapper of Rust regex and text crates.
+
+On short text, sparsity of found elements is the common denominator, this library focuses on algorithms that aknowledge this sparsity and efficiently achieves good performance from simple Python API calls to Rust optimized logics.
+
+[Give some happiness](https://www.paypal.com/donate/?business=V4NHA93BU6WPA&no_recurring=0&item_name=The+children+need+to+eat+but+I+am+too+busy&currency_code=EUR)
+
+# Features
+
+## Special case
+
+This lib has special treatment for texts that only contain `[a-zA-Z0-9ñç ]` plus accented vocals, allowing to use non unicode matching over those texts. This is particularly convenient for some Automatic Speech Recognition outputs.
+
+In every place that it is possibly to provide it, this:
+
+- `unicode`: `False` -> removes unicode chars from matching, making matching much more efficient (x6 - x12 it is easly achieved).
+- `substitute_bound`: `True` -> substitutes in patterns `r"\b"`   for `r"(?-u:\b)"` as recommended [here](https://github.com/rust-lang/regex/blob/master/PERFORMANCE.md#unicode-word-boundaries-may-prevent-the-dfa-from-being-used)
+- `substitute_latin_char`: True -> substitutes in patterns `pkg::constants::LATIN_CHARS_TO_REPLACE` **for** `pkg::constants::LATIN_CHARS_REPLACEMENT`, to allow the use of non unicode variant without losing the ability to match texts and patterns that contain those latin chars (care **it projects them into `pkg::constants::LATIN_CHARS_TO_REPLACE` both in patterns and texts**).
+
+## Find
+
+Find patterns in texts, possibly parallelizing by chunks of either patterns or texts.
+
+It uses efficient [`regex::RegexSet`](https://docs.rs/regex/latest/regex/struct.RegexSet.html) that reduces the cardinality of the patterns in the matching phase.
+
+The structure of finding function is:
+
+- Rust phase:
+    1. Try to compile in `regex::Regex` for the list of patterns. Get the list of valid ones and invalid ones.
+    2. Compile `regex::RegexSet` with valid patterns and apply over the list of texts. This gives which ones have match over the texts.
+    3. Operate compiled `regex::Regex`, finding them over all the texts for the subset of pairs that have matched in the `regex::RegexSet`.
+    4. Try to compile invalid patterns with `fancy_regex::Regex` and find matches over the texts. It reduces final invalid
+    patterns list that is given back to python.
+    5. Give matches of valid patterns and invalid patterns back to Python.
+- Python phase:
+    1. Try to apply all failed patterns, finding them over all the texts. It uses [`regex`](https://github.com/mrabarnett/mrab-regex) package
+    that has expanded pattern support over `re` built-in package.
+    2. Return the final result.
+
+### Calling examples
+
+## Literal replacer
+
+This is a very concrete function to perform high performance literal replacement using Rust `aho_corasick` implementation. It accepts parallelization by chunks of text.
+
+It uses Rust [`aho_corasick`](https://docs.rs/aho-corasick/latest/aho_corasick/) to perform replacements, adding a layer of bounding around literals to replace through the `is_bounded` parameter.
+
+- If `is_bounded` is `True` then before replacing the literal found, it is checked that any of `[A-Za-z0-9_]` (expanded with accents and special word chards that can be checked in `pkg::unicode::check_if_word_bytes`) is around the literal.
+- Matching types can be chosen over available ones in [`aho_corasick::MatchKind`](https://docs.rs/aho-corasick/latest/aho_corasick/enum.MatchKind.html#variants), being the default one `aho_corasick::MatchKind::LeftmostLongest`.
+
+More at [`doc/notebook/doc/literal_replacer.ipynb`](https://gitlab.com/g6313/pytextrust/-/blob/main/notebook/doc/literal_replacer.ipynb) in the repository.
+
+### Calling examples
+
+```python
+from pytextrust.replacer import replace_literal_patterns, MatchKind
+
+replace_literal_patterns(
+    literal_patterns=["uno", "dos"],
+    replacements=["1", "2"],
+    text_to_replace=["es el numero uno o el Dos yo soy el veintiuno"],
+    is_bounded=True,
+    case_insensitive=True,
+    match_kind=MatchKind.LeftmostLongest)
+```
+
+returns the replaced text and the number of replacements
+
+```
+(['es el numero 1 o el 2 yo soy el veintiuno'], 2)
+```
+
+## Entities
+
+Entities are found by overlapping and have a hierarchichal folder structure.
+
+- **Literal entities**: fast only literal based entities. Those entities are based in literal alternations, and
+are built from a list of strings, is like matching (lit_1|...|lit_N)`. Can be:
+  - Private: only used by regex entities by composition. The only interest on them is for composition so those are only matched not finded.
+  - Public: calculated and reported. Those reports enforce that matched boundaries are `\b`, just if the literal matching where `\b(lit_1|...|lit_N)\b`. *Tech note: positions reported by aho corasick should be mapped from byte to char position.*
+- **Regex entities**: a list of regex patterns, possibly containing literal entities calls with template language. For example if `month` is a literal entity,
+    Then `\d+ of \d+ of {{month}}` is a possible entity. The regex entities that depend positively (no negative lookback or lookahead), only are searched on the texts where the literal entity has been found, minimizing computational weight.
+
+Feeding of entity matches:
+
+- From python list of objects, where each object is equivalent to the file JSON loaded. Each object contains a field `kind` with one of two values: `re` or `lit`.
+- From local folder with folders:
+  - Structured hierarchically.
+
+Steps of entity recognition:
+
+1. Load the entity system:
+    - Deserialize all defined entities.
+    - Build `LiteralEntityPool`. There are public and private literal entities:
+        - **Private literal entities** will not be reported only used internally by regex entities.
+        - **Public literal entities** will be reported as entities.
+        **NOTE: the bound of the literal public entities is calculated after all as Aho Corasick has not bound allowed**.
+    - Build `RegexEntityPool` using literals from `LiteralEntityPool`, then there are two kinds of regex entities
+        - The ones that use any literal entity.
+        - The ones that do not use any literal entity.
+2. Process texts and get entities:
+    - Get literal entity raw index matches.
+    - Literal-based regex entities perform find if the ordered set of matches of literal entities is satisfied from literal entities results.
+    - Non literal-based regex entities find is performed using `regex::RegexSet`
+3. Ensemble together public literal entities, literal-based regex entities and non literal-based regex entities and give output.
+
+A pattern in a regex entity has two type of categorizations:
+
+- Pattern that can be compiled at `regex` crate:
+  - Pattern with at least one positive capture group related to a literal entity. Match will be decided by aho corasick and literal entity order. This is a regex were `entities::extract_required_template_structure` throws a non-empty vector.
+  - Pattern that does not fit the previous case, this pattern will be matched through `RegexSet`. This is a pattern with `entities::extract_required_template_structure` throwing an empty vector.
+- Regex that can not be compiled by `regex` crate will receive a direct find from `fancy_regex` crate. This pattern
+  receives an Error from `entities::extract_required_template_structure`.
+
+Naming convention for entity files is:
+
+### Calling examples
+
+# CICD
+
+This repository pretends to be a perfect CICD example for a Python+Rust lib based on `pyo3`. Any suggestions (caching, badges, anything, ...) just let me know by issue :)
+
+# Useful doc
+
+## Learning doc
+
+- [The Rust Programming Language](https://doc.rust-lang.org/book/title-page.html)
+- [Rust CookBook](https://rust-lang-nursery.github.io/rust-cookbook/intro.html)
+- [Rust by example](https://doc.rust-lang.org/rust-by-example/)
+- [PyO3](https://pyo3.rs/v0.16.3/index.html)
+- [Maturin](https://maturin.rs/)
+- [A comparison of regex engines](https://rust-leipzig.github.io/regex/2017/03/28/comparison-of-regex-engines/)
+
+## Reference Rust pattern matching packages
+
+- <https://docs.rs/fst/latest/fst/>, particularly <https://docs.rs/fst/latest/fst/#example-searching-multiple-sets-efficiently> for entities
+- <https://docs.rs/regex-automata/latest/regex_automata/>
+- <https://docs.rs/aho-corasick/0.7.18/aho_corasick/>
+- <https://docs.rs/regex-syntax/latest/regex_syntax/>
+
+## Performance advices
+
+- <https://github.com/rust-lang/regex/blob/master/PERFORMANCE.md#unicode-word-boundaries-may-prevent-the-dfa-from-being-used>
+- *there is no problem with using non-greedy matching or having lots of alternations in your regex*  <https://github.com/rust-lang/regex/blob/master/PERFORMANCE.md#resist-the-temptation-to-optimize-regexes>
+
+[**Benchmark by Rust regex author**](https://github.com/BurntSushi/rebar)
+
