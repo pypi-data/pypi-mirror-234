@@ -1,0 +1,1 @@
+# An event sourcing library
