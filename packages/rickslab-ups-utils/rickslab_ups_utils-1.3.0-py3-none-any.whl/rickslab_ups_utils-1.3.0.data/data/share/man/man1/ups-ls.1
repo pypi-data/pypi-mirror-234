@@ -1,0 +1,123 @@
+.TH UPS\-LS 1 "June 2022" "rickslab-ups-utils" "Ricks-Lab UPS Utilities"
+.nh
+.SH NAME
+ups-ls \- displays most relevant parameters for installed, accessible, and compatible UPSs.
+
+.SH SYNOPSIS
+.B ups-ls
+.RB [ \-\-help "] [" \-\-about "]"
+.br
+.RB [ \-\-input " | " \-\-output " | " \-\-list_commands " | " \-\-list_params " | " \-\-list_decoders "]"
+.br
+.RB [ \-\-verbose "] [" \-\-debug "] [" \-\-no_markup "]"
+
+.SH DESCRIPTION
+.B ups-ls
+displays most relevant parameters for installed and compatible UPSs listed in
+the config.json file.  By default, all available parameters are displayed. The
+\fB--input\fR and \fB--output\fR options can be used to get relevant UPS input
+and output parameters. With the \fB--list_commands\fR option, the utility will
+list all available SNMP commands for the configured UPS.  With the
+\fB--list_params\fR option, the daemon configuration parameters will be listed.
+The \fB--list_decoders\fR option will display list of all MiB decoders
+available for the UPS defined with \fBdaemon = true\fR.  The \fB--verbose\fR
+will cause informational messages to be displayed and \fB--no_markup\fR option
+will result in plain text output instead of color coded text.  The logger is
+enabled with the \fB--debug\fR option.
+
+.SH OPTIONS
+.TP
+.BR "\-\-about"
+Will display details about 
+.B ups-ls\fP.
+.TP
+.BR "\-\-input"
+Will display short list of configured UPSs with input power parameters.
+.TP
+.BR "\-\-output"
+Will display short list of configured UPSs with output power parameters.
+.TP
+.BR "\-\-list_commands"
+Will display list of all MiB commands available for the UPS defined with \fBdaemon = true\fR.
+.TP
+.BR "\-\-list_params"
+Will display list of all configuration parameters read from the
+.ul
+ups-config.ini
+file
+.TP
+.BR "\-\-list_decoders"
+Will display list of all MiB decoders available for the UPS defined with \fBdaemon = true\fR.
+.TP
+.BR " \-\-no_markup"
+Outputs plain text instead of color formatted text.
+.TP
+.BR " \-\-verbose"
+Display informational messages generated during execution.
+.TP
+.BR \-d , " \-\-debug"
+Will run in debug mode which enables the logger at debug level.
+.TP
+.BR \-h , " \-\-help"
+Display help text and exit.
+
+.SH "EXAMPLES"
+.nf
+.B ups-ls
+.br
+.fi
+
+This will display the results of sending all available MiB commands via snmp to all configured UPSs.
+This includes UPS general information, serial number, firmware version, model type, model number, contact,
+location, up time, UPS manufacture date, UPS name, percentage of total capacity, battery temperature,
+UPS system status, battery status, time on battery, run time remaining, battery replacement, input voltage,
+input frequency, last transfer event, output voltage, output frequency, load percentage, output power,
+output current, communication status, last self test results, and date of last self test.  The actual
+listing contents will UPS and NMC dependent.
+
+.SH CONFIGURATION
+Before \fBups-utils\fR can be used, the
+.ul
+ups-utils.ini
+and
+.ul
+ups-config.json
+files must be populated with details specific to the user's environment.
+
+.SH "FILES"
+.TP
+.ul
+ups-utils.ini
+This file is used to define required directory paths, script names, and script parameters.
+.TP
+.ul
+ups-config.json
+This file is used to define ups communication parameters for all UPSs intended to be monitored.
+
+.SH "FILE LOCATIONS"
+.TP
+.nr step 1 1
+The configuration files of \fBrickslab-ups-utils\fR can be located in 3 possible locations and are
+selected with the following order of priority:
+.RS 7
+.IP \n[step] 3
+repository directory  - Chosen only if executed from repository directory.
+.IP \n+[step]
+/usr/share/rickslab-ups-utils/config/  -  Used with install from debian package.
+.IP \n+[step]
+~/share/rickslab-ups-utils/config/   -  Used with pip install, if above is not available.
+.RE
+
+.SH BUGS
+Please report any bugs/issues at https://github.com/Ricks-Lab/ups-utils
+
+.SH "SEE ALSO"
+.BR ups-mon (1),
+.BR ups-daemon (1),
+.BR ups-utils.ini (4),
+.BR ups-config.json (4),
+.BR snmp (8)
+
+.SH AVAILABILITY
+The ups-ls command is part of the rickslab-ups-utils package and is available from
+https://github.com/Ricks-Lab/ups-utils

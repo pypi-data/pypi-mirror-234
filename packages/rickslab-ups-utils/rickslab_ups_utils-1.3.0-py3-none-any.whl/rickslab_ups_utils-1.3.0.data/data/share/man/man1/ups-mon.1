@@ -1,0 +1,136 @@
+.TH UPS\-MON 1 "JUNE 2022" "rickslab-ups-utils" "Ricks-Lab UPS Utilities"
+.nh
+.SH NAME
+ups-mon \- displays continuously updating status of all active UPSs
+
+.SH SYNOPSIS
+.B ups-mon
+.RB [ \-\-help "] [" \-\-about "] [" \-\-status "] [" \-\-show_unresponsive " ] [" \-\-gui "]"
+.RB [ \-\-ltz "] [" \-\-sleep " N ] [" \-\-debug "] [" \-\-debug "]"
+.br
+
+.SH DESCRIPTION
+.B ups-mon
+A utility to give the current state of all compatible UPSs. The default behavior
+is to continuously update a text based table in the current window until Ctrl-C is
+pressed.  With the \fB--gui\fR option, a table of relevant parameters will be updated
+in a Gtk window.  You can specify the delay between updates with the \fB--sleep N\fR
+option where N is an integer > 10 that specifies the number of seconds to sleep
+between updates.  The \fB--log\fR option is used to write all monitor data to a psv log
+file.  When writing to a log file, the utility will indicate this in red at the top of
+the window with a message that includes the log file name.  The \fB--status\fR option will
+output a table of the current status.  The \fB--long\fR option will include additional
+informational parameters. By default, unresponsive UPSs will not be displayed, but the
+\fB--show_unresponsive\fR can be used to force their display.
+
+.SH OPTIONS
+.TP
+.BR "\-\-about"
+Will display details about 
+.B ups-mon\fP.
+.TP
+.BR "\-\-status"
+Will display a snapshot of the current status of configured UPSs.
+.TP
+.BR "\-\-show_unresponsive"
+Will result in unresponsive configured UPSs to be included in the summary.
+.TP
+.BR "\-\-gui"
+Will use Gtk gui instead of a text table in the current terminal.
+.TP
+.BR "\-\-log"
+Will output the continuous stream of data to a log file to facilitate offline analytics.
+.TP
+.BR "\-\-sleep" " N"
+Specifies the update interval for the continuously updating status.
+.TP
+.BR " \-\-ltz"
+Will result in the use of the local time zone in the monitor window and logs.  This will
+be the local time of where the app is running, not the location of the UPS.  The default
+is UTC.
+.TP
+.BR \-d , " \-\-debug"
+Will run in debug mode which enables the logger at debug level.
+.TP
+.BR \-h , " \-\-help"
+Display help text and exit.
+
+.SH "EXAMPLES"
+.nf
+.B ups-mon --status
+.br
+Reading and verifying UPSs listed in /home/rick/pydev/ups-utils/UPSmodules/../ups-config.json.
+3 UPSs listed in /home/rick/pydev/ups-utils/UPSmodules/../ups-config.json.
+    3 are compatible, 3 are accessible, 3 are responsive, and 3 are valid.
+┌─────────────────────────────┬────────────────────────┬────────────────────────┬────────────────────────┐
+│UPS Parameters               │          UPS1          │          UPS3          │        UPS1-PDX        │
+├─────────────────────────────┼────────────────────────┼────────────────────────┼────────────────────────┤
+│UPS Real Name                │     RicksLab_UPS1      │     RicksLab_UPS3      │        APC UPS         │
+│UPS IP/FQDN                  │     192.168.1.241      │   UPS3.rickslab.com    │    192.168.100.140     │
+│UPS Model                    │     SRT3000XLA-TW      │     SRT3000XLA-TW      │    SRT3000RMXLA-NC     │
+│UPS Type                     │       apc_ap96xx       │       apc_ap96xx       │       apc_ap96xx       │
+│NMC Model                    │         AP9630         │         AP9630         │         AP9641         │
+│UPS Location                 │     RicksLab-Rack      │       SophiasLab       │        RicksLab        │
+│Daemon                       │          True          │         False          │         False          │
+│UPS Environment Temp (C)     │          ---           │          ---           │           26           │
+│Input Voltage (V)            │          115           │          116           │          121           │
+│Input Frequency (Hz)         │           59           │           60           │           60           │
+│Output Voltage (V)           │          120           │          120           │          120           │
+│Output Frequency (Hz)        │           60           │           60           │           60           │
+│Output Current (A)           │           7            │           0            │           3            │
+│Output Power (W)             │          828           │           0            │          288           │
+│Output Load as % of Capacity │           31           │           0            │           12           │
+│Percentage of Total Capacity │          100           │          100           │          100           │
+│Time on Battery (min)        │          0.0           │          0.0           │          0.0           │
+│Runtime Remaining (min)      │          82.5          │         1440.0         │         71.28          │
+│UPS System Status            │     OnLine-SCE-On      │     OnLine-SCE-On      │     OnLine-SCE-On      │
+│Battery Status               │     Battery Normal     │     Battery Normal     │     Battery Normal     │
+└─────────────────────────────┴────────────────────────┴────────────────────────┴────────────────────────┘
+.fi
+
+.SH CONFIGURATION
+Before \fBups-utils\fR can be used, the
+.ul
+ups-utils.ini
+and
+.ul
+ups-config.json
+files must be populated with details specific to the user's environment.
+
+.SH "FILES"
+.TP
+.ul
+ups-utils.ini
+This file is used to define required directory paths, script names, and script parameters.
+.TP
+.ul
+ups-config.json
+This file is used to define ups communication parameters for all UPSs intended to be monitored.
+
+.SH "FILE LOCATIONS"
+.TP
+.nr step 1 1
+The configuration files of \fBrickslab-ups-utils\fR can be located in 3 possible locations and are
+selected with the following order of priority:
+.RS 7
+.IP \n[step] 3
+repository directory  - Chosen only if executed from repository directory.
+.IP \n+[step]
+/usr/share/rickslab-ups-utils/config/  -  Used with install from debian package.
+.IP \n+[step]
+~/share/rickslab-ups-utils/config/   -  Used with pip install, if above is not available.
+.RE
+
+.SH BUGS
+Please report any bugs/issues at https://github.com/Ricks-Lab/ups-utils
+
+.SH "SEE ALSO"
+.BR ups-ls (1),
+.BR ups-daemon (1),
+.BR ups-utils.ini (4),
+.BR ups-config.json (4),
+.BR snmp (8)
+
+.SH AVAILABILITY
+The ups-mon command is part of the rickslab-ups-utils package and is available from
+https://github.com/Ricks-Lab/ups-utils
