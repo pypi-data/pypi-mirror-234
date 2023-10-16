@@ -1,0 +1,141 @@
+Metadata-Version: 2.1
+Name: xtgeo
+Version: 3.4.1
+Summary: XTGeo is a Python library for 3D grids, surfaces, wells, etc
+Keywords: grids surfaces wells cubes
+Author-Email: Equinor <jriv@equinor.com>
+License: LGPL-3.0
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Physics
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Utilities
+Project-URL: Homepage, https://github.com/equinor/xtgeo
+Project-URL: Repository, https://github.com/equinor/xtgeo
+Project-URL: Issues, https://github.com/equinor/xtgeo/issues
+Project-URL: Documentation, https://xtgeo.readthedocs.io
+Requires-Python: >=3.8
+Requires-Dist: deprecation
+Requires-Dist: ecl-data-io>=2.1
+Requires-Dist: h5py>=3
+Requires-Dist: hdf5plugin>=2.3
+Requires-Dist: matplotlib>=3.3
+Requires-Dist: numpy>=1.19
+Requires-Dist: pandas>=1.1
+Requires-Dist: roffio>=0.0.2
+Requires-Dist: scipy>=1.5
+Requires-Dist: segyio>1.8.0
+Requires-Dist: shapely>=1.6.2
+Requires-Dist: tables<3.9; platform_system != "Darwin" and python_version == "3.8"
+Requires-Dist: tables; platform_system != "Darwin" and python_version > "3.8"
+Requires-Dist: typing-extensions
+Requires-Dist: black; extra == "dev"
+Requires-Dist: coverage>=4.1; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: hypothesis; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+Requires-Dist: pylint; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-benchmark; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: pydocstyle; extra == "dev"
+Requires-Dist: pytest-runner; extra == "dev"
+Requires-Dist: pytest-mock; extra == "dev"
+Requires-Dist: pytest-snapshot; extra == "dev"
+Requires-Dist: pytest-xdist; extra == "dev"
+Requires-Dist: pydocstyle; extra == "docs"
+Requires-Dist: Sphinx<4.0; extra == "docs"
+Requires-Dist: sphinx-rtd-theme; extra == "docs"
+Requires-Dist: sphinx-toolbox; extra == "docs"
+Requires-Dist: autoclasstoc; extra == "docs"
+Requires-Dist: myst-parser; extra == "docs"
+Provides-Extra: dev
+Provides-Extra: docs
+Description-Content-Type: text/markdown
+License-File: LICENSE.md
+
+![XTGeo](https://github.com/equinor/xtgeo/blob/main/docs/images/xtgeo-logo-wide.png)
+![builds](https://github.com/equinor/xtgeo/workflows/builds/badge.svg)
+![linting](https://github.com/equinor/xtgeo/workflows/linting/badge.svg)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/c209aeed6a2a40b08ea859aeadf31cb0)](https://www.codacy.com/app/jcrivenaes/xtgeo?utm_source=github.com&utm_medium=referral&utm_content=equinor/xtgeo&utm_campaign=Badge_Grade)
+[![codecov](https://codecov.io/gh/equinor/xtgeo/branch/main/graph/badge.svg)](https://codecov.io/gh/equinor/xtgeo)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)
+[![PyPI version](https://badge.fury.io/py/xtgeo.svg)](https://badge.fury.io/py/xtgeo)
+[![Documentation Status](https://readthedocs.org/projects/xtgeo/badge/?version=latest)](https://xtgeo.readthedocs.io/en/latest/?badge=latest)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/xtgeo.svg)
+![PyPI - License](https://img.shields.io/pypi/l/xtgeo.svg)
+
+## Introduction
+
+XTGeo is a LGPL licensed Python library with C backend to support
+manipulation of (oil industry) subsurface reservoir modelling. Typical
+users are geoscientist and reservoir engineers working with
+reservoir modelling, in relation with RMS. XTGeo is developed in Equinor.
+
+Detailed documentation for [XTGeo at Read _the_ Docs](https://xtgeo.readthedocs.io)
+
+## Feature summary
+
+-   Python 3.8+ support
+-   Focus on high speed, using numpy and pandas with C backend
+-   Regular surfaces, i.e. 2D maps with regular sampling and rotation
+-   3D grids (corner-point), supporting several formats such as
+    RMS and Eclipse
+-   Support of seismic cubes, using
+    [segyio](https://github.com/equinor/segyio) as backend for SEGY format
+-   Support of well data, line and polygons (still somewhat immature)
+-   Operations between the data types listed above; e.g. slice a surface
+    with a seismic cube
+-   Optional integration with ROXAR API python for several data types
+    (see note later)
+-   Linux is main development platform, but Windows and MacOS (64 bit) are supported
+    and PYPI wheels for all three platforms are provided.
+
+## Installation
+
+For Linux, Windows and MacOS 64bit, PYPI installation is enabled:
+
+```
+pip install xtgeo
+```
+
+For detailed installation instructions (implies C compiling), see
+the documentation.
+
+## Getting started
+
+```python
+from xtgeo.surface import RegularSurface
+
+# create an instance of a surface, read from file
+mysurf = RegularSurface("myfile.gri")  # Irap binary as default
+
+print("Mean is {}".format(mysurf.values.mean()))
+
+# change date so all values less than 2000 becomes 2000
+# The values attribute gives the Numpy array
+
+mysurface.values[mysurface.values < 2000] = 2000
+
+# export the modified surface:
+mysurface.to_file("newfile.gri")
+```
+
+## Note on RMS Roxar API integration
+
+The following applies to the part of the XTGeo API that is
+connected to Roxar API (RMS):
+
+> RMS is neither an open source software nor a free software and
+> any use of it needs a software license agreement in place.
