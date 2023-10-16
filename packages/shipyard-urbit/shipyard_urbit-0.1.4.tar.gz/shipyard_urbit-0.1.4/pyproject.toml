@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "shipyard-urbit"
+version = "0.1.4"
+description = "Urbit hosting and automation platform"
+authors = ["nodreb-borrus <nodreb@borr.us>"]
+license = "Apache-2.0"
+readme = "README.md"
+packages = [
+  { include = "shipyard", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+docker = {extras = ["ssh"], version = "^6.1.3"}
+fastapi = "^0.103.2"
+uvicorn = {extras = ["standard"], version = "^0.23.2"}
+typer = {extras = ["all"], version = "^0.9.0"}
+sqlmodel = "^0.0.8"
+python-dotenv = "^1.0.0"
+psycopg2-binary = "^2.9.3"
+gunicorn = "^21.2.0"
+aioprocessing = "^2.0.1"
+aiohttp = "^3.8.5"
+ansible-runner = "^2.3.4"
+
+[tool.poetry.group.dev.dependencies]
+toml = "^0.10.2"
+pytest = "^7.2.0"
+
+[tool.poetry.scripts]
+shipyard = "shipyard.cli.main:app"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "--import-mode=importlib --no-header"
