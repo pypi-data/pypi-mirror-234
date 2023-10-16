@@ -1,0 +1,175 @@
+# {% version_info %}
+Parameters:
+  # Copilot required Parameters...
+  App:
+    Type: String
+    Description: Your application's name.
+  Env:
+    Type: String
+    Description: The environment name your service, job, or workflow is being deployed to.
+
+Mappings:
+  {{ service.prefix }}BucketNameMap:
+    # Create an entry for each environment
+    {% for env_name, config in service.environments.items() %}
+    {{ env_name }}:
+      BucketName: '{{ config.bucket_name }}'
+      LoggingBucketName: '{{ config.bucket_name }}-logs'
+    {% endfor %}
+
+Resources:
+  {{ service.prefix }}LoggingBucket:
+    Metadata:
+      'aws:copilot:description': 'An Amazon S3 bucket to store logs from {{ service.prefix }}Bucket'
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, LoggingBucketName]
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+      Tags:
+        - Key: Copilot-application
+          Value: !Ref App
+        - Key: Copilot-environment
+          Value: !Ref Env
+
+  {{ service.prefix }}LoggingBucketPolicy:
+    Metadata:
+      'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: S3ServerAccessLogsPolicy
+            Effect: Allow
+            Principal:
+              Service: logging.s3.amazonaws.com
+            Action: 's3:PutObject'
+            Resource:
+              - !Sub ${ {{ service.prefix }}LoggingBucket.Arn}/*
+              - !Sub ${ {{ service.prefix }}LoggingBucket.Arn}
+            Condition:
+              ArnLike:
+                'aws:SourceArn': !Sub ${ {{ service.prefix }}Bucket.Arn}
+              StringEquals:
+                'aws:SourceAccount': !Sub ${AWS::AccountId}
+      Bucket: !Ref {{ service.prefix }}LoggingBucket
+
+  {{ service.prefix }}Bucket:
+    Metadata:
+      'aws:copilot:description': 'An Amazon S3 bucket to store and retrieve objects for {{ service.prefix }}'
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, BucketName]
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !FindInMap [{{ service.prefix }}BucketNameMap, !Ref Env, LoggingBucketName]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Copilot-application
+          Value: !Ref App
+        - Key: Copilot-environment
+          Value: !Ref Env
+
+  {{ service.prefix }}BucketPolicy:
+    Metadata:
+      'aws:copilot:description': 'A bucket policy to deny unencrypted access to the bucket and its contents'
+    Type: AWS::S3::BucketPolicy
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ForceHTTPS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !Sub ${ {{ service.prefix }}Bucket.Arn}/*
+              - !Sub ${ {{ service.prefix }}Bucket.Arn}
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+      Bucket: !Ref {{ service.prefix }}Bucket
+
+{% if 'objects' in service %}
+  {{ service.prefix }}S3ObjectUploader:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${App}-${Env}-object-uploader"
+      Handler: index.handler
+      Runtime: python3.11
+      MemorySize: 128
+      Timeout: 10
+      Role: !GetAtt {{ service.prefix }}S3ObjectUploaderRole.Arn
+      Code:
+        ZipFile: |
+{{ service.custom_resources.s3_object(10) }}
+
+  {{ service.prefix }}S3ObjectUploaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${App}-${Env}-object-uploader-role"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: !Sub "${App}-${Env}-object-uploader-policy"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
+                Resource:
+                  - !Sub ${ dwS3BucketBucket.Arn }/*
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+
+{% for s3object in service.objects %}
+  {{ service.prefix }}S3Object{{ loop.index0 }}:
+    Type: 'Custom::S3ObjectUploader'
+    Properties:
+      ServiceToken: !GetAtt {{ service.prefix }}S3ObjectUploader.Arn
+      CopilotApplication: !Sub "${App}"
+      CopilotEnvironment: !Sub "${Env}"
+      S3Bucket: !Ref {{ service.prefix }}Bucket
+      S3ObjectKey: {{ s3object.key }}
+      S3ObjectBody: {{ s3object.body }}
+{% endfor %}
+{% endif %}
+
+Outputs:
+  {{ service.prefix }}Name:
+    Description: "The name of a user-defined bucket."
+    Value: !Ref {{ service.prefix }}Bucket
