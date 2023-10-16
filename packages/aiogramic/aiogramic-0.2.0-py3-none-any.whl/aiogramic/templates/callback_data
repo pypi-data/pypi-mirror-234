@@ -1,0 +1,20 @@
+from aiogram.filters.callback_data import CallbackData
+
+
+class {{ callback_data_name.capitalize() }}CallbackData(CallbackData, prefix="{{ prefix }}"):
+
+    {% for field in fields -%}
+    {{ field[0] }}: {{ field[1] }}
+    {% endfor %}
+
+    def __init__(
+            self,
+            {% for field in fields -%}
+            {{ field[0] }}: {{ field[1] }}{{ ", " if not loop.last else "" }}
+            {% endfor -%}
+    ):
+        super().__init__(
+            {% for field in fields -%}
+            {{ field[0] }}={{ field[0] }}{{ ", " if not loop.last else "" }}
+            {% endfor -%}
+        )
