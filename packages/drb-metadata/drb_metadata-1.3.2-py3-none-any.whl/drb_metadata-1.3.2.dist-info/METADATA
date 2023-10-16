@@ -1,0 +1,57 @@
+Metadata-Version: 2.1
+Name: drb-metadata
+Version: 1.3.2
+Summary: DRB Metadata Extractor
+Author: GAEL Systems
+Author-email: drb-python@gael.fr
+License: LGPLv3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Environment :: Plugins
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENCE.txt
+Requires-Dist: drb ~=2.2.0
+Requires-Dist: drb-xquery ~=1.3.0
+Requires-Dist: drb-extractor ~=1.2.0
+
+# DRB Metadata Extractor
+It's an applicative part using DRB allowing to extract metadata from
+data according its topic.
+
+## Metadata
+### How to extract metadata ?
+```python
+from drb.metadata import MetadataAddon
+import drb.topics.resolver as resolver
+
+
+if __name__ == '__main__':
+    topic, node = resolver.resolve('<my_resource_url>')
+    # topic keyword argument is not mandatory
+    metadata = MetadataAddon().apply(node, topic=topic)
+    for md_name, md in metadata.items():
+        print(md_name, ' -- ', md.extract())
+```
+
+### How to define metadata ?
+Metadata are defined in a `cortex.yaml` file following the template:
+```yaml
+drbItemClass: <topic_uuid>           # target topic
+variables:                           # variable list
+  - name: <var_name>                   # variable name
+    <extractor>: <extractor_content>   # an extractor
+metadata:                            # metadata list
+  - name: my_metadata                  # metadata name
+    <extractor>: <extractor_content>   # an extractor
+```
+
+- metadata are applied to their target topic and its derivatives
+- inherited metadata is override if it's redefined in a derivative topic
+- variables are not transitive between a topic and its derivatives
+
+### Packaging
+The package python containing metadata of a DRB topic must have the following
+instruction:
+ - a `drb.metadata` entry point whose its value is the targeted Python
+   package containing the `cortex.yaml` file
