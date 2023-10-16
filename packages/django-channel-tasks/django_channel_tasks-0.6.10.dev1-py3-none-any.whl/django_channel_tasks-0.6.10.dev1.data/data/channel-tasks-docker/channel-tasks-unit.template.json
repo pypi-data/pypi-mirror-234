@@ -1,0 +1,41 @@
+{
+    "listeners": {
+        "$CHANNEL_TASKS_LISTENER_ADDRESS": {
+            "pass": "routes",
+            "forwarded": {
+                "client_ip": "X-Forwarded-For",
+                "source": ["$CHANNEL_TASKS_LISTENER_ADDRESS"]
+            }
+        }
+    },
+    "routes": [
+        {
+            "match": {
+                "uri": "$CHANNEL_TASKS_STATIC_URI*"
+            },
+            "action": {
+                "share": "$CHANNEL_TASKS_STATIC_ROOT$uri"
+            }
+        },
+        {
+            "action": {
+                "pass": "applications/djangochannels"
+            }
+        }
+    ],
+    "applications": {
+        "djangochannels": {
+            "type": "python $CHANNEL_TASKS_PYTHON_VERSION",
+            "home": "$CHANNEL_TASKS_PYTHON_HOME",
+            "path": "$CHANNEL_TASKS_ASGI_PATH",
+            "module": "django_tasks.ws_asgi",
+            "environment": {
+                "DJANGO_SECRET_KEY": "$DJANGO_SECRET_KEY",
+                "CHANNEL_TASKS_INI_PATH": "$CHANNEL_TASKS_INI_PATH",
+                "CHANNEL_TASKS_DB_PASSWORD": "$CHANNEL_TASKS_DB_PASSWORD",
+                "CHANNEL_TASKS_EMAIL_USER": "$CHANNEL_TASKS_EMAIL_USER",
+                "CHANNEL_TASKS_EMAIL_PASSWORD": "$CHANNEL_TASKS_EMAIL_PASSWORD"
+            }
+        }
+    }
+}
