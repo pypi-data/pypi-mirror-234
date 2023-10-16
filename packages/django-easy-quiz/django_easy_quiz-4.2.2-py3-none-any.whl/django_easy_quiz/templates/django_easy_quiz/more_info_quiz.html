@@ -1,0 +1,42 @@
+{% load i18n %}
+
+<h2>{{ quiz.more_info_quiz.name }}</h2>
+<form method="post">
+  {% csrf_token %}
+  {% for form in more_info_quiz %}
+    <fieldset>
+      <legend>{{ form.initial.question.label|safe }}</legend>
+      {% if form.initial.answers|length == 0 and form.initial.question.answer_is_txt %}
+        <p>
+          <input type="text" name="question_{{ form.initial.question.id }}" id="answer_{{ form.initial.question.id }}_{{ answer.id }}" required />
+          <label for="answer_{{ form.initial.question.id }}_{{ answer.id }}">
+            <span class="answer">{{ answer.label|safe }}</span>
+          </label>
+        </p>
+      {% elif form.initial.question.answer_is_list %}
+        <p>
+          <select name="question_{{ form.initial.question.id }}_{{ answer.id }}" id="answer_{{ form.initial.question.id }}_{{ answer.id }}">
+            <option value="">{% translate "--Please choose an option--" %}</option>
+            {% for answer in form.initial.answers %}
+              <option value="{{ answer.id }}">{{ answer.label|safe }}</option>
+            {% endfor %}
+          </select>
+        </p>
+      {% else %}
+        {% for answer in form.initial.answers %}
+          <p>
+            <input type="radio" name="question_{{ form.initial.question.id }}" value="{{ answer.id }}" id="answer_{{ form.initial.question.id }}_{{ answer.id }}" {% if not required />
+            <label for="answer_{{ form.initial.question.id }}_{{ answer.id }}">
+              <span class="answer">{{ answer.label|safe }}</span>
+            </label>
+          </p>
+        {% endfor %}
+      {% endif %}
+    </fieldset>
+  {% endfor %}
+  {% if saved_quiz_id %}
+    <input type="hidden" name="quiz_type" value="more_info" />
+    <input type="hidden" name="saved_quiz" value="{{ saved_quiz_id }}" />
+  {% endif %}
+  <button type="submit">{% translate "Submit" %}</button>
+</form>
