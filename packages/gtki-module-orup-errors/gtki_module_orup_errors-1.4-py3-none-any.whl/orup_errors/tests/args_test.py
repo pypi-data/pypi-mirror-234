@@ -1,0 +1,20 @@
+""" Аргументы для тестирования """
+args = {'tko_name': 'ТКО-4',
+        'debtors_list': ['DEBTOR_CORP'],
+        'carrier_name': 'TEST_CORP',
+        'sqlshell': object,
+        'course': "OUT",
+        'car_protocol': 'rfid',
+        'have_brutto': True,
+        'car_inside': False,
+        'carriers_list': ['TEST_CORP', 'DEBTOR_CORP'],
+        'ar_status': 'Свободен',
+        'weight_data': 50,
+        'chosen_trash_cat': 'ТКО-4',
+        'cats_list': ['ТКО-4', 'ПО'],
+        'type_name': 'Прочее',
+        'types_list': ['Прочее', 'Разное', 'ПО'],
+        'car_number': 'В060ХА702',
+        'have_rfid': True,
+        'choose_mode': 'manual'
+        }
