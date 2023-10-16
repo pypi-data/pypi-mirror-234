@@ -1,0 +1,66 @@
+Metadata-Version: 2.1
+Name: rps-milea-framework
+Version: 0.0.6
+Summary: Django rps.Milea Framework
+Home-page: https://github.com/red-pepper-services/rps-milea-framework
+Author: red-pepper-services
+Author-email: pypi@schiegg.at
+License: MIT
+Classifier: Development Status :: 3 - Alpha
+Classifier: Framework :: Django
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Requires-Dist: Django>=4.1
+Requires-Dist: django-admin-sortable2>=2.1.4
+Requires-Dist: django-cust-email-user>=0.1.2
+Requires-Dist: django-object-actions>=4.1.0
+Requires-Dist: django-currentuser>=0.6.1
+
+===========================
+Django rps.Milea Framework
+===========================
+
+Installation
+============
+
+* Installation ::
+
+    pip install rps-milea-framework
+
+
+* Add this at the end of settings.py ::
+
+    # Init Milea Framework
+    INSTALLED_APPS = [
+        # Framwork
+        'rps_milea',
+
+        # Django
+        'django.forms',
+
+        # Third Party
+        'email_users',
+        'adminsortable2',
+
+    ] + INSTALLED_APPS
+
+    FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
+    AUTH_USER_MODEL = 'email_users.User'
+
+
+* Database Update ::
+
+    python manage.py migrate
+
+
+Internal Notes
+==============
+
+Publishing to PyPI::
+
+	python -m pip install -U wheel twine setuptools
+	python setup.py sdist
+	python setup.py bdist_wheel
+	python -m twine upload --skip-existing dist/*
