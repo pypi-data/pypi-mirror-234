@@ -1,0 +1,229 @@
+Metadata-Version: 2.1
+Name: brickagx
+Version: 0.0.17
+Summary: Brick.AGX python interface development
+Home-page: https://pub.algoryx.dev/brick/
+License: Apache 2.0
+Author: Algoryx
+Author-email: algoryx@algoryx.com
+Requires-Python: >=3.8,<=3.10
+Classifier: Intended Audience :: Manufacturing
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: Other/Proprietary License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Topic :: Scientific/Engineering :: Physics
+Classifier: Topic :: Scientific/Engineering :: Visualization
+Requires-Dist: agx (==2.36.1.5)
+Requires-Dist: brickbundles (>=0.0.17,<0.0.18)
+Description-Content-Type: text/markdown
+
+# BRICK AGX
+
+The brickagx package implements all Brick bundles such as Physics, Robotics, DriveTrain and Simulation using [AGX Dynamics Real-time multi-body simulation]((https://www.algoryx.se/agx-dynamics/)).
+The package contains python bindings and native libraries needed to load and run .brick files.
+
+## Prerequisites
+
+- Python 3.8 on Ubuntu 20.04
+- Python 3.9 on Windows or OSX
+- [AGX Dynamics](https://www.algoryx.se/agx-dynamics/) and an AGX Dynamics License
+
+BRICK version   | Required installed AGX version
+----------------|-------------------------------
+0.0.14 - 0.0.15 | 2.36.1.4
+0.0.16 - 0.0.17 | 2.36.1.5
+
+## Install
+
+To get the version corresponding to your AGX on Windows do:
+
+```bash
+setup_env.bat
+pip install %AGX_DATA_DIR%/agx-pypi
+pip install -U brickagx
+```
+
+To get the version corresponding to your AGX on OSX and Linux do:
+
+```bash
+source setup_env.sh
+pip3 install $AGX_DATA_DIR/agx-pypi
+pip3 install -U brickagx
+```
+
+## License
+
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+## Usage Examples
+
+Given the python file and brick file below, run with:
+
+```bash
+python3 inverted_pendulum.py
+```
+
+To just simulate the brick file without controllers, do:
+
+```bash
+brickview inverted_pendulum.brick
+```
+
+or `python3 -m rebrick.view inverted_pendulum.brick`
+
+Store contents below in a new file named `inverted_pendulum.brick`:
+
+```brick
+Rod is Physics3D.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Box:
+        size: Math.Vec3.fromXYZ(0.1, 0.1, 1)
+    arrow is Physics3D.Box:
+        local_transform:
+            position.z: 0.5
+            rotation: Math.Quat.angleAxis(Math.PI / 4, Math.Vec3.Y_AXIS())
+        size: Math.Vec3.fromXYZ(0.071, 0.1, 0.071)
+    mate_connector is Physics3D.MateConnector:
+        position.z: -geometry.size.z * 0.7
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+Cart is Physics3D.RigidBody:
+    inertia.mass: 10
+    geometry is Physics3D.Box:
+        size: Math.Vec3.fromXYZ(0.1, 0.1, 0.1)
+    connector is Physics3D.MateConnector:
+        main_axis: Math.Vec3.X_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+    rotated_connector is Physics3D.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+PendulumScene is Physics3D.System:
+    world_connector is Physics3D.MateConnector:
+        main_axis: Math.Vec3.X_AXIS()
+        normal: Math.Vec3.Z_AXIS()
+
+    cart is Cart
+    rod is Rod
+
+    prismatic is Physics3D.Prismatic:
+        charges: [world_connector, cart.connector]
+
+    cart_motor is Physics3D.LinearVelocityMotor:
+        desired_speed: 0
+        charges: prismatic.charges
+
+    hinge is Physics3D.Hinge:
+        initial_angle: 0
+        charges: [cart.rotated_connector, rod.mate_connector]
+
+    motor_input is Simulation.LinearVelocityMotorVelocityInput:
+        motor: cart_motor
+    
+    hinge_angle_output is Simulation.HingeAngleOutput:
+        hinge: hinge
+    hinge_angular_velocity_output is Simulation.HingeAngularVelocityOutput:
+        hinge: hinge
+    
+    cart_position_output is Simulation.RigidBodyPositionOutput:
+        rigid_body: cart
+    cart_velocity_output is Simulation.RigidBodyVelocityOutput:
+        rigid_body: cart
+```
+
+Store contents below in a new file named `inverted_pendulum.py`:
+
+```python
+import agxOSG
+import agxSDK
+import os
+import signal
+from brickbundles import bundle_path
+
+# Import useful utilities to access the current simulation, graphics root and application
+from agxPythonModules.utils.environment import init_app, simulation, root
+
+from rebrick import Math, Simulation, Signals
+from rebrick import InputSignalListener, OutputSignalListener, load_brickfile
+
+def file_dir():
+    return os.path.dirname(os.path.abspath(__file__))
+
+def pendulum():
+    return f"{file_dir()}/inverted_pendulum.brick"
+
+
+class PDController:
+    def __init__(self, kp, kd, goal):
+        self.kp = kp
+        self.kd = kd
+        self.goal = goal
+
+    def observe(self, x, xdot):
+        error = self.goal - x
+        return self.kp * error - self.kd * xdot
+
+
+class CartController(agxSDK.StepEventListener):
+
+    motor_input: Simulation.LinearVelocityMotorVelocityInput
+    cart: PDController
+    pole: PDController
+
+    def __init__(self, motor_input: Simulation.LinearVelocityMotorVelocityInput):
+        super().__init__()
+        self.motor_input = motor_input
+        self.cart = PDController(kp=10, kd=5, goal=0)
+        self.pole = PDController(kp=20, kd=5, goal=0)
+
+    def pre(self, t):
+        if t == 0.0:
+            hinge_angle = 0
+            hinge_angular_velocity = 0
+            cart_position = Math.Vec3.fromXYZ(0,0,0)
+            cart_velocity = Math.Vec3.fromXYZ(0,0,0)
+        else:
+            signal_values = {signal.source().getName():signal.value() for signal in Signals.getOutputSignals()}
+            hinge_angle = signal_values["PendulumScene.hinge_angle_output"]
+            hinge_angular_velocity = signal_values["PendulumScene.hinge_angular_velocity_output"]
+            cart_position = signal_values["PendulumScene.cart_position_output"]
+            cart_velocity = signal_values["PendulumScene.cart_velocity_output"]
+
+        u_cart = self.cart.observe(cart_position.x(), cart_velocity.x())
+        u_pole = self.pole.observe(hinge_angle, hinge_angular_velocity)
+
+        Signals.sendInputSignal(Simulation.RealInputSignal.create(-u_cart - u_pole, self.motor_input))
+
+
+def buildScene():
+
+    brick_scene, assembly = load_brickfile(simulation(), pendulum(), bundle_path(), "")
+    # Add a signal listener so that signals are picked up from inputs
+    input_signal_listener = InputSignalListener(assembly)
+    output_signal_listener = OutputSignalListener(assembly, brick_scene)
+    simulation().add(input_signal_listener, InputSignalListener.RECOMMENDED_PRIO)
+    simulation().add(output_signal_listener, OutputSignalListener.RECOMMENDED_PRIO)
+    simulation().add(assembly.get())
+    agxOSG.createVisual(assembly.get(), root())
+
+    motor_input: Simulation.LinearVelocityMotorVelocityInput = brick_scene.getDynamic("motor_input").asObject()
+    controller = CartController(motor_input)
+    simulation().add(controller)
+
+
+def handler(signum, frame):
+    os._exit(0)
+
+    signal.signal(signal.SIGINT, handler)
+
+init = init_app(name=__name__,
+                scenes=[(buildScene, '1')],
+                autoStepping=True,  # Default: False
+                onInitialized=lambda app: print('App successfully initialized.'),
+                onShutdown=lambda app: print('App successfully shut down.'))
+```
+
