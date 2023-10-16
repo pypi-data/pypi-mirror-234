@@ -1,0 +1,77 @@
+[
+  {
+    "name": "Third-party flows into code execution sink (RCE)",
+    "code": 1,
+    "description": "Values from third-party controlled source may eventually flow into code execution sink",
+    "sources": [
+      "ActivityUserInput",
+      "ProviderUserInput",
+      "ReceiverUserInput",
+      "ServiceUserInput"
+    ],
+    "sinks": [
+      "CodeExecution"
+    ]
+  },
+  {
+    "name": "Third-party input flows into file resolver",
+    "code": 2,
+    "description": "Values from third-party controlled source may eventually flow into sink file resolver",
+    "sources": [
+      "ActivityUserInput",
+      "ProviderUserInput",
+      "ReceiverUserInput",
+      "ServiceUserInput"
+    ],
+    "sinks": [
+      "FileResolver",
+      "InputStream"
+    ]
+  },
+  {
+    "name": "Third-party flows into implicitly launched intent",
+    "code": 3,
+    "description": "Values from third-party controlled source may eventually flow into an implicit intent and intent launcher",
+    "multi_sources": {
+      "a": [
+        "IntentCreation"
+      ],
+      "b": [
+        "ActivityUserInput",
+        "ReceiverUserInput",
+        "ServiceUserInput"
+      ]
+    },
+    "partial_sinks": [
+      "LaunchingComponent"
+    ]
+  },
+  {
+    "name": "Third-party flows into raw SQL statement",
+    "code": 4,
+    "description": "Values from third-party controlled source may eventually flow into a raw SQL statement potentially causing SQL injection",
+    "sources": [
+      "ActivityUserInput",
+      "ProviderUserInput",
+      "ReceiverUserInput",
+      "ServiceUserInput"
+    ],
+    "sinks": [
+      "SQLQuery"
+    ]
+  },
+  {
+    "name": "Third-party input flows into WebView Javascript execution API",
+    "code": 5,
+    "description": "Values from third-party controlled source may eventually flow into a Webview Javascript execution API",
+    "sources": [
+      "ActivityUserInput",
+      "ProviderUserInput",
+      "ReceiverUserInput",
+      "ServiceUserInput"
+    ],
+    "sinks": [
+      "ExecuteJavascript"
+    ]
+  }
+]
