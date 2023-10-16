@@ -1,0 +1,16 @@
+
+FlexibleTorqueJoint is HingeJoint:
+    actuator becomes DriveTrain.TorqueMotor:
+        charges: [motor_shaft.input]
+    motor_shaft is DriveTrain.Shaft
+    gear is DriveTrain.Gear:
+        charges: [motor_shaft.output, gear_shaft.input]
+    gear_shaft is DriveTrain.Shaft
+    mate becomes DriveTrain.HingeActuator:
+        connector_1d: gear_shaft.output
+    actuator_input is Simulation.TorqueMotorInput:
+        motor: actuator
+    hinge_angle_output is Simulation.HingeAngleOutput:
+        hinge: mate
+    hinge_velocity_output is Simulation.HingeAngularVelocityOutput:
+        hinge: mate

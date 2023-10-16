@@ -1,0 +1,17 @@
+# TODO: Fredrik decide whether this model is needed or not
+
+
+ElasticNormalSurfaceContactDefinition is SurfaceContactDefinition:
+    .doc: """
+    The ElasticNormalCoulombFrictionDefinition is a surface constact definition.
+    An elastic contact normal model with Coulomb friction.
+    The stiffness of the elastic part defaults to
+    half of the harmonic mean of the youngs modulus of the two interacting materials.
+    The relaxation time defaults to maximum relaxation time of the two interacting materials.
+    Mechanical damping capacity [Ns/m] defaults to the stiffness [N/m] multiplied with the relaxation time [s].
+    """
+
+    normal becomes ElasticContactNormalDefinition:
+        stiffness: Math.Utils.harmonicMean([material_1.youngs_modulus, material_2.youngs_modulus]) * 0.5
+        relaxation_time: Math.Utils.max([material_1.relaxation_time, material_2.relaxation_time])
+        damping_capacity: this.normal.stiffness * this.normal.relaxation_time
