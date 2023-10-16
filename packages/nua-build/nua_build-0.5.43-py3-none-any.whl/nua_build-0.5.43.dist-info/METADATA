@@ -1,0 +1,104 @@
+Metadata-Version: 2.1
+Name: nua-build
+Version: 0.5.43
+Summary: Nua build package (currently: build, core build, agent)
+Home-page: https://github.com/abilian/nua
+License: Apache-2.0
+Author: Stefane Fermigier
+Author-email: sf@abilian.com
+Requires-Python: >=3.10,<4.0
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: cleez (>=0.1.8,<0.2.0)
+Requires-Dist: docker[ssh] (>=6.0.1,<7.0.0)
+Requires-Dist: nua-lib (==0.5.43)
+Requires-Dist: packaging (>=23.1,<24.0)
+Requires-Dist: pydantic (>=1.10.8,<2.0.0)
+Requires-Dist: snoop (>=0.4.3,<0.5.0)
+Requires-Dist: tomli (>=2.0.1,<3.0.0)
+Requires-Dist: tomli-w (>=1.0.0,<2.0.0)
+Requires-Dist: typer[all] (>=0.7.0,<0.8.0)
+Project-URL: Documentation, https://nua.rocks/
+Project-URL: Repository, https://github.com/abilian/nua
+Description-Content-Type: text/markdown
+
+# Nua-build
+
+Build system for Nua packages.
+
+[Nua](https://nua.rocks/) is an open source, self-hosted cloud platform project (a PaaS - platform as a service).
+
+This packaged is mostly used internally. The main entry point is the `nua` command line tool (see: [Nua on PyPI](https://pypi.org/project/nua/) or [nua-cli on GitHub](https://github.com/abilian/nua/tree/main/nua-cli)).
+
+
+## Purpose
+
+The `nua-build` package is used to build packages deployable by the Nua orchestrator.
+
+The current version of nua-build builds Docker images for an amd64 Linux environment. There are plans to extend the system to other container and isolation architectures in future releases.
+
+
+`nua-build` relies on a `nua-config` configuration file containing application build directives. This configuration can reference other local or remote providers and is supplemented by default values. The file can be formatted as TOML, JSON or YAML.
+
+## Build sequence:
+
+The main steps to build a Nua image:
+
+- Analysis of the `nua-config` file,
+- detection of the required base images,
+- build or pull base images if needed,
+- collect files (Dockerfile, configuration files),
+- build a Docker container using the `nua-agent`,
+- store locally the resulting images as a `tar` file.
+
+
+### About Dockerfile
+
+`nua-build` allows 2 approaches for image generation:
+
+- The package can use a generic Dockerfile provided by `nua-build`, in which case most of the containerization work is done by a python script (*build.py*) executed in the container being built. This permits a build with a single `RUN` command in the docker file, but requires to specify the build through the `nua-config` config file and some python script.
+
+- The package can use a dedicated (potentially pre-existing) Dockerfile. Then this Dockerfile must be modified slightly to add the metadata to the image:
+
+```dockerfile
+RUN mkdir -p /nua/metadata
+COPY nua-config.toml /nua/metadata/
+```
+
+### Containerization layers
+
+Standard Nua images are images build from `nua-build`'s default Dockerfile.
+
+Standard Nua images contain three layers:
+
+- A Linux image (Ubuntu 22.04 LTS Jammy, amd64),
+- `nua-python`, addition of python 3.10,
+- `nua-builder`, addition of `nua-agent` and `nua-lib`.
+
+All standard Nua packages have a Python environment.
+
+Some other base images are available to facilitate builds in other programming environments: `nua-builder-nodejs16`, `nua-builder-nodejs18`, `nua-builder-nodejs20`.
+
+## Dependencies on other Nua Python packages
+
+`nua-build` uses the following packages:
+
+- `nua-lib`: common code for all Nua packages. It provides:
+
+    - `shell`: shell shortcuts (mostly wrappers above `subprocess` and `shutil`)
+    - `exec`: shortcuts to execute sub commands like `exec_as_root()`, `exec_as_root()`
+    - `actions`: higher level commands, related to the installation of packages and dependencies (wrappers above `apt`, `pip`, ...)
+
+- `nua-agent`: agent for building Nua apps. It provides:
+
+    - `app_builder`: actual builder of the application inside the Docker image.
+
+## Dependency graph
+
+![Dependency graph](./doc/dependency-graph.png)
+
