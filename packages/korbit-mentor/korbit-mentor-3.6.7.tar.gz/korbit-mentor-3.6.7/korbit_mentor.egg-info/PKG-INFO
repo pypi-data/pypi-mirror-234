@@ -1,0 +1,165 @@
+Metadata-Version: 2.1
+Name: korbit-mentor
+Version: 3.6.7
+Summary: Korbit mentor CLI tool will allow you to analyze any local files.
+Home-page: https://www.korbit.ai
+Author: Korbit Technologies Inc.
+Author-email: team@korbit.ai
+Keywords: SOFTWARE,DEVELOPMENT,MENTOR,ENGINEER
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Programming Language :: Python :: 3.11
+Description-Content-Type: text/markdown
+
+# Korbit
+
+Korbit mentor CLI will allow you to analyze any local files. See official documentation [here](https://docs.korbit.ai/cli/cli_quickstart)
+
+## Installation
+
+### Pip
+
+To install Korbit, you can use pip:
+
+```
+pip install korbit-mentor
+```
+
+### Binary
+
+#### Linux - MacOS
+
+1. Automatically installation
+
+```sh
+curl https://mentor-resources.korbit.ai/cli/install.sh | bash
+or
+sudo curl https://mentor-resources.korbit.ai/cli/install.sh | sudo bash
+```
+
+1. Linux and Macos x86
+
+```sh
+sudo wget https://mentor-resources.korbit.ai/cli/latest/korbit-x86_64 -O /usr/local/bin/korbit
+sudo chmod +x /usr/local/bin/korbit
+```
+
+1. MacOS arm64
+
+```sh
+sudo wget https://mentor-resources.korbit.ai/cli/latest/korbit-aarch64 -O /usr/local/bin/korbit
+sudo chmod +x /usr/local/bin/korbit
+```
+
+#### Windows
+
+```sh
+wget https://mentor-resources.korbit.ai/cli/latest/korbit.exe -O ~\\korbit.exe
+```
+
+## Usage
+
+To use Korbit, simply run the `korbit` command followed by the path of the file or folder you want to zip. For example, to zip the current folder, you can run:
+
+```
+korbit scan example/subfolder
+```
+
+This command will take all the files of the `example/subfolder` and request a scan on our server.
+
+### Run
+
+#### Full scan
+
+```sh
+korbit login
+korbit scan example/subfolder
+```
+
+#### PR Scan
+
+You can now also analyze only the files that you have been modifying in your current branch to compare to the branch you want.
+
+```sh
+python -m korbit/cli login
+
+# One of
+korbit scan-pr /path/to/repository main
+korbit scan-pr path/to/repository
+korbit scan-pr # Default use current directory (`.`), as the repository and `origin/master` as the base branch
+```
+
+It will take your current active branch and find the diff files. Using this, it will be requesting a review only on those files.
+_Note: You will be able to use all the same options as the `korbit scan` explained below._
+
+#### Exclude paths
+
+You have the ability to exclude paths (using `.gitignore` path regex format) from being sent to analysis. Use the `--exclude-paths` option on the scan or scan-pr command. It must be a string of regex separated by a comma.
+
+```sh
+korbit scan . --exclude-paths="**/.git/*,**/node_modules/*"
+# Run the scan-pr command on the current directory against the develop branch without including `.git` and `node_modules` files.
+korbit scan-pr  . develop --exclude-paths="**/.git/*,**/node_modules/*"
+```
+
+#### Limitation
+
+To protect us from large repository upload and potential mistake, we introduced a limit of 100mb for the number of files being sent for analysis. If this happens, make sure you are excluding the large files correctly and the files that you don't need to be reviewed. It will speed up the analysis.
+
+#### Output
+
+We introduce the ability to run a scan headless, meaning that there will be no output in the terminal. But in the following default path:
+
+```sh
+# In the working directory where the korbit scan command has been executed.
+cat .korbit/scan.log
+```
+
+If Korbit AI mentor find issues, the command will exit with a specific code number (see `--headless` option documentation).
+
+```sh
+korbit scan --help
+```
+
+This `korbit scan --headless` flag option will be used mainly in CI/CD pipelines, to automatically stop it.
+Along with the --headless command, you can specify certain thresholds for only 2 metrics at the moment:
+
+1. confidence (scale 1-10): represents how confident Korbit AI Mentor is that a particular issue is real. A higher confidence score indicates a greater level of certainty that the identified issue is valid and requires attention.
+1. priority (scale 1-10): represents the level of importance or urgency assigned by Korbit AI Mentor to a particular issue. A higher priority score indicates a greater sense of urgency and the need for immediate attention to address the identified issue.
+
+```sh
+korbit scan --headless
+```
+
+**Note**: You can use the `--thresholds-*` even if the scan isn't in headless mode, this will filter the issue found and display only the one that matters for you.
+
+#### Progress view
+
+After you start to run a `korbit scan` command and that our system accepted the request (might take some time regarding load on our server), you will see in your terminal the progress of the scan. Each file will be updated in real time with their status.
+
+```sh
+Analysis in progress (1/1)
+├── afile.js ⏳
+└── afile.py ✅
+Analyzing files (2)... ━━━━━━━━━━━━━━━━━━━━╺━━━━━━━━━━━━━━━━━━━  50% -:--:--
+```
+
+#### Result
+
+At the end when every file will be analyzed you will see in your terminal different tables containing the issues' descriptions and their placement in the given file. Along that will see the priority and confidence about that issue.
+
+```sh
+                                         Category: Critical Errors
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃ Error Description                                  ┃ File Path                  ┃ Confidence ┃ Priority ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━┩
+│ There is an error on the line X, because...        │ folder/afile.js            │ 10         │ 9        │
+└────────────────────────────────────────────────────┴────────────────────────────┴────────────┴──────────┘
+```
+
+## Contact
+
+If you have any questions or need further assistance, feel free to reach out to us at [support@korbit.ai](mailto:support@korbit.ai).
+
+You can also open new Issue tickets on this repository.
