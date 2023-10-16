@@ -1,0 +1,187 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "firebird-butler-protobuf"
+dynamic = ["version"]
+description = 'Firebird Butler protocol buffers'
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+keywords = ["Firebird", "Butler", "protobuf"]
+authors = [
+  { name = "Pavel Cisar", email = "pcisar@users.sourceforge.net" },
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: MacOS",
+  "Topic :: Software Development",
+]
+dependencies = [
+  "protobuf>=4.23.4",
+]
+
+[project.urls]
+Home = "https://firebirdsql.org/en/firebird-butler-dev/"
+Documentation = "https://firebird-butler.rtfd.io"
+Issues = "https://github.com/FirebirdSQL/Butler/issues"
+Funding = "https://github.com/sponsors/pcisar"
+Source = "https://github.com/FirebirdSQL/Butler/python"
+
+[project.entry-points."firebird.butler.protobuf"]
+"firebird.butler.fbdp" = "firebird.butler.fbdp_pb2:DESCRIPTOR"
+"firebird.butler.fbsd" = "firebird.butler.fbsd_pb2:DESCRIPTOR"
+"firebird.butler.fbsp" = "firebird.butler.fbsp_pb2:DESCRIPTOR"
+
+[tool.hatch.version]
+path = "src/firebird/butler/__about__.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["src"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/firebird"]
+
+[tool.hatch.envs.test]
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+]
+[tool.hatch.envs.test.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+version = "python --version"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.8", "3.9", "3.10", "3.11"]
+
+[tool.hatch.envs.doc]
+detached = false
+platforms = ["linux"]
+dependencies = [
+  "Sphinx>=7.1",
+  "sphinx-bootstrap-theme>=0.8.1",
+  "sphinx-autodoc-typehints>=1.24.0",
+]
+[tool.hatch.envs.doc.scripts]
+build = "cd docs ; make html"
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = [
+  "black>=23.1.0",
+  "mypy>=1.0.0",
+  "ruff>=0.0.243",
+]
+[tool.hatch.envs.lint.scripts]
+typing = "mypy --install-types --non-interactive {args:src/firebird/uuid tests}"
+style = [
+  "ruff {args:.}",
+  "black --check --diff {args:.}",
+]
+fmt = [
+  "black {args:.}",
+  "ruff --fix {args:.}",
+  "style",
+]
+all = [
+  "style",
+  "typing",
+]
+
+[tool.black]
+target-version = ["py38"]
+line-length = 120
+skip-string-normalization = true
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+select = [
+  "A",
+  "ARG",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  "EM",
+  "F",
+  "FBT",
+  "I",
+  "ICN",
+  "ISC",
+  "N",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "Q",
+  "RUF",
+  "S",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
+]
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+[tool.ruff.isort]
+known-first-party = ["firebird.uuid"]
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+
+[tool.coverage.run]
+source_pkgs = ["firebird.uuid", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/firebird/uuid/__about__.py",
+]
+
+[tool.coverage.paths]
+firebird_uuid = ["src/python", "*/python/src/firebird/uuid"]
+tests = ["tests", "*/python/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
