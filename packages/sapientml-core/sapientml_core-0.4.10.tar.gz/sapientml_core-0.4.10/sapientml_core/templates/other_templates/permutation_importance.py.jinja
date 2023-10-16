@@ -1,0 +1,25 @@
+# PERMUTATION IMPORTANCE
+from sklearn.inspection import permutation_importance
+{% if pipeline.task.target_columns|length == 1 %}
+{% set TARGET_TRAIN = 'target_train[TARGET_COLUMNS[0]]' %}
+{% else %}
+{% set TARGET_TRAIN = 'target_train' %}
+{% endif %}
+{% if target2string %}
+{{ TARGET_TRAIN }} = {{ TARGET_TRAIN }}.astype(str)
+{% endif %}
+{% if pipeline.sparse_matrix %}
+if len(feature_train.columns) <= 100:
+    perm = permutation_importance(model, feature_train.sparse.to_dense(), {{ TARGET_TRAIN }},
+                                    n_repeats=5,
+                                    random_state=0)
+    perm_df = pd.DataFrame({"feature": feature_train.columns, "importance": perm.importances_mean})
+    perm_df.to_csv("./permutation_importance.csv", index=False)
+{% else %}
+if len(feature_train.columns) <= 100:
+    perm = permutation_importance(model, feature_train, {{ TARGET_TRAIN }},
+                                    n_repeats=5,
+                                    random_state=0)
+    perm_df = pd.DataFrame({"feature": feature_train.columns, "importance": perm.importances_mean})
+    perm_df.to_csv("./permutation_importance.csv", index=False)
+{% endif %}

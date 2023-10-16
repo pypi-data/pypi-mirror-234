@@ -1,0 +1,7 @@
+with open('oneHotEncoder.pkl', 'rb') as f:
+    onehot_encoder = pickle.load(f)
+
+CATEGORICAL_COLS = {{ columns }}
+test_encoded = pd.DataFrame(onehot_encoder.transform({{ test_dataset }}[CATEGORICAL_COLS]), columns=onehot_encoder.get_feature_names_out(), index={{ test_dataset }}.index)
+{{ test_dataset }} = pd.concat([{{ test_dataset }}, test_encoded ], axis=1)
+{{ test_dataset }}.drop(CATEGORICAL_COLS, axis=1, inplace=True)
