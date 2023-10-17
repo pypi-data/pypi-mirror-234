@@ -1,0 +1,130 @@
+Metadata-Version: 2.1
+Name: waffle-hub
+Version: 0.2.14
+Summary: Waffle hub
+Home-page: https://github.com/snuailab/waffle_hub
+Author: SNUAILAB
+Author-email: huijae.lee@snuailab.ai
+License: GPL-3.0
+Project-URL: Bug Reports, https://github.com/snuailab/waffle_hub/issues
+Project-URL: Source, https://github.com/snuailab/waffle_hub
+Keywords: machine-learning,deep-learning,vision,ML,DL,AI,YOLO,Ultralytics,SNUAILAB
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Topic :: Software Development
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Image Recognition
+Classifier: Operating System :: POSIX :: Linux
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: tqdm
+Requires-Dist: tabulate ==0.9.0
+Requires-Dist: pydantic ==1.8.2
+Requires-Dist: rich ==13.5.2
+Requires-Dist: onnxruntime ==1.15.1
+Requires-Dist: tbparse ==0.0.7
+Requires-Dist: waffle-utils >=0.3.3
+Requires-Dist: ultralytics ==8.0.112
+Requires-Dist: datasets ==2.12.0
+Requires-Dist: transformers ==4.28.1
+Requires-Dist: albumentations ==1.3.0
+Requires-Dist: evaluate ==0.4.0
+Requires-Dist: timm ==0.6.13
+Requires-Dist: autocare-dlt ==0.2.4
+Requires-Dist: numpy <=1.23.5
+Requires-Dist: torchmetrics ==1.1.0
+Requires-Dist: pycocotools >=2.0.2
+Requires-Dist: py-cpuinfo >=8.0.0
+Requires-Dist: shapely >=2.0.0
+Requires-Dist: fire ==0.5.0
+Requires-Dist: Pillow ==9.5.0
+Requires-Dist: sentry-sdk
+
+<div align="center">
+  <p>
+    <a href="http://snuailab.ai/">
+        <img width="75%" src="https://raw.githubusercontent.com/snuailab/assets/main/waffle/icons/waffle_banner.png">
+    </a>
+  </p>
+</div>
+
+Waffle is a framework that lets you use lots of different deep learning tools through just one interface. When it comes to MLOps (machine learning operations), you need to be able to keep up with all the new ideas in deep learning as quickly as possible. But it's hard to do that if you have to write all the code yourself. That's why we started a project to bring together different tools into one framework.
+
+Experience the power of multiple deep learning frameworks at your fingertips with Waffle's seamless integration, unlocking limitless possibilities for your machine learning projects.
+
+# Prerequisites
+We've tested Waffle on the following environments:
+| OS | Python | PyTorch | Device | Backend | Pass |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| Ubuntu 20.04 | 3.9, 3.10 | 1.13.1 | CPU, GPU | All | [![Waffle Hub cpu test](https://github.com/snuailab/waffle_hub/actions/workflows/ci.yaml/badge.svg)](https://github.com/snuailab/waffle_hub/actions/workflows/ci.yaml) |
+| Windows | 3.9, 3.10 | 1.13.1 | CPU, GPU | All | [![Waffle Hub cpu test](https://github.com/snuailab/waffle_hub/actions/workflows/ci.yaml/badge.svg)](https://github.com/snuailab/waffle_hub/actions/workflows/ci.yaml) |
+| Ubuntu 20.04 | 3.9 | 1.13.1 | Multi GPU | Ultralytics |[![Waffle Hub multi-gpu(ddp) test on self-hosted runner](https://github.com/snuailab/waffle_hub/actions/workflows/ddp.yaml/badge.svg)](https://github.com/snuailab/waffle_hub/actions/workflows/ddp.yaml) |
+
+
+We recommend using above environments for the best experience.
+
+# Installation
+1. Install pytorch and torchvision
+    - [PyTorch and TorchVision](https://pytorch.org/get-started/locally/) (We recommend using 1.13.1)
+2. Install Waffle Hub
+    - `pip install -U waffle-hub`
+
+# Example Usage
+We provide both python module and CLI for Waffle Hub.
+
+Following examples do the exact same thing.
+
+## Python Module
+```python
+from waffle_hub.dataset import Dataset
+dataset = Dataset.sample(
+  name = "mnist_classification",
+  task = "classification",
+)
+dataset.split(
+  train_ratio = 0.8,
+  val_ratio = 0.1,
+  test_ratio = 0.1
+)
+export_dir = dataset.export("YOLO")
+
+from waffle_hub.hub import Hub
+hub = Hub.new(
+  name = "my_classifier",
+  task = "classification",
+  model_type = "yolov8",
+  model_size = "n",
+  categories = dataset.get_category_names(),
+)
+hub.train(
+  dataset = dataset,
+  epochs = 30,
+  batch_size = 64,
+  image_size=64,
+  device="cpu"
+)
+hub.inference(
+  source=export_dir,
+  draw=True,
+  device="cpu"
+)
+```
+
+## CLI
+```bash
+wd sample --name mnist_classification --task classification
+wd split --name mnist_classification --train-ratio 0.8 --val-ratio 0.1 --test-ratio 0.1
+wd export --name mnist_classification --data-type YOLO
+
+wh new --name my_classifier --task classification --model-type yolov8 --model-size n --categories [1,2]
+wh train --name my_classifier --dataset mnist_classification --epochs 30 --batch-size 64 --image-size 64 --device cpu
+wh inference --name my_classifier --source datasets/mnist_classification/exports/YOLO --draw --device cpu
+```
+
+See our [documentation](https://snuailab.github.io/waffle/) for more information!
