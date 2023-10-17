@@ -1,0 +1,1 @@
+RegFwCmd = tuple[int, ...]
