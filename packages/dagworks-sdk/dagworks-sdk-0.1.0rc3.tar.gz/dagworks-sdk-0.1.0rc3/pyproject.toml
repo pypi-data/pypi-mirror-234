@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools >= 61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dagworks-sdk"
+description = "DAGWorks SDK."
+authors = [
+    {name = "Stefan Krawczyk", email = "stefan@dagworks.io"},
+    {name = "Elijah ben Izzy", email = "elijah@dagworks.io"}
+]
+readme = "README.md"
+keywords = ["hamilton", "dagworks", "observability"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+requires-python = ">=3.7, <4"
+dynamic = ["dependencies", "optional-dependencies", "version"]
+
+[project.urls]
+"Homepage" = "https://www.dagworks.io"
+"Bug Reports" = "https://docs.google.com/forms/d/e/1FAIpQLScS9YvcuNOTretZWXUdur8XNcJPpkJwZwzxuGfbPJKc8IRS6A/viewform"
+"Source" = "https://github.com/dagworks-inc/dagworks-sdk/"
+"Documenation" = "https://docs.dagworks.io/"
+
+[project.scripts]
+dagworks = "dagworks.cli.cli:cli"
+
+# [project.optional-dependencies]
+# Add optional dependencies here, one per line
+
+[options]
+packages = { find = { exclude = ["tests"] } }
+include_package_data = true
+install_requires = [
+    # Add your dependencies here, one per line
+]
+zip_safe = false
+
+[tool.setuptools.package-data]
+# If there are data files included in your packages that need to be
+# installed, specify them here.
+"dagworks.cli.templates" = [
+    "common/*",
+    "*/template_data.json",
+    "*/data/*",
+    "common/.env.jinja2",
+    "*/config/*"]
+
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"]}
+optional-dependencies.test = { file = ["requirements-test.txt"]}
+version = { attr = "dagworks.__version__" }
