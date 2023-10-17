@@ -1,0 +1,646 @@
+# ruff: noqa: F403, F405, E402
+from __future__ import annotations
+from sharingiscaring.GRPCClient.types_pb2 import *
+from sharingiscaring.enums import NET
+from enum import Enum
+from sharingiscaring.GRPCClient.queries._SharedConverters import (
+    Mixin as _SharedConverters,
+)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sharingiscaring.GRPCClient import GRPCClient
+import os
+import sys
+
+sys.path.append(os.path.dirname("sharingiscaring"))
+from sharingiscaring.GRPCClient.CCD_Types import *
+from google.protobuf.json_format import MessageToDict
+
+
+class Mixin(_SharedConverters):
+    def convertNewRelease(self, message) -> list:
+        schedule = []
+        for entry in message:
+            entry_dict = {}
+            for descriptor in entry.DESCRIPTOR.fields:
+                key, value = self.get_key_value_from_descriptor(descriptor, entry)
+                if type(value) in self.simple_types:
+                    converted_value = self.convertType(value)
+                    if converted_value:
+                        entry_dict[key] = converted_value
+            schedule.append(CCD_NewRelease(**entry_dict))
+
+        return schedule
+
+    def convertBakerKeysEvent(self, message) -> CCD_BakerKeysEvent:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerKeysEvent(**result)
+
+    def convertEffectBakerAdded(self, message) -> CCD_BakerAdded:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+            if type(value) == BakerKeysEvent:
+                result[key] = self.convertBakerKeysEvent(value)
+
+        return CCD_BakerAdded(**result)
+
+    def convertBakerStakeUpdatedData(self, message) -> CCD_BakerStakeUpdatedData:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerStakeUpdatedData(**result)
+
+    def convertEffectBakerStakeUpdated(self, message) -> CCD_BakerStakeUpdated:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+            if type(value) == BakerStakeUpdatedData:
+                result[key] = self.convertBakerStakeUpdatedData(value)
+
+        return CCD_BakerStakeUpdated(**result)
+
+    def convertBakerStakeIncreased(self, message) -> CCD_BakerStakeIncreased:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerStakeIncreased(**result)
+
+    def convertBakerStakeDecreased(self, message) -> CCD_BakerStakeDecreased:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerStakeDecreased(**result)
+
+    def convertDelegationStakeIncreased(self, message) -> CCD_DelegationStakeIncreased:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_DelegationStakeIncreased(**result)
+
+    def convertDelegationStakeDecreased(self, message) -> CCD_DelegationStakeDecreased:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_DelegationStakeDecreased(**result)
+
+    def convertBakerSetOpenStatus(self, message) -> CCD_BakerSetOpenStatus:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerSetOpenStatus(**result)
+
+    def convertBakerSetMetadataUrl(self, message) -> CCD_BakerSetMetadataUrl:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerSetMetadataUrl(**result)
+
+    def convertDelegationSetSetRestakeEarnings(
+        self, message
+    ) -> CCD_DelegationSetRestakeEarnings:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_DelegationSetRestakeEarnings(**result)
+
+    def convertBakerRestakeEarningsUpdated(
+        self, message
+    ) -> CCD_BakerRestakeEarningsUpdated:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerRestakeEarningsUpdated(**result)
+
+    def convertBakerBakerAdded(self, message) -> CCD_BakerAdded:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if type(value) == BakerKeysEvent:
+                result[key] = self.convertBakerKeysEvent(value)
+
+            elif type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_BakerAdded(**result)
+
+    def convertDelegationSetDelegationTarget(
+        self, message
+    ) -> CCD_DelegationSetDelegationTarget:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+            elif type(value) == DelegationTarget:
+                result[key] = self.convertDelegationTarget(value)
+
+        return CCD_DelegationSetDelegationTarget(**result)
+
+    # "baker_set_open_status",
+    def convertBakerConfiguredEvents(self, message) -> list:
+        events = []
+        for entry in message:
+            # for field, value in message.ListFields():
+            #     key = field.name
+            for descriptor in entry.DESCRIPTOR.fields:
+                result = {}
+                key, value = self.get_key_value_from_descriptor(descriptor, entry)
+
+                if self.valueIsEmpty(value, key, message):
+                    pass
+
+                else:
+                    print(f"{key=}, {value=}")
+                    if type(value) == BakerEvent.BakerStakeIncreased:
+                        result[key] = self.convertBakerStakeIncreased(value)
+                        events.append(result)
+
+                    elif type(value) == BakerEvent.BakerStakeDecreased:
+                        result[key] = self.convertBakerStakeDecreased(value)
+                        events.append(result)
+
+                    elif type(value) == BakerEvent.BakerSetMetadataUrl:
+                        result[key] = self.convertBakerSetMetadataUrl(value)
+                        events.append(result)
+
+                    elif type(value) == BakerEvent.BakerSetOpenStatus:
+                        result[key] = self.convertBakerSetOpenStatus(value)
+                        events.append(result)
+
+                    elif type(value) == BakerEvent.BakerRestakeEarningsUpdated:
+                        result[key] = self.convertBakerRestakeEarningsUpdated(value)
+                        events.append(result)
+
+                    elif type(value) == BakerKeysEvent:
+                        result[key] = self.convertBakerKeysEvent(value)
+                        events.append(result)
+
+                    elif key == "baker_removed":
+                        result[key] = self.convertType(value)
+                        events.append(result)
+
+                    elif key == "baker_added":
+                        result[key] = self.convertBakerBakerAdded(value)
+                        events.append(result)
+
+        return events
+
+    def convertDelegationConfiguredEvents(self, message) -> list:
+        events = []
+        for entry in message:
+            for descriptor in entry.DESCRIPTOR.fields:
+                result = {}
+                key, value = self.get_key_value_from_descriptor(descriptor, entry)
+                if MessageToDict(value) == {}:
+                    pass
+                else:
+                    if type(value) == DelegationEvent.DelegationStakeIncreased:
+                        result[key] = self.convertDelegationStakeIncreased(value)
+                        events.append(result)
+
+                    elif type(value) == DelegationEvent.DelegationStakeDecreased:
+                        result[key] = self.convertDelegationStakeDecreased(value)
+                        events.append(result)
+
+                    elif type(value) == DelegationEvent.DelegationSetDelegationTarget:
+                        result[key] = self.convertDelegationSetDelegationTarget(value)
+                        events.append(result)
+
+                    elif type(value) == DelegationEvent.DelegationSetRestakeEarnings:
+                        result[key] = self.convertDelegationSetSetRestakeEarnings(value)
+                        events.append(result)
+
+                    elif key == "delegation_removed":
+                        result[key] = self.convertType(value)
+                        events.append(result)
+
+                    elif key == "delegation_removed":
+                        result[key] = self.convertType(value)
+                        events.append(result)
+
+        return events
+
+    def convertEffectBakerConfigured(self, message) -> CCD_BakerConfigured:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if key == "events":
+                result[key] = self.convertBakerConfiguredEvents(value)
+
+        return CCD_BakerConfigured(**result)
+
+    def convertEffectDelegationConfigured(self, message) -> CCD_DelegationConfigured:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if key == "events":
+                result[key] = self.convertDelegationConfiguredEvents(value)
+
+        return CCD_DelegationConfigured(**result)
+
+    def convertEffectAccountTransfer(self, message) -> CCD_AccountTransfer:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if MessageToDict(value) == {}:
+                pass
+            else:
+                if type(value) in self.simple_types:
+                    result[key] = self.convertType(value)
+
+        return CCD_AccountTransfer(**result)
+
+    def convertEffectAccountTransferWithSchedule(
+        self, message
+    ) -> CCD_TransferredWithSchedule:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if key == "amount":
+                result[key] = self.convertNewRelease(value)
+
+            elif type(value) in self.simple_types:
+                converted_value = self.convertType(value)
+                if converted_value:
+                    result[key] = converted_value
+
+        return CCD_TransferredWithSchedule(**result)
+
+    def convertEffectContractInitializedEvent(
+        self, message
+    ) -> CCD_ContractInitializedEvent:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if key == "events":
+                result[key] = self.convertEvents(value)
+
+            elif type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+                # if converted_value:
+                #      = converted_value
+
+        return CCD_ContractInitializedEvent(**result)
+
+    def convertEffectContractUpdateIssued(self, message) -> CCD_ContractUpdateIssued:
+        result = {}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+            if key == "effects":
+                result[key] = self.convertUpdateEvents(value)
+
+        return CCD_ContractUpdateIssued(**result)
+
+    def convertCredentialsUpdated(
+        self, message
+    ) -> CCD_AccountTransactionEffects_CredentialsUpdated:
+        result = {}
+
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if key in ["new_cred_ids", "removed_cred_ids"]:
+                result[key] = self.convertCredentialRegistrationIdEntries(value)
+
+            elif type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_AccountTransactionEffects_CredentialsUpdated(**result)
+
+    def convertEffectAccountEncryptedAmountTransferred(
+        self, message
+    ) -> CCD_AccountTransactionEffects_EncryptedAmountTransferred:
+        result = {}
+        _type = None
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+            elif type(value) in [EncryptedAmountRemovedEvent, NewEncryptedAmountEvent]:
+                result[key] = self.convertTypeWithSingleValues(value)
+
+        return CCD_AccountTransactionEffects_EncryptedAmountTransferred(**result)
+
+    def convertEffectAccountTransferredToPublic(
+        self, message
+    ) -> CCD_AccountTransactionEffects_TransferredToPublic:
+        result = {}
+        _type = None
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+            elif type(value) in [EncryptedAmountRemovedEvent]:
+                result[key] = self.convertTypeWithSingleValues(value)
+
+        return CCD_AccountTransactionEffects_TransferredToPublic(**result)
+
+    def convertAccountTransactionEffects(
+        self, message
+    ) -> CCD_AccountTransactionEffects:
+        result = {}
+        _type = {"type": "account_transaction"}
+        for field, value in message.ListFields():
+            key = field.name
+            _outcome = "success"
+            try:
+                if value.HasField("reject_reason"):
+                    _outcome = "reject"
+                    result[key], type_contents = self.convertRejectReasonNone(value)
+                    _type.update({"contents": type_contents})
+            except:  # noqa F403
+                if _outcome == "success":
+                    if type(value) == ContractInitializedEvent:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectContractInitializedEvent(value)
+
+                    elif type(value) == AccountTransactionEffects.ContractUpdateIssued:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectContractUpdateIssued(value)
+
+                    elif type(value) == AccountTransactionEffects.AccountTransfer:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectAccountTransfer(value)
+
+                    elif type(value) == BakerEvent.BakerAdded:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectBakerAdded(value)
+
+                    elif type(value) == BakerId:
+                        _type.update({"contents": key})
+                        result[key] = self.convertType(value)
+
+                    elif type(value) == AccountTransactionEffects.BakerStakeUpdated:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectBakerStakeUpdated(value)
+
+                    elif type(value) == BakerEvent.BakerRestakeEarningsUpdated:
+                        _type.update({"contents": key})
+                        result[key] = self.convertTypeWithSingleValues(value)
+
+                    elif type(value) == BakerKeysEvent:
+                        _type.update({"contents": key})
+                        result[key] = self.convertBakerKeysEvent(value)
+
+                    elif (
+                        type(value)
+                        == AccountTransactionEffects.EncryptedAmountTransferred
+                    ):
+                        _type.update({"contents": key})
+                        result[
+                            key
+                        ] = self.convertEffectAccountEncryptedAmountTransferred(value)
+
+                    elif type(value) == EncryptedSelfAmountAddedEvent:
+                        _type.update({"contents": key})
+                        result[key] = CCD_EncryptedSelfAmountAddedEvent(
+                            **self.convertTypeWithSingleValues(value)
+                        )
+
+                    elif type(value) == AccountTransactionEffects.TransferredToPublic:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectAccountTransferredToPublic(
+                            value
+                        )
+
+                    elif (
+                        type(value) == AccountTransactionEffects.TransferredWithSchedule
+                    ):
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectAccountTransferWithSchedule(
+                            value
+                        )
+
+                    elif type(value) == AccountTransactionEffects.CredentialsUpdated:
+                        _type.update({"contents": key})
+                        result[key] = self.convertCredentialsUpdated(value)
+
+                    elif type(value) == RegisteredData:
+                        _type.update({"contents": key})
+                        result[key] = self.convertType(value)
+
+                    elif type(value) == AccountTransactionEffects.BakerConfigured:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectBakerConfigured(value)
+
+                    elif type(value) == AccountTransactionEffects.DelegationConfigured:
+                        _type.update({"contents": key})
+                        result[key] = self.convertEffectDelegationConfigured(value)
+
+                    elif type(value) in self.simple_types:
+                        _type.update({"contents": key})
+                        result[key] = self.convertType(value)
+
+        return CCD_AccountTransactionEffects(**result), _type, _outcome
+
+    def convertAccountTransactionDetails(
+        self, message
+    ) -> CCD_AccountTransactionDetails:
+        result = {}
+        for field, value in message.ListFields():
+            key = field.name
+            if type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+            if type(value) == AccountTransactionEffects:
+                (
+                    result[key],
+                    _type,
+                    result["outcome"],
+                ) = self.convertAccountTransactionEffects(value)
+
+        return CCD_AccountTransactionDetails(**result), CCD_TransactionType(**_type)
+
+    def convertAccountCreationDetails(self, message) -> CCD_AccountCreationDetails:
+        result = {}
+        _type = {"type": "account_creation"}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if key == "credential_type":
+                result[key] = value
+                _type.update({"contents": CCD_CredentialType(value).name})
+
+            elif type(value) in self.simple_types:
+                result[key] = self.convertType(value)
+
+        return CCD_AccountCreationDetails(**result), CCD_TransactionType(**_type)
+
+    def convertUpdatePayload(self, message) -> CCD_UpdatePayload:
+        result = {}
+        _type = {"type": "update"}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if self.valueIsEmpty(value):
+                pass
+            else:
+                _type.update({"contents": key})
+
+                if type(value) == ExchangeRate:
+                    value_as_dict = MessageToDict(value)
+                    result[key] = CCD_ExchangeRate(
+                        **{
+                            "numerator": value_as_dict["value"]["numerator"],
+                            "denominator": value_as_dict["value"]["denominator"],
+                        }
+                    )
+
+                elif type(value) in [BakerStakeThreshold, ProtocolUpdate]:
+                    result[key] = self.convertTypeWithSingleValues(value)
+
+                elif type(value) == Level1Update:
+                    result[key] = self.convertLevel1Update(value)
+
+                elif type(value) == IpInfo:
+                    result[key] = self.convertIpInfo(value)
+
+                # TODO: no test available
+                elif type(value) == ElectionDifficulty:
+                    result[key] = self.convertElectionDifficulty(value)
+
+                # TODO: no test available
+                elif type(value) == MintDistributionCpv0:
+                    result[key] = self.convertMintDistributionCpv0(value)
+
+                # TODO: no test available
+                elif type(value) == TransactionFeeDistribution:
+                    result[key] = self.convertTransactionFeeDistribution(value)
+
+                # TODO: no test available
+                elif type(value) == GasRewards:
+                    result[key] = self.convertGasRewards(value)
+
+                # TODO: no test available
+                elif type(value) == RootUpdate:
+                    result[key] = self.convertRootUpdate(value)
+
+                # TODO: no test available
+                elif type(value) == ArInfo:
+                    result[key] = self.convertArInfo(value)
+
+                # TODO: no test available
+                elif type(value) == CooldownParametersCpv1:
+                    result[key] = self.convertCooldownParametersCpv1(value)
+
+                # TODO: no test available
+                elif type(value) == PoolParametersCpv1:
+                    result[key] = self.convertPoolParametersCpv1(value)
+
+                # TODO: no test available
+                elif type(value) == TimeParametersCpv1:
+                    result[key] = self.convertTimeParametersCpv1(value)
+
+                # TODO: no test available
+                elif type(value) == MintDistributionCpv1:
+                    result[key] = self.convertMintDistributionCpv1(value)
+
+                elif type(value) in self.simple_types:
+                    result[key] = self.convertType(value)
+
+        return CCD_UpdatePayload(**result), _type
+
+    def convertUpdateDetails(self, message) -> CCD_UpdateDetails:
+        result = {}
+        _type = {"type": "update"}
+        for descriptor in message.DESCRIPTOR.fields:
+            key, value = self.get_key_value_from_descriptor(descriptor, message)
+
+            if self.valueIsEmpty(value):
+                pass
+            else:
+                if type(value) == UpdatePayload:
+                    result[key], _type = self.convertUpdatePayload(value)
+
+                elif type(value) in self.simple_types:
+                    result[key] = self.convertType(value)
+
+        return CCD_UpdateDetails(**result), CCD_TransactionType(**_type)
+
+    def get_block_transaction_events(
+        self: GRPCClient,
+        block_hash: str,
+        net: Enum = NET.MAINNET,
+    ) -> CCD_Block:
+        blockHashInput = self.generate_block_hash_input_from(block_hash)
+
+        self.check_connection(net, sys._getframe().f_code.co_name)
+        if net == NET.MAINNET:
+            grpc_return_value = self.stub_mainnet.GetBlockTransactionEvents(
+                request=blockHashInput
+            )
+        else:
+            grpc_return_value = self.stub_testnet.GetBlockTransactionEvents(
+                request=blockHashInput
+            )
+
+        tx_list = []
+        for tx in list(grpc_return_value):
+            result = {}
+            for field, value in tx.ListFields():
+                key = field.name
+                if type(value) in self.simple_types:
+                    result[key] = self.convertType(value)
+
+                if type(value) == UpdateDetails:
+                    result[key], result["type"] = self.convertUpdateDetails(value)
+
+                if type(value) == AccountCreationDetails:
+                    result[key], result["type"] = self.convertAccountCreationDetails(
+                        value
+                    )
+
+                if type(value) == AccountTransactionDetails:
+                    result[key], result["type"] = self.convertAccountTransactionDetails(
+                        value
+                    )
+
+            tx_list.append(CCD_BlockItemSummary(**result))
+
+        return CCD_Block(**{"transaction_summaries": tx_list})
