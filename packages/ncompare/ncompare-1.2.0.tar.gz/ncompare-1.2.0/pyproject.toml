@@ -1,0 +1,70 @@
+[tool.poetry]
+name = "ncompare"
+version = "1.2.0"
+description = "Compare the structure of two NetCDF files at the command line"
+authors = ["Daniel Kaufman <daniel.kaufman@nasa.gov>"]
+readme = "README.md"
+repository = "https://github.com/nasa/ncompare"
+license = "license/LAR-20274-1_ncompare  NetCDF structural comparison tool_NOSA 1.3.pdf"
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+[tool.poetry.scripts]
+ncompare = "ncompare.console:main"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+numpy = "^1.26.0"
+netCDF4 = "^1.6.4"
+xarray = "^2023.9.0"
+colorama = "^0.4.6"
+openpyxl = "^3.1.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.2"
+ruff = ">=0.0.291,<0.0.293"
+black = "^23.9.1"
+mypy = "^1.5.1"
+coverage = "^7.3.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.mypy.overrides]]
+module = [
+  "colorama.*",
+  "netCDF4.*",
+  "openpyxl.*"
+]
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 100
+skip-string-normalization = true
+
+
+[tool.ruff]
+builtins = ["ellipsis"]
+exclude = [
+  ".eggs",
+  "doc",
+  "_typed_ops.pyi",
+]
+target-version = "py39"
+# E402: module level import not at top of file
+# E501: line too long - let black worry about that
+# E731: do not assign a lambda expression, use a def
+ignore = [
+  "E402",
+  "E501",
+  "E731",
+]
+select = [
+  "F", # Pyflakes
+  "E", # Pycodestyle
+  "W",
+  "I", # isort
+  "UP", # Pyupgrade
+]
