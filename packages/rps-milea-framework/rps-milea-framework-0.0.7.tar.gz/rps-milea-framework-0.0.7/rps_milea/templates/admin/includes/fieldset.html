@@ -1,0 +1,57 @@
+<div class="card">
+    <div class="card-status-top bg-primary"></div>
+    {% if fieldset.name %}
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ fieldset.name }}</h3>
+                {% if fieldset.description %}<p class="card-subtitle">{{ fieldset.description|safe }}</p>{% endif %}
+            </div>
+        </div>
+    {% endif %}
+ 
+    <fieldset class="card-body">
+        {% for line in fieldset %}
+            <div class="mb-3 form-row {% if not line.fields|length_is:'1' %} row {% endif %} {% if line.fields|length_is:'1' and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+                {% for field in line %}
+                    <div {% if not line.fields|length_is:'1' %} class="col"{% endif %}>
+                        {% if not line.fields|length_is:'1' and not field.is_readonly %}
+                            {{ field.errors }}
+                        {% endif %}
+ 
+                        {% if field.is_checkbox %}
+                            <label class="form-check form-switch">
+                                {{ field.field }}
+                                <span class=" form-check-label">{{ field.field.label|capfirst }}</span>
+                            </label>
+                        {% else %}
+                            {% if field.is_readonly %}
+                                <label class="form-label ">{{ field.field.label|capfirst }}:</label>
+                                {% if field.contents|first == '<' %}
+                                    {{ field.contents }}
+                                {% else %}
+                                    <input type="text"
+                                           class="form-control form-control-flush"
+                                           value="{{ field.contents }}"
+                                           readonly="readonly"/>
+                                {% endif %}
+                            {% else %}
+                                {{ field.label_tag }}
+                                {{ field.field }}
+                            {% endif %}
+                        {% endif %}
+
+                        {{ field.errors }}
+
+                        {% if field.field.help_text %}
+                            <small class="form-hint"
+                                   {% if field.field.id_for_label %} id="{{ field.field.id_for_label }}_helptext"{% endif %}>
+                                {{ field.field.help_text|safe }}
+                            </small>
+                        {% endif %}
+ 
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </fieldset>
+</div>
