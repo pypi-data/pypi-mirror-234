@@ -1,0 +1,51 @@
+[console_scripts]
+regen-package-docs = packagedcode.regen_package_docs:regen_package_docs
+scancode = scancode.cli:scancode
+scancode-license-data = licensedcode.license_db:dump_scancode_license_data
+scancode-reindex-licenses = licensedcode.reindex:reindex_licenses
+
+[scancode_output]
+csv = formattedcode.output_csv:CsvOutput
+cyclonedx = formattedcode.output_cyclonedx:CycloneDxJsonOutput
+cyclonedx-xml = formattedcode.output_cyclonedx:CycloneDxXmlOutput
+debian = formattedcode.output_debian:DebianCopyrightOutput
+html = formattedcode.output_html:HtmlOutput
+html-app = formattedcode.output_html:HtmlAppOutput
+json = formattedcode.output_json:JsonCompactOutput
+json-pp = formattedcode.output_json:JsonPrettyOutput
+jsonlines = formattedcode.output_jsonlines:JsonLinesOutput
+spdx-rdf = formattedcode.output_spdx:SpdxRdfOutput
+spdx-tv = formattedcode.output_spdx:SpdxTvOutput
+template = formattedcode.output_html:CustomTemplateOutput
+yaml = formattedcode.output_yaml:YamlOutput
+
+[scancode_output_filter]
+ignore-copyrights = cluecode.plugin_ignore_copyrights:IgnoreCopyrights
+only-findings = scancode.plugin_only_findings:OnlyFindings
+
+[scancode_post_scan]
+classify = summarycode.classify_plugin:FileClassifier
+consolidate = summarycode.plugin_consolidate:Consolidator
+filter-clues = cluecode.plugin_filter_clues:RedundantCluesFilter
+license-clarity-score = summarycode.score:LicenseClarityScore
+license-policy = licensedcode.plugin_license_policy:LicensePolicy
+license-references = licensedcode.licenses_reference:LicenseReference
+mark-source = scancode.plugin_mark_source:MarkSource
+summary = summarycode.summarizer:ScanSummary
+tallies = summarycode.tallies:Tallies
+tallies-by-facet = summarycode.tallies:FacetTallies
+tallies-key-files = summarycode.tallies:KeyFilesTallies
+tallies-with-details = summarycode.tallies:TalliesWithDetails
+
+[scancode_pre_scan]
+facet = summarycode.facet:AddFacet
+ignore = scancode.plugin_ignore:ProcessIgnore
+
+[scancode_scan]
+copyrights = cluecode.plugin_copyright:CopyrightScanner
+emails = cluecode.plugin_email:EmailScanner
+generated = summarycode.generated:GeneratedCodeDetector
+info = scancode.plugin_info:InfoScanner
+licenses = licensedcode.plugin_license:LicenseScanner
+packages = packagedcode.plugin_package:PackageScanner
+urls = cluecode.plugin_url:UrlScanner
