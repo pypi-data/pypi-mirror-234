@@ -1,0 +1,127 @@
+Metadata-Version: 2.1
+Name: qibocal
+Version: 0.0.4
+Summary: 
+Home-page: https://github.com/qiboteam/qibocal/
+License: Apache-2.0
+Author: andrea-pasquale
+Author-email: andreapasquale97@gmail.com
+Requires-Python: >=3.9,<3.12
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Physics
+Provides-Extra: classify
+Provides-Extra: docs
+Provides-Extra: viz
+Requires-Dist: Sphinx (>=5.0.0,<6.0.0) ; extra == "docs"
+Requires-Dist: click (>=8.1.3,<9.0.0)
+Requires-Dist: dash (>=2.6.0,<3.0.0)
+Requires-Dist: furo (>=2023.3.27,<2024.0.0) ; extra == "docs"
+Requires-Dist: jinja2 (>=3.1.2,<4.0.0)
+Requires-Dist: keras-tuner (>=1.3.0,<1.3.1) ; (sys_platform == "linux" or sys_platform == "darwin") and (extra == "classify")
+Requires-Dist: lmfit (>=1.0.3,<2.0.0)
+Requires-Dist: matplotlib (>=3.7.0,<4.0.0) ; extra == "classify"
+Requires-Dist: networkx (>=3.0,<4.0)
+Requires-Dist: numba (>=0.57.1,<0.58.0)
+Requires-Dist: numpy (>=1.24.0,<2.0.0)
+Requires-Dist: onnx (>=1.13.1,<2.0.0) ; extra == "classify"
+Requires-Dist: onnxruntime (>=1.14.1,<2.0.0) ; extra == "classify"
+Requires-Dist: pandas (>=1.4.3,<2.0.0)
+Requires-Dist: plotly (>=5.15.0,<6.0.0)
+Requires-Dist: pydantic (>=1.10.5,<2.0.0)
+Requires-Dist: pydot (>=1.4.2,<2.0.0) ; extra == "viz"
+Requires-Dist: pyyaml (>=6.0,<7.0)
+Requires-Dist: qibo (>=0.2.1,<0.3.0)
+Requires-Dist: qibolab (>=0.1.2,<0.2.0)
+Requires-Dist: recommonmark (>=0.7.1,<0.8.0) ; extra == "docs"
+Requires-Dist: scikit-learn (>=1.2.1,<2.0.0)
+Requires-Dist: scipy (>=1.10.1,<2.0.0)
+Requires-Dist: seaborn (>=0.12.2,<0.13.0) ; extra == "classify"
+Requires-Dist: setuptools (>=67.8.0,<68.0.0)
+Requires-Dist: skl2onnx (>=1.14.0,<2.0.0) ; extra == "classify"
+Requires-Dist: skops (>=0.6.0,<0.7.0)
+Requires-Dist: sphinx-copybutton (>=0.5.1,<0.6.0) ; extra == "docs"
+Requires-Dist: sphinx_markdown_tables (>=0.0.17,<0.0.18) ; extra == "docs"
+Requires-Dist: sphinxcontrib-bibtex (>=2.4.1,<3.0.0) ; extra == "docs"
+Requires-Dist: tensorflow (>=2.12.0,<3.0.0) ; (sys_platform == "linux" or sys_platform == "darwin") and (extra == "classify")
+Project-URL: Repository, https://github.com/qiboteam/qibocal/
+Description-Content-Type: text/markdown
+
+# Qibocal
+![Tests](https://github.com/qiboteam/qibocal/workflows/Tests/badge.svg)
+[![codecov](https://codecov.io/gh/qiboteam/qibocal/branch/main/graph/badge.svg?token=1EKZKVEVX0)](https://codecov.io/gh/qiboteam/qibocal)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7662185.svg)](https://doi.org/10.5281/zenodo.7662185)
+
+Qibocal provides Quantum Characterization Validation and Verification protocols using [Qibo](https://github.com/qiboteam/qibo) and [Qibolab](https://github.com/qiboteam/qibolab).
+
+Qibocal key features:
+
+- Automatization of calibration protocols.
+
+- Declarative inputs using runcard.
+
+- Generation of a report.
+
+## Installation
+
+The package can be installed by source:
+```sh
+git clone https://github.com/qiboteam/qibocal.git
+cd qibocal
+pip install .
+```
+
+
+### Developer instructions
+For development make sure to install the package using [`poetry`](https://python-poetry.org/) and to install the pre-commit hooks:
+```sh
+git clone https://github.com/qiboteam/qibocal.git
+cd qibocal
+poetry install
+pre-commit install
+```
+
+## Minimal working example
+
+This section shows the steps to perform a resonator spectroscopy with Qibocal.
+### Write a runcard
+A runcard contains all the essential information to run a specific task.
+For our purposes, we can use the following:
+```yml
+platform: tii1q
+
+qubits: [0]
+
+- id: resonator spectroscopy high power
+  priority: 0
+  operation: resonator_spectroscopy
+  parameters:
+    freq_width: 10_000_000
+    freq_step: 500_000
+    amplitude: 0.4
+    power_level: high
+    nshots: 1024
+    relaxation_time: 0
+
+```
+### How to run protocols
+To run the protocols specified in the ```runcard```, Qibocal uses the `qq auto` command
+```sh
+qq auto <runcard> -o <output_folder>
+```
+if ```<output_folder>``` is specified, the results will be saved in it, otherwise ```qq``` will automatically create a default folder containing the current date and the username.
+
+
+### Uploading reports to server
+
+In order to upload the report to a centralized server, send to the server administrators your public ssh key (from the machine(s) you are planning to upload the report) and then use the `qq upload <output_folder>` command. This program will upload your report to the server and generate an unique URL.
+
+## Contributing
+
+Contributions, issues and feature requests are welcome!
+Feel free to check
+<a href="https://github.com/qiboteam/qibocal/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues-closed/qiboteam/qibocal"/></a>
+
