@@ -1,0 +1,19 @@
+pubkey_whitelist: 
+    - c7da62153485ecfb1b65792c79ce3fe6fce6ed7d8ef536cb121d7a0c732e92df
+
+output_validator: nostr_relay.recipe.homeserver.whitelist_output_validator
+
+storage:
+    class: nostr_relay.recipe.homeserver.PrivateStorage
+    path: /tmp/homeserver
+    validators:
+        - nostr_relay.validators.is_signed
+        - nostr_relay.recipe.homeserver.is_whitelisted_or_tagged
+
+authentication:
+    enabled: true
+    relay_urls:
+        - ws://127.0.0.1:6969
+
+forward_events: true
+

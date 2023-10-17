@@ -1,0 +1,67 @@
+DEBUG: false
+
+storage:
+  class: nostr_relay.storage.kv.LMDBStorage
+  path: ./data/nostr.db
+  map_size: 209715200
+  # lock: false
+  # metasync: false
+  validators:
+    - nostr_relay.validators.is_not_too_large
+    - nostr_relay.validators.is_signed
+    # - nostr_relay.dynamic_lists.is_pubkey_allowed
+    # - nostr_relay.foaf.is_in_foaf
+
+
+dynamic_lists:
+  check_interval: 3600
+  allow_list_queries:
+    - {"kinds": [3], "authors": ["c7da62153485ecfb1b65792c79ce3fe6fce6ed7d8ef536cb121d7a0c732e92df"]}
+    - {"kinds": [31494], "#t": ["auth", "verification", "foaf"]}
+
+  deny_list_queries:
+    - {"kinds": [1984]}
+
+# foaf:
+#   check_interval: 3600
+#   levels: 2
+#   network_pubkeys:
+#     - c7da62153485ecfb1b65792c79ce3fe6fce6ed7d8ef536cb121d7a0c732e92df
+
+
+relay_name: python relay
+relay_description: relay written in python
+sysop_pubkey: 
+sysop_contact: 
+# options are disabled, passive, enabled
+nip05_verification: disabled
+verification_expiration: 2592000
+verification_update_frequency: 3600
+#verification_blacklist:
+# - badhost.biz
+#verification_whitelist:
+# - goodhost.com
+
+service_privatekey: 9627da965699a2a3048f97b77df5047e8cd0d11daca75e7687d0b28b65416a3c
+
+base_uri: /lmdb/
+
+gunicorn:
+  bind: 127.0.0.1:6969
+  workers: 4
+  loglevel: info
+  reload: false
+  # root_path: /test/
+
+purple:
+  host: 127.0.0.1
+  port: 6969
+  workers: 4
+  # run_profiler: true
+  # disable_compression: true
+
+
+default_req_limit: 10000
+
+fts_index_path: ./data/fts/
+fts_enabled: true

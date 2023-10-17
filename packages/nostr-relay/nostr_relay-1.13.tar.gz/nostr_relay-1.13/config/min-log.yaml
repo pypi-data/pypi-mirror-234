@@ -1,0 +1,104 @@
+DEBUG: false
+
+relay_name: python relay
+relay_description: relay written in python
+sysop_pubkey: 
+sysop_contact: 
+
+storage:
+  # sqlalchemy.url: sqlite+aiosqlite:///nostr.sqlite3
+  # num_concurrent_reqs: 8
+  # num_concurrent_adds: 8
+  sqlalchemy.url: 'postgresql+asyncpg://dcs@localhost/nostr'
+  sqlalchemy.max_overflow: 80
+  sqlalchemy.pool_size: 4
+  num_concurrent_reqs: 10
+  num_concurrent_adds: 10
+
+verification:
+  # options are disabled, passive, enabled
+  nip05_verification: disabled
+  expiration: 86400 * 30
+  update_frequency: 3600
+  #blacklist:
+  # - badhost.biz
+  #whitelist:
+  # - goodhost.com
+
+
+gunicorn:
+  bind: 127.0.0.1:6969
+  workers: 3
+  worker_connections: 2000
+  keepalive: 30
+  loglevel: error
+  reload: false
+  logconfig_dict:
+    root:
+      level: WARNING
+      handlers: [console]
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: WARNING
+        stream: ext://sys.stdout
+    loggers:
+      gunicorn:
+        level: ERROR
+        handlers: [console]
+        propagate: no
+
+# number of seconds to allow between client messages
+# message_timeout: 1800
+
+# number of open subscriptions per connection
+subscription_limit: 32
+
+logging:
+  version: 1
+  formatters:
+    simple:
+      format: '%(processName)s %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: INFO
+      formatter: simple
+      stream: ext://sys.stdout
+    sql:
+      class: logging.StreamHandler
+      level: WARNING
+      formatter: simple
+      stream: ext://sys.stdout
+  loggers:
+    sqlalchemy.engine.Engine:
+      level: ERROR
+      handlers: [sql]
+      propagate: no
+    nostr_relay:
+      level: WARNING
+      handlers: [console]
+      propagate: no
+    gunicorn:
+      level: WARNING
+      handlers: [console]
+      propagate: no
+    nostr_relay.long-queries:
+      level: ERROR
+      handlers: [console]
+      propagate: no
+    uvicorn.error:
+      level: ERROR
+      handlers: [console]
+      propagate: no
+    # nostr_relay.notify:server:
+    #   level: INFO
+    #   handlers: [console]
+    #   propagate: no
+    # nostr_relay.notify:client:
+    #   level: INFO
+    #   handlers: [console]
+    #   propagate: no
+  root:
+    level: WARNING
+    handlers: [console]

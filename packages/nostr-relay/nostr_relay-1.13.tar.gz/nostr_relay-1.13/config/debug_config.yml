@@ -1,0 +1,87 @@
+DEBUG: true
+
+db_filename: ./nostr.sqlite3
+# db_filename: ./nostr_prod.sqlite3
+# storage:
+#   sqlalchemy.url: 'postgresql+asyncpg://dcs@localhost/nostr'
+
+relay_name: Dave's relay
+relay_description: relay written in python
+sysop_pubkey: 12345
+sysop_contact: 
+nip05_verification: disabled
+# verification_update_frequency: 2
+# verification_expiration: 3600
+# redirect_index: 'https://dave.st.germa.in/'
+
+# origin_blacklist:
+#   - none
+
+# rate_limits:
+#   global:
+#     EVENT: 1000/s
+#     REQ: 100/s
+#   ip:
+#     EVENT: -1/s,1000/min
+#     REQ: -1/s
+
+
+# garbage_collector:
+#   collect_interval: 300
+
+gunicorn:
+  reload: false
+  bind: 127.0.0.1:6969
+  workers: 1
+  timeout: 60
+  proc_name: test-relay
+  loglevel: warning
+  # certfile: ./config/cert.pem
+  # keyfile: ./config/key.pem
+
+authentication:
+  enabled: true
+  actions:
+    save: a
+    query: a
+
+
+logging:
+  version: 1
+  formatters:
+    simple:
+      format: '%(processName)s %(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: DEBUG
+      formatter: simple
+      stream: ext://sys.stdout
+    sql:
+      class: logging.StreamHandler
+      level: WARNING
+      formatter: simple
+      stream: ext://sys.stdout
+    long:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: simple
+      filename: /tmp/longqueries.log
+      maxBytes: 4000000
+      backupCount: 2
+  loggers:
+    sqlalchemy.engine.Engine:
+      level: ERROR
+      handlers: [sql]
+      propagate: no
+    nostr_relay:
+      level: INFO
+      handlers: [console]
+      propagate: no
+    nostr_relay.long-queries:
+      level: INFO
+      handlers: [long]
+      propagate: no
+  root:
+    level: INFO
+    handlers: [console]
