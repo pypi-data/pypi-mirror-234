@@ -1,0 +1,2 @@
+export const id=1529;export const ids=[1529];export const modules={1529:(t,e,s)=>{s.r(e),s.d(e,{OriginalStatesDashboardStrategy:()=>o});var a=s(17463),r=s(68144),n=s(79932);let o=(0,a.Z)([(0,n.Mo)("original-states-dashboard-strategy")],(function(t,e){return{F:class extends e{constructor(...e){super(...e),t(this)}},d:[{kind:"method",static:!0,key:"generate",value:async function(t,e,s){return{title:e.config.location_name,views:[{strategy:{type:"original-states"}}]}}}]}}),r.fl)}};
+//# sourceMappingURL=1529-9DCm_15GcVQ.js.map
