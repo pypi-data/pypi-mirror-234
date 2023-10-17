@@ -1,0 +1,94 @@
+# Thera
+
+A [Python] script for building static HTML websites from [Markdown text files], using the [Mako] template engine. Excellent support for blogs: allows [YAML] metadata in the blog markdown files, can create an [Atom]-compatible RSS feed.
+
+## Why use it?
+
+- **Simple**: Requires one file to generate the site.
+- **Reliable**: A static website of HTML files has almost nothing to break. Immune to the [Slashdot effect].
+- **Secure**: No database to break into. Fewer moving parts gives hackers fewer entry points into your website.
+- **Fast**: Static pages are pre-compiled HTML, ready for display.
+
+Minimalist design reduces maintenance headaches.
+
+## How to install it
+
+    pip3 install thera
+
+## How to use it
+
+	thera.py <markdown file(s)>
+
+### Options
+
+    -b --blog             Blog index template path.
+    -c --config           Configuration file path.
+    -h --help             Show help.
+    -r --rss              Blog RSS template path.
+    -s --static           Static directory paths (javascript, css).
+    -t --template         Page template file path.
+    -v --version          Show version number.
+
+### YAML
+YAML can be used in the markdown files:
+
+    ---
+    Title: Hello world
+    Date: 09 Apr 2018 07:00 AM -0400
+    Slug: hello
+    Summary: A new blog for tech, business, and other oddments.
+    ---
+    Hello. This is a new blog with a focus on tech and business.
+
+**Note**: To generate an RSS feed the YAML date must include the offset from Coordinated Universal Time (UTC). In the example above, the offset is `-0400`.
+
+### Template tags
+#### Blog RSS XML page
+- **${articles}**: A list of page data dictionaries (explained below).
+- **${now}**: The current date/time in UTC.
+
+#### Blog index page: a list of articles
+- **${data}**: A dictionary where the key is a year and the value is a list
+of page data dictionaries (explained below) of articles for that year.
+
+#### All other pages
+- **${data}**: The **page data dictionary** with the following keys:
+    - **content**: The markdown page converted to HTML without the template applied.
+    - **display-date**: Allows the web pages to use a different date format than the YAML date.
+    - **slug**: The part of an URL identifying the page in human-friendly words. For example in <https://seagrape.us/blog/space-race.html>, *space-race* is the slug. If a slug isn't in the YAML metadata, Thera uses the markdown file name.
+    - **summary**: The summary of an article. Can be used in the RSS feed or the blog index page.
+    - **title**: The web page title. If a title isn't in the YAML metadata, Thera uses the `<h1>` header.
+    - **utc-date**: The UTC version of the YAML date. Used in the RSS feed.
+
+## Configuration file
+A JSON or YAML configuration file is optional:
+
+Name    | Usage
+------- | -----
+BUILD_DIR | Directory to store built HTML files. Default: 'build'.
+DISPLAY_DATE_FORMAT | HTML date format. Default: '%d %b %Y'.
+SOURCE_DATE_FORMAT | Markdown date format. Default: '%Y-%m-%d %H:%M %z'.
+RSS_ARTICLE_COUNT | Number of blog articles in the RSS feed. Default: 50.
+RSS_DATE_FORMAT | RSS feed date format (must conform to [RFC 822]). Default: '%a %d %b %Y %H:%M %Z'.
+
+## Links
+
+- [Project page](https://seagrape.us/thera.html)
+- [Release history](https://seagrape.us/thera-history.html)
+
+## License
+
+[MIT License].
+
+## Contact me
+
+Send bug reports and patches to <craig@seagrape.us>.
+
+[Atom]: https://en.wikipedia.org/wiki/Atom_(Web_standard)
+[Mako]: http://www.makotemplates.org
+[Markdown text files]: markdown-reference.html
+[Python]: https://www.python.org
+[RFC 822]: https://www.rfc-editor.org/rfc/rfc822
+[Slashdot Effect]: https://en.wikipedia.org/wiki/Slashdot_effect
+[YAML]: https://yaml.org
+[MIT License]: https://seagrape.us/MIT-license.html
