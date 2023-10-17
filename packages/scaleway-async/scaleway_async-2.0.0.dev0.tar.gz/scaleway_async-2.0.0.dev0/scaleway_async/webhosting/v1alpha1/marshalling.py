@@ -1,0 +1,355 @@
+# This file was automatically generated. DO NOT EDIT.
+# If you have any remark or suggestion do not hesitate to open an issue.
+
+from typing import Any, Dict
+from dateutil import parser
+
+from scaleway_core.profile import ProfileDefaults
+from scaleway_core.bridge import (
+    unmarshal_Money,
+)
+from .types import (
+    OfferQuotaWarning,
+    HostingCpanelUrls,
+    HostingOption,
+    Hosting,
+    DnsRecord,
+    Nameserver,
+    DnsRecords,
+    ListHostingsResponse,
+    OfferProduct,
+    Offer,
+    ListOffersResponse,
+    CreateHostingRequest,
+    UpdateHostingRequest,
+)
+
+
+def unmarshal_HostingCpanelUrls(data: Any) -> HostingCpanelUrls:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'HostingCpanelUrls' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("webmail", None)
+    args["webmail"] = field
+
+    field = data.get("dashboard", None)
+    args["dashboard"] = field
+
+    return HostingCpanelUrls(**args)
+
+
+def unmarshal_HostingOption(data: Any) -> HostingOption:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'HostingOption' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("name", None)
+    args["name"] = field
+
+    field = data.get("id", None)
+    args["id"] = field
+
+    return HostingOption(**args)
+
+
+def unmarshal_Hosting(data: Any) -> Hosting:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'Hosting' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("tags", None)
+    args["tags"] = field
+
+    field = data.get("domain", None)
+    args["domain"] = field
+
+    field = data.get("offer_name", None)
+    args["offer_name"] = field
+
+    field = data.get("id", None)
+    args["id"] = field
+
+    field = data.get("username", None)
+    args["username"] = field
+
+    field = data.get("dns_status", None)
+    args["dns_status"] = field
+
+    field = data.get("status", None)
+    args["status"] = field
+
+    field = data.get("offer_end_of_life", None)
+    args["offer_end_of_life"] = field
+
+    field = data.get("region", None)
+    args["region"] = field
+
+    field = data.get("project_id", None)
+    args["project_id"] = field
+
+    field = data.get("organization_id", None)
+    args["organization_id"] = field
+
+    field = data.get("options", None)
+    args["options"] = (
+        [unmarshal_HostingOption(v) for v in field] if field is not None else None
+    )
+
+    field = data.get("cpanel_urls", None)
+    args["cpanel_urls"] = unmarshal_HostingCpanelUrls(field)
+
+    field = data.get("platform_hostname", None)
+    args["platform_hostname"] = field
+
+    field = data.get("offer_id", None)
+    args["offer_id"] = field
+
+    field = data.get("platform_number", None)
+    args["platform_number"] = field
+
+    field = data.get("created_at", None)
+    args["created_at"] = parser.isoparse(field) if isinstance(field, str) else field
+
+    field = data.get("updated_at", None)
+    args["updated_at"] = parser.isoparse(field) if isinstance(field, str) else field
+
+    return Hosting(**args)
+
+
+def unmarshal_DnsRecord(data: Any) -> DnsRecord:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'DnsRecord' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("status", None)
+    args["status"] = field
+
+    field = data.get("value", None)
+    args["value"] = field
+
+    field = data.get("ttl", None)
+    args["ttl"] = field
+
+    field = data.get("type_", None)
+    args["type_"] = field
+
+    field = data.get("name", None)
+    args["name"] = field
+
+    field = data.get("priority", None)
+    args["priority"] = field
+
+    return DnsRecord(**args)
+
+
+def unmarshal_Nameserver(data: Any) -> Nameserver:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'Nameserver' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("is_default", None)
+    args["is_default"] = field
+
+    field = data.get("status", None)
+    args["status"] = field
+
+    field = data.get("hostname", None)
+    args["hostname"] = field
+
+    return Nameserver(**args)
+
+
+def unmarshal_DnsRecords(data: Any) -> DnsRecords:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'DnsRecords' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("status", None)
+    args["status"] = field
+
+    field = data.get("name_servers", None)
+    args["name_servers"] = (
+        [unmarshal_Nameserver(v) for v in field] if field is not None else None
+    )
+
+    field = data.get("records", None)
+    args["records"] = (
+        [unmarshal_DnsRecord(v) for v in field] if field is not None else None
+    )
+
+    return DnsRecords(**args)
+
+
+def unmarshal_ListHostingsResponse(data: Any) -> ListHostingsResponse:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'ListHostingsResponse' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("hostings", None)
+    args["hostings"] = (
+        [unmarshal_Hosting(v) for v in field] if field is not None else None
+    )
+
+    field = data.get("total_count", None)
+    args["total_count"] = field
+
+    return ListHostingsResponse(**args)
+
+
+def unmarshal_OfferProduct(data: Any) -> OfferProduct:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'OfferProduct' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("max_addon_domains", None)
+    args["max_addon_domains"] = field
+
+    field = data.get("ram", None)
+    args["ram"] = field
+
+    field = data.get("v_cpu", None)
+    args["v_cpu"] = field
+
+    field = data.get("support_included", None)
+    args["support_included"] = field
+
+    field = data.get("hosting_storage_quota", None)
+    args["hosting_storage_quota"] = field
+
+    field = data.get("databases_quota", None)
+    args["databases_quota"] = field
+
+    field = data.get("email_storage_quota", None)
+    args["email_storage_quota"] = field
+
+    field = data.get("email_accounts_quota", None)
+    args["email_accounts_quota"] = field
+
+    field = data.get("option", None)
+    args["option"] = field
+
+    field = data.get("name", None)
+    args["name"] = field
+
+    return OfferProduct(**args)
+
+
+def unmarshal_Offer(data: Any) -> Offer:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'Offer' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("end_of_life", None)
+    args["end_of_life"] = field
+
+    field = data.get("quota_warnings", None)
+    args["quota_warnings"] = (
+        [OfferQuotaWarning(v) for v in field] if field is not None else None
+    )
+
+    field = data.get("available", None)
+    args["available"] = field
+
+    field = data.get("product", None)
+    args["product"] = unmarshal_OfferProduct(field)
+
+    field = data.get("billing_operation_path", None)
+    args["billing_operation_path"] = field
+
+    field = data.get("id", None)
+    args["id"] = field
+
+    field = data.get("price", None)
+    args["price"] = unmarshal_Money(field)
+
+    return Offer(**args)
+
+
+def unmarshal_ListOffersResponse(data: Any) -> ListOffersResponse:
+    if not isinstance(data, dict):
+        raise TypeError(
+            "Unmarshalling the type 'ListOffersResponse' failed as data isn't a dictionary."
+        )
+
+    args: Dict[str, Any] = {}
+
+    field = data.get("offers", None)
+    args["offers"] = [unmarshal_Offer(v) for v in field] if field is not None else None
+
+    return ListOffersResponse(**args)
+
+
+def marshal_CreateHostingRequest(
+    request: CreateHostingRequest,
+    defaults: ProfileDefaults,
+) -> Dict[str, Any]:
+    output: Dict[str, Any] = {}
+
+    if request.domain is not None:
+        output["domain"] = request.domain
+
+    if request.offer_id is not None:
+        output["offer_id"] = request.offer_id
+
+    if request.project_id is not None:
+        output["project_id"] = request.project_id or defaults.default_project_id
+
+    if request.email is not None:
+        output["email"] = request.email
+
+    if request.tags is not None:
+        output["tags"] = request.tags
+
+    if request.option_ids is not None:
+        output["option_ids"] = request.option_ids
+
+    return output
+
+
+def marshal_UpdateHostingRequest(
+    request: UpdateHostingRequest,
+    defaults: ProfileDefaults,
+) -> Dict[str, Any]:
+    output: Dict[str, Any] = {}
+
+    if request.email is not None:
+        output["email"] = request.email
+
+    if request.tags is not None:
+        output["tags"] = request.tags
+
+    if request.option_ids is not None:
+        output["option_ids"] = request.option_ids
+
+    if request.offer_id is not None:
+        output["offer_id"] = request.offer_id
+
+    return output
