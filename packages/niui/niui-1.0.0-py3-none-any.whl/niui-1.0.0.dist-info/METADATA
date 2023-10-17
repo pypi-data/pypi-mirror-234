@@ -1,0 +1,73 @@
+Metadata-Version: 2.1
+Name: niui
+Version: 1.0.0
+Summary: Nimu UI Configurator
+Author-email: Nordic Inertial <timo.pihlstrom@nordicinertial.com>
+Project-URL: Homepage, https://dev.azure.com/nordic-inertial/ni-public/_git/niui
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: Flask ==2.3.2
+Requires-Dist: python-can ==4.2.1
+
+# Introduction
+
+This repository provides the source code for `niui` python package, which is user interface for Nordic Intertial
+Measurement Units. It can be used as a local web server, which provides the user interface via browser. Data is
+stored in the user's home directory.
+
+# Installing
+
+To install, you need *python* setup and when functional, run
+```sh
+pip3 install niui
+```
+
+# Getting Started
+
+To get started, you need a support package provided by the seller of the **Nimu** product. Assuming that you have extracted
+it to the directory `nimu-package-123` you can open the support package by giving it to niui with `--project-dir` parameter.
+
+You need to also install the drivers for you CAN adapter. Niui uses `python-can` as backend so all adapters supported by it, are also supported by `niui`. See [python-can documentation](https://python-can.readthedocs.io/en/master/interfaces.html) for further info.
+
+As an example, use the Vector Informatik interface with channel 1. The example here is a multichannel Vector unit and and the channel indexing start from zero.
+
+```sh
+python3 -m niui --project-dir path/to/nimu-package-123 --interface vector --channel 1
+```
+
+As an example, use PEAK-Systems PCAN-USB adapter.
+
+```sh
+python3 -m niui --project-dir path/to/nimu-package-123 --interface pcan --channel PCAN_USBBUS1
+```
+
+# Developing
+
+For the development setup, you can install project from local source code. Then in the data
+directory
+```sh
+python -m niui --debug
+```
+and
+```sh
+cd niui/ui
+yarn dev
+```
+
+
+## Releases
+
+* v1.0.0 - Tested to work with PCAN and Vector adapters. Some bugfixes.
+* v0.9.0 - Support config data parsing in Python. Fine tune work dir strcture.
+* v0.8.0 - Device lookup. Uploading and writing firmware to the device.
+* v0.7.0 - Device mock and improved tables with version difference display.
+* v0.6.0 - PEP8 and typings.
+* v0.5.0 - Basic workflow from the beginning to the end and item view grouping.
+* v0.4.0 - Packing and releasing in public.
+* v0.3.0 - Saving and loading config projects.
+* v0.2.0 - Configuration editor for groups and typical items.
+* v0.1.0 - Basic setup.
