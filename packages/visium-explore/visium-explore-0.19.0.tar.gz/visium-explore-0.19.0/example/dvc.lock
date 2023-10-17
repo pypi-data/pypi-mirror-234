@@ -1,0 +1,85 @@
+schema: '2.0'
+stages:
+  download_dataset:
+    cmd: python -m src.pipeline.download_dataset.donwloading_dataset --output-dir
+      data/download_dataset
+    deps:
+    - path: src/pipeline/download_dataset
+      hash: md5
+      md5: 839d296093d391b04988a7fa414e5324.dir
+      size: 512
+      nfiles: 1
+    outs:
+    - path: data/download_dataset
+      hash: md5
+      md5: d7f55e7cbd884b92861124b5a524c451.dir
+      size: 148180
+      nfiles: 1
+  split_dataset:
+    cmd: python -m src.pipeline.split_dataset.splitting_dataset --download-dataset-dir
+      data/download_dataset --output-dir data/split_dataset
+    deps:
+    - path: data/download_dataset
+      hash: md5
+      md5: d7f55e7cbd884b92861124b5a524c451.dir
+      size: 148180
+      nfiles: 1
+    - path: src/pipeline/split_dataset
+      hash: md5
+      md5: c2fd469f9f5250686b8c42ce0fe35ca7.dir
+      size: 761
+      nfiles: 1
+    params:
+      params.py:
+        SEED: 5
+        TEST_RATIO: 0.4
+    outs:
+    - path: data/split_dataset
+      hash: md5
+      md5: 604c207b7db7ae3a2132db052b3f7df3.dir
+      size: 180294
+      nfiles: 2
+  train_model:
+    cmd: python -m src.pipeline.train_model.training_model --split-dataset-dir data/split_dataset
+      --output-dir data/train_model
+    deps:
+    - path: data/split_dataset
+      hash: md5
+      md5: 604c207b7db7ae3a2132db052b3f7df3.dir
+      size: 180294
+      nfiles: 2
+    - path: src/pipeline/train_model
+      hash: md5
+      md5: 54cc797c3ecf382e1630b196e537d7b1.dir
+      size: 2759
+      nfiles: 2
+    outs:
+    - path: data/train_model
+      hash: md5
+      md5: 2b2c409b01bbae2f2632fca59682cda6.dir
+      size: 569275
+      nfiles: 1
+  evaluate_model:
+    cmd: python -m src.pipeline.evaluate_model.evaluating_model --train-model-dir
+      data/train_model --split-dataset-dir data/split_dataset
+    deps:
+    - path: data/split_dataset
+      hash: md5
+      md5: 604c207b7db7ae3a2132db052b3f7df3.dir
+      size: 180294
+      nfiles: 2
+    - path: data/train_model
+      hash: md5
+      md5: 2b2c409b01bbae2f2632fca59682cda6.dir
+      size: 569275
+      nfiles: 1
+    - path: src/pipeline/evaluate_model
+      hash: md5
+      md5: c0a2ccd1c8c360bd5585b7a5088e2721.dir
+      size: 2909
+      nfiles: 2
+    outs:
+    - path: metrics/metrics.json
+      hash: md5
+      md5: c120479ae12b4e4aa3674f5db1ed2f12
+      size: 31
