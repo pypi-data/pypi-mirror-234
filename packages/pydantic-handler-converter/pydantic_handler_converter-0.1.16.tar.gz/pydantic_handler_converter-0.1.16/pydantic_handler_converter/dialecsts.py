@@ -1,0 +1,22 @@
+from abc import ABC
+
+
+class BaseDialects(ABC):
+    INPUT = 'input'
+    INPUT_STR = 'input string for `{field_name}`'
+    INPUT_INT = 'input number for `{field_name}`'
+    INPUT_FLOAT = 'input number for `{field_name}`'
+    CHOOSE = 'choose value of `{field_name}`'
+    CHOOSE_FROM_ENUM = 'choose value of `{field_name}`'
+    CONTENT_TYPE_NOT_ALLOWED = 'content type is not allowed, please choose value from enum'
+    CHOOSE_FROM_ENUM_OR_INPUT = 'choose or input value of `{field_name}`'
+    BACK_BUTTON = 'back'
+    READY_BUTTON = 'ready'
+    READY_BUTTON_DATA = 'ready'
+    SKIP_BUTTON = 'skip'
+    SKIP_STEP_DATA = 'skip_step'
+
+
+class EnDialects(BaseDialects):
+    pass
+
