@@ -1,0 +1,38 @@
+default:
+  _target_: kazu.ontology_preprocessing.synonym_generation.CombinatorialSynonymGenerator
+  synonym_generators:
+    - _target_: kazu.ontology_preprocessing.synonym_generation.StopWordRemover
+    - _target_: kazu.ontology_preprocessing.synonym_generation.NgramHyphenation
+    - _target_: kazu.ontology_preprocessing.synonym_generation.StringReplacement
+      replacement_dict:
+        "-":
+          - " "
+          - "_"
+        "_":
+          - " "
+          - "-"
+      digit_aware_replacement_dict:
+        " ":
+          - "-"
+      include_greek: true
+gene:
+  _target_: kazu.ontology_preprocessing.synonym_generation.CombinatorialSynonymGenerator
+  synonym_generators:
+    - _target_: kazu.ontology_preprocessing.synonym_generation.NgramHyphenation
+    - _target_: kazu.ontology_preprocessing.synonym_generation.StringReplacement
+      replacement_dict:
+        "-":
+          - " "
+          - "_"
+        "_":
+          - " "
+          - "-"
+      digit_aware_replacement_dict:
+        " ":
+          - "-"
+      include_greek: true
+chemical:
+  _target_: kazu.ontology_preprocessing.synonym_generation.CombinatorialSynonymGenerator
+  synonym_generators:
+    - _target_: kazu.ontology_preprocessing.synonym_generation.StringReplacement
+      include_greek: true
