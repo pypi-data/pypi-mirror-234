@@ -1,0 +1,23 @@
+#%Module
+#
+
+# Gets the folder two folders up from this file
+set             venv                    [file dirname [file dirname [file dirname [file normalize $ModulesCurrentModulefile/___]]]]
+
+# Standard python path requirements
+prepend-path	 PATH $venv/bin
+setenv		     PYTHON_ROOT $venv
+
+set     necessary       {
+    python/3.7
+}
+
+foreach mod $necessary {
+    set splitList [split $mod "/"]
+    set mod_name [lindex $splitList 0]
+    if { [ is-loaded $mod_name ] } {
+        module switch $mod
+    } else {
+        module load $mod
+    }
+}
