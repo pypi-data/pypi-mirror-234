@@ -1,0 +1,164 @@
+[project]
+authors = [
+  {name = "Jacob Chapman", email = "7908073+chapmanjacobd@users.noreply.github.com"},
+]
+dependencies = [
+    "beautifulsoup4",
+    "catt",
+    "feedparser",
+    "ffmpeg-python",
+    "ftfy",
+    "gallery-dl",
+    "humanize",
+    "ipython",
+    "Markdown",
+    "mutagen",
+    "natsort",
+    "praw",
+    "puremagic",
+    "pysubs2",
+    "python-dateutil",
+    "python-mpv-jsonipc",
+    "regex",
+    "rich",
+    "screeninfo",
+    "sqlite-utils",
+    "tabulate",
+    "tinytag",
+    "yt-dlp",
+]
+description = "xk library"
+dynamic = ["version"]
+license = {file = "LICENSE"}
+name = "xklb"
+readme = "README.md"
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+deluxe = [
+  "aiohttp",
+  "brotab",
+  "geopandas",
+  "orjson",
+  "PyExifTool",
+  "scikit-learn",
+  "subliminal",
+  "textract",
+]
+dev = ["black", "isort", "ssort"]
+test = ["ruff", "pytest", "vcrpy"]
+all = ["xklb[deluxe,dev,test]"]
+
+[project.urls]
+documentation = "https://github.com/chapmanjacobd/library#usage"
+homepage = "https://github.com/chapmanjacobd/library#readme"
+repository = "https://github.com/chapmanjacobd/library/"
+
+[project.scripts]
+lb = "xklb.lb:library"
+library = "xklb.lb:library"
+
+[tool.pdm]
+version = {source = "file", path = "xklb/__init__.py"}
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.hatch.version]
+path = "xklb/__init__.py"
+
+[tool.hatch.build]
+exclude = [
+  "tests/",
+  "examples/",
+]
+
+[tool.hatch.build.force-include]
+"xklb/assets/" = "xklb/assets/"
+
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39", "py310"]
+
+[tool.isort]
+atomic = true
+combine_straight_imports = true
+float_to_top = true
+group_by_package = true
+line_length = 120
+profile = "black"
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["ANN201", "PLR2004"]
+
+[tool.ruff]
+unfixable = ["F841"]
+
+ignore = [
+  "ANN001",
+  "ANN002",
+  "ANN003",
+  "ANN101",
+  "ANN204",
+  "BLE001",
+  "C400",
+  "C401",
+  "C405",
+  "C901",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D107",
+  "D211",
+  "D212",
+  "E401",
+  "E501",
+  "EM101",
+  "ERA001",
+  "F401",
+  "FBT002",
+  "I001",
+  "N806",
+  "PGH003",
+  "PGH004",
+  "PLR0913",
+  "PLW0603",
+  "PLW2901",
+  "PTH109",
+  "PTH123",
+  "Q000",
+  "RET504",
+  "RET505",
+  "RET507",
+  "RUF001",
+  "RUF100",
+  "S101",
+  "S108",
+  "S311",
+  "S324",
+  "S603",
+  "S606",
+  "SIM103",
+  "SIM105",
+  "SIM108",
+  "SIM110",
+  "SIM114",
+  "T100",
+  "T201",
+  "TRY003",
+  "TRY300",
+  "TRY301",
+]
+line-length = 120
+select = ["ALL"]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+show-fixes = true
+
+[tool.pytest.ini_options]
+addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb --ignore=tests/data --capture=tee-sys --log-cli-level=ERROR"
+testpaths = ["tests"]
