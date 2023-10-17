@@ -1,0 +1,184 @@
+Metadata-Version: 2.1
+Name: opexebo
+Version: 0.7.1
+Summary: Collection of python code in Kavli lab.
+Home-page: https://github.com/kavli-ntnu/opexebo
+Author: Simon Ball
+Author-email: simon.ball@ntnu.no
+License: UNKNOWN
+Keywords: neuroscience kavli gridscore
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Description-Content-Type: text/markdown
+Requires-Dist: astropy >=5.3
+Requires-Dist: numpy >=1.24
+Requires-Dist: scipy >=1.10
+Requires-Dist: scikit-image >=0.20
+Requires-Dist: opencv-python
+Provides-Extra: full
+Requires-Dist: sep >=1.2.1 ; extra == 'full'
+
+# opexebo
+
+[![Build Status](https://travis-ci.com/kavli-ntnu/opexebo.svg?branch=master&status=passed)](https://travis-ci.com/kavli-ntnu/opexebo)
+[![codecov](https://codecov.io/gh/kavli-ntnu/opexebo/branch/master/graph/badge.svg)](https://codecov.io/gh/kavli-ntnu/opexebo)
+[![Documentation Status](https://readthedocs.org/projects/opexebo/badge/?version=latest)](https://opexebo.readthedocs.io/en/latest/?badge=latest)
+
+This library provides various analysis tools written by and for the Moser group  at the [Kavli Institute](https://www.ntnu.edu/kavli) in Trondheim. 
+
+The package contains a mixture of translations of the older MatLab based [Behavioural Neurology Toolbox](https://bitbucket.org/cnc-ntnu/bnt), and other functions written only in Python 3, as part of the transition towards providing open access to research code. 
+
+
+### Documentation
+
+Specifications and documentation for `opexebo` are available on [Read the Docs](https://opexebo.readthedocs.io/en/latest/).
+
+
+### Installation
+
+Install with pip:
+
+```
+pip install opexebo
+```
+
+Opexebo has an optional dependency, `sep`, that is not installed by default. To be able to install it, you require a C++ compiler installed on your system. On Linux, `gcc` will do the job. On Windows, the the Microsoft Visual C++ Build Tools fulfil the same role (https://www.microsoft.com/en-us/download/details.aspx?id=48159). To force installation of all optional dependencies, append `[full]` to the install command, for example:
+
+    pip install opexebo[full]
+
+### Tests
+
+Tests are implemented with `pytest`. Ensure that the various development tools are installed via 
+```python
+pip install -r dev-requirements.txt
+```
+And then run tests with `pytest .`
+
+
+# History
+
+## 0.7.0
+* Update dependencies for more modern versions (particularly `numpy`, `scipy` and `pytest`)
+* Switch supported Python versions for 3.8+
+
+## 0.6.1
+
+* Fix some docstrings that were not updated to reflect changes in 0.6.0
+* Fix the default limit behaviour of `accumulate_spatial` for bin width specification.
+
+
+## 0.6.0
+
+* Rewrite `spatial_occupancy` and `rate_map` to remove the walk filter (signature breaking)
+  * The individual analysis functions should be single purpose, and the walk-filter breaks this rule.
+  * Ideally, the walk-filter should be applied to spikes/tracking data _first_, and the resulting data then used for further analysis. 
+  * A dedicated function has been provided to replace this: `general.walk_filter`
+* Rewrite `shuffle` to better handle edge cases (including 1-spike-only) (signature breaking)
+* Added `general.walk_filter` to provide replace the specific filtering implemented in each of `spatial_occupancy` and `rate_map`
+
+* Fix a bug where `accumulate_spatial` can't handle cases where a single spike is present
+* Fix an error in the LFP power spectrum calculation with fft
+* Removed support for providing 1D position data as a 2d array with length 1
+  * Caused frustrating circular issues in cases where only a single data point was provided.
+  * Fairly low value addition, so support removed.
+
+
+
+## 0.5.5 (2021-06-01)
+
+* Publish to PyPi
+
+
+## 0.5.2 (2021-04-19)
+
+* Support 1D data in spatial occupancy and ratemap
+* Add Opexebo-specific errors
+* Add automated testing prior to release
+* Add `calculate_speed`
+* Add `egocentric_occupancy`
+* Fixed an edge case error in `accumulate_spatial`
+
+
+## 0.4.3 (2020-02-19)
+
+* Substantial cleanup to `accumulate_spatial`
+  - Function was mathematically correct but confusing, due to the difference between opexebo's standard of `(x, y)` and NumPy's standard of `(y, x)`
+* Added `upsampling`
+* Added `circular_mask`
+* Mandatory keyword arguments have been made positional
+* `peak_search` updated to handle issues with MaskedArrays containing negative values
+* Dcumentation expanded, made Sphinx compatible, and published on ReadTheDocs
+* Further work on BorderScore, still experimental though
+  - Functional for Rectangular arenas
+  - Circular arenas are still WIP, should not be relied upon yet.
+
+
+## 0.4.2 (2020-02-05)
+
+* Speedscore modified substantially
+  - Adaptive filtering added, allowing the user to specify an upper speed as a bandwidth
+  - Adaptive filtering adjusted to behave more sensibly in the case of small bin sizes
+  - Speeds are smoothed before correlating
+* Spatial cross correlation added
+* General `bin_number` to `bin_size` code refactored to make future development more consistent
+* Assorted unit tests added, including run-once code removed for speed
+* Fix errors associated with `>` where applied to MaskedArrays (which, unlike ndarrays, do not correctly obey  the symbol)
+
+
+## 0.4.0 (2019-12-10)
+
+* Ratemaps updated to handle walk filter (signature now requires providing animal speeds)
+* Angular occupancy coverage calculation corrected
+* circular arenas now handled in Spatial Occupancy
+* Population Vector Correlation added
+
+
+## 0.3.5 (2019-11-18)
+
+* Assorted bugfixes to HDtuning
+* Gridscore to handle NaNs more gracefully
+
+
+## 0.3.4 (2019-20-25)
+
+* `sep` made an optional dependency
+* Alternative, non `sep` based code uses `skimage`
+* Attempting to use `sep` if not installed with raise an error
+
+
+## 0.3.2 (2019-09-20)
+
+* Consistent calculating of bin numbers when histogramming
+
+
+## 0.3.0 (2019-08-27)
+
+* Third development release
+* Improve NaN handling throughout by moving to MaskedArrays
+* Fix Angular handling to function in seconds instead of frames
+* Remove matplotlib from requirements
+
+
+## 0.2.0 
+
+* Second development release
+  - Implementation of time-map -> rate-map -> (acorr, gridness score)
+  - Implementation of rate-map stats, grid stats
+  - Implementation of angular-map -> tuning-curve -> head direction score, stats.
+  - Non-production-ready implementation of border-score, speed-score. 
+
+
+## 0.1.0 (2018-08-30)
+
+* First development release
+  - Implementation of gridness score, autocorrelogram, place-field detection
+
+
