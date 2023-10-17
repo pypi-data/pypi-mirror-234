@@ -1,0 +1,998 @@
+from __future__ import annotations
+from functools import cache
+from emlib import textlib, iterlib
+import numpy as np
+import re
+import os
+import textwrap
+
+from .config import config, logger
+from .errors import CsoundError
+from . import csoundlib
+from . import jupytertools
+from . import instrtools
+from typing import Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from . import session as _session
+
+__all__ = (
+    'Instr',
+)
+
+
+_EMPTYDICT = {}
+_EMPTYSET = frozenset()
+
+
+class Instr:
+    """
+    An Instr is a template used to schedule a concrete instrument
+
+    Instrs are used within a :class:`~csoundengine.session.Session` (realtime
+    rendering) or a :class:`~csoundengine.offline.Renderer` (offline rendering)
+
+    .. note::
+
+        An Instr must be registered at the Session/Renderer before it can be used.
+        See :meth:`csoundengine.instr.Instr.register` or :meth:`csoundengine.session.Session.defInstr`
+
+    Args:
+        name: the name of the instrument
+        body: the body of the instr (the text **between** 'instr' end 'endin')
+        args: if given, a dictionary defining default values for arguments. Can be
+            init-time ('i' prefix) or performance time (with 'k' prefix).
+        init: code to be initialized at the instr0 level
+        preschedCallback: a function ``f(synthid, args) -> args``, called before
+            a note is scheduled with
+            this instrument. Can be used to allocate a table or a dict and pass
+            the resulting index to the instrument as parg
+        doc: some documentation describing what this instr does
+        includes: a list of files which need to be included in order for this instr to work
+        aliases: if given, a dict mapping arg names to real argument names. It enables
+            to define named args for an instrument using any kind of name instead of
+            following csound names, or use any kind of name in an instr to avoid possible
+            collisions while exposing a nicer name to the outside as alias
+
+    Example
+    -------
+
+    .. code-block:: python
+
+        s = Engine().session()
+        Instr('sine', r'''
+            kfreq = p5
+            iamp = p6
+            a0 = oscili:a(iamp, kfreq)
+            outch 1, a0
+        ''').register(s)
+        synth = s.sched('sine', kfreq=440, iamp=0.1)
+        synth.stop()
+
+    One can create an Instr and register it at a session in one operation:
+
+    .. code-block:: python
+
+        s = Engine().session()
+        s.defInstr('sine', r'''
+            kfreq = p5
+            kamp = p6
+            a0 = oscili:a(kamp, kfreq)
+            outch 1, a0
+        ''')
+
+
+    **Default Values**
+
+    An Instr can define default values for any of its parameters and define
+    aliases for its names:
+
+    .. code-block:: python
+
+        s = Engine().session()
+        s.defInstr('sine', r'''
+            kamp = p5
+            kfreq = p6
+            a0 = oscili:a(kamp, kfreq)
+            outch 1, a0
+        ''', args={'kamp': 0.1, 'kfreq': 1000}, aliases={'frequency': 'kfreq'}
+        )
+        # We schedule an event of sine, kamp will take the default (0.1)
+        synth = s.sched('sine', kfreq=440)
+        synth.set(frequency=450, delay=1)   # Use alias
+        synth.stop()
+
+    **Inline arguments**
+
+    An inline args declaration can set both parameter name and default value:
+
+    .. code-block:: python
+
+        s = Engine().session()
+        Instr('sine', r'''
+            |iamp=0.1, kfreq=1000|
+            a0 = oscili:a(iamp, kfreq)
+            outch 1, a0
+        ''').register(s)
+        synth = s.sched('sine', kfreq=440)
+        synth.stop()
+
+    The same can be achieved via an associated table:
+
+    .. code-block:: python
+
+        s = Engine().session()
+        Instr('sine', r'''
+            a0 = oscili:a(kamp, kfreq)
+            outch 1, a0
+        ''', tabargs=dict(amp=0.1, freq=1000
+        ).register(s)
+        synth = s.sched('sine', tabargs=dict(freq=440))
+        synth.stop()
+
+
+    An inline syntax exists also for tables:
+
+    .. code-block:: python
+
+        Intr('sine', r'''
+            {amp=0.1, freq=1000}
+            a0 = oscili:a(kamp, kfreq)
+            outch 1, a0
+        ''')
+
+
+    This will create a table and fill it will the given/default values,
+    and generate code to read from the table and free the table after
+    the event is done. Call :meth:`~csoundengine.instr.Instr.dump` to see
+    the generated code:
+
+    .. code-block:: python
+
+        i_params = p4
+        if ftexists(i_params) == 0 then
+            initerror sprintf("params table (%d) does not exist", i_params)
+        endif
+        i__paramslen = ftlen(i_params)
+        if i__paramslen < {maxidx} then
+            initerror sprintf("params table is too small (size: %d, needed: {maxidx})", i__paramslen)
+        endif
+        kamp tab 0, i_params
+        kfreq tab 1, i_params
+        a0 = oscili:a(kamp, kfreq)
+        outch 1, a0
+
+    **Offline rendering**
+
+    An Instr can also be used to define instruments for offline rendering (see
+    :class:`~csoundengine.offline.Renderer`)
+
+    .. code-block:: python
+
+        from csoundengine import *
+        renderer = Renderer(sr=44100, nchnls=2)
+
+        instrs = [
+            Instr('saw', r'''
+              kmidi = p5
+              outch 1, oscili:a(0.1, mtof:k(kmidi))
+            '''),
+            Instr('sine', r'''
+              |kamp=0.1, kmidi=60|
+              asig oscili kamp, mtof:k(kmidi)
+              asig *= linsegr:a(0, 0.1, 1, 0.1, 0)
+              outch 1, asig
+            ''')
+        ]
+
+        for instr in instrs:
+            instr.register(renderer)
+
+        score = [('saw', 0,   2, 60),
+                 ('sine', 1.5, 4, 67),
+                 ('saw', 1.5, 4, 67.1)]
+
+        events = [renderer.sched(ev[0], delay=ev[1], dur=ev[2], pargs=ev[3:])
+                  for ev in score]
+
+        # Offline events can be modified just like real-time events
+        renderer.automate(events[0], 'kmidi', pairs=[0, 60, 2, 59])
+        renderer.set(events[1], 3, 'kmidi', 67.2)
+        renderer.render("out.wav")
+
+    """
+
+    __slots__ = (
+        'name',
+        'args',
+        'aliases',
+        'init',
+        'id',
+        'controls',
+        'numchans',
+        'doc',
+        'pfieldIndexToName',
+        'pfieldNameToIndex',
+        'pfieldIndexToValue',
+        'originalBody',
+        'includes',
+        '_controlsDefaultValues',
+        '_controlsNameToIndex',
+        '_preschedCallback',
+        '_argToAlias',
+        '_preprocessedBody'
+    )
+
+    def __init__(self,
+                 name: str,
+                 body: str,
+                 args: dict[str, float] | None = None,
+                 init: str = '',
+                 numchans: int = 1,
+                 preschedCallback=None,
+                 doc: str = '',
+                 includes: list[str] | None = None,
+                 aliases: dict[str, str] = None,
+                 maxNamedArgs: int = 0
+                 ) -> None:
+
+        assert isinstance(name, str)
+
+        if errmsg := _checkInstr(body):
+            raise CsoundError(errmsg)
+
+        self.originalBody = body
+        "original body of the instr (prior to any code generation)"
+
+        self._controlsDefaultValues: list[float] | None = None
+        self._controlsNameToIndex: dict[str, int] | None = None
+
+        inlineargs = instrtools.parseInlineArgs(body)
+
+        if inlineargs:
+            body = inlineargs.body
+            args = inlineargs.args
+
+        # At the moment we do not support mixing styles: either args passed to Instr, inline
+        # args or pfields declared at the csound body
+
+        parsedInstr = csoundlib.instrParseBody(body)
+
+        if args:
+            pfields = {k: v for k, v in args.items() if k.startswith('i')}
+            controls = {k: v for k, v in args.items() if k.startswith('k')}
+
+            if parsedInstr.pfieldsUsed:
+                raise ValueError(f"Using p-fields together with named arguments is not supported. "
+                                 f"P-fields used: {parsedInstr.pfieldsUsed}, args: {args}")
+
+            if controls:
+                self._controlsNameToIndex = {key: idx for idx, key in enumerate(controls.keys())}
+                self._controlsDefaultValues = list(controls.values())
+
+                if 0 < maxNamedArgs < len(controls):
+                    raise ValueError(f"Too many named args, the maximum is {maxNamedArgs}, "
+                                     f"got {controls}")
+
+            pargsNameToIndex = instrtools.assignPfields(list(pfields.keys()), exclude=(4,))
+            pargsIndexToName = {idx: pname for pname, idx in pargsNameToIndex.items()}
+            pargsIndexToValue = {pargsNameToIndex[pname]: value for pname, value in pfields.items()}
+
+        else:
+            pargsIndexToName = parsedInstr.pfieldIndexToName
+            pargsIndexToValue = parsedInstr.pfieldIndexToValue or {}
+            pfields = parsedInstr.pfieldNameToValue
+
+            pargsIndexToName.pop(4, None)
+            pargsIndexToValue.pop(4, None)
+            pfields.pop('p4', None)
+
+            pargsNameToIndex = {pname: idx for idx, pname in pargsIndexToName.items()}
+            controls = _EMPTYDICT
+
+        self.controls: dict[str, float] = controls
+        "Named controls, mapping name to default value."
+
+        self.name: str = name
+        "Name of this instrument"
+
+        self._preprocessedBody: str = textwrap.dedent(body)
+        "Body after processing inline args"
+
+        self.args: dict[str, float] = pfields
+        """Dict mapping pfield name to default value
+        
+        pfield index is assigned by order, starting with p5"""
+
+        self.init: str = init if init is not None else ''
+        """Code to be initialized at the instr0 level, excluding include files"""
+
+        self.includes: list[str] | None = includes
+        """List of included files, or None"""
+
+        self.numchans = numchans
+        "Number of audio outputs of this instr"
+
+        self.doc = doc
+        "Description of this instr (optional)"
+
+        self.id: int = self._calculateHash()
+        "Unique numeric id of this instr"
+
+        self.pfieldIndexToName: dict[int, str] = pargsIndexToName
+        "Dict mapping pfield index to its name"
+
+        self.pfieldNameToIndex: dict[str, int] = pargsNameToIndex
+        "Dict mapping pfield name to its index"
+
+        self.pfieldIndexToValue: dict[int, float] = pargsIndexToValue
+        "Dict mapping pfield index to its default value"
+
+        self.aliases = aliases
+        """Maps alias argument names to their real argument names
+        
+        Aliased parameters can be pfields or named controls"""
+
+        self._argToAlias = {name: alias for alias, name in aliases.items()} if aliases else None
+        self._preschedCallback = preschedCallback
+
+    def register(self, session: _session.Session) -> None:
+        """
+        Register this Instr at the given session
+
+        This is just a shortcut for ``session.register(instr)``
+        Args:
+            session: the session to register this Instr at
+
+        Example
+        ~~~~~~~
+
+            >>> from csoundengine import *
+            >>> s = Engine().session()
+            >>> Instr('myinstr', ...).register(s)
+
+        This is equivalent to
+
+            >>> s.defInstr('myinstr', ...)
+        """
+        session.registerInstr(self)
+
+    def _calculateHash(self) -> int:
+        argshash = hash(frozenset(self.args.items())) if self.args else 0
+        tabhash = hash(frozenset(self.controls.items())) if self.controls else 0
+        return hash((self.name, self.originalBody, self.init, self.doc, self.numchans,
+                     argshash, tabhash))
+
+    def __hash__(self) -> int:
+        return self.id
+
+    def __eq__(self, other: Instr) -> bool:
+        if not isinstance(other, Instr):
+            return NotImplemented
+        return self.id == other.id
+
+    def __repr__(self) -> str:
+        parts = [self.name]
+        if s := self._pfieldsRepr():
+            parts.append(s)
+        if self.controls:
+            parts.append(f"tabargs={self.controls}")
+
+        return f"Instr({', '.join(parts)})"
+
+    def _pfieldsRepr(self) -> str:
+        pargs = self.pfieldIndexToName
+        if not pargs:
+            return ""
+        if self.pfieldIndexToValue:
+            parts = []
+            for i, pname in sorted(pargs.items()):
+                if i == 4:
+                    continue
+                if self.aliases and (alias := self._argToAlias.get(pname)) is not None:
+                    pname = f"{alias}({pname})"
+                parts.append(f"{pname}:{i}={self.pfieldIndexToValue.get(i, 0):.6g}")
+            return ", ".join(parts)
+        else:
+            return ", ".join(
+                    f"{pname}:{i}" for i, pname in sorted(pargs.items()) if i != 4)
+
+    def _repr_html_(self) -> str:
+        style = jupytertools.defaultPalette
+        parts = [f'Instr <strong style="color:{style["name.color"]}">{self.name}</strong><br>']
+        _ = jupytertools.htmlSpan
+        if self.args:
+            indexes = [self.pfieldIndex(name) for name in self.args.keys()]
+            # indexes = list(self.pfieldIndexToName.keys())
+            indexes.sort()
+            if 4 in indexes:
+                indexes.remove(4)
+            groups = iterlib.iterchunks(indexes, 5)
+            for group in groups:
+                htmls = []
+                for idx in group:
+                    pname = self.pfieldName(idx)
+                    if self.aliases and (alias := self._argToAlias.get(pname)):
+                        pname = f'{alias}({pname})'
+                    # parg = _(f'p{idx}', fontsize='90%')
+                    parg = f'p{idx}'
+                    if pname:
+                        pnamehtml = f"<b>{pname}</b>:{parg}"
+                    else:
+                        pnamehtml = parg
+                    html = f"{pnamehtml}=<code>{self.pfieldIndexToValue.get(idx, 0):.6g}</code>"
+                    html = _(html, fontsize='90%')
+                    htmls.append(html)
+                line = "&nbsp&nbsp&nbsp&nbsp" + ", ".join(htmls) + "<br>"
+                parts.append(line)
+        if self.controls:
+            s = _(f'&nbsp&nbsp&nbsp&nbsp controls = <code>{self.controls}</code>', fontsize='90%')
+            parts.append(s)
+        if config['jupyter_instr_repr_show_code']:
+            parts.append('<hr style="width:38%;text-align:left;margin-left:0">')
+            htmlorc = _(csoundlib.highlightCsoundOrc(self._preprocessedBody), fontsize='90%')
+            parts.append(htmlorc)
+        return "\n".join(parts)
+
+    def dump(self) -> str:
+        """
+        Returns a string with the generated code of this Instr
+        """
+        header = f"Instr(name='{self.name}')"
+        sections = ["", header]
+        pargsStr = self._pfieldsRepr()
+        if pargsStr:
+            sections.append(pargsStr)
+        if self.doc:
+            sections.append(f"> doc: {self.doc}")
+        if self.init:
+            sections.append("> init")
+            sections.append(str(self.init))
+        if self._controlsDefaultValues:
+            sections.append("> table")
+            sections.append(f"    {self.controls}")
+        sections.append("> body")
+        sections.append(self._preprocessedBody)
+        return "\n".join(sections)
+
+    @cache
+    def controlNames(self) -> frozenset[str]:
+        """
+        Set of names of the controls in this instr
+
+        Returns an empty set if this instr has no controls.
+        """
+        if not self.controls:
+            return _EMPTYSET
+        return frozenset(self.controls.keys())
+
+    @cache
+    def dynamicParamNames(self, includeRealNames=False) -> frozenset[str]:
+        """
+        Set of all dynamic parameters accepted by this Instr
+
+        Args:
+            includeRealNames: if True and this instrument has defined aliases, include
+                the real parameters in the returned dict. Aliased parameters will be
+                included twice
+
+        Returns:
+            a set of the dynamic (modifiable) parameters accepted by this Instr
+        """
+        dynparams = self.dynamicParams(includeRealNames=includeRealNames)
+        return frozenset(dynparams.keys())
+
+    @cache
+    def dynamicPfields(self, includeRealNames=False) -> dict[str, float]:
+        """
+        The dynamic pfields in this instr
+
+        A dynamic pfield is a pfield assigned to a k-variable. Such
+        pfields can be modified via .set using the pwrite opcode
+
+        Args:
+            includeRealNames: if this Instr uses aliases, include the
+                real names of the pfields along with their aliases.
+
+        Returns:
+            a dict mapping pfield name to default value.
+        """
+        if not self.pfieldNameToIndex:
+            return _EMPTYDICT
+
+        pfields = {name: self.pfieldIndexToValue.get(idx, 0.)
+                   for name, idx in self.pfieldNameToIndex.items()
+                   if name.startswith('k')}
+
+        if self.aliases:
+            for alias, realname in self.aliases.items():
+                pfields[alias] = pfields[realname]
+                if not includeRealNames:
+                    del pfields[realname]
+
+        return pfields
+
+    @cache
+    def dynamicPfieldNames(self) -> frozenset[str]:
+        """
+        Set of dynamic pfields defined in this instr
+
+        Dynamic pfields are pfields which have been assigned
+        to a k-variable
+
+        If this instr defines aliases for any of the dynamic
+        pfields, these aliases will be included in the returned
+        set
+
+        If this instrument does not have any dynamic pfields an
+        empty set will be returned. In general the returned
+        set should be considered immutable
+        """
+        if not self.pfieldNameToIndex:
+            return _EMPTYSET
+        pfields = [param for param in self.pfieldNameToIndex.keys()
+                   if param.startswith('k')]
+        if not pfields:
+            return _EMPTYSET
+
+        if self.aliases:
+            pfields.extend([alias for pfield in pfields
+                           if (alias := self._argToAlias.get(pfield))])
+
+        return frozenset(pfields)
+
+    @cache
+    def dynamicParams(self, includeRealNames=False) -> dict[str, float]:
+        """
+        A dict with all dynamic parameters defined in this instr
+
+        Dynamic parameters are not only all defined controls, but also
+        any pfield assigned to a k-variable. They include aliases to
+        any dynamic parameter.
+
+        Args:
+            includeRealNames: if this instrument has aliases, include
+                the real parameters alongside their aliases in the returned dict.
+                Otherwise, real names are not present
+
+        Returns:
+            a dict with all dynamic parameters and their default values. Returns an empty
+            dict if this instr has no dynamic parameters.
+        """
+        if not self.args and not self.controls:
+            return _EMPTYDICT
+
+        params = self.dynamicPfields()
+        if self.controls:
+            params = params | self.controls
+
+        if self.aliases:
+            for alias, realname in self.aliases.items():
+                params[alias] = params[realname]
+                if not includeRealNames:
+                    del params[realname]
+        return params
+
+    def paramNames(self, includeRealNames=False) -> frozenset[str]:
+        """
+        All parameter names
+        """
+        pfields = self.pfieldNames(includeRealNames=includeRealNames)
+        return frozenset(pfields | self.controlNames()) if self.controls else pfields
+
+    @cache
+    def pfieldNames(self, includeRealNames=False) -> frozenset[str]:
+        """
+        The set of named pfields declared in this instrument
+
+        Args:
+            includeRealNames: if True and this instr has aliases,
+                parameters which have an alias are included also
+                in the returned set. Otherwise, the alias is
+                included instead of the real argument
+
+        Returns:
+             a set with the named pfields defined in this instr
+        """
+        if not self.pfieldNameToIndex:
+            return _EMPTYSET
+
+        pfields = set(self.pfieldNameToIndex.keys())
+        if self.aliases:
+            for alias, realname in self.aliases.items():
+                if alias in pfields:
+                    pfields.add(alias)
+                    if not includeRealNames:
+                        pfields.remove(realname)
+        return frozenset(pfields)
+
+    @cache
+    def paramDefaultValues(self, includeRealNames=False) -> dict[str, float]:
+        """
+        A dict mapping named parameters to their default values
+        
+        Named parameters are any named pfields or controls. Also anonymous
+        pfields which have an assigned default value via the 'pset' opcode
+        will be included here
+
+        Args:
+            includeRealNames: if False and this instrument has defined aliases, the
+                alias shadows the real name. If True, aliased parameters will be
+                included twice
+
+        Returns:
+            a dict of named dynamic parameters to this instr and their associated
+            default values
+
+        Example
+        ~~~~~~~
+
+            >>> from csoundengine import *
+            >>> s = Engine().session()
+            >>> s.defInstr('test', r'''
+            ... |kfreq=1000|
+            ... pset 0, 0, 0, 0, 0.1, 0.5
+            ... iamp = p5
+            ... outch 1, oscili:a(iamp, kfreq * p6)
+            ... ''')
+        """
+        params = {}
+        if self.controls:
+            params.update(self.controls)
+
+        if self.pfieldNameToIndex:
+            namedPfields = {name: self.pfieldIndexToValue.get(idx, 0.)
+                            for name, idx in self.pfieldNameToIndex.items()}
+            params.update(namedPfields)
+
+        if self.aliases:
+            for alias, realname in self.aliases.items():
+                params[alias] = params[realname]
+                if not includeRealNames:
+                    del params[realname]
+
+        return params
+
+    def distributeArgs(self, args: dict[str, float]
+                       ) -> tuple[dict[str | int, float], dict[str, float]]:
+        if not self.controls:
+            return (args, _EMPTYDICT)
+        else:
+            pargs = {}
+            controlargs = {}
+            pfieldNames = self.pfieldNames()
+            controlNames = self.controlNames()
+            for arg, value in args.items():
+                if isinstance(arg, int) or arg.startswith('p') or arg in pfieldNames:
+                    pargs[arg] = value
+                else:
+                    assert arg in controlNames
+                    controlargs[arg] = value
+            return pargs, controlargs
+
+    def pfieldName(self, index: int, alias=True) -> str:
+        """
+        Given the pfield index, get the name, if given
+
+        Args:
+            index: the pfield index (starts with 1)
+            alias: if True, return the corresponding alias, if defined
+
+        Returns:
+            the corresponding pfield name, or an empty string if the
+            index does not have an associated name
+        """
+        name = self.pfieldIndexToName.get(index)
+        if name is None:
+            logger.debug(f"Arg index {index} not used for instr {self.name}")
+            return ''
+        if alias and self.aliases and (name2 := self._argToAlias.get(name)):
+            return name2
+        return name
+
+    def pfieldIndex(self, name: str, default: int | None = None) -> int:
+        """
+        Pfield index corresponding to the given name.
+
+        Args:
+            name: the index or the name of the p-field.
+            default: if the name is not known and *default* is not None, this
+                value is returned as the index to indicate that the parg was not
+                found (instead of raising an Exception)
+
+        Returns:
+            the index of the parg
+        """
+        assert isinstance(name, str)
+        if name.startswith('p') and name[1:].isdigit():
+            return int(name[1:])
+
+        if self.aliases and name in self.aliases:
+            name = self.aliases[name]
+        if (idx := self.pfieldNameToIndex.get(name)) is not None:
+            return idx
+
+        if default is not None:
+            return default
+
+        errormsg = (f"parg {name} not known for instr '{self.name}'."
+                    f"Defined named pargs: {self.pfieldNameToIndex.keys()}")
+        if self.aliases:
+            errormsg += f" Aliases: {self.aliases}"
+        raise KeyError(errormsg)
+
+    def pfieldsTranslate(self,
+                         args: Sequence[float] = (),
+                         kws: dict[str | int, float] | None = None
+                         ) -> list[float]:
+        """
+        Given pfields as values and keyword arguments, generate a list of
+        values which can be passed to sched, starting with p5
+        (p4 is reserved)
+
+        Args:
+            args: pfield values, starting with p5
+            kws: named pfields (a name can also be 'p8' for example)
+
+        Returns:
+            a list of float values with 0 representing absent pfields
+
+        """
+        firstp = 4  # 4=p5
+        n2i = self.pfieldNameToIndex
+        maxkwindex = max(n2i.values())
+        maxpargs = max(maxkwindex, len(args)-1)
+        pargs = [0.]*(maxpargs-firstp)
+        if self.pfieldIndexToValue:
+            for i, v in self.pfieldIndexToValue.items():
+                pargs[i-firstp-1] = v
+        if args:
+            pargs[:len(args)] = args
+        if kws:
+            for pname, value in kws.items():
+                idx = pname if isinstance(pname, int) else self.pfieldIndex(pname)
+                pargs[idx-5] = value
+        return pargs
+
+    def rec(self,
+            dur: float,
+            outfile: str | None = None,
+            args: list[float] | dict[str, float] | None = None,
+            sr: int | None = None,
+            ksmps: int | None = None,
+            encoding: str | None = None,
+            nchnls: int = 2,
+            wait=True,
+            a4: int | None = None,
+            delay=0.,
+            **kws
+            ) -> str:
+        """
+        Record this Instr for a given duration
+
+        Args:
+            dur: the duration of the recording
+            outfile: if given, the path to the generated output.
+                If not given, a temporary file will be generated.
+            args: the arguments passed to the instrument (if any),
+                beginning with p5 or a dict with named arguments
+            sr: the sample rate -> config['rec_sr']
+            ksmps: the number of samples per cycle -> config['rec_ksmps']
+            encoding: the sample encoding of the rendered file, given as
+                'pcmXX' or 'floatXX', where XX represent the bit-depth
+                ('pcm16', 'float32', etc). If no encoding is given a suitable default for
+                the sample format is chosen
+            nchnls: the number of channels of the generated output.
+            wait: if True, the function blocks until done, otherwise rendering
+                is asynchronous
+            a4: the frequency of A4 (see config['A4']
+            kws: any keyword will be interpreted as a named argument of this Instr
+            delay: when to schedule the instr
+
+        Returns:
+            the path of the generated soundfile
+
+        .. seealso:: :meth:`Instr.renderSamples`
+
+        Example
+        ~~~~~~~
+
+            >>> from csoundengine import *
+            >>> from sndfileio import *
+            >>> s = Engine().session()
+            >>> white = s.defInstr('white', r'''
+            ...   |igain=0.1|
+            ...   aout = gauss:a(1) * igain
+            ...   outch 1, aout
+            ... ''')
+            >>> samples, info = sndget(white.rec(2))
+            >>> info
+            samplerate : 44100
+            nframes    : 88192
+            channels   : 2
+            encoding   : float32
+            fileformat : wav
+            duration   : 2.000
+
+        """
+        from csoundengine.offline import Renderer
+        r = Renderer(sr=sr, nchnls=nchnls, ksmps=ksmps, a4=a4)
+        r.registerInstr(self)
+        r.sched(instrname=self.name,
+                delay=delay,
+                dur=dur,
+                args=args,
+                **kws)
+        sndfile, process = r.render(outfile, wait=wait, encoding=encoding)
+        return sndfile
+
+    def renderSamples(self,
+                      dur,
+                      args: list[float] | dict[str, float] | None = None,
+                      sr: int = 44100,
+                      ksmps: int | None = None,
+                      nchnls: int = 2,
+                      a4: int | None = None,
+                      delay=0.,
+                      **kws
+                      ) -> np.ndarray:
+        """
+        Record this instrument and return the generated samples
+
+        Args:
+            dur: the duration of the recording
+            args: the args passed to this instr
+            sr: the samplerate of the recording
+            ksmps: the samples per cycle used
+            nchnls: the number of channels
+            a4: the value of a4
+            delay: when to schedule this instr
+            kws: any keyword will be interpreted as a named argument of this Instr
+
+
+        Returns:
+            the generated samples as numpy array
+
+        .. seealso:: :meth:`Instr.rec`
+
+        Example
+        ~~~~~~~
+
+            >>> from csoundengine import *
+            >>> from sndfileio import *
+            >>> s = Engine().session()
+            >>> white = s.defInstr('white', r'''
+            ...  |igain=0.1|
+            ...  aout = gauss:a(1) * igain
+            ...  outch 1, aout
+            ... ''')
+            # Render two seconds of white noise
+            >>> samples = white.renderSamples(2)
+        """
+        sndfile = self.rec(dur=dur, args=args, sr=sr, ksmps=ksmps, nchnls=nchnls,
+                           wait=True, a4=a4, delay=delay, **kws)
+        if not os.path.exists(sndfile):
+            raise RuntimeError(f"Rendering error, could not find generated soundfile ('{sndfile}')")
+        import sndfileio
+        samples, sr = sndfileio.sndread(sndfile)
+        os.remove(sndfile)
+        return samples
+
+    def hasControls(self) -> bool:
+        """
+        Returns True if this instrument defines a parameters table
+        """
+        return bool(self.controls)
+
+    def controlIndex(self, param: str) -> int:
+        """
+        Returns the index of a control parameter
+
+        Raises KeyError if the parameter given is not defined
+
+        Args:
+            param: the parameter name
+
+        Returns:
+            the corresponding slot
+        """
+        if not self.hasControls():
+            raise KeyError(f"This instr ({self.name}) has no named controls")
+        idx = self._controlsNameToIndex.get(param)
+        if idx is None:
+            raise KeyError(f"Parameter {param} not known for instr {self.name}."
+                           f" Known parameters: {self.controls.keys()}")
+        return idx
+
+    def overrideControls(self, d: dict[str, float] | None = None, **kws
+                         ) -> list[float]:
+        """
+        Overrides default values for the controls in this instr
+
+        Returns the values for all the defined slots
+
+        Args:
+            d: if given, a dictionary of the form {'argname': value}.
+                Alternatively key/value pairs can be passed as keywords
+            **kws: each key must match a named parameter as defined in
+                the tabargs attribute
+
+        Returns:
+            A list of floats holding the new initial values of the
+            parameters table
+
+        Example:
+            instr.overrideTable(param1=value1, param2=value2)
+
+        """
+        if not self.controls:
+            raise ValueError("This instrument does not define controls")
+
+        if d is None and not kws:
+            return self._controlsDefaultValues
+
+        out = self._controlsDefaultValues.copy()
+        if d:
+            for key, value in d.items():
+                idx = self._controlsNameToIndex[key]
+                out[idx] = value
+        if kws:
+            for key, value in kws.items():
+                idx = self._controlsNameToIndex[key]
+                out[idx] = value
+        return out
+
+
+def _checkInstr(instr: str) -> str:
+    """
+    Returns an error message if the instrument is not well-defined
+    """
+    lines = [line for line in (line.strip() for line in instr.splitlines()) if line]
+    if not lines:
+        return ''
+
+    if re.search(r'$\s*\binstr\b', lines[0]) or re.search(r'$\s*\bendin\b', lines[-1]):
+        return ("instr should be the body of the instrument,"
+                " without 'instr' and 'endin")
+
+    for i, line in enumerate(lines):
+        if re.search(r"\bp4\b", line):
+            return (f"The instr uses p4, but p4 is reserved for the parameters table. "
+                    f"Line {i}: {line}")
+
+    return ''
+
+
+# TODO: remove this
+def _namedControlsGenerateCode(controls: dict) -> str:
+    """
+    Generates code for an instr to read named controls
+
+    Args:
+        controls: a dict mapping control name to default value. The
+            keys are valid csound k-variables
+
+    Returns:
+        the generated code
+    """
+
+    lines = [fr'''
+    ; --- start generated code for dynamic args
+    i__slicestart__ = p4
+    i__tabnum__ chnget ".dynargsTabnum"
+    if i__tabnum__ == 0 then
+        initerror sprintf("Session table does not exist (p1: %f)", p1)
+        goto __exit
+    endif
+    ''']
+    idx = 0
+    for key, value in controls.items():
+        assert key.startswith('k')
+        lines.append(f"    {key} tab i__slicestart__ + {idx}, i__tabnum__")
+        idx += 1
+    lines.append("    ; --- end generated code\n")
+    out = textlib.stripLines(textlib.joinPreservingIndentation(lines))
+    return out
+
+
+
