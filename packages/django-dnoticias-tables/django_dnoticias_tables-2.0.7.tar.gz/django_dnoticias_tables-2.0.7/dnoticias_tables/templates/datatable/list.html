@@ -1,0 +1,125 @@
+{% extends 'backoffice/masters/main.html' %}
+{% load static i18n widget_tweaks %}
+{% block title %}dnoticias | Backoffice{% endblock %}
+{% block description %}Latest updates and statistic charts{% endblock %}
+
+{% block style_template %}
+<link href="{% static 'backoffice/vendors/custom/fullcalendar/fullcalendar.bundle.css' %}" rel="stylesheet"
+    type="text/css" />
+{% endblock %}
+
+{% block style_develop %}
+<style type="text/css">
+	.search-elements__wrapper .bootstrap-select{width: 100%!important; min-width: 100px!important;}
+	.advanced-search__head {height: auto!important; min-height: auto!important;}
+	@media only screen and (max-width: 375px) {
+		.kt-portlet .kt-portlet__head .kt-portlet__head-toolbar,
+		.kt-portlet .kt-portlet__head .search-input {
+			flex: 0 0 100%;
+		    max-width: 100%;
+    		padding: 0!important;
+    	}
+    	#advanced-search {margin-right: 0!important;}
+		.kt-portlet .kt-portlet__head .search-input,
+		.kt-portlet .kt-portlet__head .search-elements__wrapper {
+	    	-webkit-order: 1;
+		    -ms-flex-order: 1;
+		    order: 1;
+		}
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- begin:: Content -->
+<div class="kt-container kt-container--fluid kt-grid__item">
+
+	<!--Begin::Row-->
+	<div class="row">
+
+		<div class="col-xl-12 order-lg-2 order-xl-1">
+			<div class="kt-portlet kt-portlet--last kt-portlet--head-lg kt-portlet--responsive-mobile" id="kt_page_portlet">
+
+				<div class="kt-portlet__head kt-portlet__head--lg kt-portlet__head--break-sm advanced-search__head d-flex flex-wrap align-items-start py-3 mb-3">
+					<div class="kt-input-icon kt-input-icon--left kt-input-icon--right col-9 col-xl-10 pr-2 mb-2 search-input">
+                        <span class="kt-input-icon__icon kt-input-icon__icon--left"><span><i class="la la-search"></i></span></span>
+                        <input type="text" class="form-control" placeholder="Pesquisar" id="{{ search_id }}">
+                        {% if filters.fields %}
+                        <a href="#" class="kt-input-icon__icon kt-input-icon__icon--right btn btn-icon btn-secondary mr-2" id="advanced-search">
+                            <span><i class="fa fa-caret-square-down"></i></span>
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% block button_block %}
+                    <div class="kt-portlet__head-toolbar col-3 col-xl-2 px-0 mb-2 order-sm-1">
+                        {% if permissions.can_create and create_url %}
+                        <a href="{{ create_url }}" class="btn btn-brand text-nowrap container">
+                            <i class="fa fa-plus-circle"></i>
+                            <span class="kt-hidden-mobile">{{ create_url_label }}</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endblock %}
+
+                    <div class="search-elements__wrapper order-sm-3 flex-fill px-0 col-12">
+                        <div class="filter-elements" style="display: none;">
+                            <div class="d-flex flex-md-row flex-column flex-fill">
+                                {% for field in filters %}
+                                <div class="kt-input-icon kt-input-icon--left mr-sm-2 mb-2">
+                                    <div class="kt-form__control">
+                                        {% render_field field class+="selectpicker" placeholder=field.label data-none-selected-text=field.label %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <button type="button" class="remove-filters btn btn-dark mb-2 text-nowrap">
+                                    <span><i class="fa fa-times"></i> Filtros</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+				</div>
+
+
+				<div class="kt-portlet__body kt-portlet__body--fit">
+					<!--begin: Datatable -->
+					<div class="kt-datatable kt-widget5" id="{{ table_id }}"></div>
+					<!--end: Datatable -->
+				</div>
+			</div>
+		</div>
+
+	</div>
+	<!--End::Row-->
+</div>
+<!-- end:: Content -->
+{% block pos_content %}
+{% endblock %}
+{% csrf_token %}
+{% endblock %}
+
+{% block script_template %}
+<script>
+    "use strict";
+
+    jQuery(document).ready(function () {
+        {% include "./includes/post.js" %}
+        {% include "./includes/set_post_link.js" %}
+        {% include "./includes/delete_popover.js" %}
+        {% if extend_js %}
+            {% include extended_filepath %}
+        {% endif %}
+
+        {% include "./includes/datatable.js" %}
+
+        {% include "./includes/daterange.js" %}
+
+        {% include "./includes/datepicker.js" %}
+    });
+
+</script>
+{% endblock %}
+
+{% block script_develop %}
+{% endblock %}

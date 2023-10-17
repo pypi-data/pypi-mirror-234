@@ -1,0 +1,57 @@
+{% load tables %}
+{% if column.visible %}
+{
+    field: "{{ column.field }}",
+    title: "{{ column.name }}",
+    width: {{ column.width }},
+    autoHide: "{{ column.auto_hide }}" == "True",
+    sortable: "{{ column.sortable }}" == "True",
+    textAlign: "{{ column.align|default:'left' }}",
+
+    template: function (data, i) {
+        console.log(data)
+        {% if not column.is_action %}
+        try{
+            return get_{{column.field}}_html(data);
+        } catch(e) {
+            console.log(e)
+            return data.{{ column.field }};
+        }
+        {% else %}
+        let action = "";
+
+        {% for action in column.actions %}
+        if(data.{{ action.identifier }}_show === true && data.{{ action.identifier }}_perm === true) {
+            {% if not action.is_delete %}
+            action += get_action_item({
+                url: data.{{ action.identifier }}_url,
+                name: "{{ action.name }}",
+                icon: "{{ action.icon }}",
+                method: "{{ action.method }}",
+                target: "{{ action.target }}",
+                id: data.DT_RowId
+            });
+            {% else %}
+            action += get_delete_item({
+                name: "{{ action.name }}",
+                url: data.{{ action.identifier }}_url,
+                icon: "{{ action.icon }}",
+                id: data.DT_RowId
+            })
+            {% endif %}
+        }
+        {% endfor %}
+
+        action = `<ul class="kt-nav"> ${action} </ul>`;
+        return `<div class="dropdown">
+            <a href="javascript:;" class="btn btn-sm btn-clean btn-icon btn-icon-md" data-toggle="dropdown">\
+                <i class="flaticon-more-1"></i>
+            </a>
+            <div class="dropdown-menu dropdown-menu-right">
+                ${action}
+            </div>
+        </div>`;
+        {% endif %}
+    }
+},
+{% endif %}
