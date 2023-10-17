@@ -1,0 +1,1 @@
+from myDynamixel.myDynamixel import *
