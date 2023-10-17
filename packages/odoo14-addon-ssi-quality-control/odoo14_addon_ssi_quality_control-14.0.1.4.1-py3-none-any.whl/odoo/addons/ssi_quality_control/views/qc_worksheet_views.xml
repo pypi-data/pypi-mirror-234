@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="qc_worksheet_view_search" model="ir.ui.view">
+    <field name="name">qc_worksheet - search</field>
+    <field name="model">qc_worksheet</field>
+    <field
+            name="inherit_id"
+            ref="ssi_transaction_mixin.mixin_transaction_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+        </data>
+    </field>
+</record>
+
+<record id="qc_worksheet_view_tree" model="ir.ui.view">
+    <field name="name">qc_worksheet - tree</field>
+    <field name="model">qc_worksheet</field>
+    <field name="mode">primary</field>
+    <field name="inherit_id" ref="ssi_transaction_mixin.mixin_transaction_view_tree" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="model_id" />
+                <field name="object_reference" />
+                <field name="type_id" />
+                <field name="date" />
+                <field name="result" />
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="qc_worksheet_view_form" model="ir.ui.view">
+    <field name="name">qc_worksheet - form</field>
+    <field name="model">qc_worksheet</field>
+    <field name="mode">primary</field>
+    <field name="inherit_id" ref="ssi_transaction_mixin.mixin_transaction_view_form" />
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="model_id" invisible="0" force_save="1" />
+                <field name="model_name" invisible="1" />
+                <field name="object_id" invisible="1" />
+                <field name="object_reference" />
+            </xpath>
+            <xpath expr="//group[@name='header_right']" position="inside">
+                <field name="date" />
+                <field name="type_id" />
+                <field name="result" />
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page name="question" string="Questions">
+                    <button
+                            name="action_reload_question"
+                            string="Reload Question"
+                            type="object"
+                            attrs="{'invisible': [('state','!=','draft')]}"
+                            class="oe_highlight"
+                            icon="fa-refresh"
+                        />
+                    <field name="question_ids">
+                        <tree>
+                            <field name="sequence" invisible="1" />
+                            <field name="name" />
+                            <field name="type" />
+                            <field name="valid_values" />
+                            <field name="success" />
+                        </tree>
+                        <form>
+                            <group name="question_1" colspan="4" col="2">
+                                <group name="question_1_1" colspan="1" col="2">
+                                    <field name="sequence" invisible="1" />
+                                    <field name="name" />
+                                    <field name="type" invisible="1" />
+                                </group>
+                                <group
+                                        name="question_1_2"
+                                        colspan="1"
+                                        col="2"
+                                        attrs="{'invisible': [('type','!=','qualitative')]}"
+                                    >
+                                    <field name="set_id" />
+                                    <field
+                                            name="allowed_qc_value_ids"
+                                            widget="many2many_tags"
+                                            invisible="1"
+                                        />
+                                    <field
+                                            name="qualitative_value_id"
+                                            domain="[('id','=',allowed_qc_value_ids)]"
+                                        />
+                                </group>
+                                <group
+                                        name="question_1_3"
+                                        colspan="1"
+                                        col="2"
+                                        attrs="{'invisible': [('type','!=','quantitative')]}"
+                                    >
+                                    <field name="quantitative_value" />
+                                    <field name="uom_id" />
+                                    <field name="min_value" invisible="1" />
+                                    <field name="max_value" invisible="1" />
+                                </group>
+                            </group>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="qc_worksheet_action" model="ir.actions.act_window">
+    <field name="name">All Worksheets</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">qc_worksheet</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="qc_worksheet_menu"
+        name="All Worksheets"
+        parent="ssi_quality_control.menu_quality_control_worksheet"
+        action="qc_worksheet_action"
+        groups="qc_worksheet_viewer_group"
+        sequence="110"
+    />
+
+</odoo>

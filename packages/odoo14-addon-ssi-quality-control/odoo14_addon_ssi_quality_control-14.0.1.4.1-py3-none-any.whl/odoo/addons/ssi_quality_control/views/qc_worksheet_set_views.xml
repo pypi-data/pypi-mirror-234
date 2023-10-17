@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2022 OpenSynergy Indonesia
+     Copyright 2022 PT. Simetri Sinergi Indonesia
+     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl). -->
+<odoo>
+<record id="qc_worksheet_set_view_search" model="ir.ui.view">
+    <field name="name">qc_worksheet_set - search</field>
+    <field name="model">qc_worksheet_set</field>
+    <field
+            name="inherit_id"
+            ref="ssi_master_data_mixin.mixin_master_data_view_search"
+        />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data />
+    </field>
+</record>
+
+<record id="qc_worksheet_set_view_tree" model="ir.ui.view">
+    <field name="name">qc_worksheet_set - tree</field>
+    <field name="model">qc_worksheet_set</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_tree" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data />
+    </field>
+</record>
+
+<record id="qc_worksheet_set_view_form" model="ir.ui.view">
+    <field name="name">qc_worksheet_set - form</field>
+    <field name="model">qc_worksheet_set</field>
+    <field name="inherit_id" ref="ssi_master_data_mixin.mixin_master_data_view_form" />
+    <field name="mode">primary</field>
+    <field name="arch" type="xml">
+        <data>
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="model_id" />
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page name="worksheet" string="Worksheet Types">
+                    <field name="type_ids">
+                        <tree editable="top">
+                            <field
+                                    name="type_id"
+                                    domain="[('model_id','=',parent.model_id)]"
+                                />
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </data>
+    </field>
+</record>
+
+<record id="qc_worksheet_set_action" model="ir.actions.act_window">
+    <field name="name">Worksheet Sets</field>
+    <field name="type">ir.actions.act_window</field>
+    <field name="res_model">qc_worksheet_set</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<menuitem
+        id="qc_worksheet_set_menu"
+        name="Sets"
+        parent="menu_quality_control_configuration_worksheet"
+        action="qc_worksheet_set_action"
+        groups="qc_worksheet_set_group"
+        sequence="120"
+    />
+
+</odoo>
