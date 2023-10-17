@@ -1,0 +1,63 @@
+[build-system]
+requires = ["maturin~=1.2.1"]
+build-backend = "maturin"
+
+[project]
+name = "dsds"
+version = "0.0.31"
+requires-python = ">=3.9"
+authors = [
+    {name = "Tianren Qin", email = "tq9695@gmail.com"}
+]
+
+license = {file = "LICENSE"}
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Rust",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+
+dependencies = [
+    "polars >= 0.19.8",
+    "scipy >= 1.11.1",
+    "numpy",
+    "tqdm",
+    "pyarrow>=12.0",
+    "typing_extensions >= 4.0.1"
+] # Drop tqdm?
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest >= 7.4.1",
+    "scikit-learn >= 1.2.0",
+    "pandas >= 2.1",
+    "category-encoders"
+]
+scikit-learn = ["scikit-learn >= 1.2.0"]
+lgbm = ["lightgbm"]
+plots = ["graphviz"]
+all = ["scikit-learn", "lightgbm", "graphviz"]
+
+keywords = ["data-pipeline", "EDA", "feature-screening", "feature-selection"]
+
+[tool.maturin]
+python-source = "python"
+module-name = "dsds._dsds_rust"
+features = ["pyo3/extension-module"]
+
+[tool.ruff]
+line-length = 120
+fix = true
+src = ["python"]
