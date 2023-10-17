@@ -1,0 +1,153 @@
+# Standard Library
+from typing import List
+
+# Third-party
+import pandas
+import plotly.express as px
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from plotly.graph_objs import Figure, Heatmap
+from sklearn.metrics import confusion_matrix  # type: ignore
+from torch.optim.optimizer import Optimizer
+from torch.utils.data import DataLoader
+from torchmetrics import PrecisionRecallCurve  # type: ignore
+
+# from sematic.ee.metrics import log_metric
+
+_N_POINTS_PR_CURVE = 2000
+
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
+
+
+def train(
+    model: nn.Module,
+    device: torch.device,
+    train_loader: DataLoader,
+    optimizer: Optimizer,
+    epoch: int,
+    log_interval: int,
+    dry_run: bool,
+) -> float:
+    model.train()
+    for batch_idx, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = F.nll_loss(output, target)
+        loss.backward()
+        optimizer.step()
+        if batch_idx % log_interval == 0:
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    epoch,
+                    batch_idx * len(data),
+                    len(train_loader.dataset),  # type: ignore
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
+                )
+            )
+            # log_metric("loss", loss.item())
+            if dry_run:
+                break
+    return loss.item()
+
+
+def _confusion_matrix(targets: List[int], preds: List[int]):
+    matrix = confusion_matrix(y_true=targets, y_pred=preds)
+    data = Heatmap(
+        z=matrix,
+        text=matrix,
+        texttemplate="%{text}",
+        x=list(range(10)),
+        y=list(range(10)),
+    )
+    layout = {
+        "title": "Confusion Matrix",
+        "xaxis": {"title": "Predicted value"},
+        "yaxis": {"title": "Real value"},
+    }
+    return Figure(data=data, layout=layout)
+
+
+def test(model: nn.Module, device: torch.device, test_loader: DataLoader):
+    model.eval()
+    test_loss: float = 0
+    correct = 0
+    probas = []
+    preds = []
+    targets = []
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            probas.append(output)
+            targets.append(target)
+            test_loss += F.nll_loss(
+                output, target, reduction="sum"
+            ).item()  # sum up batch loss
+            pred = output.argmax(dim=1)  # get the index of the max log-probability
+            preds.append(pred)
+            correct += pred.eq(target).sum().item()
+
+    test_loss /= len(test_loader.dataset)  # type: ignore
+    pr_curve = PrecisionRecallCurve(num_classes=10, task="multiclass")
+    precision, recall, thresholds = pr_curve(torch.cat(probas), torch.cat(targets))
+    classes = []
+    for i in range(10):
+        classes += [i] * len(precision[i])
+
+    df = pandas.DataFrame(
+        {
+            "precision": list(torch.cat(precision).cpu()),
+            "recall": list(torch.cat(recall).cpu()),
+            "class": classes,
+        }
+    )
+
+    # We don't need every point to make a useful plot, so we'll subsample
+    # every nth row (with `reduction_factor` as n), targeting
+    # a size of about 2000 points.
+    reduction_factor = int(len(df) / _N_POINTS_PR_CURVE) + 1
+    df = df.iloc[::reduction_factor, :]
+
+    fig = px.scatter(
+        df,
+        x="recall",
+        y="precision",
+        color="class",
+        labels={"x": "Recall", "y": "Precision"},
+    )
+
+    return dict(
+        average_loss=test_loss,
+        accuracy=correct / len(test_loader.dataset),  # type: ignore
+        pr_curve=fig,
+        confusion_matrix=_confusion_matrix(
+            torch.cat(targets).cpu(), torch.cat(preds).cpu()  # type: ignore
+        ),
+    )
