@@ -1,0 +1,102 @@
+{% load custom_tags_and_filters %}
+{# Making this condition into number to use it more easily in the template #}
+{# This is equivalent to display_rate_time = rate_form.time.value or show_rate_time #}
+{% with form_has_time=rate_form.time.value|yesno:"1,0" show_time_var=show_rate_time|yesno:"1,0" %}
+	{% with display_rate_time=form_has_time|add:show_time_var %}
+		<div id="{{ rate_form.form_number }}_form">
+			<input type="hidden" name="form_numbers[]" value="{{ rate_form.form_number }}">
+			<input type="hidden" name="{{ rate_form.form_number }}_id" value="{{ rate_form.instance.id|default_if_none:'' }}">
+			<input type="hidden" name="{{ rate_form.form_number }}_type" value="{{ rate_form.instance.type.id }}">
+			<input type="hidden" name="{{ rate_form.form_number }}_category" value="{{ rate_form.instance.category.id }}">
+			<input type="hidden" name="{{ rate_form.form_number }}_tool" value="{{ rate_form.instance.tool.id }}">
+			<input type="hidden" name="{{ rate_form.form_number }}_area" value="{{ rate_form.instance.area.id }}">
+			<input type="hidden" name="{{ rate_form.form_number }}_consumable" value="{{ rate_form.instance.consumable.id }}">
+			<div class="form-group">
+				<div class="h4 col-sm-6 {% if not display_rate_time %}tool-rate-section{% else %}text-right{% endif %}" style="padding-left: 0; padding-right: 0">
+					<div class="col-sm-12">
+						<span style="margin-right: 10px">
+							{% if not display_rate_time %}{{ rate_form.display_title }}{% else %}{{ rate_form.instance.time.name|default:"New time" }}{% endif %}
+						</span>
+						{% if rate_times and not display_rate_time and rate_form.instance.type.can_have_rate_time %}
+							<button title="Click to add a different rate time" type="button" onclick="add_rate_form('{{ rate_form.form_number }}');" class="btn-success btn btn-xs pull-right"><i style="margin-right: 5px" class="glyphicon-plus-sign glyphicon"></i>Add new time</button>
+						{% endif %}
+						{% if display_rate_time %}
+							<button title="Delete this rate time" type="button" onclick="delete_rate_form('{{ rate_form.form_number }}', '{{ rate_form.instance.id|default_if_none:'' }}');" class="btn-danger btn btn-xs pull-right"><span class="glyphicon-trash glyphicon"></span></button>
+						{% endif %}
+					</div>
+				</div>
+				{% if rate_form.non_field_errors %}
+					<div class="col-sm-6 form-control-static danger-highlight tool-rate-section" style="border-top: none">
+						{{ rate_form.non_field_errors|striptags }}
+					</div>
+				{% endif %}
+			</div>
+			{% if display_rate_time %}
+				<div class="form-group">
+					<label class="control-label col-sm-2" for="{{ rate_form.form_number }}_time"><strong>Time</strong></label>
+					<div class="col-sm-4">
+						<select class="form-control" id="{{ rate_form.form_number }}_time" name="{{ rate_form.form_number }}_time" required>
+							<option value="" disabled selected></option>
+							{% for rate_time in rate_times %}
+								<option value="{{ rate_time.id }}" {% if rate_form.time.value|to_int == rate_time.id %}selected{% endif %}>{{ rate_time }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					{% if rate_form.time.errors %}
+						<div class="col-sm-6 form-control-static danger-highlight">
+							{{ rate_form.time.errors|striptags }}
+						</div>
+					{% endif %}
+				</div>
+			{% endif %}
+			<div class="form-group">
+				<label class="control-label col-sm-2" for="{{ rate_form.form_number }}_amount"><strong>Amount</strong></label>
+				<div class="col-sm-4">
+					<input class="form-control" type="number" step=".01" id="{{ rate_form.form_number }}_amount" name="{{ rate_form.form_number }}_amount" value="{{ rate_form.amount.value }}">
+				</div>
+				{% if rate_form.amount.errors %}
+					<div class="col-sm-6 form-control-static danger-highlight">
+						{{ rate_form.amount.errors|striptags }}
+					</div>
+				{% endif %}
+			</div>
+			<div class="form-group">
+				<div class="col-sm-4 col-sm-offset-2">
+					<div class="checkbox">
+						<label><input type="checkbox" id="{{ rate_form.form_number }}_flat" name="{{ rate_form.form_number }}_flat" {% if rate_form.flat.value %}checked{% endif %}> Flat</label>
+					</div>
+				</div>
+				{% if rate_form.flat.errors %}
+					<div class="col-sm-6 form-control-static danger-highlight">
+						{{ rate_form.flat.errors|striptags }}
+					</div>
+				{% endif %}
+			</div>
+			{% if rate_form.instance.type.type == "TOOL_USAGE" or rate_form.instance.type.type == "AREA_USAGE" %}
+				<div class="form-group">
+					<div class="col-sm-4 col-sm-offset-2">
+						<div class="checkbox">
+							<label><input type="checkbox" id="{{ rate_form.form_number }}_daily" name="{{ rate_form.form_number }}_daily" {% if rate_form.daily.value %}checked{% endif %}> Daily rate</label>
+						</div>
+					</div>
+					{% if rate_form.daily.errors %}
+						<div class="col-sm-6 form-control-static danger-highlight">
+							{{ rate_form.daily.errors|striptags }}
+						</div>
+					{% endif %}
+				</div>
+			{% endif %}
+			<div class="form-group">
+				<label class="control-label col-sm-2" for="{{ rate_form.form_number }}_minimum_charge">Minimum Charge</label>
+				<div class="col-sm-4">
+					<input class="form-control" type="number" step=".01" id="{{ rate_form.form_number }}_minimum_charge" name="{{ rate_form.form_number }}_minimum_charge" value="{{ rate_form.minimum_charge.value }}">
+				</div>
+				{% if rate_form.minimum_charge.errors %}
+					<div class="col-sm-6 form-control-static danger-highlight">
+						{{ rate_form.minimum_charge.errors|striptags }}
+					</div>
+				{% endif %}
+			</div>
+		</div>
+	{% endwith %}
+{% endwith %}

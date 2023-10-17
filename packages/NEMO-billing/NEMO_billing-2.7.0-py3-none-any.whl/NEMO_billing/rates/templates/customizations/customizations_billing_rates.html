@@ -1,0 +1,42 @@
+{% load custom_tags_and_filters %}
+{% load billing_tags %}
+<div class="panel-body">
+    <h3 class="customization-section-title" id="rate">Rates settings</h3>
+    <form method="POST" action="{% url 'customize' 'billing_rates' %}" class="form-horizontal">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="control-label col-lg-3 col-md-4">Rates table</label>
+            <div class="col-lg-9 col-md-8">
+                <div class="checkbox">
+                    <label><input type="checkbox" name="rates_expand_table" {% if rates_expand_table %}checked{% endif %} value="enabled">Expand rates table in tool control</label><br/>
+                </div>
+            </div>
+			<label class="control-label col-lg-3 col-md-4">Show all rate categories</label>
+            <div class="col-lg-9 col-md-8">
+                <div class="checkbox">
+                    <label><input type="checkbox" name="rates_show_all_categories" {% if rates_show_all_categories %}checked{% endif %} value="enabled">Check this box to show rates for all rate categories in tool control (otherwise only rate categories matching the user's projects are shown)</label><br/>
+                </div>
+            </div>
+			<label class="control-label col-lg-3 col-md-4">Allow blank rate</label>
+            <div class="col-lg-9 col-md-8">
+                <div class="checkbox">
+                    <label><input type="checkbox" name="allow_blank_rate" {% if allow_blank_rate %}checked{% endif %} value="enabled">Allow blank rates for categories</label><br/>
+                </div>
+            </div>
+			{% cap_discount_installed as cap_discount_installed %}
+			{% if cap_discount_installed %}
+				<label class="control-label col-lg-3 col-md-4">Daily rate</label>
+				<div class="col-lg-9 col-md-8">
+					<div class="radio">
+						<label><input type="radio" name="rates_daily_per_account" {% if not rates_daily_per_account %}checked{% endif %} value="">By project</label>
+						<label><input type="radio" name="rates_daily_per_account" {% if rates_daily_per_account %}checked{% endif %} value="enabled">By account</label>
+					</div>
+				</div>
+			{% endif %}
+        </div>
+        <div class="customization-separation" style="margin-bottom: 15px"></div>
+        <div class="text-center">
+            {% button type="save" value="Save settings" %}
+        </div>
+    </form>
+</div>
