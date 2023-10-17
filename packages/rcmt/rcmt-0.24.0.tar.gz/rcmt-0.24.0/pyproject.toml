@@ -1,0 +1,86 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "rcmt"
+version = "0.24.0"
+description = ""
+license = "LGPL-3.0-only"
+authors = [ "Markus Meyer <hydrantanderwand@gmail.com>",]
+readme = "README.md"
+repository = "https://github.com/wndhydrnt/rcmt"
+documentation = "https://rcmt.readthedocs.io/"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)"
+]
+
+[tool.poetry.extras]
+semgrep = ["semgrep"]
+
+[tool.poetry.urls]
+Changelog = "https://github.com/wndhydrnt/rcmt/blob/main/CHANGELOG.md"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+ignore_missing_imports = true
+plugins = "sqlalchemy.ext.mypy.plugin"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+PyYAML = ">=5.4.1,<7.0.0"
+PyGithub = "^1.55"
+GitPython = "^3.1.18"
+pydantic = "^2.2.1"
+structlog = ">=23.1,<23.2"
+mergedeep = "^1.3.4"
+toml = "^0.10.2"
+click = "^8.0.1"
+colorama = "^0.4.4"
+python-gitlab = ">=2.10,<4.0"
+humanize = "^4.2.3"
+python-slugify = ">=7,<9"
+sqlalchemy = {extras = ["mypy"], version = ">=1.4.44,<3.0.0"}
+alembic = "^1.8.1"
+pydantic-settings = "^2.0.3"
+semgrep = {version = "^1.39.0", optional = true}
+greenlet = "^3.0.0"
+jinja2 = "^3.1.2"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+mkdocs-material = "^9.4.0"
+mkdocstrings = {version = "^0.23.0", extras = ["python"]}
+
+[tool.poetry.group.dev.dependencies]
+black = "23.9.1"
+isort = "5.12.0"
+pytest = "^7.2.1"
+mypy = "1.5.1"
+types-toml = "^0.10.8"
+types-PyYAML = "^6.0.12"
+flake8 = "^6.0.0"
+types-python-slugify = "^7.0.0.1"
+
+[tool.poetry.scripts]
+rcmt = "rcmt.cli:main"
+
+[tool.coverage.run]
+command_line = "-m pytest"
+omit = [ ".venv/*", "tests/*",]
+source = [ ".",]
+
+[tool.poetry.dev-dependencies.coverage]
+extras = [ "toml",]
+version = "7.3.2"

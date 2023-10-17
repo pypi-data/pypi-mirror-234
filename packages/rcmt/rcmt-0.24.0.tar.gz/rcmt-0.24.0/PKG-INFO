@@ -1,0 +1,111 @@
+Metadata-Version: 2.1
+Name: rcmt
+Version: 0.24.0
+Summary: 
+Home-page: https://github.com/wndhydrnt/rcmt
+License: LGPL-3.0-only
+Author: Markus Meyer
+Author-email: hydrantanderwand@gmail.com
+Requires-Python: >=3.9,<4.0
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Provides-Extra: semgrep
+Requires-Dist: GitPython (>=3.1.18,<4.0.0)
+Requires-Dist: PyGithub (>=1.55,<2.0)
+Requires-Dist: PyYAML (>=5.4.1,<7.0.0)
+Requires-Dist: alembic (>=1.8.1,<2.0.0)
+Requires-Dist: click (>=8.0.1,<9.0.0)
+Requires-Dist: colorama (>=0.4.4,<0.5.0)
+Requires-Dist: greenlet (>=3.0.0,<4.0.0)
+Requires-Dist: humanize (>=4.2.3,<5.0.0)
+Requires-Dist: jinja2 (>=3.1.2,<4.0.0)
+Requires-Dist: mergedeep (>=1.3.4,<2.0.0)
+Requires-Dist: pydantic (>=2.2.1,<3.0.0)
+Requires-Dist: pydantic-settings (>=2.0.3,<3.0.0)
+Requires-Dist: python-gitlab (>=2.10,<4.0)
+Requires-Dist: python-slugify (>=7,<9)
+Requires-Dist: semgrep (>=1.39.0,<2.0.0) ; extra == "semgrep"
+Requires-Dist: sqlalchemy[mypy] (>=1.4.44,<3.0.0)
+Requires-Dist: structlog (>=23.1,<23.2)
+Requires-Dist: toml (>=0.10.2,<0.11.0)
+Project-URL: Changelog, https://github.com/wndhydrnt/rcmt/blob/main/CHANGELOG.md
+Project-URL: Documentation, https://rcmt.readthedocs.io/
+Project-URL: Repository, https://github.com/wndhydrnt/rcmt
+Description-Content-Type: text/markdown
+
+# rcmt
+
+With rcmt you can
+
+- create, modify or delete files across many repositories.
+- merge global settings with user-configured settings in repositories.
+- write your own tooling to manipulate files in repositories.
+
+Take a look at the [documentation](https://rcmt.readthedocs.io/) to learn more.
+
+## Development
+
+### Set up virtualenv and install dependencies
+
+Requirements:
+- [poetry](https://python-poetry.org/)
+
+```shell
+poetry install --with docs
+```
+
+### Run linters
+
+Requirements:
+- [Set up virtualenv and install dependencies](#set-up-virtualenv-and-install-dependencies) (only once)
+
+```shell
+make lint
+```
+
+### Run tests
+
+Requirements:
+- [Set up virtualenv and install dependencies](#set-up-virtualenv-and-install-dependencies) (only once)
+
+```shell
+make test
+```
+
+### Generate and view docs
+
+Requirements:
+- [Set up virtualenv and install dependencies](#set-up-virtualenv-and-install-dependencies) (only once)
+
+Start a local development server:
+
+```shell
+poetry run mkdocs serve
+```
+
+Open `http://127.0.0.1:8000/` in a browser.
+
+### Create a new database migration
+
+Requirements:
+- [Set up virtualenv and install dependencies](#set-up-virtualenv-and-install-dependencies) (only once)
+
+1. Ensure that the database is on the latest revision:
+   ```shell
+   poetry run alembic -c ./hack/alembic.ini upgrade head
+   ```
+2. Add, change or delete a model in [rcmt/database/\_\_init\_\_.py](./rcmt/database/__init__.py).
+3. Let Alembic generate the new migration:
+   ```shell
+   poetry run alembic -c ./hack/alembic.ini revision --autogenerate -m 'Add model "Extension"'
+   ```
+   **Note:** Alembic cannot detect every change. Review the newly generated file in [rcmt/database/migrations/versions](./rcmt/database/migrations/versions).
+   See [What does Autogenerate Detect (and what does it not detect?)](https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect)
+   section in the documentation of Alembic for more details.
+
