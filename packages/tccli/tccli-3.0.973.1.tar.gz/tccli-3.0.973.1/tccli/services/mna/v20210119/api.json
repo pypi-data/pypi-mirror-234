@@ -1,0 +1,1573 @@
+{
+  "actions": {
+    "AddDevice": {
+      "document": "新建设备记录",
+      "input": "AddDeviceRequest",
+      "name": "新建设备",
+      "output": "AddDeviceResponse",
+      "status": "online"
+    },
+    "CreateEncryptedKey": {
+      "document": "通过此接口设置和更新预置密钥",
+      "input": "CreateEncryptedKeyRequest",
+      "name": "设置或更新密钥",
+      "output": "CreateEncryptedKeyResponse",
+      "status": "online"
+    },
+    "CreateQos": {
+      "document": "移动网络发起Qos加速过程",
+      "input": "CreateQosRequest",
+      "name": "发起Qos加速过程",
+      "output": "CreateQosResponse",
+      "status": "online"
+    },
+    "DeleteDevice": {
+      "document": "删除设备信息",
+      "input": "DeleteDeviceRequest",
+      "name": "删除设备",
+      "output": "DeleteDeviceResponse",
+      "status": "online"
+    },
+    "DeleteQos": {
+      "document": "移动网络停止Qos加速过程",
+      "input": "DeleteQosRequest",
+      "name": "停止Qos加速过程",
+      "output": "DeleteQosResponse",
+      "status": "online"
+    },
+    "DescribeQos": {
+      "document": "获取Qos加速状态",
+      "input": "DescribeQosRequest",
+      "name": "获取Qos加速状态",
+      "output": "DescribeQosResponse",
+      "status": "online"
+    },
+    "GetDevice": {
+      "document": "通过指定设备的ID查找设备详细信息",
+      "input": "GetDeviceRequest",
+      "name": "获取设备详细信息",
+      "output": "GetDeviceResponse",
+      "status": "online"
+    },
+    "GetDevices": {
+      "document": "获取设备信息列表",
+      "input": "GetDevicesRequest",
+      "name": "设备信息列表",
+      "output": "GetDevicesResponse",
+      "status": "online"
+    },
+    "GetFlowStatistic": {
+      "document": "获取指定设备Id，指定时间点数据流量使用情况",
+      "input": "GetFlowStatisticRequest",
+      "name": "获取数据流量统计数据",
+      "output": "GetFlowStatisticResponse",
+      "status": "online"
+    },
+    "GetMultiFlowStatistic": {
+      "document": "批量获取设备流量统计曲线",
+      "input": "GetMultiFlowStatisticRequest",
+      "name": "批量获取设备流量统计",
+      "output": "GetMultiFlowStatisticResponse",
+      "status": "online"
+    },
+    "GetPublicKey": {
+      "document": "获取公钥用于验签",
+      "input": "GetPublicKeyRequest",
+      "name": "获取公钥",
+      "output": "GetPublicKeyResponse",
+      "status": "online"
+    },
+    "GetStatisticData": {
+      "document": "在用量统计页面下载流量数据",
+      "input": "GetStatisticDataRequest",
+      "name": "下载用量统计数据",
+      "output": "GetStatisticDataResponse",
+      "status": "online"
+    },
+    "UpdateDevice": {
+      "document": "更新设备信息",
+      "input": "UpdateDeviceRequest",
+      "name": "更新设备",
+      "output": "UpdateDeviceResponse",
+      "status": "online"
+    }
+  },
+  "metadata": {
+    "apiVersion": "2021-01-19",
+    "api_brief": "介绍如何使用API对多网聚合加速进行操作，包括启动加速、停止加速、上报接口状态等",
+    "serviceNameCN": "多网聚合加速",
+    "serviceShortName": "mna"
+  },
+  "objects": {
+    "AddDeviceRequest": {
+      "document": "AddDevice请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "新建设备的名称",
+          "example": "dev1",
+          "member": "string",
+          "name": "DeviceName",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "新建设备的备注",
+          "example": "mobile",
+          "member": "string",
+          "name": "Remark",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "新建设备的base64密钥字符串，非必选，如果不填写则由系统自动生成",
+          "example": "dasdfrfwer32e4r",
+          "member": "string",
+          "name": "DataKey",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "是否设置预置密钥",
+          "example": "true",
+          "member": "bool",
+          "name": "Encrypted",
+          "required": false,
+          "type": "bool"
+        }
+      ],
+      "type": "object"
+    },
+    "AddDeviceResponse": {
+      "document": "AddDevice返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "经过加密算法加密后的base64格式密钥",
+          "example": "dasdfrfwer32e4r",
+          "member": "string",
+          "name": "DataKey",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备ID",
+          "example": "xxx",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "签名字符串\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "\"xxxxx\"",
+          "member": "string",
+          "name": "Signature",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "Capacity": {
+      "document": "接口能力扩展，用于填充电信的加速Token，并为未来参数提供兼容空间",
+      "members": [
+        {
+          "disabled": false,
+          "document": "电信鉴权的Token。要加速的电信手机终端访问 http://qos.189.cn/qos-api/getToken?appid=TencentCloud 页面，获取返回结果中result的值",
+          "example": "177cc9c4ab0-7b93546e8a7a89c7716b38139af3ba6b580045e9",
+          "member": "string",
+          "name": "CTCCToken",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "终端所处在的省份，建议不填写由服务端自动获取，若需填写请填写带有省、市、自治区、特别行政区等后缀的省份中文全称",
+          "example": "广东省",
+          "member": "string",
+          "name": "Province",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    },
+    "Context": {
+      "document": "加速策略关键数据",
+      "members": [
+        {
+          "disabled": false,
+          "document": "测速数据",
+          "example": "略",
+          "member": "NetworkData",
+          "name": "NetworkData",
+          "required": false,
+          "type": "object",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "用户期望最低门限",
+          "example": "略",
+          "member": "ExpectedThreshold",
+          "name": "ExpectedLowThreshold",
+          "required": false,
+          "type": "object",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "用户期望最高门限",
+          "example": "略",
+          "member": "ExpectedThreshold",
+          "name": "ExpectedHighThreshold",
+          "required": false,
+          "type": "object",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    },
+    "CreateEncryptedKeyRequest": {
+      "document": "CreateEncryptedKey请求参数结构体",
+      "members": [],
+      "type": "object"
+    },
+    "CreateEncryptedKeyResponse": {
+      "document": "CreateEncryptedKey返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "预置密钥",
+          "example": "\"xxxxx\"",
+          "member": "string",
+          "name": "EncryptedKey",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "CreateQosRequest": {
+      "document": "CreateQos请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "加速业务源地址信息，SrcIpv6和（SrcIpv4+SrcPublicIpv4）二选一，目前Ipv6不可用，全部填写以Ipv4参数为准。",
+          "example": "{\"SrcIpv4\": \"192.168.2.11\", \"SrcPublicIpv4\": \"10.22.33.14\"}",
+          "member": "SrcAddressInfo",
+          "name": "SrcAddressInfo",
+          "required": true,
+          "type": "object"
+        },
+        {
+          "disabled": false,
+          "document": "加速业务目标地址信息",
+          "example": "{\"DestIpv4\": \"128.22.36.40\"}",
+          "member": "DestAddressInfo",
+          "name": "DestAddressInfo",
+          "required": true,
+          "type": "object"
+        },
+        {
+          "disabled": false,
+          "document": "加速套餐\nT100K：时延性保障 + 带宽保障上下行保障 100kbps\nT200K：时延性保障 + 带宽保障上下行保障 200kbps\nT400K：时延性保障 + 带宽保障上下行保障  400kbps\nBD1M：带宽型保障 + 下行带宽保障1Mbps\nBD2M：带宽型保障 + 下行带宽保障2Mbps\nBD4M：带宽型保障 + 下行带宽保障4Mbps\nBU1M：带宽型保障 + 上行带宽保障1Mbps\nBU2M：带宽型保障 + 上行带宽保障2Mbps\nBU4M：带宽型保障 + 上行带宽保障4Mbps",
+          "example": "T100K",
+          "member": "string",
+          "name": "QosMenu",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "申请加速的设备信息，包括运营商，操作系统，设备唯一标识等。",
+          "example": "{\"OS\": 1, \"Vendor\": 2, \"IMEI\": \"357315094232545\"}",
+          "member": "DeviceInfo",
+          "name": "DeviceInfo",
+          "required": false,
+          "type": "object"
+        },
+        {
+          "disabled": false,
+          "document": "期望加速时长（单位分钟），默认值30分钟",
+          "example": "30",
+          "member": "uint64",
+          "name": "Duration",
+          "required": false,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "接口能力扩展，如果是电信用户，必须填充CTCC Token字段",
+          "example": "{ \"CTCCToken\" : \"177cc9c4ab0-7b93546\", \"Province\": \"Guangdong\" }",
+          "member": "Capacity",
+          "name": "Capacity",
+          "required": false,
+          "type": "object"
+        },
+        {
+          "disabled": false,
+          "document": "应用模板ID",
+          "example": "app-1abcedf",
+          "member": "string",
+          "name": "TemplateId",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "针对特殊协议进行加速\n1. IP （默认值）\n2. UDP\n3. TCP",
+          "example": "1",
+          "member": "uint64",
+          "name": "Protocol",
+          "required": false,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "加速策略关键数据",
+          "example": "{\"NetworkData\":{\"RTT\":[30,25,51],\"Loss\":0.02,\"Jitter\":50.5,\"Inte",
+          "member": "Context",
+          "name": "Context",
+          "required": false,
+          "type": "object"
+        },
+        {
+          "disabled": false,
+          "document": "签名",
+          "example": "af4764571f217a9bd2c50d8e97c54239bcacb15c835100e59fda84cb33603d14",
+          "member": "string",
+          "name": "Extern",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "CreateQosResponse": {
+      "document": "CreateQos返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "单次加速唯一 Id",
+          "example": "ZWViYzAwNzJmNjRkNGExMDgyMjkzZTY0YzU0ZjZhNDY=-1-0",
+          "member": "string",
+          "name": "SessionId",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "当前加速剩余时长（单位秒）",
+          "example": "1790",
+          "member": "uint64",
+          "name": "Duration",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DeleteDeviceRequest": {
+      "document": "DeleteDevice请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "删除设备的唯一ID",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DeleteDeviceResponse": {
+      "document": "DeleteDevice返回参数结构体",
+      "members": [
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DeleteQosRequest": {
+      "document": "DeleteQos请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "单次加速唯一 Id",
+          "example": "ZWViYzAwNzJmNjRkNGExMDgyMjkzZTY0YzU0ZjZhNDY=-1-0",
+          "member": "string",
+          "name": "SessionId",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DeleteQosResponse": {
+      "document": "DeleteQos返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "单次加速唯一 Id",
+          "example": "ZWViYzAwNzJmNjRkNGExMDgyMjkzZTY0YzU0ZjZhNDY=-1-0",
+          "member": "string",
+          "name": "SessionId",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "本次加速会话持续时间（单位秒）",
+          "example": "300",
+          "member": "uint64",
+          "name": "Duration",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DescribeQosRequest": {
+      "document": "DescribeQos请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "单次加速唯一 Id",
+          "example": "ZWViYzAwNzJmNjRkNGExMDgyMjkzZTY0YzU0ZjZhNDY=-1-0",
+          "member": "string",
+          "name": "SessionId",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DescribeQosResponse": {
+      "document": "DescribeQos返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "0：无匹配的加速中会话\n1：存在匹配的加速中会话",
+          "example": "0",
+          "member": "uint64",
+          "name": "Status",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "手机公网出口IP，仅匹配时返回\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "114.114.114.114",
+          "member": "string",
+          "name": "SrcPublicIpv4",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "业务访问目的IP，仅匹配时返回\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "[\"8.8.8.8\",\"8.8.8.9\"]",
+          "member": "string",
+          "name": "DestIpv4",
+          "required": true,
+          "type": "list",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "当前加速剩余时长（单位秒）有，仅匹配时返回\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "1790",
+          "member": "uint64",
+          "name": "Duration",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "加速套餐类型，仅匹配时返回\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "T100K",
+          "member": "string",
+          "name": "QosMenu",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "DestAddressInfo": {
+      "document": "多网聚合加速目标地址结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "加速业务目标 ip 地址数组",
+          "example": "[10.1.135.152, 10.1.133.14]",
+          "member": "string",
+          "name": "DestIp",
+          "required": true,
+          "type": "list"
+        }
+      ],
+      "usage": "in"
+    },
+    "DeviceBaseInfo": {
+      "document": "设备的基本信息",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备唯一ID",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备名称",
+          "example": "\"xxx\"",
+          "member": "string",
+          "name": "DeviceName",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备创建的时间，单位：ms",
+          "example": "169043203113091072",
+          "member": "string",
+          "name": "CreateTime",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备最后在线时间，单位：ms",
+          "example": "169043203113091072",
+          "member": "string",
+          "name": "LastTime",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备的备注",
+          "example": "\"xxx\"",
+          "member": "string",
+          "name": "Remark",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "out"
+    },
+    "DeviceDetails": {
+      "document": "设备详细信息",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备基本信息",
+          "example": "无",
+          "member": "DeviceBaseInfo",
+          "name": "DeviceBaseInfo",
+          "required": true,
+          "type": "object",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备网络信息\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "无",
+          "member": "DeviceNetInfo",
+          "name": "DeviceNetInfo",
+          "required": true,
+          "type": "list",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "聚合服务器地址\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "gz",
+          "member": "string",
+          "name": "GatewaySite",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "业务下行速率\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "123",
+          "member": "float",
+          "name": "BusinessDownRate",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "业务上行速率\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "12",
+          "member": "float",
+          "name": "BusinessUpRate",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        }
+      ],
+      "usage": "out"
+    },
+    "DeviceInfo": {
+      "document": "设备信息结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "运营商\n1：移动 \n2：电信\n3：联通\n4：广电\n99：其他",
+          "example": "1",
+          "member": "uint64",
+          "name": "Vendor",
+          "required": false,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备操作系统：\n1：Android\n2： IOS\n99：其他",
+          "example": "1",
+          "member": "uint64",
+          "name": "OS",
+          "required": false,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备唯一标识\nIOS 填写 IDFV\nAndroid 填写 IMEI",
+          "example": "357315094232545",
+          "member": "string",
+          "name": "DeviceId",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "用户手机号码",
+          "example": "18649853764",
+          "member": "string",
+          "name": "PhoneNum",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "无线信息\n1：4G\n2：5G\n3：WIFI\n99：其他",
+          "example": "1",
+          "member": "uint64",
+          "name": "Wireless",
+          "required": false,
+          "type": "int",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    },
+    "DeviceNetInfo": {
+      "document": "设备网络状态信息",
+      "members": [
+        {
+          "disabled": false,
+          "document": "网络类型：\n0:数据\n1:Wi-Fi\n2:有线\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "1",
+          "member": "int64",
+          "name": "Type",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "启用/禁用\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "true",
+          "member": "bool",
+          "name": "DataEnable",
+          "required": true,
+          "type": "bool",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "上行限速\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "10000",
+          "member": "string",
+          "name": "UploadLimit",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "下行限速\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "10000",
+          "member": "string",
+          "name": "DownloadLimit",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "接收实时速率\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "100",
+          "member": "uint64",
+          "name": "DataRx",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "发送实时速率\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "100",
+          "member": "uint64",
+          "name": "DataTx",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "运营商类型：\n1: 中国移动；\n2: 中国电信; \n3: 中国联通\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "1",
+          "member": "int64",
+          "name": "Vendor",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "连接状态：\n0:无连接\n1:连接中\n2:已连接\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "1",
+          "member": "int64",
+          "name": "State",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "公网IP\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "\"xxx.xxx.xxx.xx\"",
+          "member": "string",
+          "name": "PublicIp",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "信号强度/单位：dbm\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "-85",
+          "member": "int64",
+          "name": "SignalStrength",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "数据网络类型：\n-1 ：无效值   \n2：2G \n3：3G \n4：4G \n5：5G\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "4",
+          "member": "int64",
+          "name": "Rat",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "网卡名\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "\"xxx\"",
+          "member": "string",
+          "name": "NetInfoName",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "下行实时速率（浮点数类型代替上一版本DataRx的整型）\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "12.3",
+          "member": "float",
+          "name": "DownRate",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "上行实时速率（浮点数类型代替上一版本TxRate的整型）\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "1.23",
+          "member": "float",
+          "name": "UpRate",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        }
+      ],
+      "usage": "out"
+    },
+    "ExpectedThreshold": {
+      "document": "用户期望门限",
+      "members": [
+        {
+          "disabled": false,
+          "document": "期望发起加速的时延阈值",
+          "example": "60",
+          "member": "float",
+          "name": "RTT",
+          "required": true,
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "期望发起加速的丢包率阈值",
+          "example": "0.02",
+          "member": "float",
+          "name": "Loss",
+          "required": true,
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "期望发起加速的抖动阈值",
+          "example": "60",
+          "member": "float",
+          "name": "Jitter",
+          "required": true,
+          "type": "float",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    },
+    "FlowDetails": {
+      "document": "设备流量信息",
+      "members": [
+        {
+          "disabled": false,
+          "document": "流量数据点\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "无",
+          "member": "NetDetails",
+          "name": "NetDetails",
+          "required": false,
+          "type": "list",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "设备ID\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "DeviceId",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "流量最大值（单位：bytes）\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "51548",
+          "member": "float",
+          "name": "MaxValue",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "流量平均值（单位：bytes）\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "15441",
+          "member": "float",
+          "name": "AvgValue",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        },
+        {
+          "disabled": false,
+          "document": "流量总值（单位：bytes）\n注意：此字段可能返回 null，表示取不到有效值。",
+          "example": "656546",
+          "member": "float",
+          "name": "TotalValue",
+          "required": false,
+          "type": "float",
+          "value_allowed_null": true
+        }
+      ],
+      "usage": "out"
+    },
+    "GetDeviceRequest": {
+      "document": "GetDevice请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "搜索指定设备的id",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "GetDeviceResponse": {
+      "document": "GetDevice返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备详细信息",
+          "example": "无",
+          "member": "DeviceDetails",
+          "name": "DeviceDetails",
+          "type": "object",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "GetDevicesRequest": {
+      "document": "GetDevices请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "每页显示记录数，PageSize、PageNumber值均为-1 时，按照1页无限制条数匹配所有设备",
+          "example": "10",
+          "member": "int64",
+          "name": "PageSize",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "当前查看页码，PageSize、PageNumber值均为-1 时，按照1页无限制条数匹配所有设备",
+          "example": "1",
+          "member": "int64",
+          "name": "PageNumber",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "搜索设备的关键字（ID或者设备名），为空时匹配所有设备",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "Keyword",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "DeviceType\n不传：返回所有设备；\n1:自有设备；\n2:三方设备",
+          "example": "1",
+          "member": "int64",
+          "name": "DeviceType",
+          "required": false,
+          "type": "int"
+        }
+      ],
+      "type": "object"
+    },
+    "GetDevicesResponse": {
+      "document": "GetDevices返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备信息列表",
+          "example": "无",
+          "member": "DeviceBaseInfo",
+          "name": "DeviceInfos",
+          "type": "list",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "设备总记录条数",
+          "example": "20",
+          "member": "int64",
+          "name": "Length",
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "总页数",
+          "example": "2",
+          "member": "int64",
+          "name": "TotalPage",
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "GetFlowStatisticRequest": {
+      "document": "GetFlowStatistic请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备ID",
+          "example": "245aee95-f37e-55d0-5258-19520bdf4b53",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "开始查找时间",
+          "example": "1659514436",
+          "member": "int64",
+          "name": "BeginTime",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "截止时间",
+          "example": "1659515436",
+          "member": "int64",
+          "name": "EndTime",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "流量种类（1：上行流量，2：下行流量）",
+          "example": "1",
+          "member": "int64",
+          "name": "Type",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "时间粒度（1：按小时统计，2：按天统计）",
+          "example": "1",
+          "member": "int64",
+          "name": "TimeGranularity",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "type": "object"
+    },
+    "GetFlowStatisticResponse": {
+      "document": "GetFlowStatistic返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "流量详细信息",
+          "example": "无",
+          "member": "NetDetails",
+          "name": "NetDetails",
+          "type": "list",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "查找时间段流量使用最大值（单位：byte）",
+          "example": "216516",
+          "member": "float",
+          "name": "MaxValue",
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "查找时间段流量使用平均值（单位：byte）",
+          "example": "25151",
+          "member": "float",
+          "name": "AvgValue",
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "查找时间段流量使用总量（单位：byte）",
+          "example": "35465464",
+          "member": "float",
+          "name": "TotalValue",
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "GetMultiFlowStatisticRequest": {
+      "document": "GetMultiFlowStatistic请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备id列表，单次最多请求10个设备",
+          "example": "无",
+          "member": "string",
+          "name": "DeviceIds",
+          "required": true,
+          "type": "list"
+        },
+        {
+          "disabled": false,
+          "document": "1659514436",
+          "example": "1659514436",
+          "member": "int64",
+          "name": "BeginTime",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "1659515000",
+          "example": "1659515000",
+          "member": "int64",
+          "name": "EndTime",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "统计流量类型（1：上行流量，2：下行流量）",
+          "example": "1",
+          "member": "int64",
+          "name": "Type",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "统计时间粒度（1：按小时统计，2：按天统计）",
+          "example": "1",
+          "member": "int64",
+          "name": "TimeGranularity",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "type": "object"
+    },
+    "GetMultiFlowStatisticResponse": {
+      "document": "GetMultiFlowStatistic返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "批量设备流量信息",
+          "example": "无",
+          "member": "FlowDetails",
+          "name": "FlowDetails",
+          "type": "list",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "GetPublicKeyRequest": {
+      "document": "GetPublicKey请求参数结构体",
+      "members": [],
+      "type": "object"
+    },
+    "GetPublicKeyResponse": {
+      "document": "GetPublicKey返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "非对称公钥",
+          "example": "\"xxxxx\"",
+          "member": "string",
+          "name": "PublicKey",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "GetStatisticDataRequest": {
+      "document": "GetStatisticData请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备ID",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "统计开始时间，单位：s",
+          "example": "1661212800",
+          "member": "int64",
+          "name": "BeginTime",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "统计结束时间，单位：s",
+          "example": "1661587200",
+          "member": "int64",
+          "name": "EndTime",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "disabled": false,
+          "document": "聚合粒度：\n1:按小时统计\n2:按天统计",
+          "example": "1",
+          "member": "int64",
+          "name": "TimeGranularity",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "type": "object"
+    },
+    "GetStatisticDataResponse": {
+      "document": "GetStatisticData返回参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "文件地址url",
+          "example": "\"http://xxxx\"",
+          "member": "string",
+          "name": "FilePath",
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "NetDetails": {
+      "document": "网络详细信息",
+      "members": [
+        {
+          "disabled": false,
+          "document": "流量值（bit）",
+          "example": "98",
+          "member": "float",
+          "name": "Current",
+          "required": true,
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "时间点，单位：s",
+          "example": "1690424186",
+          "member": "string",
+          "name": "Time",
+          "required": true,
+          "type": "string",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "out"
+    },
+    "NetworkData": {
+      "document": "测速数据",
+      "members": [
+        {
+          "disabled": false,
+          "document": "时延数组，最大长度30",
+          "example": "[10,20,30]",
+          "member": "float",
+          "name": "RTT",
+          "required": true,
+          "type": "list",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "丢包率",
+          "example": "0.02",
+          "member": "float",
+          "name": "Loss",
+          "required": true,
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "抖动",
+          "example": "50.5",
+          "member": "float",
+          "name": "Jitter",
+          "required": true,
+          "type": "float",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "10位秒级时间戳",
+          "example": "1644891913",
+          "member": "int64",
+          "name": "Timestamp",
+          "required": true,
+          "type": "int",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    },
+    "SrcAddressInfo": {
+      "document": "移动网络加速源地址结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "用户私网 ipv4 地址",
+          "example": "10.1.135.152",
+          "member": "string",
+          "name": "SrcIpv4",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "用户公网 ipv4 地址",
+          "example": "223.104.63.10",
+          "member": "string",
+          "name": "SrcPublicIpv4",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "用户 ipv6 地址",
+          "example": "1050:0:0:0:5:600:300c:326b",
+          "member": "string",
+          "name": "SrcIpv6",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    },
+    "UpdateDeviceRequest": {
+      "document": "UpdateDevice请求参数结构体",
+      "members": [
+        {
+          "disabled": false,
+          "document": "设备id",
+          "example": "\"mna-xxx\"",
+          "member": "string",
+          "name": "DeviceId",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "设备名称",
+          "example": "\"dev\"",
+          "member": "string",
+          "name": "DeviceName",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "设备备注",
+          "example": "\"xxx\"",
+          "member": "string",
+          "name": "Remark",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "disabled": false,
+          "document": "更新设备网络信息",
+          "example": "无",
+          "member": "UpdateNetInfo",
+          "name": "UpdateNetInfo",
+          "required": false,
+          "type": "list"
+        }
+      ],
+      "type": "object"
+    },
+    "UpdateDeviceResponse": {
+      "document": "UpdateDevice返回参数结构体",
+      "members": [
+        {
+          "document": "唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。",
+          "member": "string",
+          "name": "RequestId",
+          "type": "string"
+        }
+      ],
+      "type": "object"
+    },
+    "UpdateNetInfo": {
+      "document": "更新设备网络状态信息",
+      "members": [
+        {
+          "disabled": false,
+          "document": "网络类型：\n0:数据\n1:Wi-Fi",
+          "example": "1",
+          "member": "int64",
+          "name": "Type",
+          "required": false,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "启用/禁用",
+          "example": "true",
+          "member": "bool",
+          "name": "DataEnable",
+          "required": false,
+          "type": "bool",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "上行限速：bit",
+          "example": "10000",
+          "member": "uint64",
+          "name": "UploadLimit",
+          "required": false,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "下行限速：bit",
+          "example": "10000",
+          "member": "uint64",
+          "name": "DownloadLimit",
+          "required": false,
+          "type": "int",
+          "value_allowed_null": false
+        },
+        {
+          "disabled": false,
+          "document": "网卡名",
+          "example": "\"xxx\"",
+          "member": "string",
+          "name": "NetInfoName",
+          "required": false,
+          "type": "string",
+          "value_allowed_null": false
+        }
+      ],
+      "usage": "in"
+    }
+  },
+  "version": "1.0"
+}
