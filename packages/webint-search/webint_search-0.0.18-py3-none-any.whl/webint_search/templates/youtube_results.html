@@ -1,0 +1,13 @@
+$def with (query, results)
+$var title: YouTube Search Results for <code>$query</code>
+
+$for result in results:
+    <div>
+    <img src="$result['thumbnails'][0]" style=display:inline-block;width:5em>
+    <form action=$tx.origin/media method=post style=display:inline-block>
+    $ url = f"https://youtube.com/watch?v={result['id']}"
+    <a href="$url">$result["title"]</a><br>
+    <small><strong>$result["duration"]</strong>, $result["channel"], $result["publish_time"], $result["views"]</small>
+    <input name=url value="$url" type=hidden><button>Download</button>
+    </form>
+    </div>

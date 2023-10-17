@@ -1,0 +1,174 @@
+$def with (query, iw_profile, ap_profile, formatted_query, result, ipa_pronunciation, cmu_pronunciation, definition, rhymes, web_results, code_projects, code_files, books)
+$var breadcrumbs = ("search", "Search")
+
+<style>
+pre {
+  font-size: .8em;
+  width: 100%; }
+.profile * {
+  vertical-align: top; }
+.profile_summary {
+  font-size: .8em;
+.profile_summary p {
+  margin-bottom: 0; }
+.profile form {
+  margin-top: 1em; }
+</style>
+
+<form style="margin:1em 0">
+    <input name=q value="$query"> <button>Search</button>
+</form>
+
+$if iw_profile or ap_profile:
+    <div class=profile
+        style="display:grid;grid-gap:1em;grid-template-columns:20% auto;margin:2em 0 0 0">
+        $if iw_profile:
+            $ profile = iw_profile
+            $if photos := profile.get("photo"):
+                <img src=$photos[0] style=width:100%>
+            <div>
+            <p style=margin:0><big><strong>$profile["name"][0]</strong></big><br>
+            $if urls := profile.get("url"):
+                <small>
+                $for url in urls:
+                    <a href=$url>$url</a>
+                    $if not loop.last:
+                        &bull;
+                </small></p>
+            <div class=profile_summary>$:profile["note"][0]</div>
+            $if tags := profile.get("category"):
+                <div style=font-size:.8em>
+                $for tag in tags:
+                    $if "value" in tag:
+                        $tag["value"]
+                    $else:
+                        $tag
+                    $if not loop.last:
+                        &bull;
+                </div>
+            </div>
+        $elif ap_profile:
+            $ profile = ap_profile
+            $if photos := profile.get("icon"):
+                $if not isinstance(photos, list):
+                    $ photos = [photos]
+                <img src=$photos[0]["url"] style=width:100%>
+            <div>
+            <p style=margin:0><big><strong>$profile["name"]</strong></big><br>
+            $if "url" in profile:
+                $ urls = profile["url"]
+                $if not isinstance(urls, list):
+                    $ urls = [urls]
+                <small>
+                $for url in urls:
+                    <a href=$url>$url</a>
+                    $if not loop.last:
+                        &bull;
+                </small></p>
+            <div class=profile_summary>$:profile["summary"]</div>
+            $if "tag" in profile:
+                <div style=font-size:.8em>
+                $for tag in profile["tag"]:
+                    $tag["name"]
+                    $if not loop.last:
+                        &bull;
+                </div>
+            </div>
+    </div>
+    $if tx.user.is_owner:
+        <form action=/people method=post style=text-align:right>
+            <input type=hidden name=identifier value="$query">
+            <button>Follow</button>
+        </form>
+    <details>
+    <summary>Full Summary</summary>
+    <pre>$pformat(profile)</pre>
+    </details>
+
+$if result:
+    <pre>$formatted_query<br>
+    <big>$result</big></pre>
+
+$if definition:
+    <p><strong title="$cmu_pronunciation">$ipa_pronunciation</strong>, $definition<br>
+    <small>rhymes: $", ".join(rhymes)</small></p>
+
+<h2>Across the Web</h2>
+$if web_results:
+    <div>
+    $ featured_sites = {
+    $   "$tx.host.name": ("$tx.origin/media/6ysi.png", " — $tx.host.owner['name'][0]"),
+    $   "indieweb.org": ("https://indieweb.org/favicon.ico", " - IndieWeb"),
+    $   "en.wikipedia.org": ("https://www.wikipedia.org/static/favicon/wikipedia.ico", " - Wikipedia"),
+    $   "www.youtube.com": ("https://www.youtube.com/s/desktop/a24ea7cc/img/favicon.ico", " - YouTube"),
+    $   "developer.mozilla.org": ("https://developer.mozilla.org/favicon-48x48.cbbd161b.png", " | MDN - MDN Web Docs"),
+    $   "www.w3.org": ("https://www.w3.org/favicon.ico", " - World Wide Web Consortium (W3C)"),
+    $   "stackoverflow.com": ("https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico?v=ec617d715196", " - Stack Overflow"),
+    $   "twitter.com": ("https://abs.twimg.com/favicons/twitter.3.ico", " | Twitter"),
+    $   "www.imdb.com": ("https://m.media-amazon.com/images/G/01/imdb/images-ANDW73HA/favicon_desktop_32x32._CB1582158068_.png", " - IMDb"),
+    $ }
+    $ blocked_sites = (
+    $   "www.$tx.host.name",
+    $   "www.freecodecamp.org",
+    $   "www.tutorialspoint.com",
+    $   "www.w3schools.com",
+    $ )
+    <div>
+    $for result_url, result_text in web_results:
+        $ opacity = .75
+        $ font_size = "1em"
+        $ icon = None
+        $ suffix = ""
+        $if result_url.host in featured_sites:
+            $ font_size = "1.25em"
+            $ icon, suffix = featured_sites[result_url.host]
+            $ opacity = 1
+            $if result_url.host == "developer.mozilla.org" and not result_url.path.startswith("en-US"):
+                $continue
+        $elif result_url.host in blocked_sites:
+            $continue
+        <div style="opacity:$opacity;line-height:1;margin:.25em 0">
+        <a href=$result_url>$result_text.removesuffix(suffix)</a><br>
+        <small><small>
+        $if icon:
+            <img style=height:1.25em;position:relative;top:.225em src=$icon>&ensp;\
+            $str(result_url).removeprefix(f"{result_url.origin}/")
+        $else:
+            $result_url
+        </small></small>
+        </div>
+    </div>
+    </div>
+$else:
+    <p>0 results</p>
+
+<h2>Code</h2>
+$if code_projects.most_common()[0][0]:
+    <ul>
+    $for project, file_count in code_projects.most_common():
+        <li><a href=$tx.origin/code/projects/$project>$project</a>
+        $ files = code_files[project]
+        <small>\
+        $for code_file in sorted(files)[:3]:
+            <a href=$tx.origin/code/projects/$project/files/$code_file
+            style=color:#777>$code_file</a>\
+            $if not loop.last:
+                , \
+        $if len(files) > 3:
+             <em>and $(file_count - 3) more</em>
+        </small></li>
+    </ul>
+$else:
+    <p>0 results</p>
+
+$# <h2>Books</h2>
+$# <p>found $books.pop("found") document out of $books.pop("out_of"),
+$# search took $books.pop("search_time_ms")ms</p>
+$# <ul>
+$# $for book in books.pop("hits"):
+$#     <li><p>$book.pop("document")</p>
+$#     <p>$book.pop("highlights")</p>
+$#     <pre>$pformat(book)</pre>
+$#     </li>
+$# </ul>
+$# XXX <pre>$pformat(books)</pre>
