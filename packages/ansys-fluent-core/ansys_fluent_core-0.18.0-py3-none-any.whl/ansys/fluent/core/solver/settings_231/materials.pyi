@@ -1,0 +1,36 @@
+#
+# This is an auto-generated file.  DO NOT EDIT!
+#
+
+
+from typing import Union, List, Tuple
+
+class materials:
+    fluent_name = ...
+    child_names = ...
+    database = ...
+    fluid = ...
+    solid = ...
+    mixture = ...
+    inert_particle = ...
+    droplet_particle = ...
+    combusting_particle = ...
+    particle_mixture = ...
+    command_names = ...
+
+    def list_materials(self, ):
+        """
+        List all locally-stored materials.
+        """
+
+    def list_properties(self, name: str):
+        """
+        List the properties of a locally-stored material.
+        
+        Parameters
+        ----------
+            name : str
+                'name' child.
+        
+        """
+
