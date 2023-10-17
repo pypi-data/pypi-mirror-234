@@ -1,0 +1,57 @@
+[project]
+authors = [
+  {name = "Smithed Team", email = "team@smithed.dev"},
+]
+dependencies = [
+  "beet>=0.95.1",
+  "mecha>=0.76.2",
+  "typer>=0.9.0",
+  "tokenstream>=1.7.0",
+  "backports-strenum>=1.2.8",
+]
+description = "Smithed's Python client with CLI, weld and more"
+license = "MIT"
+name = "smithed"
+readme = "README.md"
+requires-python = ">= 3.10"
+version = "0.13.4"
+
+[project.scripts]
+weld = "smithed.weld:cli"
+
+[tool.rye]
+dev-dependencies = [
+  "ruff>=0.0.292",
+  "streamlit>=1.27.2",
+  "black>=23.9.1",
+  "pytest>=7.4.2",
+  "pytest-insta>=0.2.0",
+  "lectern>=0.29.1",
+  "devtools>=0.12.2",
+  "streamlit-extras>=0.3.4",
+  "python-semantic-release==7.34.6",
+  "ipython>=8.16.1",
+]
+managed = true
+
+[tool.rye.scripts]
+check = {chain = ["check:black", "check:ruff"]}
+"check:black" = "black smithed examples tests --check"
+"check:ruff" = "ruff smithed examples tests"
+format = "black smithed examples tests"
+test = "pytest"
+
+[tool.semantic_release]
+branch = "main"
+build_command = "rye build"
+major_on_zero = false
+upload_to_pypi = true
+version_toml = ["pyproject.toml:project.version"]
+version_variable = ["smithed/__init__.py:__version__", "smithed/weld/__init__.py:__version__"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
