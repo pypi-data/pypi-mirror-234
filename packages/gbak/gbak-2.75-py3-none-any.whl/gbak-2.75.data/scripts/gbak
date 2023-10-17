@@ -1,0 +1,248 @@
+#!python
+from __future__ import absolute_import
+import click
+import pkg_resources
+
+from gbackup import Client, DriverHelper
+
+VERSION = pkg_resources.require("gbak")[0].version
+
+@click.group()
+@click.version_option(version=VERSION, prog_name='gbak')
+def gbak():  # pragma: no cover
+    pass
+
+@click.command()
+@click.option('--config', help='config file')
+@click.option('--input', help=' input')
+@click.option('--output', help=' output')
+def download(config,input,output):
+    if config != None :
+        c = Client(config, "download", input, output)
+        c.run()
+    else:
+        print("{}")
+@click.command()
+@click.option('--url', help='config file')
+@click.option('--ext', help=' ext', default=None)
+@click.option('--root', help=' root', default=None)
+def downloada(url,ext,root):
+    if url != None :
+        dhr = DriverHelper()
+        rs = dhr.download_file(url,root,ext)
+        print(rs)
+    else:
+        print("")
+@click.command()
+@click.option('--sv', help='server name')
+@click.option('--idx', help='id file', default=None)
+@click.option('--path', help=' root', default=None)
+def downloadsv(sv,idx,path):
+    if sv != None :
+        dhr = DriverHelper()
+        rs = dhr.download_file_pub(sv,idx,path)
+        print(rs)
+    else:
+        print("")
+@click.command()
+@click.option('--sv', help='server name')
+@click.option('--idx', help='id file', default=None)
+@click.option('--dic', help=' dic', default=None)
+def download_with_name(sv,idx,dic):
+    if sv != None :
+        dhr = DriverHelper()
+        rs = dhr.download_file_with_name(sv, idx, dic)
+        print(rs)
+    else:
+        print("")
+@click.command()
+@click.option('--sv', help='server name')
+@click.option('--idx', help='id file', default=None)
+@click.option('--path', help=' root', default=".")
+@click.option('--type', help=' type', default=None)
+def downloadfolder(sv, idx, path, type):
+    if sv != None :
+        dhr = DriverHelper()
+        rs = dhr.download_folder(sv, idx, path, type)
+        print(rs)
+    else:
+        print("")
+@click.command()
+@click.option('--sv', help='server name')
+@click.option('--idx', help='id file', default=None)
+def listfolder(sv, idx):
+    if sv != None :
+        dhr = DriverHelper()
+        dhr.list_folder(sv, idx)
+    else:
+        print("")
+@click.command()
+@click.option('--config', help='config file')
+@click.option('--input', help=' input')
+def upload(config, input):
+    if config != None :
+        c = Client(config, "upload", input, "")
+        c.run()
+    else:
+        print("{}")
+@click.command()
+@click.option('--email', help='email')
+@click.option('--input', help=' input')
+def uploada_email(email, input):
+    if input != None:
+        dhr = DriverHelper()
+        rs = dhr.upload_file(email,input)
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--email', help='email')
+@click.option('--input', help=' input')
+@click.option('--folderid', help=' folderid')
+def uploada_email_folder(email, input, folderid):
+    if input != None:
+        dhr = DriverHelper()
+        rs = dhr.upload_file_to_folder(email, input, folderid)
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--server', help='server group name')
+@click.option('--input', help=' input')
+def uploada_sv(server, input):
+    if input != None:
+        dhr = DriverHelper()
+        rs = dhr.upload_file_auto(server, [input])
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--input', help=' input')
+def upload_r2(input):
+    if input != None:
+        dhr = DriverHelper()
+        rs = dhr.upload_file_r2(input)
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--url', help=' url')
+def delete_r2(url):
+    if url != None:
+        dhr = DriverHelper()
+        rs = dhr.delete_file_r2(url)
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--days', help=' days')
+def delete_expired_r2(days):
+    if days != None:
+        dhr = DriverHelper()
+        rs = dhr.delete_expired_r2(int(days))
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--url', help='url')
+@click.option('--input', help=' input: path want to update')
+def update(url, input):
+    if input != None:
+        dhr = DriverHelper()
+        rs = dhr.update_file(url,input)
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--email', help='email')
+@click.option('--idx', help='idx')
+def delete(email, idx):
+    if input != None:
+        dhr = DriverHelper()
+        rs = dhr.delete_file(email, idx)
+        print(rs)
+    else:
+        print("{}")
+@click.command()
+@click.option('--email', help='email')
+@click.option('--name', help='name')
+@click.option('--folderid', help='folderid')
+def create_folder(email, name, folderid):
+    if email and name:
+        dhr = DriverHelper()
+        rs = dhr.create_folder(email, name, folderid)
+        print(rs)
+    else:
+        print("error")
+@click.command()
+@click.option('--email', help='email')
+@click.option('--days', help='days')
+def delete_old_files(email, days):
+    if email and days:
+        dhr = DriverHelper()
+        rs = dhr.delete_old_files(email, int(days))
+        print(rs)
+    else:
+        print("error")
+@click.command()
+@click.option('--sv', help='sv')
+@click.option('--idx', help='idx')
+def get_file_size(sv, idx):
+    if sv and idx:
+        dhr = DriverHelper()
+        rs = dhr.get_file_size(sv, idx)
+        print(rs)
+    else:
+        print("error")
+@click.command()
+@click.option('--email', help='email')
+@click.option('--idx', help='idx')
+def get_file_size_email(email, idx):
+    if email and idx:
+        dhr = DriverHelper()
+        rs = dhr.get_file_size_email(email, idx)
+        print(rs)
+    else:
+        print("error")
+@click.command()
+@click.option('--idx', help='idx')
+def get_file_info_v2(idx):
+    if idx:
+        dhr = DriverHelper()
+        rs = dhr.get_file_info_v2(idx)
+        print(rs)
+    else:
+        print("error")
+@click.command()
+@click.option('--sv', help='sv')
+@click.option('--idx', help='idx')
+def get_thumbnail(sv, idx):
+    if sv and idx:
+        dhr = DriverHelper()
+        rs = dhr.get_thumbnail(sv, idx)
+        print(rs)
+    else:
+        print("error")
+gbak.add_command(download)
+gbak.add_command(upload)
+gbak.add_command(upload_r2)
+gbak.add_command(delete_r2)
+gbak.add_command(delete_expired_r2)
+gbak.add_command(downloada)
+gbak.add_command(uploada_email)
+gbak.add_command(uploada_sv)
+gbak.add_command(update)
+gbak.add_command(downloadsv)
+gbak.add_command(download_with_name)
+gbak.add_command(downloadfolder)
+gbak.add_command(delete)
+gbak.add_command(delete_old_files)
+gbak.add_command(listfolder)
+gbak.add_command(uploada_email_folder)
+gbak.add_command(create_folder)
+gbak.add_command(get_file_size)
+gbak.add_command(get_file_size_email)
+gbak.add_command(get_file_info_v2)
+gbak.add_command(get_thumbnail)
+if __name__ == '__main__':  # pragma: no cover
+    gbak()
