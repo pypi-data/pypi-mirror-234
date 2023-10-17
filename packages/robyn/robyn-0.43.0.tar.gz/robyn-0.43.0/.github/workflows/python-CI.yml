@@ -1,0 +1,38 @@
+# CI to test Robyn on major Linux, MacOS and Windows
+
+on: [push, pull_request]
+
+name: Python Continuous integration
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows", "ubuntu", "macos"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    name: ${{ matrix.os }} tests with python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry==1.3.0
+          poetry export --with test --with dev --without-hashes --output requirements.txt
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Add macos target
+        if: matrix.os == 'macos'
+        run: rustup target add aarch64-apple-darwin
+      - name: Setup Rust part of the project
+        run: |
+          maturin build -i python --universal2 --out dist
+          pip install --no-index --find-links=dist/ robyn
+      - name: Test with pytest
+        run: |
+          pytest
