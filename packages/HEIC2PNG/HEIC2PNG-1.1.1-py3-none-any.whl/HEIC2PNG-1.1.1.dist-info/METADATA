@@ -1,0 +1,88 @@
+Metadata-Version: 2.1
+Name: HEIC2PNG
+Version: 1.1.1
+Summary: Convert format of HEIC image to PNG by using Python.
+Home-page: https://github.com/natlee/HEIC2PNG
+Author: Nat Lee
+Author-email: natlee.work@gmail.com
+Project-URL: Documentation, https://github.com/natlee/HEIC2PNG
+Project-URL: Bug Reports, https://github.com/natlee/HEIC2PNG/issues
+Project-URL: Source Code, https://github.com/natlee/HEIC2PNG
+Keywords: HEIC,PNG,converter,image
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pillow
+Requires-Dist: pillow-heif
+Requires-Dist: numpy
+Requires-Dist: pngquant-cli
+Provides-Extra: dev
+Requires-Dist: check-manifest ; extra == 'dev'
+
+# HEIC2PNG
+
+[![Test](https://github.com/NatLee/HEIC2PNG/actions/workflows/test.yml/badge.svg)](https://github.com/NatLee/HEIC2PNG/actions/workflows/test.yml)
+[![Release](https://github.com/NatLee/HEIC2PNG/actions/workflows/release.yml/badge.svg)](https://github.com/NatLee/HEIC2PNG/actions/workflows/release.yml)
+
+This is a tool for converting the format of HEIC images to PNG using Python. It now supports quality adjustment and has an option to overwrite existing files, enhancing the flexibility and usability of the tool.
+
+## Installation
+
+```bash
+pip install heic2png
+```
+
+Visit [HEIC2PNG on PyPI](https://pypi.org/project/HEIC2PNG/) for more details.
+
+## Usage
+
+### As a Library
+
+You can use HEIC2PNG in your Python code as shown below:
+
+```python
+from heic2png import HEIC2PNG
+
+if __name__ == '__main__':
+    heic_img = HEIC2PNG('test.heic', quality=90)  # Specify the quality of the converted image
+    heic_img.save()  # The converted image will be saved as `test.png`
+```
+
+### Command Line Interface
+
+HEIC2PNG also provides a CLI for easy conversion of HEIC images to PNG. Here are some examples:
+
+Convert a HEIC image to PNG with a specified output path:
+
+```bash
+heic2png -i test.heic -o test.png -q 90  # -q is used to specify the quality
+```
+
+If you want to keep the original name, use the command below. It will generate `test.png` for you:
+
+```bash
+heic2png -i test.heic -q 90
+```
+
+To overwrite an existing PNG file, use the `-w`` flag:
+
+```bash
+heic2png -i test.heic -o test.png -q 90 -w
+```
+## References
+
+- [Example PyPi Package](https://github.com/tomchen/example_pypi_package)
+- [Pillow HEIF](https://github.com/bigcat88/pillow_heif)
+- [pngquant](https://pngquant.org/)
