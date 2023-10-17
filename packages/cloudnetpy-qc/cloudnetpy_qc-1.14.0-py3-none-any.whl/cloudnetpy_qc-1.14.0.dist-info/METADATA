@@ -1,0 +1,127 @@
+Metadata-Version: 2.1
+Name: cloudnetpy-qc
+Version: 1.14.0
+Summary: Quality control routines for CloudnetPy products
+Author-email: Finnish Meteorological Institute <actris-cloudnet@fmi.fi>
+License: MIT License
+        
+        Copyright (c) 2021-2022 Finnish Meteorological Institute
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+Project-URL: Homepage, https://github.com/actris-cloudnet/cloudnetpy-qc
+Project-URL: Repository, https://github.com/actris-cloudnet/cloudnetpy-qc
+Project-URL: Changelog, https://github.com/actris-cloudnet/cloudnetpy-qc/blob/main/CHANGELOG.md
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: cfchecker
+Requires-Dist: netCDF4
+Requires-Dist: numpy
+Requires-Dist: requests
+Requires-Dist: scipy
+Provides-Extra: test
+Requires-Dist: mypy ; extra == 'test'
+Requires-Dist: pylint ; extra == 'test'
+Requires-Dist: pytest-flakefinder ; extra == 'test'
+Requires-Dist: types-requests ; extra == 'test'
+
+# CloudnetPy-QC
+
+![](https://github.com/actris-cloudnet/cloudnetpy-qc/workflows/CloudnetPy-QC%20CI/badge.svg)
+
+Software for evaluating quality of [ACTRIS-Cloudnet](https://cloudnet.fmi.fi) data products.
+
+## Installation
+
+```shell
+$ pip3 install cloudnetpy-qc
+```
+
+## Usage
+
+```python
+import json
+from cloudnetpy_qc import quality
+report = quality.run_tests('cloudnet-file.nc')
+json_object = json.dumps(report, indent=2)
+print(json_object)
+```
+
+## Format of the report
+
+- `timestamp`: UTC timestamp of the test
+- `qcVersion`: `cloudnetpy-qc` version
+- `tests`: `Test[]`
+
+### `Test`
+
+- `testId`: Unique name of the test
+- `exceptions`: `Exception[]`
+
+### `Exception`
+
+- `message`: Free-form message about the exception
+- `result`: `"info"`, `"error"` or `"warning"`
+
+### Example:
+
+```json
+{
+  "timestamp": "2022-10-13T07:00:26.906815Z",
+  "qcVersion": "1.1.2",
+  "tests": [
+    {
+      "testId": "TestUnits",
+      "exceptions": []
+    },
+    {
+      "testId": "TestInstrumentPid",
+      "exceptions": [
+        {
+          "message": "Instrument PID is missing.",
+          "result": "warning"
+        }
+      ]
+    },
+    {
+      "testId": "TestTimeVector",
+      "exceptions": []
+    },
+    {
+      "testId": "TestVariableNames",
+      "exceptions": []
+    },
+    {
+      "testId": "TestCFConvention",
+      "exceptions": []
+    }
+  ]
+}
+```
+
+## License
+
+MIT
