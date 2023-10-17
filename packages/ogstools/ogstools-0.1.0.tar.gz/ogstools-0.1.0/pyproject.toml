@@ -1,0 +1,146 @@
+[build-system]
+requires = ['setuptools', 'setuptools_scm[toml]']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "ogstools"
+dynamic = ["version"]
+description = "A collection of Python tools aimed at evolving into a modeling toolchain around OpenGeoSys."
+authors = [{ name = 'OpenGeoSys Community', email = 'info@opengeosys.org' }]
+license = { text = "BSD-3-Clause" }
+readme = "README.md"
+requires-python = '>=3.9'
+dependencies = [
+  "h5py>=3.9.0",
+  "meshio==5.3.4",
+  "matplotlib>=3.7.1",
+  "pyvista>=0.39.1",
+  "rich>=13.4.2",
+  "scipy>=1.10.1",
+  "Pint>=0.22",
+  "Pillow>=9.5.0",
+  "pandas>=2.0.3",
+  "ogs>=6.4.5.dev0",
+]
+
+[project.urls]
+"Documentation" = 'https://ogs.ogs.xyz/tools/ogstools'
+"Bug Tracker" = 'https://discourse.opengeosys.org'
+"Source Code" = 'https://gitlab.opengeosys.org/ogs/tools/ogstools'
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ogstools*"]
+namespaces = false
+
+[tool.setuptools_scm]
+version_scheme = "no-guess-dev" # would increment version otherwise
+
+[project.scripts]
+msh2vtu = 'ogstools.msh2vtu._cli:cli'
+feflow2ogs = 'ogstools.feflowlib._cli:cli'
+
+[project.optional-dependencies]
+dev = ["pre-commit>=2.20", "tox>=4.1", "build", "black"]
+test = ["pytest", "coverage", "gmsh"]
+docs = [
+  "sphinx",
+  "sphinx-argparse",
+  "sphinxcontrib-programoutput",
+  "sphinxcontrib-apidoc",
+  "livereload",
+  "pydata-sphinx-theme",
+  "myst-parser",
+  "myst_nb",
+  "sphinx-design",
+  "sphinx_gallery",
+]
+feflow = [
+  "ifm_contrib==0.2.0",
+  "matplotlib<3.8",     # TODO: remove when ifm_contrib supports matplotlib 3.8
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+  "-ra",
+  "--showlocals",
+  "--strict-markers",
+  "--strict-config",
+  "--import-mode=importlib",
+]
+xfail_strict = true
+# TODO: LB enable this again, deal with MatplotlibDeprecationWarning in fe2vtu
+# tests
+#filterwarnings = ["error"]
+log_cli_level = "info"
+testpaths = ["tests", "ogstools/meshlib/tests"]
+
+[tool.black]
+line-length = 80
+
+[tool.mypy]
+files = "ogstools"
+exclude = ['.*/examples/.*']
+strict = false
+show_error_codes = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+warn_unreachable = true
+# Uncomment and fix one by one:
+# check_untyped_defs = true
+# disallow_untyped_defs = true
+# disallow_incomplete_defs =  true
+
+[tool.ruff]
+select = [
+  "E",
+  "F",
+  "W",    # flake8
+  "B",
+  "B904", # flake8-bugbear
+  "I",    # isort
+  "ARG",  # flake8-unused-arguments
+  "C4",   # flake8-comprehensions
+  "EM",   # flake8-errmsg
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "G",    # flake8-logging-format
+  "PGH",  # pygrep-hooks
+  "PIE",  # flake8-pie
+  "PL",   # pylint
+  "PT",   # flake8-pytest-style
+  "PTH",  # flake8-use-pathlib
+  "RET",  # flake8-return
+  "RUF",  # Ruff-specific
+  "SIM",  # flake8-simplify
+  "UP",   # pyupgrade
+  "YTT",  # flake8-2020
+  "EXE",  # flake8-executable
+  "NPY",  # NumPy specific rules
+  "PD",   # pandas-vet
+]
+extend-ignore = [
+  "PLR",   # Design related pylint codes
+  "E501",  # Line too long
+  "PT004", # Use underscore for non-returning fixture (use usefixture instead)
+  # RUF005 should be disabled when using numpy, see
+  # https://github.com/charliermarsh/ruff/issues/2142:
+  "RUF005",
+  "PT009",  # can use unittest-assertion
+]
+target-version = "py39"
+typing-modules = ["mypackage._compat.typing"]
+unfixable = [
+  "T20",  # Removes print statements
+  "F841", # Removes unused variables
+]
+exclude = []
+flake8-unused-arguments.ignore-variadic-names = true
+line-length = 80
+
+[tool.ruff.per-file-ignores]
+"tests/**" = ["T20"]
+
+[tool.codespell]
+ignore-words-list = "methode"
+skip = "*.vtu"
