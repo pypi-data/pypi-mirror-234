@@ -1,0 +1,48 @@
+[tool.poetry]
+name = "autoblocksai"
+# The version is not maintained here. It's set in the release workflow via the version input.
+version = "0.0.10"
+description = ""
+authors = ["Autoblocks Engineering <engineering@autoblocks.ai>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "autoblocks"}]
+
+[tool.poetry.dependencies]
+python = "^3.8.1"
+httpx = "^0.24.0"
+wrapt = "^1.15.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.3.3"
+pytest = "^7.4.0"
+pytest-httpx = "^0.22.0"
+langchain = "0.0.277"
+openai = "^0.28.1"
+freezegun = "^1.2.2"
+
+[tool.poetry.scripts]
+e2e = "e2e.run:main"
+
+# This allows users to run their pytest suite with our plugin via `pytest --autoblocks`.
+# See:
+# https://python-poetry.org/docs/pyproject/#plugins
+# https://docs.pytest.org/en/7.1.x/how-to/writing_plugins.html#making-your-plugin-installable-by-others
+# https://github.com/python-poetry/poetry/issues/1641#issuecomment-559502420
+[tool.poetry.plugins."pytest11"]
+autoblocks = "autoblocks._impl.pytest.plugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+select = ["E", "F", "I001"]
+line-length = 120
+
+[tool.ruff.isort]
+force-single-line = true
+known-first-party = ["autoblocks"]
