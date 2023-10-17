@@ -1,0 +1,117 @@
+[build-system]
+requires = [
+  "setuptools>=61.2",
+  "Cython>=3.0",
+  "numpy>=1.25, <2.0",
+]
+
+[project]
+name = "yt_astro_analysis"
+version = "1.1.3"
+description = "yt astrophysical analysis modules extension"
+authors = [
+    { name = "The yt project", email = "yt-dev@python.org" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+keywords = [
+    "astronomy astrophysics visualization amr adaptivemeshrefinement",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "h5py>=3.1.0",
+    "yt>=4.0.1",
+    # upper cap should be lifted when build-time requirement is bumped to >=2.0, see
+    "numpy>=1.19.3, <2.0",
+    "packaging>=20.9",
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+text = "BSD 3-Clause"
+
+[project.urls]
+Homepage = "https://yt-project.org/"
+Documentation = "https://yt-astro-analysis.readthedocs.io/"
+Source = "https://github.com/yt-project/yt_astro_analysis/"
+Tracker = "https://github.com/yt-project/yt_astro_analysis/issues"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.black]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+exclude = ["*__init__.py", "*api.py"]
+ignore = ["E501"]
+select = [
+    "E",
+    "F",
+    "W",
+    "C4",  # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "G",   # flake8-logging
+    "YTT", # flake8-2020
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.isort]
+combine-as-imports = true
+known-third-party = [
+  "IPython",
+  "nose",
+  "numpy",
+  "sympy",
+  "matplotlib",
+  "unyt",
+  "git",
+  "yaml",
+  "dateutil",
+  "requests",
+  "coverage",
+  "pytest",
+  "pyx",
+  "glue",
+]
+known-first-party = ["yt", "yt_astro_analysis"]
+
+
+[tool.pytest]
+filterwarnings = ["error"]
