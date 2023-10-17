@@ -1,0 +1,54 @@
+---
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - '*'
+    #branches:
+    #  - main
+
+jobs:
+  build_and_publish:
+    name: Build and publish Python distributions to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.x
+
+      - name: Install pypa/build
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install setuptools wheel twine build
+          python -m pip install importlib_metadata numpy pandas seaborn scipy tables tdt xlsxwriter
+
+      - name: Build package
+        run: >-
+          python -m build --sdist --wheel --outdir dist/ .
+        #run: >-
+        #  python -m
+        #    build
+        #    --sdist
+        #    --wheel
+        #    --outdir dist/
+        #    .
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          #https://pypi.org/p/<your-pypi-project-name>
+          #repository-url: https://test.pypi.org/legacy/
+
+  #    - name: Publish distribution 📦 to PyPI
+  #      if: startsWith(github.ref, 'refs/tags')
+  #      uses: pypa/gh-action-pypi-publish@release/v1
+  #      with:
+  #        password: ${{ secrets.PYPI_API_TOKEN }}
