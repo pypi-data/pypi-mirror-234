@@ -1,0 +1,346 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CP2K_VERSION: "2023.1"
+  TAG: "3.2.0"  # The nlesc-nano/nano-qmflows-manylinux tag
+  PY_COLORS: "1"
+
+jobs:
+  build_wheels:
+    name: Build wheels cp39-${{ matrix.buildplat[1] }}
+    runs-on: ${{ matrix.buildplat[0] }}
+    strategy:
+      fail-fast: false
+      matrix:
+        buildplat:
+        - [ubuntu-latest, manylinux_x86_64]
+        - [ubuntu-latest, manylinux_aarch64]
+        - [macos-latest, macosx_x86_64]
+        - [macos-latest, macosx_arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        if: matrix.buildplat[1] == 'manylinux_aarch64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Get MacOS build dependencies
+        if: matrix.buildplat[0] == 'macos-latest'
+        env:
+          BUILD_PLAT: ${{ matrix.buildplat[1] }}
+        run: |
+          curl -Lsf https://github.com/nlesc-nano/nano-qmflows-manylinux/releases/download/$TAG/$BUILD_PLAT.tar.gz -o $BUILD_PLAT.tar.gz
+          tar -xzf $BUILD_PLAT.tar.gz
+          cp -r $BUILD_PLAT/bin/* /usr/local/bin/
+          sudo cp -r $BUILD_PLAT/lib/* /usr/local/lib/
+          cp -r $BUILD_PLAT/include/* /usr/local/include/
+          cp -r $BUILD_PLAT/share/* /usr/local/share/
+
+      - name: Enable aarch64/arm64 compilation
+        if: matrix.buildplat[1] == 'manylinux_aarch64' || matrix.buildplat[1] == 'macosx_arm64'
+        run: |
+          echo "CIBW_ARCHS_LINUX=aarch64" >> $GITHUB_ENV
+          echo "CIBW_ARCHS_MACOS=arm64" >> $GITHUB_ENV
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16
+        env:
+          CIBW_BUILD: cp39-${{ matrix.buildplat[1] }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: "ghcr.io/nlesc-nano/manylinux2014_aarch64-qmflows:${{ env.TAG }}"
+          CIBW_MANYLINUX_X86_64_IMAGE: "ghcr.io/nlesc-nano/manylinux2014_x86_64-qmflows:${{ env.TAG }}"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: ./wheelhouse/*.whl
+
+  test_wheels_x86_64:
+    name: Test wheels ${{ matrix.version[0] }}-${{ matrix.buildplat[1] }}
+    runs-on: ${{ matrix.buildplat[0] }}
+    needs: [build_wheels]
+    strategy:
+      fail-fast: false
+      matrix:
+        buildplat:
+        - [ubuntu-latest, manylinux_x86_64, manylinux2014_x86_64]
+        - [macos-latest, macosx_x86_64, macosx_10_14_x86_64]
+        version:
+        - ["cp38", "3.8"]
+        - ["cp39", "3.9"]
+        - ["cp310", "3.10"]
+        - ["cp311", "3.11"]
+        - ["cp312", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.version[1] }}
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: dist
+
+      - name: Install dependencies
+        run: |
+          WHL_NAME=$(python scripts/get_whl_name.py dist ${{ matrix.buildplat[2] }})
+          pip install "$WHL_NAME"[test] --prefer-binary
+
+      - name: Python info
+        run: |
+          which python
+          python --version
+
+      - name: Installed packages
+        run: pip list
+
+      - name: Install CP2K
+        run: |
+          case "${{ matrix.buildplat[0] }}" in
+            "ubuntu-latest")
+              bash scripts/download_cp2k.sh x86_64 $CP2K_VERSION ;;
+            "macos-latest")
+              brew update && brew install cp2k ;;
+          esac
+
+      - name: CP2K info
+        run: cp2k.ssmp --version
+
+      - name: Test with pytest
+        run: |
+          bash scripts/prepare_test_dir.sh
+          cd /tmp/nanoqm
+
+          case "${{ github.event_name }}" in
+            "release")
+              export IS_RELEASE=1 ;;
+            *)
+              export IS_RELEASE=0 ;;
+          esac
+          pytest -m "not (slow or long)"
+
+  test_wheels_aarch64:
+    name: Test wheels ${{ matrix.version[0] }}-${{ matrix.buildplat[1] }}
+    runs-on: ${{ matrix.buildplat[0] }}
+    needs: [build_wheels]
+    strategy:
+      fail-fast: false
+      matrix:
+        buildplat:
+          - [ubuntu-latest, manylinux_aarch64]
+        version:
+          - ["cp38", "python3.8"]
+          - ["cp39", "python3.9"]
+          - ["cp310", "python3.10"]
+          - ["cp311", "python3.11"]
+          - ["cp312", "python3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: dist
+
+      - uses: uraimo/run-on-arch-action@v2
+        name: Test with pytest
+        with:
+          arch: aarch64
+          distro: ubuntu_latest
+          dockerRunArgs: |
+            --volume "${{github.workspace}}:/workspace"
+            --env CP2K_VERSION=${CP2K_VERSION}
+          install: |
+            echo "\n::group::Install Python"
+            apt update
+            apt install -y software-properties-common
+            add-apt-repository ppa:deadsnakes/ppa
+            apt install -y ${{ matrix.version[1] }}-full
+            ln -sf /usr/bin/${{ matrix.version[1] }} /usr/bin/python
+            ln -sf /usr/bin/${{ matrix.version[1] }} /usr/bin/python3
+            export PYTHONPATH=/usr/bin/${{ matrix.version[1] }}
+
+            echo "\n::group::Install pip"
+            apt install -y python3-pip
+
+            echo "\n::group::Install curl"
+            apt install -y curl
+          run: |
+            cd /workspace
+
+            echo "\n::group::Install CP2K"
+            bash scripts/download_cp2k.sh aarch64 $CP2K_VERSION
+
+            echo "\n::group::Install the package"
+            WHL_NAME=$(python scripts/get_whl_name.py dist manylinux2014_aarch64)
+            pip install $WHL_NAME[test] --prefer-binary
+
+            echo "\n::group::Python info"
+            python --version
+            pip list
+
+            echo "\n::group::Run tests"
+            bash scripts/prepare_test_dir.sh
+            cd /tmp/nanoqm
+
+            case "${{ github.event_name }}" in
+              "release")
+                export IS_RELEASE=1 ;;
+              *)
+                export IS_RELEASE=0 ;;
+            esac
+            pytest -m "not (slow or long)"
+
+  build_sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    env:
+      QMFLOWS_INCLUDEDIR: ""
+      QMFLOWS_LIBDIR: ""
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install build
+
+      - name: Python info
+        run: |
+          which python
+          python --version
+
+      - name: Installed packages
+        run: pip list
+
+      - name: Build sdist
+        run: |
+          python -m build --sdist
+          tree dist
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: ./dist/*.tar.gz
+
+  test_sdist:
+    name: Test sdist
+    runs-on: ubuntu-latest
+    needs: [build_sdist]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install CP2K
+      run: bash scripts/download_cp2k.sh x86_64 $CP2K_VERSION
+
+    - name: Info CP2K
+      run: cp2k.ssmp --version
+
+    - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        update-conda: true
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: wheels
+        path: dist
+
+    - name: Install dependencies
+      run: |
+        conda install -c conda-forge pip boost eigen "libint>=2.6.0" highfive
+        TGZ_NAME=$(python scripts/get_whl_name.py dist 'tar\.gz')
+        pip install $TGZ_NAME[test]
+
+    - name: Conda info
+      run: conda info
+
+    - name: Conda list
+      run: conda list
+
+    - name: Test with pytest
+      run: |
+        bash scripts/prepare_test_dir.sh
+        cd /tmp/nanoqm
+
+        case "${{ github.event_name }}" in
+          "release")
+            export IS_RELEASE=1 ;;
+          *)
+            export IS_RELEASE=0 ;;
+        esac
+        pytest -m "not (slow or long)"
+
+  upload_wheels:
+    name: Upload wheels & sdist
+    runs-on: ubuntu-latest
+    needs: [test_sdist, test_wheels_x86_64, test_wheels_aarch64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: dist
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.*"
+
+      - name: Install dependencies
+        run: pip install twine
+
+      - name: Python info
+        run: |
+          which python
+          python --version
+
+      - name: Installed packages
+        run: pip list
+
+      - name: Validate wheels
+        run: |
+          tree dist
+          twine check dist/*
+
+      - name: Publish wheels
+        if: github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+
+      - name: Attach wheels to GitHub release
+        if: github.event_name == 'release'
+        uses: AButler/upload-release-assets@v2.0.2
+        with:
+          files: 'dist/*'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

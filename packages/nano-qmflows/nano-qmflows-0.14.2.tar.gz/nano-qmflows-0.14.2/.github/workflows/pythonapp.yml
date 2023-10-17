@@ -1,0 +1,210 @@
+name: test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+    cancel-in-progress: true
+
+env:
+  CP2K_DEFAULT: "2023.1"
+  TAG: "3.2.0"  # The nlesc-nano/nano-qmflows-manylinux tag
+  PY_COLORS: "1"
+
+jobs:
+  test_conda:
+    name: Test python ${{ matrix.version }} (conda) on ${{ matrix.os }}; ${{ matrix.special[0] }} ${{ matrix.special[1] }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        special:
+          - ["", ""]
+        include:
+          # GCC 7/11 tests
+          - os: ubuntu-20.04
+            version: "3.11"
+            special: ["GCC", "7"]
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["GCC", "12"]
+          # CP2K 6.1/7.1/8.2/9.1/2022.1 tests
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["CP2K", "6.1"]
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["CP2K", "7.1"]
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["CP2K", "8.2"]
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["CP2K", "9.1"]
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["CP2K", "2022.1"]
+          # Pre-release tests
+          - os: ubuntu-latest
+            version: "3.11"
+            special: ["pre-release", ""]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install CP2K
+      run: |
+        case "${{ matrix.special[0] }}" in
+          "CP2K")
+            CP2K_VERSION="${{ matrix.special[1] }}" ;;
+          *)
+            CP2K_VERSION=$CP2K_DEFAULT ;;
+        esac
+        bash scripts/download_cp2k.sh x86_64 $CP2K_VERSION
+
+    - name: Info CP2K
+      run: cp2k.ssmp --version
+
+    - name: Install GCC
+      if: matrix.special[0] == 'GCC'
+      uses: egor-tensin/setup-gcc@v1
+      with:
+        version: ${{ matrix.special[1] }}
+        platform: x64
+
+    - name: Info GCC
+      run: gcc --version
+
+    - name: Setup conda
+      uses: s-weigand/setup-conda@v1
+      with:
+        update-conda: true
+
+    - name: Install dependencies
+      run: |
+        conda create -n test -c conda-forge python=${{ matrix.version }} boost eigen "libint>=2.6.0" highfive
+        source $CONDA/bin/activate test
+        case "${{ matrix.special[0] }}" in
+          "pre-release")
+            pip install --pre -r ./install_requirements.txt -r ./test_requirements.txt --upgrade --force-reinstall
+            pip install git+https://github.com/SCM-NV/qmflows@master --upgrade
+            pip install git+https://github.com/NLeSC/noodles@master --upgrade
+            ;;
+          *)
+            pip install -r ./install_requirements.txt
+            pip install -r ./test_requirements.txt
+            ;;
+        esac
+
+    - name: Conda info
+      run: |
+        source $CONDA/bin/activate test
+        conda info
+
+    - name: Conda list
+      run: conda list -n test
+
+    - name: Install the package
+      run: |
+        source $CONDA/bin/activate test
+        pip install -e . -vvv --no-deps
+
+    - name: Test with pytest
+      run: |
+        source $CONDA/bin/activate test
+        pytest -m "not (slow or long)"
+
+    - name: coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        name: codecov-umbrella
+
+  test_pypi:
+    name: Test python ${{ matrix.version }} (pypi) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Build wheels
+      uses: pypa/cibuildwheel@v2.16
+      env:
+        CIBW_BUILD: cp39-manylinux_x86_64
+        CIBW_MANYLINUX_X86_64_IMAGE: "ghcr.io/nlesc-nano/manylinux2014_x86_64-qmflows:${{ env.TAG }}"
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.version }}
+
+    - name: Install dependencies
+      run: |
+        WHL_NAME=$(python scripts/get_whl_name.py wheelhouse manylinux2014_x86_64)
+        pip install "$WHL_NAME"[test]
+
+    - name: Python info
+      run: |
+        which python
+        python --version
+
+    - name: Installed packages
+      run: pip list
+
+    - name: Test with pytest
+      run: |
+        bash scripts/download_cp2k.sh x86_64 $CP2K_DEFAULT
+        bash scripts/prepare_test_dir.sh && cd /tmp/nanoqm
+        pytest -m "not (slow or long)"
+
+    - name: coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        name: codecov-umbrella
+
+  Linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python on ubuntu-latest
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.*"
+
+      - name: Install linters
+        run: pip install -r ./linting_requirements.txt
+
+      - name: Python info
+        run: |
+          which python
+          python --version
+
+      - name: Installed packages
+        run: pip list
+
+      - name: Run flake8
+        run: flake8 nanoqm test setup.py scripts
+
+      - name: Run pydocstyle
+        run: pydocstyle nanoqm
+
+      - name: Run mypy
+        run: mypy nanoqm setup.py scripts
+        continue-on-error: true
