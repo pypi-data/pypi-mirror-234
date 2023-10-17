@@ -1,0 +1,65 @@
+[tool.poetry]
+name = "apparat"
+version = "0.0.2"
+description = "This is the machine description framework"
+authors = ["Frans Fürst <frans.fuerst+gitlab@protonmail.com>"]
+repository = "https://projects.om-office.de/frans/machinery.git"
+readme = "Readme.md"
+packages = [
+  {include = "machinery"}
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4"
+asyncinotify = "^4.0"
+
+
+[tool.poetry.dev-dependencies]
+asyncssh = "^2"
+black = "^22"
+isort = "^5"
+pytest = "^7"
+pytest-cov = "^3"
+mypy = "^1.5"
+pylint = "^2"
+ipython = "^8"
+twine = "^4"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+target-version = ['py39']
+fast = true
+exclude = '''
+(
+  /(                        # exclude a few common directories in the
+    \.git                   # root of the project
+    | \.pytest_cache
+    | \.venv
+    | \.container_home_dir
+    | build
+    | dist
+  ))
+'''
+
+[tool.isort]
+profile = "black"
+skip_glob = [".venv", ".container_home_dir"]
+
+[tool.mypy]
+strict="True"
+disallow_untyped_defs = "True"
+disallow_any_unimported = "True"
+no_implicit_optional = "True"
+check_untyped_defs = "True"
+warn_return_any = "True"
+warn_unused_ignores = "True"
+show_error_codes = "True"
+exclude = [
+    '\.venv',
+    'tests'
+]
