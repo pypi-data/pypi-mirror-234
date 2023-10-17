@@ -1,0 +1,88 @@
+_convert_: 'all'
+_target_: kazu.steps.linking.rules_based_disambiguation.RulesBasedEntityClassDisambiguationFilterStep
+parsers: ${oc.dict.values:ontologies.parsers}
+class_matcher_rules:
+  cell_line:
+    tp:
+      - - "_":
+            cell_line: True
+        - LOWER:
+            IN:
+              - cell
+              - cells
+      - - LOWER: cell
+        - LOWER: line
+        - "_":
+            cell_line: True
+      - - LOWER: cell
+        - LOWER: type
+        - "_":
+            cell_line: True
+    fp: ~
+  cell_type:
+    tp:
+      - - "_":
+            cell_type: True
+        - LOWER:
+            IN:
+              - cell
+              - cells
+      - - LOWER: cell
+        - LOWER: line
+        - "_":
+            cell_type: True
+      - - LOWER: cell
+        - LOWER: type
+        - "_":
+            cell_type: True
+    fp: ~
+  anatomy:
+    tp: ~
+    fp:
+      - - "_":
+            drug: True
+        - "_":
+            anatomy: True
+        - LOWER: arm
+      - - LOWER: single
+        - LOWER: "-"
+        - "_":
+            anatomy: True
+          LOWER: arm
+      - - LOWER: multi
+        - LOWER: "-"
+        - "_":
+            anatomy: True
+          LOWER: arm
+      - - LOWER: quality
+        - LOWER: "-"
+          OP: "?"
+        - LOWER: of
+        - LOWER: "-"
+          OP: "?"
+        - "_":
+            anatomy: True
+          LOWER: life
+
+mention_matcher_rules:
+  disease:
+    IVF:
+      fp:
+        - - NORM: ICSI
+        - - NORM: cycle
+        - - NORM: treatment
+    MFS:
+      fp:
+        - - NORM: endpoint
+  gene:
+    IVF: ${..disease.IVF}
+    EMA:
+      fp:
+        - - NORM: European
+        - - NORM: Agency
+  drug:
+    UCB:
+      fp:
+        - - NORM: pharma
+        - - NORM: company
+        - - NORM: brussels
