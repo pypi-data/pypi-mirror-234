@@ -1,0 +1,198 @@
+Metadata-Version: 2.1
+Name: fmu-sumo
+Version: 1.0.0
+Summary: Python package for interacting with Sumo in an FMU setting
+Home-page: https://github.com/equinor/fmu-sumo
+Author: Equinor
+License: Apache 2.0
+Keywords: fmu,sumo
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: PyYAML >=5.4
+Requires-Dist: pandas >=1.1.3
+Requires-Dist: deprecation
+Requires-Dist: sumo-wrapper-python
+Requires-Dist: xtgeo
+Requires-Dist: azure-core
+Requires-Dist: fmu-dataio
+Requires-Dist: pyarrow ; python_version > "3.6.1"
+Requires-Dist: OpenVDS ; sys_platform != "darwin"
+Provides-Extra: docs
+Requires-Dist: sphinx ==6.2.1 ; extra == 'docs'
+Requires-Dist: sphinx-rtd-theme ; extra == 'docs'
+Requires-Dist: autoapi ; extra == 'docs'
+Requires-Dist: sphinx-autodoc-typehints ; extra == 'docs'
+Requires-Dist: sphinxcontrib-apidoc ; extra == 'docs'
+Provides-Extra: tests
+Requires-Dist: pytest >=6.1.1 ; extra == 'tests'
+Requires-Dist: pytest-timeout ; extra == 'tests'
+
+[![Documentation Status](https://readthedocs.org/projects/fmu-sumo/badge/?version=latest)](https://fmu-sumo.readthedocs.io/en/latest/?badge=latest)
+
+
+# fmu-sumo
+This package is intended for interaction with Sumo within the FMU (Fast Model Update(TM)) ecosystem.
+
+
+## Explorer
+
+> :warning: OpenVDS does not publish builds for MacOS. You can still use the Explorer without OpenVDS, but some Cube methods will not work.
+
+Explore and retrieve data from Sumo.
+
+```python
+from fmu.sumo.explorer import Explorer
+
+sumo = Explorer()
+```
+
+#### Example: Find cases
+```python
+# List of all available cases
+cases = sumo.cases
+
+# Get filter values
+cases.statuses
+cases.users
+cases.fields
+
+# Apply filters
+cases = cases.filter(status=["keep", "offical"], user="peesv", field="Drogon")
+
+for case in cases:
+    print(case.id)
+    print(case.name)
+
+# select case
+case = cases[0]
+```
+
+#### Example: Retrieve case objects
+Get objects within a case through `case.[CONTEXT].[OBJECT_TYPE]`.
+
+##### Realized data
+```python
+# All realized surface objects in case
+surfs = case.realization.surfaces
+
+# Get filter values
+surfs.names
+surfs.tagnames
+surfs.iterations
+
+# Apply filters
+surfs = surfs.filter(name="surface_name", tagname="surface_tagname", iteration=0)
+
+# Get surface
+surf = surfs[0]
+
+# Metadata
+surf.id
+surf.name
+surf.tagname
+surf.iteration
+surf.realization
+
+# Binary
+surf.blob
+
+# Get xtgeo.RegularSurface
+reg = surf.to_regular_surface()
+reg.quickplot()
+```
+
+##### Aggregated data
+```python
+# All aggregated surfaces in case
+surfs = case.aggregation.surfaces
+
+# Get filter values
+surfs.names
+surfs.tagnames
+surfs.iterations
+surfs.operations
+
+# Apply filters
+surfs = surfs.filter(name="surface_name", tagname="surface_tagname", iteration=0, operation="mean")
+
+# Get surface
+surf = surfs[0]
+
+```
+
+##### Observed data
+```python
+# All observed surfaces in case
+surfs = case.observation.surfaces
+
+# Get filter values
+surfs.names
+surfs.tagnames
+
+# Apply filters
+surfs = surfs.filter(name="surface_name", tagname="surface_tagname")
+
+# Get surfaces
+surf = surfs[0]
+```
+
+## Uploader
+
+Upload data from FMU to Sumo
+
+### Concepts
+`SumoConnection`: The SumoConnection object represents the connection to Sumo, and will handle authentication etc when initiated. This object uses the Sumo python wrapper under the hood.
+
+`CaseOnDisk`: The CaseOnDisk object represents an ensemble of reservoir model realisations. The object relates to the case metadata. Individual files belonging to the case are represented as FileOnDisk objects.
+
+`FileOnDisk`: The FileOnDisk object represents a single file in an FMU case, stored on the local disk.
+
+### workflow for uploading during ERT runs
+
+HOOK (presim) workflow registering the case:
+```python
+from fmu.sumo import uploader
+
+# Establish connection to Sumo
+connection = sumo.SumoConnection()
+
+# Initiate the case object
+case = sumo.CaseOnDisk(
+    case_metadata_path="/path/to/case_metadata.yml",
+    sumo_connection=sumo_connection
+    )
+
+# Register the case on Sumo
+# This uploads case metadata to Sumo
+case.register()
+```
+
+FORWARD_JOB uploading data (can be repeated multiple times during a workflow):
+```python
+from fmu.sumo import uploader
+
+# Establish connection to Sumo
+connection = sumo.SumoConnection()
+
+# Initiate the case object
+case = sumo.CaseOnDisk(
+    case_metadata_path="/path/to/case_metadata",
+    sumo_connection=sumo_connection
+    )
+
+# Add file-objects to the case
+case.add_files("/globable/path/to/files/*.gri")
+
+# Upload case data objects (files)
+case.upload()
+
+```
+
