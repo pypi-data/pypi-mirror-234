@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+import os
+import subprocess
+import sys
+import traceback
+
+from nerdcore.utils.ncdefs_utils import find_project_root
+sys.path.append(find_project_root())
+from nerdcore.defs import nl, PYTHON_COMMAND
+from nerdcore.utils.env.environment_checks import nerd_env_checks
+from nerdcore.utils.env.update_env_class import update_env_class
+from nerdcore.utils.nerd.find_entity import find_entity
+from nerdcore.utils.nerd.generate_nerd_configs import generate_nerd_configs
+from nerdcore.utils.nerd.parse_nerd_args import parse_nerd_args
+from nerdcore.utils.nerd.run_entities import run_deployment, run_command
+from nerdcore.utils.nerd.theme_functions import print_t
+from nerdcore.utils.nerd_config.update_nerd_config_class import update_nerd_config_class
+
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
+
+# Some basic environment checks
+nerd_env_checks()
+
+# Regenerate "magic" config/env stuff
+update_env_class()
+update_nerd_config_class()
+
+# Generate nerd config temp files from nerd-manifest.yaml
+generate_nerd_configs()
+
+# Setup and Parse Command Line Args
+nerd_args, named_args, unnamed_args, action, entity_name, entity_type = parse_nerd_args()
+
+# Find Entity (includes interactive selection)
+entity_path = find_entity(entity_name, entity_type)
+
+# Get the correctly chosen entity name without extension (user might have given incorrect name)
+entity_name = os.path.splitext(os.path.basename(entity_path))[0]
+
+if action == 'edit':
+    subprocess.run(['vim', entity_path.strip()])
+
+elif action == 'help':
+    subprocess.call([PYTHON_COMMAND, entity_path.strip()])
+
+elif action == 'run':
+    try:
+
+        print_t(f'{entity_type}: {entity_name}', 'quiet')
+
+        # Commands
+        if entity_type == 'command':
+            extension = os.path.splitext(entity_path.strip())[1]
+            if extension == ".py":
+                run_command(entity_path.strip(), entity_name, nerd_args, named_args, unnamed_args)
+            elif extension == ".sh":
+                subprocess.call(['bash', entity_path.strip()] + sys.argv[2:])
+            elif extension == ".bat":
+                subprocess.call([entity_path.strip()] + sys.argv[2:])
+            else:
+                print_t(f"Unsupported entity_type: {extension}. find_entity should filter this.", 'error')
+                exit(1)
+
+        # Deployments
+        elif entity_type == 'deployment':
+            run_deployment(entity_path.strip(), entity_name, nerd_args, named_args, unnamed_args)
+
+        # Unsupported
+        else:
+            print_t(f'unsupported entity_type: {entity_type}', 'error')
+            exit(1)
+
+    except KeyboardInterrupt:
+        print_t(f"{nl}Exiting due to KeyboardInterrupt from user.", 'quiet')
+        exit(1)
+
+    except ValueError as e:
+        print_t(f"{nl}Error: {e}", 'error')
+        exit(1)
+
+    except Exception as e:
+        print_t(f"{nl}Error: {e}", 'error')
+        print_t(f"{nl}Error Trace:{nl}{nl.join(traceback.format_exc().splitlines())}")
+        exit(1)
+else:
+    print_t(f'unsupported action: {action}', 'error')
+    exit(1)
+
+exit(0)

@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+import os
+import shutil
+import sys
+
+from termcolor import colored
+
+from nerdcore.ncdefs import (NC_ENV_DEFAULT_PATH, NC_NERD_MANIFEST_DEFAULT_PATH, NC_NERD_CONFIG_DEFAULTS_DEFAULT_PATH,
+                             NC_THEME_CONFIG_PATH, NC_ENV_CLASS_PATH, NC_NERD_CONFIG_CLASS_PATH,
+                             NC_GITIGNORE_DEFAULT_PATH, NC_README_DEFAULT_PATH,
+                             NC_REQUIREMENTS_DEFAULT_PATH, NC_APPS_CONFIG_DEFAULT_PATH)
+
+top_level_dirs = [
+    'abilities',
+    'deployments',
+    'commands',
+    'config',
+    'tasks',
+    'stor',
+]
+
+config_dirs = [
+    'framework',
+]
+
+stor_dirs = [
+    'temp',
+]
+
+# Get the new project name from the command line arguments
+try:
+    new_project_name = sys.argv[1]
+except IndexError:
+    print(colored('Please provide a project name.', 'red'))
+    sys.exit(1)
+
+if os.path.exists(new_project_name):
+    print(colored(f"Directory '{new_project_name}' already exists.", 'red'))
+    sys.exit(1)
+
+if not new_project_name.isalpha():
+    print(colored("Project name must only contain letters/underscores to enable relative imports within user modules",
+                  'red'))
+    sys.exit(1)
+
+print(colored(f"Initializing new nerdcore project '{new_project_name}'...", 'green'))
+
+# Create the project root directory
+print(colored(f"Creating directory: {new_project_name}", 'cyan'))
+os.makedirs(new_project_name, exist_ok=True)
+
+project_path = os.path.join(os.getcwd(), new_project_name)
+
+# Create the default .env file
+print(colored("Creating default .env file", 'cyan'))
+shutil.copyfile(NC_ENV_DEFAULT_PATH, os.path.join(project_path, ".env"))
+
+# Create the top level directories
+for top_level_dir in top_level_dirs:
+    print(colored(f"Creating directory: {top_level_dir}", 'cyan'))
+    os.makedirs(os.path.join(project_path, top_level_dir), exist_ok=True)
+
+# Create the config directories
+for config_dir in config_dirs:
+    print(colored(f"Creating directory: config/{config_dir}", 'cyan'))
+    os.makedirs(os.path.join(project_path, 'config', config_dir), exist_ok=True)
+
+# Create the stor directories
+for stor_dir in stor_dirs:
+    print(colored(f"Creating directory: stor/{stor_dir}", 'cyan'))
+    os.makedirs(os.path.join(project_path, 'stor', stor_dir), exist_ok=True)
+
+# Create the config files
+print(colored("Creating config/example files...", 'cyan'))
+config_path = os.path.join(project_path, 'config')
+shutil.copyfile(NC_NERD_MANIFEST_DEFAULT_PATH, os.path.join(config_path, 'nerd-manifest.yaml'))
+shutil.copyfile(NC_NERD_CONFIG_DEFAULTS_DEFAULT_PATH, os.path.join(config_path, 'nerd-config-defaults.yaml'))
+shutil.copyfile(NC_THEME_CONFIG_PATH, os.path.join(config_path, 'framework', 'theme.py'))
+shutil.copyfile(NC_APPS_CONFIG_DEFAULT_PATH, os.path.join(config_path, 'apps.py'))
+
+env_class_path = os.path.join(config_path, 'framework', 'env_class.py')
+shutil.copyfile(NC_ENV_CLASS_PATH, env_class_path)
+# replace 'from nerdcore.config.theme' with 'from config.framework.theme' in env_class.py
+with open(env_class_path, 'r') as f:
+    lines = f.readlines()
+with open(env_class_path, 'w') as f:
+    for line in lines:
+        f.write(line.replace('from nerdcore.config.theme', 'from config.framework.theme'))
+
+nerd_config_class_path = os.path.join(config_path, 'framework', 'nerd_config_class.py')
+shutil.copyfile(NC_NERD_CONFIG_CLASS_PATH, nerd_config_class_path)
+
+# Create the default gitignore
+print(colored("Creating default .gitignore...", 'cyan'))
+shutil.copyfile(NC_GITIGNORE_DEFAULT_PATH, os.path.join(project_path, '.gitignore'))
+
+# Create the default requirements.txt
+print(colored("Creating default requirements.txt...", 'cyan'))
+shutil.copyfile(NC_REQUIREMENTS_DEFAULT_PATH, os.path.join(project_path, 'requirements.txt'))
+
+# Create the default README
+print(colored("Creating default README...", 'cyan'))
+shutil.copyfile(NC_README_DEFAULT_PATH, os.path.join(project_path, 'README.md'))
+
+print(colored('nerdcore project setup complete', 'green'))

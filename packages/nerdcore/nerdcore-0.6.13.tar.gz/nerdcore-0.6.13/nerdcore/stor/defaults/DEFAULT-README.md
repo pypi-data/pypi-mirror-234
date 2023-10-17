@@ -1,0 +1,1 @@
+This is a template for a project created by the nerdcore package/framework. It is a scaffolded default version of a nerdcore CLI, complete with expected directory structure, configuration files, etc.
