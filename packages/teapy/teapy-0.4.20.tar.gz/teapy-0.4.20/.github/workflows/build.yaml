@@ -1,0 +1,40 @@
+name: Build
+
+on:
+  push:
+      branches:
+        - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-rust:
+    name: teapy build
+    strategy:
+      matrix:
+        python-version: [ "3.8" ]
+        os: [ "ubuntu-latest" ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Rust
+        run: rustup show
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: shared-${{ matrix.os }}
+
+      - name: Run formatting checks
+        run: |
+          cargo fmt --all -- --check
+      - name: Run linting checks
+        run : |
+          export RUSTFLAGS="-C debuginfo=0"
+          cargo clippy
+
+      
