@@ -1,0 +1,232 @@
+Metadata-Version: 2.1
+Name: BRUNCH
+Version: 0.0.17
+Summary: drive scanning & sculpting
+License: CL
+Description-Content-Type: text/plain
+License-File: LICENSE
+Requires-Dist: jsonschema
+
+
+
+
+
+
+
+<b>BRUNCH</b>
+	<b># DRIVE OPERATIONS</b>
+	
+	<b>License (or Passport, or Wishes)</b>
+		A Caution License
+
+		This is a cyte for erasing persistant storage devices,
+		It's pre-semver version 1.
+
+		You may pretend that it's a potentially toxic chemical mass
+		that you found 1.82*2**99 Earth aphelions ago
+		in a multiverse that you have 100% 
+		indisputable claim to.
+		
+	
+	<b>DANGER</b>	
+		THIS MODULE IS STILL AN EARLY VERSION,
+		USAGE IS NOT RECOMMENDED.
+		
+		ALSO, THIS IS NOT FINANCIAL ADVICE,
+		
+		AND ANY ACRONYMS OF THE "MD" VARIETY
+		STAND FOR "MARYLAND"
+	
+	<b>CAUTION</b>
+		<b>THIS MODULE IS USED FOR ERASING PERSISTANT STORAGE DEVICES LIKE:</b>
+		<b>SOLID STATE DRIVES, HARD DRIVES, SD CARDS, MICRO SD CARDS, FLASH DRIVES</b>
+	
+	
+	<b>FUNCTIONS</b>
+		THESE NEED ACCESS TO BLOCK SPECIAL FILE PATH WHERE DRIVE IS ATTACHED.
+			EXAMPLE: /dev/sd----
+		
+		CONCEPTS:
+			MEAL:  THIS IS THE ENTIRE SPAN OF INDEXES TO BE READ
+			PLATE: THIS IS THE ONE SPAN OF INDEXES WITHIN THE MEAL
+			
+		"DRIVE INFORMATION" SECTION BELOW HAS INFO PERTAINING TO FINDING
+		THE BYTES COUNT OF A DRIVE.
+		
+		<b>ERASE</b>
+			<code>
+				[TCSH] BRUNCH ERASE ENTIRELY --drive-path /dev/sd0000 --last-byte-index 31914983423 
+				
+				#
+				#	It's possible to check with:
+				#
+				[TCSH] xxd -len 20 -seek 31914983420 /dev/sde
+			</code>
+		
+		<b>SCULPT (WRITE)</b>
+			<code>
+			
+				#
+				#	CAUTION:
+				#
+				#		EXAMPLE: /dev/sd----
+				# 
+				DRIVE_PATH = ""
+			
+				LOOP = 1
+				def PROGRESS (PARAMS):
+					nonlocal LOOP;
+					INDEXES = PARAMS ["INDEXES"]
+					SIZE = PARAMS ["SIZE"]
+					LAST_LOOP = PARAMS ["LAST_LOOP"]
+			
+					if (LOOP == 1000):
+						PERCENT = str (100 * (INDEXES [1] / DRIVE_BYTES))
+						print (
+							INDEXES[0],
+							INDEXES[1] - INDEXES[0], 
+							"%:", PERCENT
+						)
+						
+						LOOP = 1;
+					
+					LOOP += 1
+			
+				BYTES_PER_PLATE = 512 * 512;
+				BYTES_INDEXES = [
+					0, 
+					DRIVE_BYTES - 1 
+				]
+			
+				SCULPT.START ({
+					"DRIVE PATH": DRIVE_PATH,
+					
+					"BYTES INDEXES": BYTES_INDEXES,		
+					"BYTES FOR PLATE": PLATE,
+					
+					"PROGRESS": PROGRESS
+				})
+			
+			
+			
+			</code>
+		
+		
+		<b>SCAN (READ)</b>	
+			<code>
+				BRUNCH SCAN BYTES --drive-path /dev/sdb --indexes '[ 0, 99 ]' --bytes-per-plate 512
+			</code>
+	
+			<code>
+				import BRUNCH.SCAN as SCAN			
+					
+				#
+				#	CAUTION:
+				#
+				#		EXAMPLE: /dev/sd----
+				# 
+				DRIVE_PATH = ""	
+					
+				BYTE_STRING = b''
+				def PROGRESS (PARAMS):
+					nonlocal BYTE_STRING;
+					BYTE_STRING += PARAMS ['PLATE']
+				
+				SCAN.START ({
+					"DRIVE PATH": DRIVE_PATH, 
+					
+					"BYTES INDEXES": [ 0, 28 ],		
+					"BYTES PER PLATE": 10,
+					
+					"PROGRESS": PROGRESS
+				})	
+				
+				print (BYTE_STRING)
+				#
+				#	b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+				#
+			</code>
+		
+	<b>DRIVE INFORMATION</b>
+		#
+		#	lsblk -b -p
+		#	lsblk -b -p --json
+		#	lsblk -S
+		#
+		[TCSH] lsblk -b -p
+	
+			NAME        MAJ:MIN RM        SIZE RO TYPE MOUNTPOINTS
+			/dev/sda      8:0    0 40018599936  0 disk 
+			├─/dev/sda1   8:1    0   629145600  0 part /boot/efi
+			├─/dev/sda2   8:2    0  1073741824  0 part /boot
+			└─/dev/sda3   8:3    0 38313918464  0 part /home
+													   /
+			/dev/sdb      8:16   0 40018597888  0 disk 
+			/dev/zram0  252:0    0  8589934592  0 disk [SWAP]
+		
+		[TCSH] cat /proc/partitions
+		
+		[TCSH] hdparm -v /dev/sdb
+		
+		[TCSH] blockdev --getsz /dev/sdb
+			
+			78161324
+			
+		#
+		#	https://en.wikipedia.org/wiki/Util-linux
+		#	https://github.com/util-linux/util-linux
+		#
+		[TCSH] fdisk -l
+			
+			Disk /dev/sdc: 37.27 GiB, 40018597888 bytes, 78161324 sectors
+			Disk model: high speed      
+			Units: sectors of 1 * 512 = 512 bytes
+			Sector size (logical/physical): 512 bytes / 512 bytes
+			I/O size (minimum/optimal): 512 bytes / 512 bytes
+			
+		THEREFORE:
+			40,018,597,888
+		
+			DRIVE PATH: /dev/sdb
+			BYTE INDEXES: [ 0, 40018597887 ]
+			
+			40018597888 / 78161324 = 512
+
+			#
+			#	/dev/sda is the operating system drive
+			#
+			
+	<b>PERTINENT</b>
+		XXD:
+			#
+			#	SCAN START OF DRIVE
+			#
+			xxd -len 100 /dev/sde
+		
+			#
+			#	SCAN END OF DRIVE:
+			#		40018597888 - 100 = 40018597788
+			#
+			xxd -len 100 -seek 40018597788 /dev/sdb
+			
+			xxd -len 20 -seek 32010928128 /dev/sde
+			xxd -len 20 -seek 31914983424 /dev/sde
+			#
+			#	THERE MIGHT BE UNWRITABLE BYTES AFTER LAST BYTE..
+			#
+			xxd -seek 32010928128 /dev/sdb
+			
+			
+		
+		CREATING BLOCK SPECIAL FILES:
+			(IF YOU, FOR INSTANCE, ACCIDENTALLY OVERWRITE /dev/sdb)
+			
+			THERE'S ALMOST DEFINITELY MORE TO IT THAN THIS:
+				#
+				# [TCSH] file /dev/sda	
+				#
+				[TCSH] sudo mknod /dev/sdb b 8 0
+
+	
+			
+

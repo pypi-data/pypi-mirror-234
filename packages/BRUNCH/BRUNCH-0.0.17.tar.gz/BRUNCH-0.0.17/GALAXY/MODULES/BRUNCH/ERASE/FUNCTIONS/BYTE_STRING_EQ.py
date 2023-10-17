@@ -1,0 +1,5 @@
+
+
+
+def CHECK ():
+	return;
