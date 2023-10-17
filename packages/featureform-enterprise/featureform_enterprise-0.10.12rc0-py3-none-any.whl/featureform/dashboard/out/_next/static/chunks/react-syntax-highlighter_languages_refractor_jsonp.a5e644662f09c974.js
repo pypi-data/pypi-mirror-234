@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[7561],{80963:function(n,s,e){var a=e(45950);function u(n){n.register(a),n.languages.jsonp=n.languages.extend("json",{punctuation:/[{}[\]();,.]/}),n.languages.insertBefore("jsonp","punctuation",{function:/(?!\s)[_$a-zA-Z\xA0-\uFFFF](?:(?!\s)[$\w\xA0-\uFFFF])*(?=\s*\()/})}n.exports=u,u.displayName="jsonp",u.aliases=[]}}]);
+//# sourceMappingURL=react-syntax-highlighter_languages_refractor_jsonp.a5e644662f09c974.js.map
