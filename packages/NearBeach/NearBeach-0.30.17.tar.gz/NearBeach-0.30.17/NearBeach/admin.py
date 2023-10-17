@@ -1,0 +1,74 @@
+from django.contrib import admin
+
+# Register your models here.
+from .models import (
+    Bug,
+    BugClient,
+    ChangeTask,
+    ChangeTaskBlock,
+    Customer,
+    Document,
+    DocumentPermission,
+    Folder,
+    GroupPermission,
+    Group,
+    KanbanBoard,
+    KanbanCard,
+    KanbanColumn,
+    KanbanLevel,
+    ListOfBugClient,
+    ListOfRequirementItemStatus,
+    ListOfRequirementItemType,
+    ListOfRequirementStatus,
+    ListOfRequirementType,
+    ListOfRFCStatus,
+    ListOfTitle,
+    Notification,
+    ObjectAssignment,
+    Organisation,
+    PermissionSet,
+    Project,
+    RequestForChange,
+    RequestForChangeGroupApproval,
+    Requirement,
+    RequirementItem,
+    Tag,
+    TagAssignment,
+    Task,
+    UserGroup,
+)
+
+admin.site.register(Bug)
+admin.site.register(BugClient)
+admin.site.register(ChangeTask)
+admin.site.register(ChangeTaskBlock)
+admin.site.register(Customer)
+admin.site.register(Document)
+admin.site.register(DocumentPermission)
+admin.site.register(Folder)
+admin.site.register(GroupPermission)
+admin.site.register(Group)
+admin.site.register(KanbanBoard)
+admin.site.register(KanbanCard)
+admin.site.register(KanbanColumn)
+admin.site.register(KanbanLevel)
+admin.site.register(ListOfBugClient)
+admin.site.register(ListOfRequirementItemStatus)
+admin.site.register(ListOfRequirementItemType)
+admin.site.register(ListOfRequirementStatus)
+admin.site.register(ListOfRequirementType)
+admin.site.register(ListOfRFCStatus)
+admin.site.register(ListOfTitle)
+admin.site.register(Notification)
+admin.site.register(ObjectAssignment)
+admin.site.register(Organisation)
+admin.site.register(PermissionSet)
+admin.site.register(Project)
+admin.site.register(RequestForChange)
+admin.site.register(RequestForChangeGroupApproval)
+admin.site.register(Requirement)
+admin.site.register(RequirementItem)
+admin.site.register(Tag)
+admin.site.register(TagAssignment)
+admin.site.register(Task)
+admin.site.register(UserGroup)
