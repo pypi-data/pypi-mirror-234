@@ -1,0 +1,20 @@
+$def with (collections)
+$var title: Collections
+
+$for collection in collections:
+    <h2>$collection.pop("name")</h2>
+    <p>created $pendulum.from_timestamp(collection.pop("created_at")).diff_for_humans(),
+    contains $collection.pop("num_documents") documents</p>
+    <ul>
+    $ default_sort = collection.pop("default_sorting_field")
+    $for field in collection.pop("fields"):
+        $ name = field.pop("name")
+        <li><details>
+        <summary>$name
+        $if name == default_sort:
+            <abbr title="default sort"><strong>*</strong></abbr>
+        <small><code>$field.pop("type")</code></small></summary>
+        <pre>$pformat(field)</pre>
+        </details></li>
+    </ul>
+    <pre>$pformat(collection)</pre>
