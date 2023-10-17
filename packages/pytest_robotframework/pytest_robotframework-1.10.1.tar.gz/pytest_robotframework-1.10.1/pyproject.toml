@@ -1,0 +1,494 @@
+[project]
+name = "pytest_robotframework"
+version = "1.10.1"
+description = "a pytest plugin that can run both python and robotframework tests while generating robot reports for them"
+authors = [
+    { name = "DetachHead", email = "detachhead@users.noreply.github.com" },
+]
+dependencies = [
+    "pytest<8,>=7",
+    "robotframework<7.0.0,>=6.1.1",
+    "deepmerge<2.0.0,>=1.1.0",
+    "basedtyping<0.2,>=0.1.0",
+]
+requires-python = ">=3.8,<4.0"
+readme = "README.md"
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+repository = "https://github.com/detachhead/pytest-robotframework"
+
+[project.entry-points.pytest11]
+robotframework = "pytest_robotframework._internal.plugin"
+
+[tool.pdm.dev-dependencies]
+lint = [
+    "black>=23",
+    "basedmypy>=2.1",
+    "pylint>=3.0.0a7",
+    "ruff>=0.0.290",
+    "robotframework-robocop>=4.1.0",
+    "robotframework-tidy>=4.5.0",
+]
+test = [
+    "lxml>=4.9.3",
+    "lxml-stubs>=0.4.0",
+]
+
+[tool.pdm.plugins.pytest11]
+robotframework = "pytest_robotframework._internal.plugin"
+
+[tool.pdm.scripts._mypy_package]
+cmd = "pdm run mypy -p pytest_robotframework"
+
+[tool.pdm.scripts._mypy_tests]
+cmd = "pdm run mypy -p tests"
+
+[tool.pdm.scripts.mypy_all]
+composite = [
+    "_mypy_package",
+    "_mypy_tests",
+]
+
+[tool.pyprojectx]
+pdm = "pdm==2.9.3"
+
+[tool.pyprojectx.aliases]
+install = "pdm install"
+run = "pdm run"
+outdated = "pdm update --outdated"
+test = "pdm run pytest"
+
+[tool.black]
+target-version = [
+    "py38",
+]
+skip-magic-trailing-comma = true
+preview = true
+
+[tool.pylint.MASTER]
+fail-on = "I"
+bad-names = [
+    "foo",
+    "bar",
+    "baz",
+    "retval",
+]
+load-plugins = [
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.broad_try_caluse",
+    "pylint.extensions.check_elif",
+    "pylint.extensions.code_style",
+    "pylint.extensions.comparetozero",
+    "pylint.extensions.comparison_placement",
+    "pylint.extensions.confusing_elif",
+    "pylint.extensions.consider_refactoring_into_while_condition",
+    "pylint.extensions.consider_ternary_expression",
+    "pylint.extensions.dict_init_mutate",
+    "pylint.extensions.docparams",
+    "pylint.extensions.docstyle",
+    "pylint.extensions.dunder",
+    "pylint.extensions.empty_comment",
+    "pylint.extensions.emptystring",
+    "pylint.extensions.eq_without_hash",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.magic_value",
+    "pylint.extensions.no_self_use",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.private_import",
+    "pylint.extensions.redefined_loop_name",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.typing",
+    "pylint.extensions.while_used",
+]
+
+[tool.pylint."MESSAGE CONTROL"]
+disable = [
+    "R",
+    "C",
+    "E",
+    "F",
+    "W",
+    "I",
+]
+enable = [
+    "useless-suppression",
+    "access-member-before-definition",
+    "assigning-non-slot",
+    "assignment-from-no-return",
+    "assignment-from-none",
+    "bad-except-order",
+    "bad-exception-cause",
+    "bad-format-character",
+    "bad-reversed-sequence",
+    "bad-super-call",
+    "catching-non-exception",
+    "class-variable-slots-conflict",
+    "dict-iter-missing-items",
+    "inconsistent-mro",
+    "init-is-generator",
+    "invalid-bool-returned",
+    "invalid-bytes-returned",
+    "invalid-character-carriage-return",
+    "invalid-class-object",
+    "invalid-enum-extension",
+    "invalid-envvar-value",
+    "invalid-format-returned",
+    "invalid-getnewargs-ex-returned",
+    "invalid-getnewargs-returned",
+    "invalid-index-returned",
+    "invalid-length-hint-returned",
+    "invalid-length-returned",
+    "invalid-metaclass",
+    "invalid-repr-returned",
+    "invalid-sequence-index",
+    "invalid-slice-index",
+    "invalid-slice-step",
+    "invalid-slots",
+    "invalid-slots-object",
+    "invalid-star-assignment-target",
+    "invalid-str-returned",
+    "invalid-unary-operand-type",
+    "invalid-unicode-codec",
+    "logging-format-truncated",
+    "logging-unsupported-format",
+    "method-hidden",
+    "misplaced-bare-raise",
+    "misplaced-format-function",
+    "missing-kwoa",
+    "modified-iterating-dict",
+    "modified-iterating-set",
+    "non-iterator-returned",
+    "nonlocal-and-global",
+    "not-a-mapping",
+    "not-async-context-manager",
+    "not-callable",
+    "not-context-manager",
+    "potential-index-error",
+    "raising-non-exception",
+    "redundant-keyword-arg",
+    "relative-beyond-top-level",
+    "repeated-keyword",
+    "singledispatch-method",
+    "singledispatchmethod-function",
+    "star-needs-assignment-target",
+    "unhashable-member",
+    "unpacking-non-sequence",
+    "unsupported-assignment-operation",
+    "unsupported-binary-operation",
+    "unsupported-delete-operation",
+    "abstract-method",
+    "anomalous-unicode-escape-in-string",
+    "arguments-out-of-order",
+    "arguments-renamed",
+    "attribute-defined-outside-init",
+    "bad-builtin",
+    "bad-indentation",
+    "bad-open-mode",
+    "bad-staticmethod-argument",
+    "bad-thread-instantiation",
+    "comparison-with-callable",
+    "confusing-with-statement",
+    "cyclic-import",
+    "deprecated-argument",
+    "deprecated-class",
+    "deprecated-decorator",
+    "deprecated-method",
+    "deprecated-module",
+    "differing-param-doc",
+    "differing-type-doc",
+    "global-at-module-level",
+    "global-variable-undefined",
+    "invalid-format-index",
+    "invalid-overridden-method",
+    "method-cache-max-size-none",
+    "missing-any-param-doc",
+    "missing-format-attribute",
+    "missing-param-doc",
+    "missing-parentheses-for-call-in-test",
+    "missing-raises-doc",
+    "missing-return-doc",
+    "missing-return-type-doc",
+    "missing-timeout",
+    "missing-yield-doc",
+    "missing-yield-type-doc",
+    "modified-iterating-list",
+    "multiple-constructor-doc",
+    "nan-comparison",
+    "non-ascii-file-name",
+    "non-parent-init-called",
+    "non-str-assignment-to-dunder-name",
+    "overlapping-except",
+    "overridden-final-method",
+    "preferred-module",
+    "raising-format-tuple",
+    "redeclared-assigned-name",
+    "redefined-outer-name",
+    "redefined-slots-in-subclass",
+    "redundant-returns-doc",
+    "redundant-u-string-prefix",
+    "redundant-unittest-assert",
+    "redundant-yields-doc",
+    "reimported",
+    "self-cls-assignment",
+    "shallow-copy-environ",
+    "signature-differs",
+    "super-init-not-called",
+    "super-without-brackets",
+    "unbalanced-dict-unpacking",
+    "unbalanced-tuple-unpacking",
+    "undefined-loop-variable",
+    "unnecessary-ellipsis",
+    "unnecessary-lambda",
+    "unreachable",
+    "unused-private-member",
+    "unused-wildcard-import",
+    "useless-param-doc",
+    "useless-parent-delegation",
+    "useless-type-doc",
+    "useless-with-lock",
+    "using-constant-test",
+    "using-final-decorator-in-unsupported-version",
+    "while-used",
+    "wrong-exception-operation",
+    "bad-file-encoding",
+    "bad-mcs-classmethod-argument",
+    "bad-mcs-method-argument",
+    "dict-init-mutate",
+    "invalid-characters-in-docstring",
+    "mixed-line-endings",
+    "non-ascii-module-import",
+    "non-ascii-name",
+    "unexpected-line-ending-format",
+    "use-implicit-booleaness-not-comparison",
+    "chained-comparison",
+    "condition-evals-to-constant",
+    "confusing-consecutive-elif",
+    "consider-swap-variables",
+    "consider-using-augmented-assign",
+    "consider-using-from-import",
+    "consider-using-join",
+    "consider-using-max-builtin",
+    "consider-using-min-builtin",
+    "consider-using-namedtuple-or-dataclass",
+    "consider-using-tuple",
+    "empty-comment",
+    "no-classmethod-decorator",
+    "no-staticmethod-decorator",
+    "redefined-variable-type",
+    "simplifiable-condition",
+    "simplify-boolean-expression",
+    "stop-iteration-return",
+    "unnecessary-dict-index-lookup",
+    "unnecessary-list-index-lookup",
+    "use-set-for-membership",
+    "useless-return",
+]
+
+[tool.pylint.REPORTS]
+reports = "no"
+output-format = "colorized"
+score = "no"
+
+[tool.pylint.FORMAT]
+max-line-length = 200
+
+[tool.pytest.ini_options]
+addopts = [
+    "-p no:robotframework",
+    "--ignore=tests/fixtures",
+]
+xfail_strict = true
+enable_assertion_pass_hook = true
+
+[tool.mypy]
+allow_redefinition = true
+default_return = false
+cache_dir = "nul"
+
+[[tool.mypy.overrides]]
+module = [
+    "robot.*",
+]
+no_implicit_reexport = false
+ignore_missing_py_typed = true
+
+[[tool.mypy.overrides]]
+module = [
+    "deepmerge.*",
+]
+ignore_missing_py_typed = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pytest_robotframework.*",
+    "tests.*",
+]
+default_return = true
+
+[tool.ruff]
+extend-select = [
+    "I",
+    "UP",
+    "PYI",
+    "PL",
+    "B",
+    "PGH",
+    "T10",
+    "G",
+    "A",
+    "ERA",
+    "ARG",
+    "SIM",
+    "RET",
+    "N",
+    "RUF",
+    "S",
+    "ISC",
+    "TRY",
+    "D",
+    "PT",
+    "YTT",
+    "ASYNC",
+    "BLE",
+    "FBT",
+    "C4",
+    "DTZ",
+    "T10",
+    "FA",
+    "INP",
+    "PIE",
+    "G",
+    "T20",
+    "RSE",
+    "RET",
+    "SLF",
+    "TID",
+    "TCH",
+    "PTH",
+    "TD",
+    "PD",
+    "FLY",
+    "NPY",
+    "AIR",
+    "PERF",
+    "FURB",
+    "LOG",
+]
+ignore = [
+    "PLR0913",
+    "PLR0912",
+    "PLR0915",
+    "PLR2004",
+    "PLR1722",
+    "PLW2901",
+    "PLE0605",
+    "PLR0911",
+    "PLW0603",
+    "PLC0105",
+    "PLC0414",
+    "RUF013",
+    "RUF016",
+    "TRY002",
+    "TRY003",
+    "D10",
+    "D203",
+    "D204",
+    "D205",
+    "D209",
+    "D210",
+    "D212",
+    "D213",
+    "D400",
+    "D401",
+    "D403",
+    "D404",
+    "D405",
+    "D406",
+    "D415",
+    "D418",
+    "PT013",
+    "TD002",
+    "PGH003",
+    "S101",
+    "E701",
+]
+target-version = "py38"
+respect-gitignore = true
+line-length = 100
+preview = true
+
+[tool.ruff.pycodestyle]
+ignore-overlong-task-comments = true
+
+[tool.ruff.flake8-pytest-style]
+fixture-parentheses = false
+
+[tool.ruff.per-file-ignores]
+"*.pyi" = [
+    "A001",
+    "A002",
+    "N",
+]
+
+[tool.ruff.isort]
+combine-as-imports = true
+required-imports = [
+    "from __future__ import annotations",
+]
+
+[tool.robotidy]
+configure = [
+    "AlignTemplatedTestCases:enabled=True",
+    "RenameKeywords:enabled=True",
+    "RenameTestCases:enabled=True",
+    "SplitTooLongLine:line_length=160",
+]
+
+[tool.robocop]
+paths = [
+    "tests",
+]
+reports = [
+    "all",
+]
+exclude = [
+    "not-allowed-char-in-filename",
+    "non-local-variables-should-be-uppercase",
+    "section-variable-not-uppercase",
+    "too-many-calls-in-test-case",
+    "too-many-calls-in-keyword",
+    "too-long-test-case",
+    "too-many-arguments",
+    "not-capitalized-test-case-title",
+    "file-too-long",
+    "too-long-keyword",
+    "missing-doc-resource-file",
+    "missing-doc-keyword",
+    "missing-doc-suite",
+    "missing-doc-test-case",
+]
+configure = [
+    "todo-in-comment:enabled:False",
+    "too-many-test-cases:enabled:False",
+    "too-many-calls-in-keyword:severity:W",
+    "can-be-resource-file:severity:W",
+    "missing-doc-suite:severity:W",
+    "line-too-long:line_length:160",
+    "possible-variable-overwriting:severity:E",
+    "could-be-test-tags:severity:E",
+    "tag-already-set-in-test-tags:severity:E",
+    "unused-variable:severity:W",
+    "unnecessary-string-conversion:severity:W",
+    "expression-can-be-simplified:severity:W",
+    "can-be-resource-file:severity:W",
+]
+
+[build-system]
+requires = [
+    "pdm-backend",
+]
+build-backend = "pdm.backend"
