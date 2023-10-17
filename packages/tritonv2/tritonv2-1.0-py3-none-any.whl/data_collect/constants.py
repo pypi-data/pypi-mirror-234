@@ -1,0 +1,34 @@
+# !/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+#
+# Copyright (c) 2023 Baidu.com, Inc. All Rights Reserved
+"""
+data collect client constants
+"""
+MODEL_NAME = 'MODEL_NAME'
+
+TIME_DIRECTORY_FORMAT = '%Y-%m-%d/%H'
+
+CAPTURE_LOG_DIR = 'CAPTURE_LOG_DIR'
+CAPTURE_BLOB_DIR = 'CAPTURE_BLOB_DIR'
+
+CAPTURE_LOG_ROTATION = 'CAPTURE_LOG_ROTATION'
+CAPTURE_LOG_RETENTION = 'CAPTURE_LOG_RETENTION'
+
+ENABLE_CAPTURE_INPUT = 'ENABLE_CAPTURE_INPUT'
+ENABLE_CAPTURE_PREDICTION = 'ENABLE_CAPTURE_PREDICTION'
+ENABLE_CAPTURE_GROUND_TRUTH = 'ENABLE_CAPTURE_GROUND_TRUTH'
+
+DEFAULT_CAPTURE_LOG_DIR = './data/log'
+DEFAULT_CAPTURE_BLOB_DIR = './data/blob'
+
+DEFAULT_CAPTURE_INPUT_DESIGNATION = 'inputs'
+DEFAULT_CAPTURE_PREDICTION_DESIGNATION = 'predictions'
+DEFAULT_CAPTURE_LABEL_DESIGNATION = 'labels'
+
+DEFAULT_CAPTURE_LOG_ROTATION = "100MB"
+DEFAULT_CAPTURE_LOG_RETENTION = 10
+
+# opencv image write valid content type
+# https://docs.opencv.org/4.5.3/d4/da8/group__imgcodecs.html#gabbc7ef1aa2edfaa87772f1202d67e0ce
+CV2_IMWRITE_VALID_CONTENT_TYPE = {'image/jpeg', 'image/jpg', 'image/png', 'image/tiff', 'image/webp', 'image/bmp'}
