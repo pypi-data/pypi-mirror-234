@@ -1,0 +1,89 @@
+{
+   "default": {
+      "usage": "lmcv_tools [command] [args]",
+      "topics": {
+         "Possible Commands": {
+            "version": "Show version",
+            "help": "Show a help text. Without arguments, show this text. With a command name as argument, show a help text about this command",
+            "translate": "Translate file to another format. Example: translate Job-1.inp to .dat",
+            "extract": "Extract attributes from .pos file to CSV format. Example: extract [attributes] from [path/to/.pos]",
+            "generate": "Generate special artifacts. Example: generate [artifact name]",
+            "reorder": "Add a nodal solver order in .dat files. Example: reorder [method] [path/to/.dat]"
+         }
+      }
+   },
+   "version": {
+      "usage": "version",
+      "topics": {
+         "Details": {
+            "No Arguments": "This command shows the version of this program"
+         }
+      }
+   },
+   "translate": {
+      "usage": "translate [path/to/file] to [extension]",
+      "topics": {
+         "Possible Translations": {
+            ".inp to .dat": "Example: translate Job-1.inp to .dat",
+            ".dat to .svg": "Example: translate Plate.dat to .svg"
+         },
+         "Possible Arguments": {
+            "[path/to/file]": "Required argument. Relative path to file",
+            "[new extension]": "Required argument. Extension to which the file will be translated"
+         },
+         "Projections in .dat to .svg": {
+            "Explanation": "The translation \".dat to .svg\" has a third optional argument: [projection type]",
+            "[projection type]": "Optional argument. Supported projections: plane_xy (default), plane_yz, plane_xz, isometric",
+            "Example": "translate Plate.dat to .svg isometric"
+         }
+      }
+   },
+   "extract": {
+      "usage": "extract [attributes] from [path/to/.pos] where [condition] to [path/to/.csv]",
+      "topics": {
+         "Possible Arguments": {
+            "[attributes]": "Required argument. List of names (at least one) that represent a piece of data from a .pos file. Supported attributes: step.id, step.factor, node.id, node.x, node.y, node.z, step.node.u, step.node.v, step.node.w, buckling.id, buckling.factor, buckling.node.u, buckling.node.v, buckling.node.w, vibration.id, vibration.factor, vibration.node.u, vibration.node.v, vibration.node.w",
+            "[path/to/.pos]": "Required argument. Relative path to .pos file",
+            "[condition]": "Optional argument. Series of attribute constraints, combining attribute names, operators and test values. Supported operators: and, or, =, >, <, >=, <=, !=, in. Remembering that the symbols '>' and '<' must be encapsulated by quotes. Otherwise, they will be interpreted by the shell as redirection operators. Example: [...] where step.id '>' 5 and step.factor '<' 1.0",
+            "[path/to/.csv]": "Optional argument. Relative path to .csv file. If it is not given, it will be the same as the .pos file"
+         }
+      }
+   },
+   "generate": {
+      "usage": "generate [artifact name] [args] [path/to/artifact]",
+      "topics": {
+         "Possible Arguments": {
+            "[artifact name]": "Required argument. Name of the artifact. Supported artifacts: virtual_laminas",
+            "[args]": "Series of arguments that depend on the artifact. See the topics bellow for more details",
+            "[path/to/artifact]": "Optional argument. Relative path to artifact output files. If it is not given, it will be the file with the same name of artifact in the current directory"
+         },
+         "Arguments for virtual_laminas": {
+            "[Laminas Count]": "Required integer argument",
+            "[Element Type]": "Required string argument. Supported element types: Solid, Shell",
+            "[Laminas Thickness]": "Required float point argument. If the element type is Shell, it represents total absolute thickness. If the element type is Solid, it represents the relative thickness for each lamina.",
+            "[Number of Integration Points]": "Required integer argument",
+            "[Power Law Exponent]": "Required float point argument. Exponent of Power Law, a mathematical function that determines the volume fractions of the Functionally Graded Material represented by virtual laminas",
+            "[Micromechanical Model]": "Required string argument. Supported micromechanical models: voigt, mori_tanaka, hashin_shtrikman_lower_bound, hashin_shtrikman_upper_bound",
+            "[E1]": "Required float point argument. Elastic Modulus of Material 1",
+            "[E2]": "Required float point argument. Elastic Modulus of Material 2",
+            "[nu1]": "Required float point argument. Poisson's Coefficient of Material 1",
+            "[nu2]": "Required float point argument. Poisson's Coefficient of Material 2",
+            "[pho1]": "Required float point argument. Density of Material 1",
+            "[pho2]": "Required float point argument. Density of Material 2",
+            "[Smart Laminas]": "Required boolean argument. If True, the laminas will be generated by a new smart method"
+         }
+      }
+   },
+   "reorder": {
+      "usage": "reorder [method] [path/to/.dat]",
+      "topics": {
+         "Possible Arguments": {
+            "[method]": "Required argument. Method of Reordering. Supported methods: rcm (Reverse Cuthill-McKee), sloan, boost_sloan",
+            "[path/to/.dat]": "Required argument. Relative path to .dat file"
+         },
+         "Possible Flags": {
+            "-i or --info": "Show info about bandwidth reduction"
+         }
+      }
+   }
+}
