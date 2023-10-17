@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>imagedata.archives.abstractarchive &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">imagedata.archives.abstractarchive</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for imagedata.archives.abstractarchive</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract class for archives.</span>
+
+<span class="sd">Defines generic functions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2018-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+
+<div class="viewcode-block" id="NoOtherInstance"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.NoOtherInstance">[docs]</a><span class="k">class</span> <span class="nc">NoOtherInstance</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="WriteMultipleArchives"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.WriteMultipleArchives">[docs]</a><span class="k">class</span> <span class="nc">WriteMultipleArchives</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Member"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.Member">[docs]</a><span class="k">class</span> <span class="nc">Member</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class definition for filehandle in imagedata archives.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span>
+                 <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">fh</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">local_file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the filehandle object.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fh</span> <span class="o">=</span> <span class="n">fh</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_file</span> <span class="o">=</span> <span class="n">local_file</span></div>
+
+
+<div class="viewcode-block" id="AbstractArchive"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive">[docs]</a><span class="k">class</span> <span class="nc">AbstractArchive</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class definition for imagedata archive plugins.</span>
+<span class="sd">    Plugins must be a subclass of AbstractPlugin and</span>
+<span class="sd">    must define the attributes set in __init__() and</span>
+<span class="sd">    the following methods:</span>
+
+<span class="sd">    __init__() method</span>
+<span class="sd">    use_query() method</span>
+<span class="sd">    getnames() method</span>
+<span class="sd">    basename() method</span>
+<span class="sd">    open() method</span>
+<span class="sd">    getmembers() method</span>
+<span class="sd">    to_localfile() method</span>
+<span class="sd">    add_localfile() method</span>
+<span class="sd">    writedata() method</span>
+<span class="sd">    is_file() method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">plugin_type</span> <span class="o">=</span> <span class="s1">&#39;archive&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">authors</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">_mimetypes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the archive object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__authors</span> <span class="o">=</span> <span class="n">authors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__mimetypes</span> <span class="o">=</span> <span class="n">_mimetypes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="AbstractArchive.use_query"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.use_query">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">use_query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Does the plugin need the ?query part of the url?&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin name</span>
+
+<span class="sd">        Single word string describing the image format.</span>
+<span class="sd">        Typical names: dicom, nifti, itk.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin description</span>
+
+<span class="sd">        Single line string describing the image format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__description</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">authors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin authors</span>
+
+<span class="sd">        Multi-line string naming the author(s) of the plugin.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__authors</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin version</span>
+
+<span class="sd">        String giving the plugin version.</span>
+<span class="sd">        Version scheme: 1.0.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__version</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin URL</span>
+
+<span class="sd">        URL string to the site of the plugin or the author(s).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Underlying transport plugin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mimetypes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;MIME types supported by this plugin.</span>
+
+<span class="sd">        List of strings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mimetypes</span>
+
+<div class="viewcode-block" id="AbstractArchive.getnames"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.getnames">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getnames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get name list of the members.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files: List or single str of filename matches.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The members as a list of their names.</span>
+<span class="sd">                It has the same order as the members of the archive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.basename"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.basename">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filehandle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Basename of file.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            if archive.basename(filehandle) == &quot;DICOMDIR&quot;:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filehandle: reference to member object</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Basename of file: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.open"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.open">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: Handle to file.</span>
+<span class="sd">            mode: Open mode.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">             An IO object for the member.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.getmembers"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.getmembers">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getmembers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the members of the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files: List of filename matches.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The members of the archive as a list of Filehandles.</span>
+<span class="sd">                The list has the same order as the members of the archive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.to_localfile"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.to_localfile">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">to_localfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Access a member object through a local file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: handle to member file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            filename to file guaranteed to be local.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.add_localfile"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.add_localfile">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_localfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_file</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a local file to the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            local_file: named local file</span>
+<span class="sd">            filename: filename in the archive</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.writedata"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.writedata">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">writedata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write data to a named file in the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename: named file in the archive</span>
+<span class="sd">            data: data to write</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.close"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.close">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close archive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractArchive.is_file"><a class="viewcode-back" href="../../../APIReferenceArchives.html#imagedata.archives.abstractarchive.AbstractArchive.is_file">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine whether the named file is a single file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: file member.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            whether member is a single file (bool)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enter context manager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Leave context manager, cleaning up any open files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<span class="c1"># class ArchiveCollection(AbstractArchive):</span>
+<span class="c1">#     &quot;&quot;&quot;A collection of one or more archives, providing the same interface as</span>
+<span class="c1">#     a single archive.</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1"># import os.path</span>
+<span class="c1"># import collections</span>
+<span class="c1"># import logging</span>
+<span class="c1"># import mimetypes</span>
+<span class="c1"># import urllib.parse</span>
+<span class="c1"># import imagedata.archives</span>
+<span class="c1"># import imagedata.transports</span>
+<span class="c1">#</span>
+<span class="c1">#     name = &quot;archivecollection&quot;</span>
+<span class="c1">#     description = &quot;A collection of one or more archives&quot;</span>
+<span class="c1">#     authors = &quot;Erling Andersen&quot;</span>
+<span class="c1">#     version = &quot;1.0.0&quot;</span>
+<span class="c1">#     url = &quot;www.helse-bergen.no&quot;</span>
+<span class="c1">#     mimetypes = None</span>
+<span class="c1">#</span>
+<span class="c1">#     def __init__(self, transport=None, url=None, mode=&quot;r&quot;, read_directory_only=True,</span>
+<span class="c1">#                  opts=None):</span>
+<span class="c1">#         super(ArchiveCollection, self).__init__(self.name, self.description,</span>
+<span class="c1">#                                                 self.authors, self.version, self.url,</span>
+<span class="c1">#                                                 self.mimetypes)</span>
+<span class="c1">#</span>
+<span class="c1">#         if opts is None:</span>
+<span class="c1">#             opts = {}</span>
+<span class="c1">#         # Handle both single url, a url tuple, and a url list</span>
+<span class="c1">#         if isinstance(urls, list):</span>
+<span class="c1">#             self.__urls = urls</span>
+<span class="c1">#         elif isinstance(urls, tuple):</span>
+<span class="c1">#             self.__urls = list(urls)</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             self.__urls = [urls]</span>
+<span class="c1">#         if len(self.__urls) &lt; 1:</span>
+<span class="c1">#             raise ValueError(&quot;No URL(s) where given&quot;)</span>
+<span class="c1">#</span>
+<span class="c1">#         self.__archives = []</span>
+<span class="c1">#         # Collect list of archives</span>
+<span class="c1">#         for url in self.__urls:</span>
+<span class="c1">#             logging.debug(&quot;ArchiveCollection: url: &#39;{}&#39;&quot;.format(url))</span>
+<span class="c1">#             urldict = urllib.parse.urlsplit(url, scheme=&quot;file&quot;)</span>
+<span class="c1">#             # dirname = os.path.dirname(urldict.path)</span>
+<span class="c1">#             basename = os.path.basename(urldict.path)</span>
+<span class="c1">#             logging.debug(&quot;ArchiveCollection: transport root: &#39;{}&#39;&quot;.format(os.curdir))</span>
+<span class="c1">#             # transport = imagedata.transports.Transport(</span>
+<span class="c1">#             #     urldict.scheme, root=os.curdir)</span>
+<span class="c1">#             logging.debug(&quot;ArchiveCollection: archive url: &#39;{}&#39;&quot;.format(url))</span>
+<span class="c1">#             archive = imagedata.archives.find_mimetype_plugin(</span>
+<span class="c1">#                 mimetypes.guess_type(basename)[0],</span>
+<span class="c1">#                 # transport,</span>
+<span class="c1">#                 url,</span>
+<span class="c1">#                 mode=mode)</span>
+<span class="c1">#             self.__archives.append(archive)</span>
+<span class="c1">#</span>
+<span class="c1">#         # Construct the member dict (archive,filehandle) for all archives</span>
+<span class="c1">#         self.__memberlist = collections.OrderedDict()</span>
+<span class="c1">#         for archive in self.__archives:</span>
+<span class="c1">#             logging.debug(&quot;ArchiveCollection: construct archive {}&quot;.format(archive))</span>
+<span class="c1">#             filedict = archive.getnames()</span>
+<span class="c1">#             logging.debug(&quot;ArchiveCollection: construct filelist {} {}&quot;.format(</span>
+<span class="c1">#                 type(filedict), filedict))</span>
+<span class="c1">#             for key in filedict.keys():</span>
+<span class="c1">#                 self.__memberlist[key] = (archive, filedict[key])</span>
+<span class="c1">#</span>
+<span class="c1">#     def getnames(self, files=None):</span>
+<span class="c1">#         &quot;&quot;&quot;Return the members as a list of their names.</span>
+<span class="c1">#         It has the same order as the members of the archive.</span>
+<span class="c1">#</span>
+<span class="c1">#         Chain the references (archive,filehandle) from each archive</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         return self.__memberlist</span>
+<span class="c1">#</span>
+<span class="c1">#     def basename(self, filehandle):</span>
+<span class="c1">#         &quot;&quot;&quot;Basename of file.</span>
+<span class="c1">#</span>
+<span class="c1">#         Typical use:</span>
+<span class="c1">#             if archive.basename(filehandle) == &quot;DICOMDIR&quot;:</span>
+<span class="c1">#</span>
+<span class="c1">#         Input:</span>
+<span class="c1">#         - filehandle: reference to member object</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         archive, name = filehandle</span>
+<span class="c1">#         return archive.basename(name)</span>
+<span class="c1">#</span>
+<span class="c1">#     def getmember(self, filehandle):</span>
+<span class="c1">#         &quot;&quot;&quot;Return the members of the archive as an OrderedDict of member objects.</span>
+<span class="c1">#         The keys are the member names as given by getnames().</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         archive, fh = filehandle</span>
+<span class="c1">#         return archive.getmember(fh)</span>
+<span class="c1">#</span>
+<span class="c1">#     def getmembers(self, files=None):</span>
+<span class="c1">#         &quot;&quot;&quot;Return the members of the archive as a list of member objects.</span>
+<span class="c1">#         The list has the same order as the members in the archive.</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         return self.__memberlist</span>
+<span class="c1">#</span>
+<span class="c1">#     def to_localfile(self, filehandle):</span>
+<span class="c1">#         &quot;&quot;&quot;Access a member object through a local file.</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         archive, name = filehandle</span>
+<span class="c1">#         return archive.to_localfile(name)</span>
+<span class="c1">#</span>
+<span class="c1">#     def writedata(self, filename, data):</span>
+<span class="c1">#         &quot;&quot;&quot;Write data to a named file in the archive.</span>
+<span class="c1">#         Input:</span>
+<span class="c1">#         - filename: named file in the archive</span>
+<span class="c1">#         - data: data to write</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         if len(self.__archives) &gt; 1:</span>
+<span class="c1">#             raise WriteMultipleArchives(&quot;Cannot write data to multiple archives&quot;)</span>
+<span class="c1">#         self.__archives[0].writedata(filename, data)</span>
+<span class="c1">#</span>
+<span class="c1">#     def close(self):</span>
+<span class="c1">#         &quot;&quot;&quot;Close archive.</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         for archive in self.__archives:</span>
+<span class="c1">#             archive.close()</span>
+<span class="c1">#</span>
+<span class="c1">#     def __enter__(self):</span>
+<span class="c1">#         &quot;&quot;&quot;Enter context manager.</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         return self</span>
+<span class="c1">#</span>
+<span class="c1">#     def __exit__(self):</span>
+<span class="c1">#         &quot;&quot;&quot;Leave context manager, cleaning up any open files.</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         self.close()</span>
+<span class="c1">#</span>
+<span class="c1">#     @abstractmethod</span>
+<span class="c1">#     def use_query(self):</span>
+<span class="c1">#         pass</span>
+<span class="c1">#</span>
+<span class="c1">#     @abstractmethod</span>
+<span class="c1">#     def open(self, filehandle, mode=&#39;rb&#39;):</span>
+<span class="c1">#         pass</span>
+<span class="c1">#</span>
+<span class="c1">#     @abstractmethod</span>
+<span class="c1">#     def add_localfile(self, local_file, filename):</span>
+<span class="c1">#         pass</span>
+<span class="c1">#</span>
+<span class="c1">#     @abstractmethod</span>
+<span class="c1">#     def is_file(self):</span>
+<span class="c1">#         pass</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

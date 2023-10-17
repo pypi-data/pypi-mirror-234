@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.formats.itkplugin &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../formats.html">src.imagedata.formats</a></li>
+      <li class="breadcrumb-item active">src.imagedata.formats.itkplugin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.formats.itkplugin</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read/Write image files using ITK</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2013-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">itk</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">NotImageError</span><span class="p">,</span> <span class="n">input_order_to_dirname_str</span><span class="p">,</span> <span class="n">shape_to_str</span><span class="p">,</span> <span class="n">WriteNotImplemented</span><span class="p">,</span>\
+    <span class="n">SORT_ON_SLICE</span><span class="p">,</span> <span class="n">SORT_ON_TAG</span><span class="p">,</span> <span class="n">sort_on_to_str</span>
+<span class="kn">from</span> <span class="nn">..axis</span> <span class="kn">import</span> <span class="n">UniformLengthAxis</span><span class="p">,</span> <span class="n">VariableAxis</span>
+<span class="kn">from</span> <span class="nn">.abstractplugin</span> <span class="kn">import</span> <span class="n">AbstractPlugin</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ImageTypeError"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ImageTypeError">[docs]</a><span class="k">class</span> <span class="nc">ImageTypeError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thrown when trying to load or save an image of unknown type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DependencyError"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.DependencyError">[docs]</a><span class="k">class</span> <span class="nc">DependencyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thrown when a required module could not be loaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<span class="c1"># noinspection PyUnresolvedReferences</span>
+<div class="viewcode-block" id="ITKPlugin"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin">[docs]</a><span class="k">class</span> <span class="nc">ITKPlugin</span><span class="p">(</span><span class="n">AbstractPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read/write ITK files.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;itk&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Read and write ITK files.&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.1.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">authors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="k">if</span> <span class="n">authors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authors</span> <span class="o">=</span> <span class="n">authors</span>
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="k">if</span> <span class="n">url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ITKPlugin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># self.orientation          = si.orientation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_read_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">hdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read image data from given file handle</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            f: file handle or filename (depending on self._need_local_file)</span>
+<span class="sd">            opts: Input options (dict)</span>
+<span class="sd">            hdr: Header dict</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of</span>
+<span class="sd">                hdr: Header dict</span>
+<span class="sd">                    Return values:</span>
+<span class="sd">                        - info: Internal data for the plugin</span>
+<span class="sd">                              None if the given file should not be included (e.g. raw file)</span>
+<span class="sd">                si: numpy array (multi-dimensional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;itkplugin._read_image&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;itkplugin._read_image filehandle </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.raw&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># https://blog.kitware.com/itk-python-image-pixel-types/</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">itk</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">itk</span><span class="o">.</span><span class="n">GetArrayFromImage</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reduce_shape</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape read ITK: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+            <span class="n">o</span> <span class="o">=</span> <span class="n">reader</span>
+        <span class="k">except</span> <span class="n">NotImageError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;itkplugin._read_image: inner exception </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">NotImageError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> does not look like a ITK file&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+
+        <span class="c1"># Color image?</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">photometricInterpretation</span> <span class="o">=</span> <span class="s1">&#39;MONOCHROME2&#39;</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">o</span><span class="o">.</span><span class="n">GetNumberOfComponentsPerPixel</span><span class="p">()</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin._read_image: RGB color&#39;</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">photometricInterpretation</span> <span class="o">=</span> <span class="s1">&#39;RGB&#39;</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">return</span> <span class="n">o</span><span class="p">,</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="nf">_need_local_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the plugin need access to local files?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Boolean. True: The plugin need access to local filenames.</span>
+<span class="sd">                False: The plugin can access files given by an open file handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_set_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_list</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set header tags.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            image_list: list with (info,img) tuples</span>
+<span class="sd">            hdr: Header dict</span>
+<span class="sd">            si: numpy array (multi-dimensional)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hdr: Header dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># def transformMatrix(direction, origin):</span>
+        <span class="c1">#     matrix = itk.GetArrayFromMatrix(direction)</span>
+        <span class="c1">#     A = np.array([[matrix[2,2], matrix[1,2], matrix[0,2], origin[2]],</span>
+        <span class="c1">#                   [matrix[2,1], matrix[1,1], matrix[0,1], origin[1]],</span>
+        <span class="c1">#                   [matrix[2,0], matrix[1,0], matrix[0,0], origin[0]],</span>
+        <span class="c1">#                   [          0,           0,           0,         1]])</span>
+        <span class="c1">#     return A</span>
+
+        <span class="c1"># orientation = self.orientation</span>
+        <span class="c1"># rotation = np.zeros([3,3])</span>
+        <span class="c1"># # X axis</span>
+        <span class="c1"># rotation[0,0] = orientation[0]</span>
+        <span class="c1"># rotation[0,1] = orientation[1]</span>
+        <span class="c1"># rotation[0,2] = orientation[2]</span>
+        <span class="c1"># # Y axis</span>
+        <span class="c1"># rotation[1,0] = orientation[3]</span>
+        <span class="c1"># rotation[1,1] = orientation[4]</span>
+        <span class="c1"># rotation[1,2] = orientation[5]</span>
+        <span class="c1"># # Z axis = X cross Y</span>
+        <span class="c1"># rotation[2,0] = orientation[1]*orientation[5]-orientation[2]*orientation[4]</span>
+        <span class="c1"># rotation[2,1] = orientation[2]*orientation[3]-orientation[0]*orientation[5]</span>
+        <span class="c1"># rotation[2,2] = orientation[0]*orientation[4]-orientation[1]*orientation[3]</span>
+        <span class="c1"># logger.debug(rotation)</span>
+        <span class="c1">#</span>
+        <span class="c1"># # Set direction by modifying default orientation in place</span>
+        <span class="c1"># d=image.GetDirection()</span>
+        <span class="c1"># dv=d.GetVnlMatrix()</span>
+        <span class="c1"># for col in range(3):</span>
+        <span class="c1">#     v=itk.vnl_vector.D()</span>
+        <span class="c1">#     v.set_size(3)</span>
+        <span class="c1">#     v.put(0, rotation[col,0])</span>
+        <span class="c1">#     v.put(1, rotation[col,1])</span>
+        <span class="c1">#     v.put(2, rotation[col,2])</span>
+        <span class="c1">#     dv.set_column(col,v)</span>
+
+        <span class="n">o</span><span class="p">,</span> <span class="n">img</span> <span class="o">=</span> <span class="n">image_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">spacing</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">GetSpacing</span><span class="p">()</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">GetOrigin</span><span class="p">()</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">GetDirection</span><span class="p">()</span>
+
+        <span class="c1"># Set spacing</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">spacing</span><span class="o">.</span><span class="n">GetVnlVector</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin._set_tags: hdr </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hdr</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin._set_tags: spacing </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">2</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Set imagePositions for first slice</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">origin</span><span class="o">.</span><span class="n">GetVnlVector</span><span class="p">()</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">)])}</span>
+
+        <span class="c1"># Do not calculate transformationMatrix here. Will be calculated by Series() when needed.</span>
+        <span class="c1"># self.transformationMatrix = transformMatrix(direction, hdr[&#39;imagePositions&#39;][0])</span>
+        <span class="c1"># hdr[&#39;transformationMatrix&#39;] = self.transformationMatrix</span>
+        <span class="c1"># logger.debug(&#39;ITKPlugin._set_tags: transformationMatrix=\n{}&#39;.format(</span>
+        <span class="c1">#     self.transformationMatrix))</span>
+
+        <span class="c1"># Set image orientation</span>
+        <span class="n">iop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_orientation_from_vnl_matrix</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin._set_tags: iop=</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iop</span><span class="p">))</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">iop</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">iop</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">iop</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                    <span class="n">iop</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">iop</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">iop</span><span class="p">[</span><span class="mi">3</span><span class="p">]))</span>
+
+        <span class="c1"># Set tags</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">_actual_shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">_color</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">hdr</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="n">_actual_shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">_color</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin.read: color&#39;</span><span class="p">)</span>
+        <span class="n">_actual_ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_actual_shape</span><span class="p">)</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="n">nz</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+            <span class="s1">&#39;row&#39;</span><span class="p">,</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">_actual_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">,</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span>
+            <span class="n">_actual_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">_actual_ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">nz</span> <span class="o">=</span> <span class="n">_actual_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">UniformLengthAxis</span><span class="p">(</span>
+                <span class="s1">&#39;slice&#39;</span><span class="p">,</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">nz</span><span class="p">,</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">_actual_ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">nt</span> <span class="o">=</span> <span class="n">_actual_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">UniformLengthAxis</span><span class="p">(</span>
+                <span class="n">input_order_to_dirname_str</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span><span class="p">),</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">nt</span><span class="p">,</span>
+                <span class="n">dt</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nt</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">_color</span><span class="p">:</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">VariableAxis</span><span class="p">(</span>
+                    <span class="s1">&#39;rgb&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">tags</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape read DCM: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape_to_str</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="ITKPlugin.write_3d_numpy"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin.write_3d_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">write_3d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 3D numpy image as ITK file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: ITKPlugin instance</span>
+<span class="sd">            si: Series array (3D or 4D), including these attributes:</span>
+<span class="sd">            - slices</span>
+<span class="sd">            - spacing</span>
+<span class="sd">            - imagePositions</span>
+<span class="sd">            - transformationMatrix</span>
+<span class="sd">            - orientation</span>
+<span class="sd">            - tags</span>
+
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteNotImplemented</span><span class="p">(</span>
+                <span class="s2">&quot;Writing color ITK images not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin.write_3d_numpy: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">filename_template</span> <span class="o">=</span> <span class="s1">&#39;Image_</span><span class="si">%05d</span><span class="s1">.mha&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename_template</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">imagePositions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">transformationMatrix</span>
+        <span class="c1"># self.orientation          = si.orientation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">tags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">get_transformation_components_xyz</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape write: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape_to_str</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+        <span class="c1"># if si.ndim == 2:</span>
+        <span class="c1">#    si.shape = (1,) + si.shape</span>
+        <span class="c1"># if si.ndim == 3:</span>
+        <span class="c1">#    si.shape = (1,) + si.shape</span>
+        <span class="c1"># assert si.ndim == 4, &quot;write_3d_series: input dimension %d is not 3D.&quot; % (si.ndim-1)</span>
+        <span class="c1"># if si.shape[0] != 1:</span>
+        <span class="c1">#    raise ValueError(&quot;Attempt to write 4D image ({}) using write_3d_numpy&quot;.format(</span>
+        <span class="c1">#        si.shape))</span>
+        <span class="k">assert</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span>\
+            <span class="s2">&quot;write_3d_series: input dimension </span><span class="si">%d</span><span class="s2"> is not 2D/3D.&quot;</span> <span class="o">%</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="c1"># slices = si.shape[1]</span>
+        <span class="c1"># if slices != si.slices:</span>
+        <span class="c1">#    raise ValueError(&quot;write_3d_series: slices of dicom template ({}) differ &quot;</span>
+        <span class="c1">#        &quot;from input array ({}).&quot;.format(si.slices, slices))</span>
+
+        <span class="c1"># if not os.path.isdir(directory_name):</span>
+        <span class="c1">#    os.makedirs(directory_name)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span>
+        <span class="c1"># filename = os.path.join(directory_name, filename)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_numpy_itk</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ITKPlugin.write_4d_numpy"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin.write_4d_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">write_4d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 4D numpy image as ITK files</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: ITKPlugin instance</span>
+<span class="sd">            si: [tag,slice,rows,columns]: Series array, including these attributes:</span>
+<span class="sd">            - slices</span>
+<span class="sd">            - spacing</span>
+<span class="sd">            - imagePositions</span>
+<span class="sd">            - transformationMatrix</span>
+<span class="sd">            - orientation</span>
+<span class="sd">            - tags</span>
+
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteNotImplemented</span><span class="p">(</span>
+                <span class="s2">&quot;Writing color ITK images not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin.write_4d_numpy: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">filename_template</span> <span class="o">=</span> <span class="s1">&#39;Image_</span><span class="si">%05d</span><span class="s1">.mha&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename_template</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">imagePositions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">transformationMatrix</span>
+        <span class="c1"># self.orientation          = si.orientation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">tags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">get_transformation_components_xyz</span><span class="p">()</span>
+
+        <span class="c1"># Defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="n">SORT_ON_SLICE</span>
+        <span class="k">if</span> <span class="s1">&#39;output_sort&#39;</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s1">&#39;output_sort&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Should we allow to write 3D volume?</span>
+        <span class="c1"># if si.ndim == 3:</span>
+        <span class="c1">#    si.shape = (1,) + si.shape</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: input dimension </span><span class="si">{}</span><span class="s2"> is not 4D.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: si dtype </span><span class="si">{}</span><span class="s2">, shape </span><span class="si">{}</span><span class="s2">, sort </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">sort_on_to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span><span class="p">)))</span>
+
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;write_4d_series: tags of dicom template (</span><span class="si">{}</span><span class="s2">) differ &quot;</span>
+                <span class="s2">&quot;from input array (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">steps</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">slices</span> <span class="o">!=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;write_4d_series: slices of dicom template (</span><span class="si">{}</span><span class="s2">) differ &quot;</span>
+                <span class="s2">&quot;from input array (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">slices</span><span class="p">,</span> <span class="n">slices</span><span class="p">))</span>
+
+        <span class="c1"># if not os.path.isdir(directory_name):</span>
+        <span class="c1">#    os.makedirs(directory_name)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_4d_numpy: si[0,0,0,0]=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">si</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">==</span> <span class="n">SORT_ON_TAG</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="n">_slice</span>
+                <span class="c1"># filename = os.path.join(directory_name, filename)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_numpy_itk</span><span class="p">(</span><span class="n">si</span><span class="p">[:,</span> <span class="n">_slice</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># default: SORT_ON_SLICE:</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="n">tag</span>
+                <span class="c1"># filename = os.path.join(directory_name, filename)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_numpy_itk</span><span class="p">(</span><span class="n">si</span><span class="p">[</span><span class="n">tag</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ITKPlugin.write_numpy_itk"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin.write_numpy_itk">[docs]</a>    <span class="k">def</span> <span class="nf">write_numpy_itk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write single volume to file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: ITKPlugin instance, including these attributes:</span>
+<span class="sd">                - slices (not used)</span>
+<span class="sd">                - spacing</span>
+<span class="sd">                - imagePositions</span>
+<span class="sd">                - transformationMatrix</span>
+<span class="sd">                - orientation (not used)</span>
+<span class="sd">                - tags (not used)</span>
+
+<span class="sd">            si: numpy 3D array [slice,row,column]</span>
+<span class="sd">            archive: archive object</span>
+<span class="sd">            filename: file name, possibly without extentsion</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;write_numpy_itk: input dimension </span><span class="si">%d</span><span class="s2"> is not 2D/3D.&quot;</span> <span class="o">%</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">issubdtype</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">):</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">(</span><span class="n">si</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_numpy_itk: arr </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="c1"># arr=arr.astype(np.uint16)</span>
+        <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">complex64</span> <span class="ow">or</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span><span class="p">:</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_numpy_itk: arr </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+        <span class="c1"># Write it</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_numpy_itk: arr </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">itk</span><span class="o">.</span><span class="n">GetImageFromArray</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+        <span class="n">from_image_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_image_type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_image_from_numpy</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_numpy_itk: imagetype </span><span class="si">{}</span><span class="s2"> filename </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">from_image_type</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.mha&#39;</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_itk: ext </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">)</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span>
+            <span class="n">suffix</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_itk: write local file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">itk</span><span class="o">.</span><span class="n">imwrite</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_itk: written local file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_itk: copy to archive </span><span class="si">%s</span><span class="s1"> as </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="n">archive</span><span class="o">.</span><span class="n">add_localfile</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_orientation_from_vnl_matrix</span><span class="p">(</span><span class="n">direction</span><span class="p">):</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">direction</span><span class="o">.</span><span class="n">GetVnlMatrix</span><span class="p">()</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">arr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">arr</span>
+
+<div class="viewcode-block" id="ITKPlugin.set_direction_from_dicom_header"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin.set_direction_from_dicom_header">[docs]</a>    <span class="k">def</span> <span class="nf">set_direction_from_dicom_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
+        <span class="n">orientation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span>
+        <span class="n">rotation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="c1"># X axis</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Y axis</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="c1"># Z axis = X cross Y</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">rotation</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">-</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">orientation</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;set_direction_from_dicom_header: rotation:</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rotation</span><span class="p">))</span>
+
+        <span class="c1"># Set direction by modifying default orientation in place</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">GetDirection</span><span class="p">()</span>
+        <span class="n">dv</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">GetVnlMatrix</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">itk</span><span class="o">.</span><span class="n">vnl_vector</span><span class="o">.</span><span class="n">D</span><span class="p">()</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">set_size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">rotation</span><span class="p">[</span><span class="n">col</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">rotation</span><span class="p">[</span><span class="n">col</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">rotation</span><span class="p">[</span><span class="n">col</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">dv</span><span class="o">.</span><span class="n">set_column</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ITKPlugin.set_direction_from_transformation_matrix"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin.set_direction_from_transformation_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">set_direction_from_transformation_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span>
+
+        <span class="c1"># Set direction by modifying default orientation in place</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">GetDirection</span><span class="p">()</span>
+        <span class="n">dv</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">GetVnlMatrix</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">itk</span><span class="o">.</span><span class="n">vnl_vector</span><span class="o">.</span><span class="n">D</span><span class="p">()</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">set_size</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span> <span class="o">-</span> <span class="n">col</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span> <span class="o">-</span> <span class="n">col</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="mi">2</span> <span class="o">-</span> <span class="n">col</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">dv</span><span class="o">.</span><span class="n">set_column</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ITKPlugin.get_image_from_numpy"><a class="viewcode-back" href="../../../../source/src.imagedata.formats.html#src.imagedata.formats.itkplugin.ITKPlugin.get_image_from_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">get_image_from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an itk Image created from the supplied scipy ndarray.</span>
+
+<span class="sd">        If the image_type is supported, will be automatically transformed to that type,</span>
+<span class="sd">        otherwise the most suitable is selected.</span>
+
+<span class="sd">        Note: always use this instead of directly the itk.PyBuffer, as that</span>
+<span class="sd">                object transposes the image axes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image an array, type image np.ndarray</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            an instance of itk.Image holding the array&#39;s data, type itk.Image (instance)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">itkMatrix_from_orientation</span><span class="p">(</span><span class="n">orientation</span><span class="p">,</span> <span class="n">normal</span><span class="p">):</span>
+            <span class="n">o_t</span> <span class="o">=</span> <span class="n">orientation</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">colr</span> <span class="o">=</span> <span class="n">o_t</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">colc</span> <span class="o">=</span> <span class="n">o_t</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">coln</span> <span class="o">=</span> <span class="n">normal</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">colr</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">colc</span><span class="p">[:</span><span class="mi">2</span><span class="p">]))</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">colr</span><span class="p">,</span> <span class="n">colc</span><span class="p">,</span> <span class="n">coln</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">m</span>
+
+        <span class="n">image</span><span class="o">.</span><span class="n">SetDirection</span><span class="p">(</span>
+            <span class="n">itkMatrix_from_orientation</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">))</span>
+
+        <span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;get_image_from_numpy: (z,y,x)=(</span><span class="si">{}</span><span class="s2">,</span><span class="si">{}</span><span class="s2">,</span><span class="si">{}</span><span class="s2">) (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">z</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;get_image_from_numpy: SetOrigin int&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">image</span><span class="o">.</span><span class="n">SetOrigin</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">)])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">image</span><span class="o">.</span><span class="n">SetOrigin</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">z</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;get_image_from_numpy: SetOrigin float&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">image</span><span class="o">.</span><span class="n">SetOrigin</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">)])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">image</span><span class="o">.</span><span class="n">SetOrigin</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)])</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;get_image_from_numpy: SetSpacing float&quot;</span><span class="p">)</span>
+        <span class="n">dz</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dz</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">image</span><span class="o">.</span><span class="n">SetSpacing</span><span class="p">([</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">image</span><span class="o">.</span><span class="n">SetSpacing</span><span class="p">([</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">image</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_image_type</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the image type of the supplied image as itk.Image template.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image: an instance of itk.Image</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a template of itk.Image, type itk.Image</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">itk</span><span class="o">.</span><span class="n">Image</span><span class="p">[</span><span class="n">itk</span><span class="o">.</span><span class="n">template</span><span class="p">(</span><span class="n">image</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+                             <span class="n">itk</span><span class="o">.</span><span class="n">template</span><span class="p">(</span><span class="n">image</span><span class="p">)[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="p">(</span><span class="ne">NotImplementedError</span><span class="p">,</span>
+                   <span class="s1">&#39;The python wrappers of ITK define no template class for this data type.&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

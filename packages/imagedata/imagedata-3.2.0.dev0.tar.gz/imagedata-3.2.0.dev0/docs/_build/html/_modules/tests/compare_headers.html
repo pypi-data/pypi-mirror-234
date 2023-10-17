@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tests.compare_headers &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tests.compare_headers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tests.compare_headers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">imagedata.axis</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+
+<div class="viewcode-block" id="compare_headers"><a class="viewcode-back" href="../../source/tests.html#tests.compare_headers.compare_headers">[docs]</a><span class="k">def</span> <span class="nf">compare_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="n">uid</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">compare_template_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="n">uid</span><span class="p">)</span>
+    <span class="n">compare_geometry_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compare_template_headers"><a class="viewcode-back" href="../../source/tests.html#tests.compare_headers.compare_template_headers">[docs]</a><span class="k">def</span> <span class="nf">compare_template_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="n">uid</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="c1"># logging.debug(&#39;compare_headers: name {} {}&#39;.format(hdr.name, newhdr.name))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="c1"># logging.debug(&#39;compare_headers: description {} {}&#39;.format(hdr.description, newhdr.description))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">description</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">authors</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">input_order</span><span class="p">)</span>
+    <span class="c1"># obj.assertEqual(hdr.sort_on, newhdr.sort_on)</span>
+
+    <span class="c1"># DicomHeaderDict[slice].tuple(tagvalue, filename, dicomheader)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># for k in hdr.DicomHeaderDict.keys():</span>
+        <span class="c1">#    obj.assertEqual(hdr.DicomHeaderDict[k], newhdr.DicomHeaderDict[k])</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hdr</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">uid</span><span class="p">:</span>
+        <span class="n">compare_optional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="s1">&#39;studyInstanceUID&#39;</span><span class="p">)</span>
+        <span class="c1"># compare_optional(obj, hdr, newhdr, &#39;seriesInstanceUID&#39;)</span>
+        <span class="n">compare_optional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="s1">&#39;frameOfReferenceUID&#39;</span><span class="p">)</span>
+    <span class="n">compare_optional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="s1">&#39;seriesNumber&#39;</span><span class="p">)</span>
+    <span class="n">compare_optional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="s1">&#39;seriesDescription&#39;</span><span class="p">)</span>
+    <span class="n">compare_optional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">,</span> <span class="s1">&#39;imageType&#39;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">photometricInterpretation</span><span class="p">,</span>
+                     <span class="n">newhdr</span><span class="o">.</span><span class="n">photometricInterpretation</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compare_optional"><a class="viewcode-back" href="../../source/tests.html#tests.compare_headers.compare_optional">[docs]</a><span class="k">def</span> <span class="nf">compare_optional</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">a_attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">a_attr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">b_attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">b_attr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">a_attr</span><span class="p">,</span> <span class="n">b_attr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compare_geometry_headers"><a class="viewcode-back" href="../../source/tests.html#tests.compare_headers.compare_geometry_headers">[docs]</a><span class="k">def</span> <span class="nf">compare_geometry_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">newhdr</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">sliceLocations</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">sliceLocations</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">spacing</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span>
+                                         <span class="n">decimal</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># logging.debug(&#39;compare_headers:    hdr.imagePositions[{}]={}&#39;.format(k,hdr.imagePositions[k]))</span>
+        <span class="c1"># logging.debug(&#39;compare_headers: newhdr.imagePositions[{}]={}&#39;.format(k,newhdr.imagePositions[k]))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+            <span class="n">newhdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+            <span class="n">decimal</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">transformationMatrix</span><span class="p">,</span> <span class="n">newhdr</span><span class="o">.</span><span class="n">transformationMatrix</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compare_axes"><a class="viewcode-back" href="../../source/tests.html#tests.compare_headers.compare_axes">[docs]</a><span class="k">def</span> <span class="nf">compare_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">,</span> <span class="n">new_axes</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">axes</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_axes</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">axis</span><span class="p">,</span> <span class="n">new_axis</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">new_axes</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">axis</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">new_axis</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">axis</span><span class="o">.</span><span class="n">VariableAxis</span><span class="p">):</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">axis</span><span class="o">.</span><span class="n">UniformLengthAxis</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">axis</span><span class="o">.</span><span class="n">UniformAxis</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">step</span><span class="p">,</span> <span class="n">new_axis</span><span class="o">.</span><span class="n">step</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compare_pydicom"><a class="viewcode-back" href="../../source/tests.html#tests.compare_headers.compare_pydicom">[docs]</a><span class="k">def</span> <span class="nf">compare_pydicom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig</span><span class="p">,</span> <span class="n">temp</span><span class="p">):</span>
+    <span class="n">dont_verify</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Content Date&#39;</span><span class="p">,</span> <span class="s1">&#39;Content Time&#39;</span><span class="p">,</span> <span class="s1">&#39;Instance Number&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Largest Pixel Value in Series&#39;</span><span class="p">,</span> <span class="s1">&#39;Window Center&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Window Width&#39;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">data_element</span> <span class="ow">in</span> <span class="n">orig</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">data_element</span><span class="o">.</span><span class="n">VR</span> <span class="o">==</span> <span class="s2">&quot;SQ&quot;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">data_element</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">dont_verify</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">data_element</span><span class="o">.</span><span class="n">VR</span> <span class="o">==</span> <span class="s2">&quot;DS&quot;</span><span class="p">:</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">data_element</span><span class="o">.</span><span class="n">tag</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span>
+                <span class="n">data_element</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">temp</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">err_msg</span><span class="o">=</span><span class="s1">&#39;Name=&quot;</span><span class="si">{}</span><span class="s1">&quot;, VR=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">data_element</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">data_element</span><span class="o">.</span><span class="n">VR</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tag</span> <span class="o">=</span> <span class="n">data_element</span><span class="o">.</span><span class="n">tag</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">data_element</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">temp</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                             <span class="n">msg</span><span class="o">=</span><span class="s1">&#39;Name=&quot;</span><span class="si">{}</span><span class="s1">&quot;, VR=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                 <span class="n">data_element</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">data_element</span><span class="o">.</span><span class="n">VR</span><span class="p">)</span>
+                             <span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span><span class="n">orig</span><span class="o">.</span><span class="n">SliceLocation</span><span class="p">,</span> <span class="n">temp</span><span class="o">.</span><span class="n">SliceLocation</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_almost_equal</span><span class="p">(</span>
+        <span class="n">orig</span><span class="o">.</span><span class="n">ImagePositionPatient</span><span class="p">,</span> <span class="n">temp</span><span class="o">.</span><span class="n">ImagePositionPatient</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>imagedata.formats.niftiplugin &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">imagedata.formats.niftiplugin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for imagedata.formats.niftiplugin</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read/Write Nifti-1 files</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2013-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">nibabel</span>
+<span class="kn">import</span> <span class="nn">nibabel.spatialimages</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">NotImageError</span><span class="p">,</span> <span class="n">WriteNotImplemented</span><span class="p">,</span> <span class="n">input_order_to_dirname_str</span><span class="p">,</span>\
+    <span class="n">shape_to_str</span><span class="p">,</span> <span class="n">sort_on_to_str</span><span class="p">,</span>\
+    <span class="n">SORT_ON_SLICE</span>
+<span class="kn">from</span> <span class="nn">..axis</span> <span class="kn">import</span> <span class="n">UniformLengthAxis</span>
+<span class="kn">from</span> <span class="nn">.abstractplugin</span> <span class="kn">import</span> <span class="n">AbstractPlugin</span>
+
+<span class="c1"># import nitransforms</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">NIFTI_XFORM_UNKNOWN</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">NIFTI_XFORM_SCANNER_ANAT</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">NIFTI_XFORM_ALIGNED_ANAT</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">NIFTI_XFORM_TALAIRACH</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">NIFTI_XFORM_MNI_152</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<div class="viewcode-block" id="NoInputFile"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.NoInputFile">[docs]</a><span class="k">class</span> <span class="nc">NoInputFile</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FilesGivenForMultipleURLs"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.FilesGivenForMultipleURLs">[docs]</a><span class="k">class</span> <span class="nc">FilesGivenForMultipleURLs</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NiftiPlugin"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.NiftiPlugin">[docs]</a><span class="k">class</span> <span class="nc">NiftiPlugin</span><span class="p">(</span><span class="n">AbstractPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read/write Nifti-1 files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;nifti&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Read and write Nifti-1 files.&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    data - getter and setter - NumPy array</span>
+<span class="sd">    read() method</span>
+<span class="sd">    write() method</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NiftiPlugin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_read_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">hdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read image data from given file handle</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            f: file handle or filename (depending on self._need_local_file)</span>
+<span class="sd">            opts: Input options (dict)</span>
+<span class="sd">            hdr: Header</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of</span>
+<span class="sd">                hdr: Header</span>
+<span class="sd">                    Return values:</span>
+<span class="sd">                        - info: Internal data for the plugin</span>
+<span class="sd">                            None if the given file should not be included (e.g. raw file)</span>
+<span class="sd">                si: numpy array (multi-dimensional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;niftiplugin::read filehandle </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="c1"># TODO: Read nifti directly from open file object</span>
+        <span class="c1">#      Should be able to do something like:</span>
+        <span class="c1">#</span>
+        <span class="c1"># with archive.open(member_name) as member:</span>
+        <span class="c1">#    # Create a nibabel image using</span>
+        <span class="c1">#    # the existing file handle.</span>
+        <span class="c1">#    fmap = nibabel.nifti1.Nifti1Image.make_file_map()</span>
+        <span class="c1">#    #nibabel.nifti1.Nifti1Header</span>
+        <span class="c1">#    fmap[&#39;image&#39;].fileobj = member</span>
+        <span class="c1">#    img = nibabel.Nifti1Image.from_file_map(fmap)</span>
+        <span class="c1">#</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;niftiplugin::read load f </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">spatialimages</span><span class="o">.</span><span class="n">ImageFileError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotImageError</span><span class="p">(</span>
+                <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> does not look like a nifti file.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">img</span>
+
+        <span class="k">if</span> <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+
+        <span class="n">hdr</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_to_dicom</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">dataobj</span><span class="p">),</span>
+            <span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">flipud</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">info</span><span class="p">,</span> <span class="n">si</span>
+
+    <span class="k">def</span> <span class="nf">_need_local_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the plugin need access to local files?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Boolean:</span>
+<span class="sd">                - True: The plugin need access to local filenames</span>
+<span class="sd">                - False: The plugin can access files given by an open file handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_set_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_list</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set header tags.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            image_list: list with (img,si) tuples</span>
+<span class="sd">            hdr: Header</span>
+<span class="sd">            si: numpy array (multi-dimensional)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hdr: Header</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">img</span><span class="p">,</span> <span class="n">si</span> <span class="o">=</span> <span class="n">image_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">header</span>
+        <span class="n">_data_shape</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get_data_shape</span><span class="p">()</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="n">nz</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="n">_data_shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data_shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">nz</span> <span class="o">=</span> <span class="n">_data_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data_shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">nt</span> <span class="o">=</span> <span class="n">_data_shape</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_set_tags: ny </span><span class="si">{}</span><span class="s2">, nx </span><span class="si">{}</span><span class="s2">, nz </span><span class="si">{}</span><span class="s2">, nt </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ny</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">nt</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;NiftiPlugin.read: get_qform</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">get_qform</span><span class="p">()))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;NiftiPlugin.read: info.get_zooms() </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">get_zooms</span><span class="p">()))</span>
+        <span class="n">_xyzt_units</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get_xyzt_units</span><span class="p">()</span>
+        <span class="n">_data_zooms</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get_zooms</span><span class="p">()</span>
+        <span class="c1"># _dim_info = info.get_dim_info()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_set_tags: get_dim_info(): </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">get_dim_info</span><span class="p">()))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_set_tags: get_xyzt_units(): </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">get_xyzt_units</span><span class="p">()))</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">dz</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">_data_zooms</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data_zooms</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">dz</span> <span class="o">=</span> <span class="n">_data_zooms</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data_zooms</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">_data_zooms</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">_xyzt_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;meter&#39;</span><span class="p">:</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">dy</span> <span class="o">*</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">dz</span> <span class="o">*</span> <span class="mf">1000.</span>
+        <span class="k">elif</span> <span class="n">_xyzt_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;micron&#39;</span><span class="p">:</span>
+            <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">dy</span> <span class="o">/</span> <span class="mf">1000.</span><span class="p">,</span> <span class="n">dz</span> <span class="o">/</span> <span class="mf">1000.</span>
+        <span class="k">if</span> <span class="n">_xyzt_units</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;msec&#39;</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">/</span> <span class="mf">1000.</span>
+        <span class="k">elif</span> <span class="n">_xyzt_units</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;usec&#39;</span><span class="p">:</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">dt</span> <span class="o">/</span> <span class="mf">1000000.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">dz</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">dy</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">))</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">dz</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">dy</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">))</span>
+
+        <span class="c1"># Simplify shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reduce_shape</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+
+        <span class="n">sform</span><span class="p">,</span> <span class="n">scode</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get_sform</span><span class="p">(</span><span class="n">coded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">qform</span><span class="p">,</span> <span class="n">qcode</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get_qform</span><span class="p">(</span><span class="n">coded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">qfac</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;pixdim&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">qfac</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;qfac (pixdim[0]) should be 1 or -1&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Image orientation and positions</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">sform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">scode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Method 3 - sform: orientation&quot;</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+                <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="n">sform</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">sform</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
+            <span class="n">Q</span> <span class="o">=</span> <span class="n">sform</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+            <span class="c1"># p = sform[:3, 3]</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">affines</span><span class="o">.</span><span class="n">apply_affine</span><span class="p">(</span><span class="n">sform</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">Q</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">Q</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Note: rz, ry, rx, cz, cy, cx</span>
+            <span class="n">iop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                <span class="n">Q</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">dx</span><span class="p">,</span> <span class="n">Q</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">dx</span><span class="p">,</span> <span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">dx</span><span class="p">,</span>
+                <span class="n">Q</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">dy</span><span class="p">,</span> <span class="n">Q</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">dy</span><span class="p">,</span> <span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">dy</span>
+            <span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                <span class="n">_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                    <span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">_slice</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+                    <span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">_slice</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="p">(</span><span class="n">Q</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">_slice</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                <span class="p">])</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">_p</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">qform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">qcode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Method 2 - qform: orientation&quot;</span><span class="p">)</span>
+            <span class="n">qoffset_x</span><span class="p">,</span> <span class="n">qoffset_y</span><span class="p">,</span> <span class="n">qoffset_z</span> <span class="o">=</span> <span class="n">qform</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">get_qform_quaternion</span><span class="p">()</span>
+
+            <span class="n">rx</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="n">c</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">ry</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">c</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">rz</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+
+            <span class="n">cx</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">cy</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">a</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">cz</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span>
+
+            <span class="c1"># normal from quaternion derived once and saved for position calculation ...</span>
+            <span class="c1"># ... do not handle qfac here ... do it later</span>
+            <span class="n">tx</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">b</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+            <span class="n">ty</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+            <span class="n">tz</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="n">a</span> <span class="o">+</span> <span class="n">d</span> <span class="o">*</span> <span class="n">d</span> <span class="o">-</span> <span class="n">c</span> <span class="o">*</span> <span class="n">c</span> <span class="o">-</span> <span class="n">b</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span>
+
+            <span class="n">iop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rz</span><span class="p">,</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rx</span><span class="p">,</span> <span class="n">cz</span><span class="p">,</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                <span class="n">_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                    <span class="n">tx</span> <span class="o">*</span> <span class="n">qfac</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">_slice</span> <span class="o">-</span> <span class="n">qoffset_x</span><span class="p">,</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+                    <span class="n">ty</span> <span class="o">*</span> <span class="n">qfac</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">_slice</span> <span class="o">-</span> <span class="n">qoffset_y</span><span class="p">,</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+                    <span class="n">tz</span> <span class="o">*</span> <span class="n">qfac</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">*</span> <span class="n">_slice</span> <span class="o">+</span> <span class="n">qoffset_z</span>
+                <span class="p">])</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">_p</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Reverse x,y,z</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Method 1 - assume axial: orientation&quot;</span><span class="p">)</span>
+            <span class="n">iop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                <span class="n">_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                    <span class="mi">0</span><span class="p">,</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+                    <span class="mi">0</span><span class="p">,</span>  <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+                    <span class="n">dz</span> <span class="o">*</span> <span class="n">_slice</span>
+                <span class="p">])</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">_p</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Reverse x,y,z</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="n">iop</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">times</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">nt</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nt</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">==</span> <span class="n">nt</span><span class="p">,</span>\
+            <span class="s2">&quot;Wrong timeline calculated (times=</span><span class="si">{}</span><span class="s2">) (nt=</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">),</span> <span class="n">nt</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;_set_tags: times </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">times</span><span class="p">))</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="n">tags</span><span class="p">[</span><span class="n">z</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">tags</span>
+
+        <span class="n">axes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+                <span class="n">input_order_to_dirname_str</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span><span class="p">),</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">nt</span><span class="p">,</span>
+                <span class="n">dt</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+                <span class="s1">&#39;slice&#39;</span><span class="p">,</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">nz</span><span class="p">,</span>
+                <span class="n">dz</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+            <span class="s1">&#39;row&#39;</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">ny</span><span class="p">,</span>
+            <span class="n">dy</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">nx</span><span class="p">,</span>
+            <span class="n">dx</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span>
+
+        <span class="n">hdr</span><span class="o">.</span><span class="n">photometricInterpretation</span> <span class="o">=</span> <span class="s1">&#39;MONOCHROME2&#39;</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Set dummy DicomHeaderDict</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">DicomHeaderDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nt</span><span class="p">):</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">tag</span><span class="p">],</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hdr</span><span class="o">.</span><span class="n">empty_ds</span><span class="p">())</span>
+                <span class="p">)</span>
+
+    <span class="c1"># def nifti_to_affine(self, affine, shape):</span>
+    <span class="c1">#</span>
+    <span class="c1">#     if len(shape) != 4:</span>
+    <span class="c1">#         raise ValueError(&quot;4D only (was: %dD)&quot; % len(shape))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     q = affine.copy()</span>
+    <span class="c1">#</span>
+    <span class="c1">#     logger.debug(&quot;q from nifti_to_affine():\n{}&quot;.format(q))</span>
+    <span class="c1">#     # Swap row 0 (z) and 2 (x)</span>
+    <span class="c1">#     q[[0, 2],:] = q[[2, 0],:]</span>
+    <span class="c1">#     # Swap column 0 (z) and 2 (x)</span>
+    <span class="c1">#     q[:,[0, 2]] = q[:,[2, 0]]</span>
+    <span class="c1">#     logger.debug(&quot;q swap nifti_to_affine():\n{}&quot;.format(q))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     analyze_to_dicom = np.eye(4)</span>
+    <span class="c1">#     analyze_to_dicom[0,3] = 1</span>
+    <span class="c1">#     analyze_to_dicom[1,3] = 1</span>
+    <span class="c1">#     analyze_to_dicom[2,3] = 1</span>
+    <span class="c1">#     dicom_to_analyze = np.linalg.inv(analyze_to_dicom)</span>
+    <span class="c1">#     q = np.dot(q,dicom_to_analyze)</span>
+    <span class="c1">#     logger.debug(&quot;q after dicom_to_analyze:\n{}&quot;.format(q))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     analyze_to_dicom = np.eye(4)</span>
+    <span class="c1">#     analyze_to_dicom[0,3] = -1</span>
+    <span class="c1">#     analyze_to_dicom[1,1] = -1</span>
+    <span class="c1">#     rows = shape[2]</span>
+    <span class="c1">#     analyze_to_dicom[1,3] = rows</span>
+    <span class="c1">#     analyze_to_dicom[2,3] = -1</span>
+    <span class="c1">#     dicom_to_analyze = np.linalg.inv(analyze_to_dicom)</span>
+    <span class="c1">#     q = np.dot(q,dicom_to_analyze)</span>
+    <span class="c1">#     logger.debug(&quot;q after rows dicom_to_analyze:\n{}&quot;.format(q))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     patient_to_tal = np.eye(4)</span>
+    <span class="c1">#     patient_to_tal[0,0] = -1</span>
+    <span class="c1">#     patient_to_tal[1,1] = -1</span>
+    <span class="c1">#     tal_to_patient = np.linalg.inv(patient_to_tal)</span>
+    <span class="c1">#     q = np.dot(tal_to_patient,q)</span>
+    <span class="c1">#     logger.debug(&quot;q after tal_to_patient:\n{}&quot;.format(q))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     return q</span>
+
+    <span class="c1"># def affine_to_nifti(self, shape):</span>
+    <span class="c1">#     q = self.transformationMatrix.copy()</span>
+    <span class="c1">#     logger.debug(&quot;Affine from self.transformationMatrix:\n{}&quot;.format(q))</span>
+    <span class="c1">#     # Swap row 0 (z) and 2 (x)</span>
+    <span class="c1">#     q[[0, 2],:] = q[[2, 0],:]</span>
+    <span class="c1">#     # Swap column 0 (z) and 2 (x)</span>
+    <span class="c1">#     q[:,[0, 2]] = q[:,[2, 0]]</span>
+    <span class="c1">#     logger.debug(&quot;Affine swap self.transformationMatrix:\n{}&quot;.format(q))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # q now equals dicom_to_patient in spm_dicom_convert</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # Convert space</span>
+    <span class="c1">#     analyze_to_dicom = np.eye(4)</span>
+    <span class="c1">#     analyze_to_dicom[0,3] = -1</span>
+    <span class="c1">#     analyze_to_dicom[1,1] = -1</span>
+    <span class="c1">#     #if len(shape) == 3:</span>
+    <span class="c1">#     #    rows = shape[1]</span>
+    <span class="c1">#     #else:</span>
+    <span class="c1">#     #    rows = shape[2]</span>
+    <span class="c1">#     rows = shape[-2]</span>
+    <span class="c1">#     analyze_to_dicom[1,3] = rows</span>
+    <span class="c1">#     analyze_to_dicom[2,3] = -1</span>
+    <span class="c1">#     logger.debug(&quot;analyze_to_dicom:\n{}&quot;.format(analyze_to_dicom))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     patient_to_tal = np.eye(4)</span>
+    <span class="c1">#     patient_to_tal[0,0] = -1</span>
+    <span class="c1">#     patient_to_tal[1,1] = -1</span>
+    <span class="c1">#     logger.debug(&quot;patient_to_tal:\n{}&quot;.format(patient_to_tal))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     q = np.dot(patient_to_tal,q)</span>
+    <span class="c1">#     logger.debug(&quot;q with patient_to_tal:\n{}&quot;.format(q))</span>
+    <span class="c1">#     q = np.dot(q,analyze_to_dicom)</span>
+    <span class="c1">#     # q now equals mat in spm_dicom_convert</span>
+    <span class="c1">#</span>
+    <span class="c1">#     analyze_to_dicom = np.eye(4)</span>
+    <span class="c1">#     analyze_to_dicom[0,3] = 1</span>
+    <span class="c1">#     analyze_to_dicom[1,3] = 1</span>
+    <span class="c1">#     analyze_to_dicom[2,3] = 1</span>
+    <span class="c1">#     logger.debug(&quot;analyze_to_dicom:\n{}&quot;.format(analyze_to_dicom))</span>
+    <span class="c1">#     q = np.dot(q,analyze_to_dicom)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     logger.debug(&quot;q nifti:\n{}&quot;.format(q))</span>
+    <span class="c1">#     return q</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_geometry_from_affine</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span> <span class="n">q</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Extract geometry attributes from Nifti header</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: NiftiPlugin instance</span>
+<span class="sd">            q: nifti Qform</span>
+<span class="sd">            hdr.spacing</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hdr: header</span>
+<span class="sd">                - hdr.imagePositions[0]</span>
+<span class="sd">                - hdr.orientation</span>
+<span class="sd">                - hdr.transformationMatrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Swap back from nifti patient space, flip x and y directions</span>
+        <span class="n">affine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">q</span><span class="p">)</span>
+        <span class="c1"># Set imagePositions for first slice</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">affine</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">])}</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;getGeometryFromAffine: hdr imagePositions=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">))</span>
+        <span class="c1"># Set slice orientation</span>
+        <span class="n">ds</span><span class="p">,</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;getGeometryFromAffine: spacing ds </span><span class="si">{}</span><span class="s2">, dr </span><span class="si">{}</span><span class="s2">, dc </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span><span class="p">))</span>
+
+        <span class="n">colr</span> <span class="o">=</span> <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">dr</span>
+        <span class="n">colc</span> <span class="o">=</span> <span class="n">affine</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">dc</span>
+        <span class="c1"># T0 = affine[:3,3][::-1]</span>
+        <span class="n">orient</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;getGeometryFromAffine: affine</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">affine</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">orient</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">colc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">orient</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">colr</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;getGeometryFromAffine: orient </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">orient</span><span class="p">))</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="n">orient</span>
+        <span class="k">return</span>
+
+    <span class="c1"># noinspection PyPep8Naming</span>
+<div class="viewcode-block" id="NiftiPlugin.create_affine_xyz"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.NiftiPlugin.create_affine_xyz">[docs]</a>    <span class="k">def</span> <span class="nf">create_affine_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create affine in xyz.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Normalize a vector</span>
+
+<span class="sd">            https://stackoverflow.com/questions/21030391/how-to-normalize-an-array-in-numpy</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                v: 3D vector</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                normalized 3D vector</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+            <span class="k">return</span> <span class="n">v</span> <span class="o">/</span> <span class="n">norm</span>
+
+        <span class="n">ds</span><span class="p">,</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span>
+
+        <span class="c1"># NIfTI is RAS+, DICOM is LPS+</span>
+        <span class="n">colr</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">]))</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,))</span> <span class="o">*</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">colc</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]))</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">3</span><span class="p">,))</span> <span class="o">*</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># T0 = self.imagePositions[0][::-1].reshape(3, )  # x,y,z</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Tn = self.imagePositions[self.slices - 1][::-1].reshape(3, )  # x,y,z</span>
+            <span class="c1"># k = Tn</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">colc</span><span class="p">,</span> <span class="n">colr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">ds</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">colc</span><span class="p">,</span> <span class="n">colr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">k</span> <span class="o">*</span> <span class="n">ds</span>
+
+        <span class="n">L</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">L</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">colr</span> <span class="o">*</span> <span class="n">dr</span>
+        <span class="n">L</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">colc</span> <span class="o">*</span> <span class="n">dc</span>
+        <span class="n">L</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">k</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getPositionForVoxel</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># L[:3, 3] = self.origin * [-1, -1, 1]</span>
+        <span class="n">L</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">L</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">L</span></div>
+
+    <span class="c1"># def getQformFromTransformationMatrix(self):</span>
+    <span class="c1">#     # def matrix_from_orientation(orientation, normal):</span>
+    <span class="c1">#     #    oT = orientation.reshape((2,3)).T</span>
+    <span class="c1">#     #    colr = oT[:,0].reshape((3,1))</span>
+    <span class="c1">#     #    colc = oT[:,1].reshape((3,1))</span>
+    <span class="c1">#     #    coln = normal.reshape((3,1))</span>
+    <span class="c1">#     #    if len(self.shape) &lt; 3:</span>
+    <span class="c1">#     #        M = np.hstack((colr[:2], colc[:2])).reshape((2,2))</span>
+    <span class="c1">#     #    else:</span>
+    <span class="c1">#     #        M = np.hstack((colr, colc, coln)).reshape((3,3))</span>
+    <span class="c1">#     #    return M</span>
+    <span class="c1">#</span>
+    <span class="c1">#     def normalize(v):</span>
+    <span class="c1">#         &quot;&quot;&quot;Normalize a vector</span>
+    <span class="c1">#</span>
+    <span class="c1">#         https://stackoverflow.com/questions/21030391/how-to-normalize-an-array-in-numpy</span>
+    <span class="c1">#</span>
+    <span class="c1">#         :param v: 3D vector</span>
+    <span class="c1">#         :return: normalized 3D vector</span>
+    <span class="c1">#         &quot;&quot;&quot;</span>
+    <span class="c1">#         norm = np.linalg.norm(v, ord=1)</span>
+    <span class="c1">#         if norm == 0:</span>
+    <span class="c1">#             norm = np.finfo(v.dtype).eps</span>
+    <span class="c1">#         return v / norm</span>
+    <span class="c1">#</span>
+    <span class="c1">#     def L_from_orientation(orientation, normal, spacing):</span>
+    <span class="c1">#         &quot;&quot;&quot;</span>
+    <span class="c1">#         orientation: row, then column index direction cosines</span>
+    <span class="c1">#         &quot;&quot;&quot;</span>
+    <span class="c1">#         _ds, _dr, _dc = spacing</span>
+    <span class="c1">#         _colr = normalize(np.array(orientation[3:6])).reshape((3,))</span>
+    <span class="c1">#         _colc = normalize(np.array(orientation[0:3])).reshape((3,))</span>
+    <span class="c1">#         _t0 = self.imagePositions[0][::-1].reshape(3, )  # x,y,z</span>
+    <span class="c1">#         if self.slices &gt; 1:</span>
+    <span class="c1">#             _tn = self.imagePositions[self.slices - 1][::-1].reshape(3, )  # x,y,z</span>
+    <span class="c1">#             # k = _tn</span>
+    <span class="c1">#             _k = np.cross(_colr, _colc, axis=0)</span>
+    <span class="c1">#             _k = _k * _ds</span>
+    <span class="c1">#         else:</span>
+    <span class="c1">#             _k = np.cross(_colr, _colc, axis=0)</span>
+    <span class="c1">#             _k = _k * _ds</span>
+    <span class="c1">#</span>
+    <span class="c1">#         _L = np.zeros((4, 4))</span>
+    <span class="c1">#         _L[:3, 0] = _t0[:]</span>
+    <span class="c1">#         _L[3, 0] = 1</span>
+    <span class="c1">#         _L[:3, 1] = _k</span>
+    <span class="c1">#         _L[3, 1] = 1 if self.slices &gt; 1 else 0</span>
+    <span class="c1">#         _L[:3, 2] = _colr * [-1, -1, 1] * _dr</span>
+    <span class="c1">#         _L[:3, 3] = _colc * [-1, -1, 1] * _dc</span>
+    <span class="c1">#         return _L</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # M = self.transformationMatrix</span>
+    <span class="c1">#     # M = matrix_from_orientation(self.orientation, self.normal)</span>
+    <span class="c1">#     # ipp = self.origin</span>
+    <span class="c1">#     # q = np.array([[M[2,2], M[2,1], M[2,0], ipp[0]],</span>
+    <span class="c1">#     #              [M[1,2], M[1,1], M[1,0], ipp[1]],</span>
+    <span class="c1">#     #              [M[0,2], M[0,1], M[0,0], ipp[2]],</span>
+    <span class="c1">#     #              [     0,      0,      0,     1 ]]</span>
+    <span class="c1">#     #        )</span>
+    <span class="c1">#</span>
+    <span class="c1">#     if self.slices &gt; 1:</span>
+    <span class="c1">#         r = np.array([[1, 1, 1, 0], [1, 1, 0, 1], [1, self.slices, 0, 0], [1, 1, 0, 0]])</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         r = np.array([[1, 0, 1, 0], [1, 0, 0, 1], [1, self.slices, 0, 0], [1, 0, 0, 0]])</span>
+    <span class="c1">#     l = L_from_orientation(self.orientation, self.normal, self.spacing)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # Linv = np.linalg.inv(L)</span>
+    <span class="c1">#     # Aspm = np.dot(r, np.linalg.inv(l))</span>
+    <span class="c1">#     to_ones = np.eye(4)</span>
+    <span class="c1">#     to_ones[:, 3] = 1</span>
+    <span class="c1">#     # A = np.dot(Aspm, to_ones)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     ds, dr, dc = self.spacing</span>
+    <span class="c1">#     colr = normalize(np.array(self.orientation[3:6])).reshape((3,))</span>
+    <span class="c1">#     colc = normalize(np.array(self.orientation[0:3])).reshape((3,))</span>
+    <span class="c1">#     coln = normalize(np.cross(colc, colr, axis=0))</span>
+    <span class="c1">#     t_0 = self.imagePositions[0][::-1].reshape(3, )  # x,y,z</span>
+    <span class="c1">#     if self.slices &gt; 1:</span>
+    <span class="c1">#         t_n = self.imagePositions[self.slices - 1][::-1].reshape((3,))  # x,y,z</span>
+    <span class="c1">#         abcd = np.array([1, 1, self.slices, 1]).reshape((4,))</span>
+    <span class="c1">#         one = np.ones((1,))</span>
+    <span class="c1">#         efgh = np.concatenate((t_n, one))</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         abcd = np.array([0, 0, 1, 0]).reshape((4,))</span>
+    <span class="c1">#         # zero = np.zeros((1,))</span>
+    <span class="c1">#         efgh = np.concatenate((n * ds, zeros))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # From derivations/spm_dicom_orient.py</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # premultiplication matrix to go from 0 to 1 based indexing</span>
+    <span class="c1">#     one_based = np.eye(4)</span>
+    <span class="c1">#     one_based[:3, 3] = (1, 1, 1)</span>
+    <span class="c1">#     # premult for swapping row and column indices</span>
+    <span class="c1">#     row_col_swap = np.eye(4)</span>
+    <span class="c1">#     row_col_swap[:, 0] = np.eye(4)[:, 1]</span>
+    <span class="c1">#     row_col_swap[:, 1] = np.eye(4)[:, 0]</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # various worming matrices</span>
+    <span class="c1">#     orient_pat = np.hstack([colr.reshape(3, 1), colc.reshape(3, 1)])</span>
+    <span class="c1">#     orient_cross = coln</span>
+    <span class="c1">#     pos_pat_0 = t_0</span>
+    <span class="c1">#     if self.slices &gt; 1:</span>
+    <span class="c1">#         missing_r_col = (t_0 - t_n) / (1 - self.slices)</span>
+    <span class="c1">#         pos_pat_N = t_n</span>
+    <span class="c1">#     pixel_spacing = [dr, dc]</span>
+    <span class="c1">#     NZ = self.slices</span>
+    <span class="c1">#     slice_thickness = ds</span>
+    <span class="c1">#</span>
+    <span class="c1">#     R3 = np.dot(orient_pat, np.diag(pixel_spacing))</span>
+    <span class="c1">#     # R3 = orient_pat * np.diag(pixel_spacing)</span>
+    <span class="c1">#     r = np.zeros((4, 2))</span>
+    <span class="c1">#     r[:3, :] = R3</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # The following is specific to the SPM algorithm.</span>
+    <span class="c1">#     x1 = np.ones(4)</span>
+    <span class="c1">#     y1 = np.ones(4)</span>
+    <span class="c1">#     y1[:3] = pos_pat_0</span>
+    <span class="c1">#</span>
+    <span class="c1">#     to_inv = np.zeros((4, 4))</span>
+    <span class="c1">#     to_inv[:, 0] = x1</span>
+    <span class="c1">#     to_inv[:, 1] = abcd</span>
+    <span class="c1">#     to_inv[0, 2] = 1</span>
+    <span class="c1">#     to_inv[1, 3] = 1</span>
+    <span class="c1">#     inv_lhs = np.zeros((4, 4))</span>
+    <span class="c1">#     inv_lhs[:, 0] = y1</span>
+    <span class="c1">#     inv_lhs[:, 1] = efgh</span>
+    <span class="c1">#     inv_lhs[:, 2:] = r</span>
+    <span class="c1">#</span>
+    <span class="c1">#     def spm_full_matrix(x2, y2):</span>
+    <span class="c1">#         rhs = to_inv[:, :]</span>
+    <span class="c1">#         rhs[:, 1] = x2</span>
+    <span class="c1">#         lhs = inv_lhs[:, :]</span>
+    <span class="c1">#         lhs[:, 1] = y2</span>
+    <span class="c1">#         return np.dot(lhs, np.linalg.inv(rhs))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     if self.slices &gt; 1:</span>
+    <span class="c1">#         x2_ms = np.array([1, 1, NZ, 1])</span>
+    <span class="c1">#         y2_ms = np.ones((4,))</span>
+    <span class="c1">#         y2_ms[:3] = pos_pat_N</span>
+    <span class="c1">#         A_ms = spm_full_matrix(x2_ms, y2_ms)</span>
+    <span class="c1">#         A = A_ms</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         orient = np.zeros((3, 3))</span>
+    <span class="c1">#         orient[:3, :2] = orient_pat</span>
+    <span class="c1">#         orient[:, 2] = orient_cross</span>
+    <span class="c1">#         x2_ss = np.array([0, 0, 1, 0])</span>
+    <span class="c1">#         y2_ss = np.zeros((4,))</span>
+    <span class="c1">#         # y2_ss[:3] = orient * np.array([0, 0, slice_thickness])</span>
+    <span class="c1">#         y2_ss[:3] = np.dot(orient, np.array([0, 0, slice_thickness]))</span>
+    <span class="c1">#         A_ss = spm_full_matrix(x2_ss, y2_ss)</span>
+    <span class="c1">#         A = A_ss</span>
+    <span class="c1">#</span>
+    <span class="c1">#     A = np.dot(A, row_col_swap)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     multi_aff = np.eye(4)</span>
+    <span class="c1">#     multi_aff[:3, :2] = R3</span>
+    <span class="c1">#     trans_z_N = np.array([0, 0, self.slices - 1, 1])</span>
+    <span class="c1">#     multi_aff[:3, 2] = missing_r_col</span>
+    <span class="c1">#     multi_aff[:3, 3] = pos_pat_0</span>
+    <span class="c1">#     # est_pos_pat_N = np.dot(multi_aff, trans_z_N)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # Flip voxels in y</span>
+    <span class="c1">#     analyze_to_dicom = np.eye(4)</span>
+    <span class="c1">#     analyze_to_dicom[1, 1] = -1</span>
+    <span class="c1">#     # analyze_to_dicom[1,3] = shape[1]+1</span>
+    <span class="c1">#     analyze_to_dicom[1, 3] = self.slices</span>
+    <span class="c1">#     logger.debug(&quot;getQformFromTransformationMatrix: analyze_to_dicom\n{}&quot;.format(</span>
+    <span class="c1">#         analyze_to_dicom))</span>
+    <span class="c1">#     # dicom_to_analyze = np.linalg.inv(analyze_to_dicom)</span>
+    <span class="c1">#     # q = np.dot(q,dicom_to_analyze)</span>
+    <span class="c1">#     q = np.dot(A, analyze_to_dicom)</span>
+    <span class="c1">#     # ## 2019.07.03 # q = np.dot(q,analyze_to_dicom)</span>
+    <span class="c1">#     # ## 2019.07.03 # logger.debug(&quot;q after rows dicom_to_analyze:\n{}&quot;.format(q))</span>
+    <span class="c1">#     # Flip mm coords in x and y directions</span>
+    <span class="c1">#     patient_to_tal = np.diag([1, -1, -1, 1])</span>
+    <span class="c1">#     # patient_to_tal = np.eye(4)</span>
+    <span class="c1">#     # patient_to_tal[0,0] = -1</span>
+    <span class="c1">#     # patient_to_tal[1,1] = -1</span>
+    <span class="c1">#     # tal_to_patient = np.linalg.inv(patient_to_tal)</span>
+    <span class="c1">#     # q = np.dot(tal_to_patient,q)</span>
+    <span class="c1">#     logger.debug(&quot;getQformFromTransformationMatrix: patient_to_tal\n{}&quot;.format(</span>
+    <span class="c1">#         patient_to_tal))</span>
+    <span class="c1">#     q = np.dot(patient_to_tal, q)</span>
+    <span class="c1">#     logger.debug(&quot;getQformFromTransformationMatrix: q after\n{}&quot;.format(q))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     return q</span>
+
+    <span class="c1"># def create_affine(self, sorted_dicoms):</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Function to generate the affine matrix for a dicom series</span>
+    <span class="c1">#     From dicom2nifti:common.py:</span>
+    <span class="c1">#     https://github.com/icometrix/dicom2nifti/blob/master/dicom2nifti/common.py</span>
+    <span class="c1">#     This method was based on (http://nipy.org/nibabel/dicom/dicom_orientation.html)</span>
+    <span class="c1">#     :param sorted_dicoms: list with sorted dicom files</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # Create affine matrix</span>
+    <span class="c1">#     (http://nipy.sourceforge.net/nibabel/dicom/dicom_orientation.html#dicom-slice-affine)</span>
+    <span class="c1">#     image_orient1 = np.array(sorted_dicoms[0].ImageOrientationPatient)[0:3]</span>
+    <span class="c1">#     image_orient2 = np.array(sorted_dicoms[0].ImageOrientationPatient)[3:6]</span>
+    <span class="c1">#</span>
+    <span class="c1">#     delta_r = float(sorted_dicoms[0].PixelSpacing[0])</span>
+    <span class="c1">#     delta_c = float(sorted_dicoms[0].PixelSpacing[1])</span>
+    <span class="c1">#</span>
+    <span class="c1">#     image_pos = np.array(sorted_dicoms[0].ImagePositionPatient)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     last_image_pos = np.array(sorted_dicoms[-1].ImagePositionPatient)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     if len(sorted_dicoms) == 1:</span>
+    <span class="c1">#         # Single slice</span>
+    <span class="c1">#         step = [0, 0, -1]</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         step = (image_pos - last_image_pos) / (1 - len(sorted_dicoms))</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # check if this is actually a volume and not all slices on the same location</span>
+    <span class="c1">#     if np.linalg.norm(step) == 0.0:</span>
+    <span class="c1">#         raise NotImageError(&quot;Not a volume&quot;)</span>
+    <span class="c1">#</span>
+    <span class="c1">#     affine = np.array(</span>
+    <span class="c1">#         [[-image_orient1[0] * delta_c, -image_orient2[0] * delta_r, -step[0], -image_pos[0]],</span>
+    <span class="c1">#          [-image_orient1[1] * delta_c, -image_orient2[1] * delta_r, -step[1], -image_pos[1]],</span>
+    <span class="c1">#          [image_orient1[2] * delta_c, image_orient2[2] * delta_r, step[2], image_pos[2]],</span>
+    <span class="c1">#          [0, 0, 0, 1]]</span>
+    <span class="c1">#     )</span>
+    <span class="c1">#     return affine, np.linalg.norm(step)</span>
+
+<div class="viewcode-block" id="NiftiPlugin.write_3d_numpy"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.NiftiPlugin.write_3d_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">write_3d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 3D numpy image as Nifti file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: NiftiPlugin instance</span>
+<span class="sd">            si: Series array (3D or 4D), including these attributes:</span>
+<span class="sd">                slices,</span>
+<span class="sd">                spacing,</span>
+<span class="sd">                imagePositions,</span>
+<span class="sd">                transformationMatrix,</span>
+<span class="sd">                orientation,</span>
+<span class="sd">                tags</span>
+
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteNotImplemented</span><span class="p">(</span>
+                <span class="s2">&quot;Writing color Nifti images not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;NiftiPlugin.write_3d_numpy: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">filename_template</span> <span class="o">=</span> <span class="s1">&#39;Image.nii.gz&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename_template</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># TODO # self._save_dicom_to_nifti(si)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">transformationMatrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">imagePositions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">tags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">get_transformation_components_xyz</span><span class="p">()</span>
+        <span class="c1"># slice_direction = _find_slice_direction(si, self.transformationMatrix, self.normal)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape write: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape_to_str</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+        <span class="k">assert</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span>\
+            <span class="s2">&quot;write_3d_series: input dimension </span><span class="si">%d</span><span class="s2"> is not 3D.&quot;</span> <span class="o">%</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span>
+
+        <span class="n">fsi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_from_dicom</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">fsi</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">affine_xyz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_affine_xyz</span><span class="p">()</span>
+        <span class="n">nifti_header</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Header</span><span class="p">()</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_dim_info</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">slice</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_data_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">dz</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_zooms</span><span class="p">((</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_zooms</span><span class="p">((</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">))</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_data_dtype</span><span class="p">(</span><span class="n">fsi</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">affine_xyz</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_xyzt_units</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="s1">&#39;mm&#39;</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">fsi</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">nifti_header</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_numpy_nifti</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NiftiPlugin.write_4d_numpy"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.NiftiPlugin.write_4d_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">write_4d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 4D numpy image as Nifti file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: NiftiPlugin instance</span>
+<span class="sd">            si[tag,slice,rows,columns]: Series array, including these attributes:</span>
+<span class="sd">                slices,</span>
+<span class="sd">                spacing,</span>
+<span class="sd">                imagePositions,</span>
+<span class="sd">                transformationMatrix,</span>
+<span class="sd">                orientation,</span>
+<span class="sd">                tags</span>
+
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteNotImplemented</span><span class="p">(</span>
+                <span class="s2">&quot;Writing color Nifti images not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ITKPlugin.write_4d_numpy: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">filename_template</span> <span class="o">=</span> <span class="s1">&#39;Image.nii.gz&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename_template</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">transformationMatrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">imagePositions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">tags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">origin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">get_transformation_components_xyz</span><span class="p">()</span>
+
+        <span class="c1"># Defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="n">SORT_ON_SLICE</span>
+        <span class="k">if</span> <span class="s1">&#39;output_sort&#39;</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s1">&#39;output_sort&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Should we allow to write 3D volume?</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">elif</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: input dimension </span><span class="si">{}</span><span class="s2"> is not 4D.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: si dtype </span><span class="si">{}</span><span class="s2">, shape </span><span class="si">{}</span><span class="s2">, sort </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">sort_on_to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span><span class="p">)))</span>
+
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;write_4d_series: tags of dicom template (</span><span class="si">{}</span><span class="s2">) differ &quot;</span>
+                <span class="s2">&quot;from input array (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">steps</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">slices</span> <span class="o">!=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;write_4d_series: slices of dicom template (</span><span class="si">{}</span><span class="s2">) differ &quot;</span>
+                <span class="s2">&quot;from input array (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">slices</span><span class="p">,</span> <span class="n">slices</span><span class="p">))</span>
+
+        <span class="n">fsi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_from_dicom</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">fsi</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="n">affine_xyz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_affine_xyz</span><span class="p">()</span>
+        <span class="n">nifti_header</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Header</span><span class="p">()</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_dim_info</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">slice</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_data_shape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">dz</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_zooms</span><span class="p">((</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_data_dtype</span><span class="p">(</span><span class="n">fsi</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">affine_xyz</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># NiftiHeader.set_slice_duration()</span>
+        <span class="c1"># NiftiHeader.set_slice_times(times)</span>
+        <span class="n">nifti_header</span><span class="o">.</span><span class="n">set_xyzt_units</span><span class="p">(</span><span class="n">xyz</span><span class="o">=</span><span class="s1">&#39;mm&#39;</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="s1">&#39;sec&#39;</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">fsi</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">nifti_header</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_numpy_nifti</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NiftiPlugin.write_numpy_nifti"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.niftiplugin.NiftiPlugin.write_numpy_nifti">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">write_numpy_nifti</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write nifti data to file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: ITKPlugin instance, including these attributes:</span>
+<span class="sd">            - slices (not used)</span>
+<span class="sd">            - spacing</span>
+<span class="sd">            - imagePositions</span>
+<span class="sd">            - transformationMatrix</span>
+<span class="sd">            - orientation (not used)</span>
+<span class="sd">            - tags (not used)</span>
+
+<span class="sd">            img: Nifti1Image</span>
+<span class="sd">            archive: archive object</span>
+<span class="sd">            filename: file name, possibly without extentsion</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.nii.gz&#39;</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.nii.gz&#39;</span><span class="p">):</span>
+            <span class="n">ext</span> <span class="o">=</span> <span class="s1">&#39;.nii.gz&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_nifti: ext </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">ext</span><span class="p">)</span>
+
+        <span class="n">f</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span>
+            <span class="n">suffix</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_nifti: write local file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;write_numpy_nifti: copy to file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">archive</span><span class="o">.</span><span class="n">add_localfile</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_save_dicom_to_nifti</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert DICOM to Nifti&quot;&quot;&quot;</span>
+        <span class="n">hdr</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Header</span><span class="p">()</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">si</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="p">,</span> <span class="n">slice_direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_header_dicom_to_nifti</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">slice_direction</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hdr</span><span class="p">,</span> <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nii_flip_z</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">)</span>
+                <span class="n">slice_direction</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">slice_direction</span><span class="p">)</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nii_set_ortho</span><span class="p">(</span><span class="n">hdr</span><span class="p">,</span> <span class="n">img</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nii_save_attributes</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_header_dicom_to_nifti</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="c1"># COL/ROW</span>
+        <span class="n">inPlanePhaseEncodingDirection</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">getDicomAttribute</span><span class="p">(</span><span class="s1">&#39;InPlanePhaseEncodingDirection&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inPlanePhaseEncodingDirection</span> <span class="o">==</span> <span class="s1">&#39;ROW&#39;</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_dim_info</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">slice</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">inPlanePhaseEncodingDirection</span> <span class="o">==</span> <span class="s1">&#39;COL&#39;</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_dim_info</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">slice</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">slice_direction</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">q44</span><span class="p">,</span> <span class="n">slice_direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nifti_dicom_mat</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">q44</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">NIFTI_XFORM_UNKNOWN</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">q44</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">NIFTI_XFORM_UNKNOWN</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">q44</span><span class="p">,</span> <span class="n">slice_direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nifti_dicom_mat</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">q44</span><span class="p">,</span> <span class="n">NIFTI_XFORM_SCANNER_ANAT</span><span class="p">)</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">q44</span><span class="p">,</span> <span class="n">NIFTI_XFORM_SCANNER_ANAT</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">slice_direction</span>
+
+    <span class="k">def</span> <span class="nf">_nifti_dicom_mat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create NIfTI header based on values from DICOM header&quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Normalize a vector</span>
+
+<span class="sd">            https://stackoverflow.com/questions/21030391/how-to-normalize-an-array-in-numpy</span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                v: 3D vector</span>
+<span class="sd">            Returns:</span>
+<span class="sd">                normalized 3D vector</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">ord</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+            <span class="k">return</span> <span class="n">v</span> <span class="o">/</span> <span class="n">norm</span>
+
+        <span class="n">origin</span><span class="p">,</span> <span class="n">orientation</span><span class="p">,</span> <span class="n">normal</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">get_transformation_components_xyz</span><span class="p">()</span>
+        <span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># x,y,z</span>
+
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">orientation</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
+        <span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">orientation</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+        <span class="n">q</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">q</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">q</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">q</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">diagVox</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">spacing</span><span class="p">)</span>
+
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">diagVox</span><span class="p">)</span>
+
+        <span class="n">q44</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="n">q44</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="n">q44</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">origin</span>
+        <span class="n">q44</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">slice_direction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_slice_direction</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">q44</span><span class="p">,</span> <span class="n">normal</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>  <span class="c1"># LPS to nifti RAS</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>  <span class="c1"># Swap rows 0 and 1</span>
+                <span class="n">q44</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">q44</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">q44</span><span class="p">,</span> <span class="n">slice_direction</span>
+
+    <span class="k">def</span> <span class="nf">_nii_flip_z</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flip slice order&quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">si</span>
+        <span class="c1"># LOAD_MAT33(s,h-&gt;srow_x[0],h-&gt;srow_x[1],h-&gt;srow_x[2],</span>
+        <span class="c1">#            h-&gt;srow_y[0],h-&gt;srow_y[1], h-&gt;srow_y[2],</span>
+        <span class="c1">#            h-&gt;srow_z[0],h-&gt;srow_z[1],h-&gt;srow_z[2]);</span>
+        <span class="n">sform</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_sform</span><span class="p">()[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="c1"># LOAD_MAT44(Q44,h-&gt;srow_x[0],h-&gt;srow_x[1],h-&gt;srow_x[2],h-&gt;srow_x[3],</span>
+        <span class="c1">#            h-&gt;srow_y[0],h-&gt;srow_y[1],h-&gt;srow_y[2],h-&gt;srow_y[3],</span>
+        <span class="c1">#            h-&gt;srow_z[0],h-&gt;srow_z[1],h-&gt;srow_z[2],h-&gt;srow_z[3]);</span>
+        <span class="c1"># q44 = np.eye(4)</span>
+        <span class="c1"># q44[:3, :3] = sform</span>
+        <span class="n">q44</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_sform</span><span class="p">()</span>
+        <span class="c1"># vec4 v= setVec4(0.0f,0.0f,(float) h-&gt;dim[3]-1.0f);</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># v = nifti_vect44mat44_mul(v, Q44); //after flip this voxel will be the origin</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">q44</span><span class="p">)</span>  <span class="c1"># after flip this voxel will be the origin</span>
+        <span class="c1"># mat33 mFlipZ;</span>
+        <span class="c1"># LOAD_MAT33(mFlipZ,1.0f, 0.0f, 0.0f, 0.0f,1.0f,0.0f, 0.0f,0.0f,-1.0f);</span>
+        <span class="n">mFlipZ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># s= nifti_mat33_mul( s , mFlipZ );</span>
+        <span class="n">sform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">sform</span><span class="p">,</span> <span class="n">mFlipZ</span><span class="p">)</span>
+        <span class="c1"># LOAD_MAT44(Q44, s.m[0][0],s.m[0][1],s.m[0][2],v.v[0],</span>
+        <span class="c1">#        s.m[1][0],s.m[1][1],s.m[1][2],v.v[1],</span>
+        <span class="c1">#        s.m[2][0],s.m[2][1],s.m[2][2],v.v[2]);</span>
+        <span class="n">q44</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">sform</span>
+        <span class="n">q44</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="c1"># setQSForm(h,Q44, true);</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">q44</span><span class="p">,</span> <span class="n">NIFTI_XFORM_SCANNER_ANAT</span><span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">q44</span><span class="p">,</span> <span class="n">NIFTI_XFORM_SCANNER_ANAT</span><span class="p">)</span>
+        <span class="c1"># printMessage(&quot;nii_flipImgY dims %dx%dx%d %d \n&quot;,h-&gt;dim[1],h-&gt;dim[2],</span>
+        <span class="c1">#     dim3to7,h-&gt;bitpix/8);</span>
+        <span class="c1"># return self._nii_flip_image_z(hdr, si)</span>
+        <span class="k">return</span> <span class="n">hdr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_from_dicom</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_nii_set_ortho</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">isMat44Canonical</span><span class="p">(</span><span class="n">R</span><span class="p">):</span>
+            <span class="c1"># returns true if diagonals &gt;0 and all others =0</span>
+            <span class="c1">#  no rotation is necessary - already in perfect orthogonal alignment</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">j</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">def</span> <span class="nf">xyz2mm</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">ret</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">R</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">ret</span>
+
+        <span class="k">def</span> <span class="nf">getDistance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">_min</span><span class="p">):</span>
+            <span class="c1"># Scalar distance between two 3D points - Pythagorean theorem</span>
+            <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">_min</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span>
+                             <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">_min</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span>
+                             <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">_min</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="mi">2</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">minCornerFlip</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+            <span class="c1"># Orthogonal rotations and reflections applied as 3x3 matrices will cause the origin</span>
+            <span class="c1"># to shift. A simple solution is to first compute the most left, posterior, inferior</span>
+            <span class="c1"># voxel in the source image. This voxel will be at location i,j,k = 0,0,0, so we can</span>
+            <span class="c1"># simply use this as the offset for the final 4x4 matrix...</span>
+            <span class="c1"># vec3i flipVecs[8]</span>
+            <span class="c1"># vec3 corner[8], min</span>
+            <span class="n">flipVecs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">corner</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># mat44 s = sFormMat(h);</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_sform</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+                <span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+                <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">])</span>  <span class="c1"># assume no reflections</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># reflect X</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># reflect Y</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">flipVecs</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># reflect Z</span>
+                <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xyz2mm</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="c1"># find extreme edge from ALL corners....</span>
+            <span class="n">_min</span> <span class="o">=</span> <span class="n">corner</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">_min</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
+                        <span class="n">_min</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+            <span class="c1"># dx: observed distance from corner</span>
+            <span class="n">min_dx</span> <span class="o">=</span> <span class="n">getDistance</span><span class="p">(</span><span class="n">corner</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">_min</span><span class="p">)</span>
+            <span class="n">min_index</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># index of corner closest to _min</span>
+            <span class="c1"># see if any corner is closer to absmin than the first one...</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="n">getDistance</span><span class="p">(</span><span class="n">corner</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">_min</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">dx</span> <span class="o">&lt;</span> <span class="n">min_dx</span><span class="p">:</span>
+                    <span class="n">min_dx</span> <span class="o">=</span> <span class="n">dx</span>
+                    <span class="n">min_index</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="c1"># _min = corner[minIndex]  # this is the single corner closest to _min from all</span>
+            <span class="k">return</span> <span class="n">corner</span><span class="p">[</span><span class="n">min_index</span><span class="p">],</span> <span class="n">flipVecs</span><span class="p">[</span><span class="n">min_index</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">getOrthoResidual</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
+            <span class="c1"># mat33 mat = matDotMul33(orig, transform);</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">orig</span> <span class="o">@</span> <span class="n">transform</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">getBestOrient</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">):</span>
+            <span class="c1"># flipVec reports flip: [1 1 1]=no flips, [-1 1 1] flip X dimension</span>
+            <span class="c1"># LOAD_MAT33(orig,R.m[0][0],R.m[0][1],R.m[0][2],</span>
+            <span class="c1">#            R.m[1][0],R.m[1][1],R.m[1][2],</span>
+            <span class="c1">#            R.m[2][0],R.m[2][1],R.m[2][2]);</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">flipVec</span>
+            <span class="n">orig</span> <span class="o">=</span> <span class="n">R</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">best</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">rot</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>  <span class="c1"># 6 rotations</span>
+                <span class="k">if</span> <span class="n">rot</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># LOAD_MAT33(newmat,flipVec.v[0],0,0, 0,flipVec.v[1],0, 0,0,flipVec.v[2])</span>
+                    <span class="n">newmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">flipVec</span>
+                <span class="k">elif</span> <span class="n">rot</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># LOAD_MAT33(newmat,flipVec.v[0],0,0, 0,0,flipVec.v[1], 0,flipVec.v[2],0)</span>
+                    <span class="n">newmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">flipVec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">]])</span>
+                <span class="k">elif</span> <span class="n">rot</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># LOAD_MAT33(newmat,0,flipVec.v[0],0, flipVec.v[1],0,0, 0,0,flipVec.v[2])</span>
+                    <span class="n">newmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">flipVec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">2</span><span class="p">]]])</span>
+                <span class="k">elif</span> <span class="n">rot</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="c1"># LOAD_MAT33(newmat,0,flipVec.v[0],0, 0,0,flipVec.v[1], flipVec.v[2],0,0)</span>
+                    <span class="n">newmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="n">flipVec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+                <span class="k">elif</span> <span class="n">rot</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="c1"># LOAD_MAT33(newmat,0,0,flipVec.v[0], flipVec.v[1],0,0, 0,flipVec.v[2],0)</span>
+                    <span class="n">newmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">flipVec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">]])</span>
+                <span class="k">elif</span> <span class="n">rot</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="c1"># LOAD_MAT33(newmat,0,0,flipVec.v[0], 0,flipVec.v[1],0, flipVec.v[2],0,0)</span>
+                    <span class="n">newmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">flipVec</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">flipVec</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+                <span class="n">newval</span> <span class="o">=</span> <span class="n">getOrthoResidual</span><span class="p">(</span><span class="n">orig</span><span class="p">,</span> <span class="n">newmat</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">newval</span> <span class="o">&gt;</span> <span class="n">best</span><span class="p">:</span>
+                    <span class="n">best</span> <span class="o">=</span> <span class="n">newval</span>
+                    <span class="n">ret</span> <span class="o">=</span> <span class="n">newmat</span>
+            <span class="k">return</span> <span class="n">ret</span>
+
+        <span class="k">def</span> <span class="nf">setOrientVec</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+            <span class="c1"># Assumes isOrthoMat NOT computed on INVERSE, hence return INVERSE of solution...</span>
+            <span class="c1"># e.g. [-1,2,3] means reflect x axis, [2,1,3] means swap x and y dimensions</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="k">elif</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">ret</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ret</span>
+
+        <span class="k">def</span> <span class="nf">orthoOffsetArray</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">stepBytesPerVox</span><span class="p">):</span>
+            <span class="c1"># return lookup table of length dim with values incremented by stepBytesPerVox</span>
+            <span class="c1">#  e.g. if Dim=10 and stepBytes=2: 0,2,4..18, is stepBytes=-2 18,16,14...0</span>
+            <span class="c1"># size_t *lut= (size_t *)malloc(dim*sizeof(size_t));</span>
+            <span class="n">lut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">stepBytesPerVox</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">lut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lut</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">stepBytesPerVox</span> <span class="o">*</span> <span class="p">(</span><span class="n">dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+                    <span class="n">lut</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">lut</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">stepBytesPerVox</span>
+            <span class="k">return</span> <span class="n">lut</span>
+
+        <span class="k">def</span> <span class="nf">reOrientImg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">outDim</span><span class="p">,</span> <span class="n">outInc</span><span class="p">,</span> <span class="n">bytePerVox</span><span class="p">,</span> <span class="n">nvol</span><span class="p">):</span>
+            <span class="c1"># Reslice data to new orientation</span>
+            <span class="c1"># Generate look up tables</span>
+            <span class="n">xLUT</span> <span class="o">=</span> <span class="n">orthoOffsetArray</span><span class="p">(</span><span class="n">outDim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bytePerVox</span> <span class="o">*</span> <span class="n">outInc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">yLUT</span> <span class="o">=</span> <span class="n">orthoOffsetArray</span><span class="p">(</span><span class="n">outDim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">bytePerVox</span> <span class="o">*</span> <span class="n">outInc</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">zLUT</span> <span class="o">=</span> <span class="n">orthoOffsetArray</span><span class="p">(</span><span class="n">outDim</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">bytePerVox</span> <span class="o">*</span> <span class="n">outInc</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="c1"># Convert data</span>
+            <span class="c1"># number of voxels in spatial dimensions [1,2,3]</span>
+            <span class="c1"># bytePerVol = bytePerVox*outDim[0]*outDim[1]*outDim[2]</span>
+            <span class="c1"># o = 0  # output address</span>
+            <span class="c1"># inbuf = (uint8_t *) malloc(bytePerVol)  # we convert 1 volume at a time</span>
+            <span class="c1"># outbuf = (uint8_t *) img  # source image</span>
+            <span class="k">for</span> <span class="n">vol</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nvol</span><span class="p">):</span>  <span class="c1"># for each volume</span>
+                <span class="c1"># memcpy(&amp;inbuf[0], &amp;outbuf[vol*bytePerVol], bytePerVol)  # copy source volume</span>
+                <span class="n">inbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="n">vol</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outDim</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+                    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outDim</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outDim</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Has not verified adressing&#39;</span><span class="p">)</span>
+                            <span class="c1"># memcpy(&amp;outbuf[o], &amp;inbuf[xLUT[x]+yLUT[y]+zLUT[z]], bytePerVox)</span>
+                            <span class="n">img</span><span class="p">[</span><span class="n">vol</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">inbuf</span><span class="p">[</span><span class="n">xLUT</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">yLUT</span><span class="p">[</span><span class="n">y</span><span class="p">],</span> <span class="n">zLUT</span><span class="p">[</span><span class="n">z</span><span class="p">]]</span>
+                            <span class="c1"># o += bytePerVox</span>
+
+        <span class="k">def</span> <span class="nf">reOrient</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">orientVec</span><span class="p">,</span> <span class="n">orient</span><span class="p">,</span> <span class="n">minMM</span><span class="p">):</span>
+            <span class="c1"># e.g. [-1,2,3] means reflect x axis, [2,1,3] means swap x and y dimensions</span>
+
+            <span class="n">nvox</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">columns</span> <span class="o">*</span> <span class="n">img</span><span class="o">.</span><span class="n">rows</span> <span class="o">*</span> <span class="n">img</span><span class="o">.</span><span class="n">slices</span>
+            <span class="k">if</span> <span class="n">nvox</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">img</span>
+            <span class="n">outDim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">outInc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>  <span class="c1"># set dimensions, pixdim</span>
+                <span class="n">outDim</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">outInc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">outInc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">elif</span> <span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">outInc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">orientVec</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">outInc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">outInc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># flip</span>
+            <span class="n">nvol</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># convert all non-spatial volumes from source to destination</span>
+            <span class="k">for</span> <span class="n">vol</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="n">vol</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">nvol</span> <span class="o">=</span> <span class="n">nvol</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="n">vol</span><span class="p">]</span>
+            <span class="n">reOrientImg</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">outDim</span><span class="p">,</span> <span class="n">outInc</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">bitpix</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="n">nvol</span><span class="p">)</span>
+            <span class="c1"># now change the header....</span>
+            <span class="n">outPix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">h</span><span class="o">.</span><span class="n">pixdim</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span>
+                               <span class="n">h</span><span class="o">.</span><span class="n">pixdim</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span>
+                               <span class="n">h</span><span class="o">.</span><span class="n">pixdim</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">orientVec</span><span class="p">[</span><span class="mi">2</span><span class="p">])]])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">outDim</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">pixdim</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">outPix</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># mat44 s = sFormMat(h);</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_sform</span><span class="p">()</span>
+            <span class="c1"># mat33 mat; //computer transform</span>
+            <span class="c1"># LOAD_MAT33(mat, s.m[0][0],s.m[0][1],s.m[0][2],</span>
+            <span class="c1">#                      s.m[1][0],s.m[1][1],s.m[1][2],</span>
+            <span class="c1">#                      s.m[2][0],s.m[2][1],s.m[2][2]);</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">s</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># Computer transform</span>
+            <span class="c1"># mat = matMul33(  mat, orient);</span>
+            <span class="n">mat</span> <span class="o">=</span> <span class="n">mat</span> <span class="o">@</span> <span class="n">orient</span>
+            <span class="c1"># s = setMat44Vec(mat, minMM); //add offset</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">s</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">mat</span>
+            <span class="n">s</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">minMM</span>  <span class="c1"># Add offset</span>
+            <span class="c1"># mat2sForm(h,s);</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">set_sform</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="c1"># h-&gt;qform_code = h-&gt;sform_code; //apply to the quaternion as well</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">sform_code</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_sform</span><span class="p">(</span><span class="n">coded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># float dumdx, dumdy, dumdz;</span>
+            <span class="c1"># nifti_mat44_to_quatern(s, &amp;h-&gt;quatern_b, &amp;h-&gt;quatern_c, &amp;h-&gt;quatern_d,</span>
+            <span class="c1">#     &amp;h-&gt;qoffset_x, &amp;h-&gt;qoffset_y, &amp;h-&gt;qoffset_z,</span>
+            <span class="c1">#     &amp;dumdx, &amp;dumdy, &amp;dumdz,&amp;h-&gt;pixdim[0]) ;</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">set_qform</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">sform_code</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">img</span>
+
+        <span class="c1"># mat44 s = sFormMat(h);</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">get_sform</span><span class="p">()</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hdr</span>  <span class="c1"># TODO</span>
+        <span class="k">if</span> <span class="n">isMat44Canonical</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image in perfect alignment: no need to reorient&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">img</span>
+        <span class="c1"># vec3i  flipV;</span>
+        <span class="n">flipV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">minMM</span><span class="p">,</span> <span class="n">flipV</span> <span class="o">=</span> <span class="n">minCornerFlip</span><span class="p">(</span><span class="n">hdr</span><span class="p">)</span>
+        <span class="n">orient</span> <span class="o">=</span> <span class="n">getBestOrient</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">flipV</span><span class="p">)</span>
+        <span class="n">orientVec</span> <span class="o">=</span> <span class="n">setOrientVec</span><span class="p">(</span><span class="n">orient</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">orientVec</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">orientVec</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">orientVec</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Image already near best orthogonal alignment: no need to reorient&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">img</span>
+        <span class="n">is24</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">bitpix</span> <span class="o">==</span> <span class="mi">24</span><span class="p">:</span>  <span class="c1"># RGB stored as planar data. Treat as 3 8-bit slices</span>
+            <span class="k">return</span> <span class="n">img</span>
+            <span class="n">is24</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">bitpix</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">reOrient</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">orientVec</span><span class="p">,</span> <span class="n">orient</span><span class="p">,</span> <span class="n">minMM</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is24</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">bitpix</span> <span class="o">=</span> <span class="mi">24</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="mi">3</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;NewRotation= </span><span class="si">%d</span><span class="s2"> </span><span class="si">%d</span><span class="s2"> </span><span class="si">%d</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">orientVec</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">orientVec</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">orientVec</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;MinCorner= </span><span class="si">%.2f</span><span class="s2"> </span><span class="si">%.2f</span><span class="s2"> </span><span class="si">%.2f</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">minMM</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minMM</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">minMM</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">img</span>
+
+    <span class="k">def</span> <span class="nf">_nii_save_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">hdr</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_find_slice_direction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">affine</span><span class="p">,</span> <span class="n">normal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return slice direction</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">         None : unknown</span>
+<span class="sd">         1 : sag,</span>
+<span class="sd">         2 : cor</span>
+<span class="sd">         3 : axial</span>
+<span class="sd">         - : flipped</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">slice_direction</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+            <span class="n">slice_direction</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">slice_direction</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="c1"># pos = si.patientPosition(slice_direction)</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="mi">0</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">slice_direction</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="c1"># pos1v = nifti_vect44mat44_mul(x, affine)</span>
+        <span class="n">pos1v</span> <span class="o">=</span> <span class="n">x</span> <span class="o">@</span> <span class="n">affine</span>
+        <span class="n">pos1</span> <span class="o">=</span> <span class="n">pos1v</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">slice_direction</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Same direction? Note Python indices from 0</span>
+        <span class="n">flip</span> <span class="o">=</span> <span class="p">(</span><span class="n">pos</span> <span class="o">&gt;</span> <span class="n">affine</span><span class="p">[</span><span class="n">slice_direction</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span> <span class="o">!=</span> <span class="p">(</span><span class="n">pos1</span> <span class="o">&gt;</span> <span class="n">affine</span><span class="p">[</span><span class="n">slice_direction</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">flip</span><span class="p">:</span>
+            <span class="n">slice_direction</span> <span class="o">=</span> <span class="o">-</span> <span class="n">slice_direction</span>
+        <span class="k">return</span> <span class="n">slice_direction</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

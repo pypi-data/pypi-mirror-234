@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.apps.Siemens.draw_antialiased &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/jquery.js"></script>
+        <script src="../../../../../_static/underscore.js"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.imagedata.apps.Siemens.draw_antialiased</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.apps.Siemens.draw_antialiased</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Library to draw an antialiased line.</span>
+<span class="sd">  http://stackoverflow.com/questions/3122049/drawing-an-anti-aliased-line-with-thepython-imaging-library</span>
+<span class="sd">  https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm</span>
+
+<span class="sd">  https://yellowsplash.wordpress.com/2009/10/23/fast-antialiased-circles-and-ellipses-from-xiaolin-wus-concepts/</span>
+<span class="sd">  https://stackoverflow.com/questions/37589165/drawing-an-antialiased-circle-as-described-by-xaolin-wu#37714284</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">matplotlib.path</span> <span class="kn">import</span> <span class="n">Path</span>
+
+
+<div class="viewcode-block" id="draw_polygon_mask"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.draw_polygon_mask">[docs]</a><span class="k">def</span> <span class="nf">draw_polygon_mask</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a 2D mask [ny,nx] on canvas</span>
+
+<span class="sd">    Optionally, fill the polygon with the same colour.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        canvas: numpy array</span>
+<span class="sd">        points: polygon points (list of tuples (x,y)) (float)</span>
+<span class="sd">        colour: colour to draw (mask index) (int)</span>
+<span class="sd">        threshold: only pixels with an alpha &gt; threshold will be drawn (float, 0.0-1.0)</span>
+<span class="sd">        fill: whether to fill the circle (boolean)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># points_matrix = self.get_points_matrix(hdr)</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    print(&quot;polygon: points cm    &quot;, points)</span>
+<span class="sd">    print(&quot;polygon: points matrix&quot;, polygon)</span>
+<span class="sd">    print(&quot;polygon: colour %d fill&quot; % colour, fill)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Flag the voxels that will be in the mask</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+    <span class="c1"># Colour the voxels on the polygon with the True colour</span>
+    <span class="n">pn</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># Close the polygon</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points</span><span class="p">:</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">pn</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="n">draw_line_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">pn</span> <span class="o">=</span> <span class="n">p</span>
+    <span class="c1"># canvas.save(&quot;/tmp/polygon.png&quot;, &quot;PNG&quot;)</span>
+
+    <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
+        <span class="c1"># Colour the voxels inside the polygon with the True colour</span>
+        <span class="n">inside</span> <span class="o">=</span> <span class="n">point_in_polygon</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">inside</span><span class="p">)</span>
+    <span class="c1"># Set voxels in the mask to the given colour</span>
+    <span class="n">canvas</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">colour</span></div>
+
+
+<div class="viewcode-block" id="plot"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.plot">[docs]</a><span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Draws an anti-aliased pixel on a line.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">steep</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span>
+    <span class="c1"># if x &lt; canvas.shape[1] and y &lt; canvas.shape[0] and x &gt;= 0 and y &gt;= 0:</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">alpha</span> <span class="o">&gt;=</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">canvas</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">colour</span></div>
+
+
+<div class="viewcode-block" id="iround"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.iround">[docs]</a><span class="k">def</span> <span class="nf">iround</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Rounds x to the nearest integer.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ipart</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ipart"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.ipart">[docs]</a><span class="k">def</span> <span class="nf">ipart</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Floors x.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="fpart"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.fpart">[docs]</a><span class="k">def</span> <span class="nf">fpart</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the fractional part of x.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">x</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="rfpart"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.rfpart">[docs]</a><span class="k">def</span> <span class="nf">rfpart</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the 1 minus the fractional part of x.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">fpart</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="draw_line_mask"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.draw_line_mask">[docs]</a><span class="k">def</span> <span class="nf">draw_line_mask</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Draw line mask on NumPy array.</span>
+
+<span class="sd">    Apply the Xialon Wu anti-aliasing algorithm for drawing line.</span>
+<span class="sd">    Draw points only when the alpha blending is above a set threshold.</span>
+<span class="sd">    Only given colour value is drawn. Intended usage is as a mask index.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        canvas: numpy array (2D)</span>
+<span class="sd">        (x1,y1), (x2,y2): line end points (float)</span>
+<span class="sd">        colour: colour to draw (mask index) (int)</span>
+<span class="sd">        threshold: only pixels with an alpha &gt; threshold will be drawn (float, 0.0-1.0)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    if not dx:</span>
+<span class="sd">        # Vertical line</span>
+<span class="sd">        draw_line((x1, y1, x2, y2), fill=col, width=1)</span>
+<span class="sd">        return</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span>
+    <span class="n">steep</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">steep</span><span class="p">:</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x1</span>
+        <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">y2</span><span class="p">,</span> <span class="n">x2</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span>
+    <span class="k">if</span> <span class="n">x2</span> <span class="o">&lt;</span> <span class="n">x1</span><span class="p">:</span>
+        <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x1</span>
+        <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">y2</span><span class="p">,</span> <span class="n">y1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dy</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+        <span class="n">gradient</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="c1"># Handle first endpoint</span>
+    <span class="n">xend</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
+    <span class="n">yend</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">+</span> <span class="n">gradient</span> <span class="o">*</span> <span class="p">(</span><span class="n">xend</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span>
+    <span class="n">xgap</span> <span class="o">=</span> <span class="n">rfpart</span><span class="p">(</span><span class="n">x1</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">xpxl1</span> <span class="o">=</span> <span class="n">xend</span>  <span class="c1"># this will be used in the main loop</span>
+    <span class="n">ypxl1</span> <span class="o">=</span> <span class="n">ipart</span><span class="p">(</span><span class="n">yend</span><span class="p">)</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">xpxl1</span><span class="p">,</span> <span class="n">ypxl1</span><span class="p">,</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">rfpart</span><span class="p">(</span><span class="n">yend</span><span class="p">)</span> <span class="o">*</span> <span class="n">xgap</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">xpxl1</span><span class="p">,</span> <span class="n">ypxl1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">fpart</span><span class="p">(</span><span class="n">yend</span><span class="p">)</span> <span class="o">*</span> <span class="n">xgap</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">intery</span> <span class="o">=</span> <span class="n">yend</span> <span class="o">+</span> <span class="n">gradient</span>  <span class="c1"># first y-intersection for the main loop</span>
+
+    <span class="c1"># handle second endpoint</span>
+    <span class="n">xend</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span>
+    <span class="n">yend</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">gradient</span> <span class="o">*</span> <span class="p">(</span><span class="n">xend</span> <span class="o">-</span> <span class="n">x2</span><span class="p">)</span>
+    <span class="n">xgap</span> <span class="o">=</span> <span class="n">fpart</span><span class="p">(</span><span class="n">x2</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">xpxl2</span> <span class="o">=</span> <span class="n">xend</span>  <span class="c1"># this will be used in the main loop</span>
+    <span class="n">ypxl2</span> <span class="o">=</span> <span class="n">ipart</span><span class="p">(</span><span class="n">yend</span><span class="p">)</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">xpxl2</span><span class="p">,</span> <span class="n">ypxl2</span><span class="p">,</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">rfpart</span><span class="p">(</span><span class="n">yend</span><span class="p">)</span> <span class="o">*</span> <span class="n">xgap</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">xpxl2</span><span class="p">,</span> <span class="n">ypxl2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">fpart</span><span class="p">(</span><span class="n">yend</span><span class="p">)</span> <span class="o">*</span> <span class="n">xgap</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+
+    <span class="c1"># main loop</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">xpxl1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">xpxl2</span><span class="p">)):</span>
+        <span class="n">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ipart</span><span class="p">(</span><span class="n">intery</span><span class="p">),</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">rfpart</span><span class="p">(</span><span class="n">intery</span><span class="p">),</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">plot</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ipart</span><span class="p">(</span><span class="n">intery</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">steep</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">fpart</span><span class="p">(</span><span class="n">intery</span><span class="p">),</span> <span class="n">threshold</span><span class="p">)</span>
+        <span class="n">intery</span> <span class="o">=</span> <span class="n">intery</span> <span class="o">+</span> <span class="n">gradient</span></div>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">def draw_simple_line(x1, y1, x2, y2, fill=col, width=1):</span>
+<span class="sd">    if x1 != x2:</span>
+<span class="sd">        # Horizontal line</span>
+<span class="sd">        assert y1 == y2, &quot;Horizontal line only.&quot;</span>
+<span class="sd">        if x1 &gt; x2: x2,x1 = x1,x2</span>
+<span class="sd">        x = x1</span>
+<span class="sd">        while x &lt;= x2:</span>
+<span class="sd">            plot(canvas, x, y1</span>
+<span class="sd">            x += 1</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="point_in_polygon"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.point_in_polygon">[docs]</a><span class="k">def</span> <span class="nf">point_in_polygon</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">polygon</span><span class="p">):</span>
+    <span class="n">ny</span><span class="p">,</span> <span class="n">nx</span> <span class="o">=</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="c1"># Create vertex coordinates for each grid cell...</span>
+    <span class="c1"># (&lt;0,0&gt; is at the top left of the grid in this system)</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nx</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ny</span><span class="p">))</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">contains_points</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">ny</span><span class="p">,</span> <span class="n">nx</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">grid</span></div>
+
+
+<div class="viewcode-block" id="draw_circle_mask"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.draw_circle_mask">[docs]</a><span class="k">def</span> <span class="nf">draw_circle_mask</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">outer_radius</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Draw circle mask on NumPy array.</span>
+
+<span class="sd">    Apply algorithm for drawing anti-aliased circle.</span>
+<span class="sd">    Draw points only when the alpha blending is above a set threshold.</span>
+<span class="sd">    Only given _colour value is drawn. Intended usage is as a mask index.</span>
+
+<span class="sd">    Optionally, fill the circle with the same _colour.</span>
+
+<span class="sd">    Reference:</span>
+<span class="sd">      https://stackoverflow.com/questions/37589165/drawing-an-antialiased-circle-as-described-by-xaolin-wu#37714284</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        canvas: numpy array</span>
+<span class="sd">        center_x, center_y: center of circle in array coordinates (int)</span>
+<span class="sd">        outer_radius: radius of circle in array dimension (float)</span>
+<span class="sd">        colour: _colour to draw (mask index) (int)</span>
+<span class="sd">        threshold: only pixels with an alpha &gt; threshold will be drawn (float, 0.0-1.0)</span>
+<span class="sd">        fill: whether to fill the circle (boolean)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    def _draw_8point(_canvas, _cx, _cy, x, y, _colour):</span>
+<span class="sd">        # Draw the 8 symmetries</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cy, _cx, y, x)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cy + y,  _cx - x)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cy + y,  _cx + x)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cy - y,  _cx - x)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cy - y,  _cx + x)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cx + x,  _cy - y)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cx + x,  _cy + y)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cx - x,  _cy - y)</span>
+<span class="sd">        print(&quot;_draw_8point&quot;, _cx - x,  _cy + y)</span>
+
+<span class="sd">        _canvas[_cy + y,  _cx - x] = _colour</span>
+<span class="sd">        _canvas[_cy + y,  _cx + x] = _colour</span>
+<span class="sd">        _canvas[_cy - y,  _cx - x] = _colour</span>
+<span class="sd">        _canvas[_cy - y,  _cx + x] = _colour</span>
+<span class="sd">        _canvas[_cx + x,  _cy - y] = _colour</span>
+<span class="sd">        _canvas[_cx + x,  _cy + y] = _colour</span>
+<span class="sd">        _canvas[_cx - x,  _cy - y] = _colour</span>
+<span class="sd">        _canvas[_cx - x,  _cy + y] = _colour</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_draw_8point</span><span class="p">(</span><span class="n">_canvas</span><span class="p">,</span> <span class="n">_cx</span><span class="p">,</span> <span class="n">_cy</span><span class="p">,</span> <span class="n">_i</span><span class="p">,</span> <span class="n">_j</span><span class="p">,</span> <span class="n">_colour</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Draws 8 points, one on each octant.&quot;&quot;&quot;</span>
+        <span class="c1"># Square symmetry</span>
+        <span class="n">local_coord</span> <span class="o">=</span> <span class="p">[(</span><span class="n">_i</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">k</span> <span class="o">%</span> <span class="mi">2</span><span class="p">),</span> <span class="n">_j</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">k</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+        <span class="c1"># Diagonal symmetry</span>
+        <span class="n">local_coord</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">j_</span><span class="p">,</span> <span class="n">i_</span><span class="p">)</span> <span class="k">for</span> <span class="n">i_</span><span class="p">,</span> <span class="n">j_</span> <span class="ow">in</span> <span class="n">local_coord</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i_</span><span class="p">,</span> <span class="n">j_</span> <span class="ow">in</span> <span class="n">local_coord</span><span class="p">:</span>
+            <span class="c1"># print(&quot;_draw_8point&quot;, _cy + j_,  _cx + i_)</span>
+            <span class="n">_canvas</span><span class="p">[</span><span class="n">_cy</span> <span class="o">+</span> <span class="n">j_</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">+</span> <span class="n">i_</span><span class="p">]</span> <span class="o">=</span> <span class="n">_colour</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">outer_radius</span>
+    <span class="n">last_fade_amount</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># fade_amount = 0</span>
+
+    <span class="n">max_opaque</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">j</span><span class="p">:</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">outer_radius</span> <span class="o">*</span> <span class="n">outer_radius</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">fade_amount</span> <span class="o">=</span> <span class="n">max_opaque</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">height</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fade_amount</span> <span class="o">&lt;</span> <span class="n">last_fade_amount</span><span class="p">:</span>
+            <span class="c1"># Opaqueness reset so drop down a row.</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">last_fade_amount</span> <span class="o">=</span> <span class="n">fade_amount</span>
+
+        <span class="c1"># We&#39;re fading out the current _j row, and fading in the next one down.</span>
+        <span class="k">if</span> <span class="n">max_opaque</span> <span class="o">-</span> <span class="n">fade_amount</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">_draw_8point</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">colour</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fade_amount</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">_draw_8point</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">colour</span><span class="p">)</span>
+
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
+        <span class="n">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">colour</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="draw_ellipse_mask"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.draw_ellipse_mask">[docs]</a><span class="k">def</span> <span class="nf">draw_ellipse_mask</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">outer_radius</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Draw ellipse mask on NumPy array.</span>
+
+<span class="sd">    Apply algorithm for drawing anti-aliased ellipse.</span>
+<span class="sd">    Draw points only when the alpha blending is above a set threshold.</span>
+<span class="sd">    Only given _colour value is drawn. Intended usage is as a mask index.</span>
+
+<span class="sd">    Optionally, fill the ellipse with the same _colour.</span>
+
+<span class="sd">    Reference:</span>
+<span class="sd">      https://yellowsplash.wordpress.com/2009/10/23/fast-antialiased-circles-and-ellipses-from-xiaolin-wus-concepts/</span>
+<span class="sd">      https://stackoverflow.com/questions/37589165/drawing-an-antialiased-circle-as-described-by-xaolin-wu#37714284</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        canvas: numpy array</span>
+<span class="sd">        center_x, center_y: center of ellipse in array coordinates (int)</span>
+<span class="sd">        outer_radius: radius of circle in array dimension (float)</span>
+<span class="sd">        colour: colour to draw (mask index) (int)</span>
+<span class="sd">        threshold: only pixels with an alpha &gt; threshold will be drawn (float, 0.0-1.0)</span>
+<span class="sd">        fill: whether to fill the circle (boolean)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_draw_4point</span><span class="p">(</span><span class="n">_canvas</span><span class="p">,</span> <span class="n">_cx</span><span class="p">,</span> <span class="n">_cy</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">_colour</span><span class="p">):</span>
+        <span class="c1"># Draw the 8 symmetries</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;_draw_8point&quot;</span><span class="p">,</span> <span class="n">_cy</span><span class="p">,</span> <span class="n">_cx</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;_draw_8point&quot;</span><span class="p">,</span> <span class="n">_cy</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;_draw_8point&quot;</span><span class="p">,</span> <span class="n">_cy</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;_draw_8point&quot;</span><span class="p">,</span> <span class="n">_cy</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;_draw_8point&quot;</span><span class="p">,</span> <span class="n">_cy</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span>
+
+        <span class="n">_canvas</span><span class="p">[</span><span class="n">_cy</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">-</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_colour</span>
+        <span class="n">_canvas</span><span class="p">[</span><span class="n">_cy</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">+</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_colour</span>
+        <span class="n">_canvas</span><span class="p">[</span><span class="n">_cy</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">-</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_colour</span>
+        <span class="n">_canvas</span><span class="p">[</span><span class="n">_cy</span> <span class="o">-</span> <span class="n">y</span><span class="p">,</span> <span class="n">_cx</span> <span class="o">+</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">_colour</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="n">outer_radius</span>
+    <span class="n">last_fade_amount</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># fade_amount = 0</span>
+
+    <span class="n">max_opaque</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">j</span><span class="p">:</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">outer_radius</span> <span class="o">*</span> <span class="n">outer_radius</span> <span class="o">-</span> <span class="n">i</span> <span class="o">*</span> <span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">fade_amount</span> <span class="o">=</span> <span class="n">max_opaque</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">height</span><span class="p">)</span> <span class="o">-</span> <span class="n">height</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">fade_amount</span> <span class="o">&lt;</span> <span class="n">last_fade_amount</span><span class="p">:</span>
+            <span class="c1"># Opaqueness reset so drop down a row.</span>
+            <span class="n">j</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="n">last_fade_amount</span> <span class="o">=</span> <span class="n">fade_amount</span>
+
+        <span class="c1"># We&#39;re fading out the current j row, and fading in the next one down.</span>
+        <span class="k">if</span> <span class="n">max_opaque</span> <span class="o">-</span> <span class="n">fade_amount</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">_draw_4point</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">colour</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fade_amount</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">:</span>
+            <span class="n">_draw_4point</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">colour</span><span class="p">)</span>
+
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">fill</span><span class="p">:</span>
+        <span class="n">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">center_x</span><span class="p">,</span> <span class="n">center_y</span><span class="p">,</span> <span class="n">colour</span><span class="p">,</span> <span class="n">colour</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="flood_fill4"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.flood_fill4">[docs]</a><span class="k">def</span> <span class="nf">flood_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">old_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">canvas</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">==</span> <span class="n">old_value</span><span class="p">:</span>
+            <span class="n">canvas</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
+            <span class="c1"># Attempt to propagate in each of four directions</span>
+            <span class="n">flood_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">old_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span>
+            <span class="n">flood_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">old_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span>
+            <span class="n">flood_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">old_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span>
+            <span class="n">flood_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">old_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="boundary_fill4"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.draw_antialiased.boundary_fill4">[docs]</a><span class="k">def</span> <span class="nf">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span><span class="p">,</span> <span class="n">boundary_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">canvas</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">canvas</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">!=</span> <span class="n">boundary_value</span> <span class="ow">and</span> <span class="n">canvas</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">!=</span> <span class="n">fill_value</span><span class="p">:</span>
+            <span class="n">canvas</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">fill_value</span>
+            <span class="n">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">boundary_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span>
+            <span class="n">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">boundary_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span>
+            <span class="n">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">boundary_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span>
+            <span class="n">boundary_fill4</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">boundary_value</span><span class="p">,</span> <span class="n">fill_value</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

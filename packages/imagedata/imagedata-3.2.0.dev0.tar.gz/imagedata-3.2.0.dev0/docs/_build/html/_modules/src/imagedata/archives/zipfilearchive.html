@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.archives.zipfilearchive &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../archives.html">src.imagedata.archives</a></li>
+      <li class="breadcrumb-item active">src.imagedata.archives.zipfilearchive</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.archives.zipfilearchive</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read/Write files from a zipfile</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2018-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+
+<span class="kn">from</span> <span class="nn">.abstractarchive</span> <span class="kn">import</span> <span class="n">AbstractArchive</span><span class="p">,</span> <span class="n">Member</span>
+<span class="kn">from</span> <span class="nn">..transports</span> <span class="kn">import</span> <span class="n">Transport</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="list_files"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.list_files">[docs]</a><span class="k">def</span> <span class="nf">list_files</span><span class="p">(</span><span class="n">startpath</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">os</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">startpath</span><span class="p">):</span>
+        <span class="n">level</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">startpath</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">indent</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">level</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indent</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">root</span><span class="p">)))</span>
+        <span class="n">subindent</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">level</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">subindent</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="WriteFileIO"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.WriteFileIO">[docs]</a><span class="k">class</span> <span class="nc">WriteFileIO</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">FileIO</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Local object making sure the new file is written to zip</span>
+<span class="sd">    archive before closing.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">member</span><span class="p">,</span> <span class="n">local_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Make a WriteFileIO object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            archive: ZipFile object</span>
+<span class="sd">            member: member of the zip archive</span>
+<span class="sd">            local_file: local temporary file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WriteFileIO</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">local_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wb&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span> <span class="o">=</span> <span class="n">archive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__filename</span> <span class="o">=</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span> <span class="o">=</span> <span class="n">local_file</span>
+
+<div class="viewcode-block" id="WriteFileIO.close"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.WriteFileIO.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close file, copy it to archive, then delete local file.&quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive.WriteFileIO.close:&quot;</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">WriteFileIO</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive.WriteFileIO.close: zip </span><span class="si">%s</span><span class="s2"> as </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__filename</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__filename</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive.WriteFileIO.close: remove </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enter context manager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive.WriteFileIO __enter__: </span><span class="si">%s</span><span class="s2"> </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__local_file</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Leave context manager:</span>
+<span class="sd">        Copy file to zip archive.</span>
+<span class="sd">        Remove local file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ZipfileArchive"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive">[docs]</a><span class="k">class</span> <span class="nc">ZipfileArchive</span><span class="p">(</span><span class="n">AbstractArchive</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read/write image files from a zipfile.&quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;zip&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Read and write image files from a zipfile.&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.1.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+    <span class="n">mimetypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;application/zip&#39;</span><span class="p">,</span> <span class="s1">&#39;application/x-zip-compressed&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Internal data</span>
+    <span class="c1"># self.__transport: file transport object.</span>
+    <span class="c1"># self.__fp: zip file object in transport object</span>
+    <span class="c1"># self.__archive: ZipFile object.</span>
+    <span class="c1"># self.__path: path to the zip file using given transport.</span>
+    <span class="c1"># self.__mode: &#39;r&#39; or &#39;w&#39;: read or write access.</span>
+    <span class="c1"># self.__tmpdir: Local directory where zip file is unpacked.</span>
+    <span class="c1"># self.__files: dict of files in the zip archive.</span>
+    <span class="c1">#   key is path name in the zip archive.</span>
+    <span class="c1">#   value is a Member object:</span>
+    <span class="c1">#     info[&#39;unpacked&#39;]: whether the file is unpacked in tmpdir (boolean)</span>
+    <span class="c1">#     filename: path name in the zip archive</span>
+    <span class="c1">#     fh: file handle when open, otherwise None</span>
+    <span class="c1">#     local_file: local filename of unpacked file</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ZipfileArchive</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mimetypes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="n">opts</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive.__init__ url: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s1">&#39;[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+            <span class="c1"># Windows: Parse without x:, then reattach drive letter</span>
+            <span class="n">urldict</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">url</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">urldict</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">urldict</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">urldict</span><span class="o">.</span><span class="n">path</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">urldict</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">urldict</span><span class="o">.</span><span class="n">netloc</span>
+        <span class="k">if</span> <span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="k">elif</span> <span class="n">url</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;url not given&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Determine transport from url</span>
+            <span class="c1"># netloc = urldict.netloc</span>
+            <span class="c1"># netloc = urldict.path</span>
+            <span class="c1"># netloc: where is zipfile</span>
+            <span class="c1"># self.__path: zipfile name</span>
+            <span class="k">if</span> <span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;xnat&#39;</span><span class="p">:</span>
+                <span class="n">netloc</span> <span class="o">=</span> <span class="n">urldict</span><span class="o">.</span><span class="n">netloc</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">__path</span>
+                <span class="c1"># self.__path = urldict.path</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.__init__: scheme: </span><span class="si">%s</span><span class="s1">, netloc: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="n">netloc</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span> <span class="o">=</span> <span class="n">Transport</span><span class="p">(</span>
+                    <span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                    <span class="n">netloc</span><span class="o">=</span><span class="n">urldict</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+                    <span class="n">root</span><span class="o">=</span><span class="n">urldict</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                    <span class="n">read_directory_only</span><span class="o">=</span><span class="n">read_directory_only</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># netloc, self.__path = os.path.split(urldict.path)</span>
+                <span class="n">netloc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.__init__: scheme: </span><span class="si">%s</span><span class="s1">, netloc: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                             <span class="p">(</span><span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="n">netloc</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span> <span class="o">=</span> <span class="n">Transport</span><span class="p">(</span>
+                    <span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                    <span class="n">root</span><span class="o">=</span><span class="n">netloc</span><span class="p">,</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                    <span class="n">read_directory_only</span><span class="o">=</span><span class="n">read_directory_only</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__files</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive path: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__mode</span> <span class="o">+</span> <span class="s2">&quot;b&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive self.__fp: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__fp</span><span class="p">)))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive open zipfile mode </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__fp</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">,</span>
+            <span class="n">compression</span><span class="o">=</span><span class="n">zipfile</span><span class="o">.</span><span class="n">ZIP_DEFLATED</span><span class="p">)</span>
+        <span class="c1"># Extract the archive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__tmpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Extract zipfile </span><span class="si">{}</span><span class="s2"> to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__tmpdir</span><span class="p">))</span>
+        <span class="c1"># Get filelist in self.__files</span>
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">namelist</span><span class="p">():</span>
+            <span class="c1"># norm_fname = os.path.normpath(fname)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_is_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">getinfo</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>  <span class="c1"># Works with Python &gt;= 3.6</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">_is_dir</span> <span class="o">=</span> <span class="n">fname</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+                <span class="k">raise</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_dir</span><span class="p">:</span>
+                <span class="c1"># member = {&#39;unpacked&#39;: False, &#39;name&#39;: norm_fname, &#39;fh&#39;: None}</span>
+                <span class="c1"># self.__files[norm_fname] = member</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span> <span class="o">=</span> <span class="n">Member</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span>
+                                             <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;unpacked&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+                                             <span class="p">)</span>
+        <span class="c1"># logger.debug(&quot;ZipFile self.__files: {}&quot;.format(self.__files))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Underlying transport plugin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span>
+
+<div class="viewcode-block" id="ZipfileArchive.use_query"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.use_query">[docs]</a>    <span class="k">def</span> <span class="nf">use_query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Does the plugin need the ?query part of the url?&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.getnames"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.getnames">[docs]</a>    <span class="k">def</span> <span class="nf">getnames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get name list of the members.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files: List or single str of filename matches</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The members as a list of their names.</span>
+<span class="sd">                It has the same order as the members of the archive.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: When no matching file is found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">files</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="n">files</span>
+        <span class="k">if</span> <span class="n">wanted_files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>\
+                <span class="p">(</span><span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">wanted_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">)):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.getnames: found files </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.getnames: member </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">required_filename</span> <span class="ow">in</span> <span class="n">wanted_files</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.getnames: required </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">required_filename</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">required_filename</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+                        <span class="n">required_filename</span> <span class="o">=</span> <span class="n">required_filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">required_filename</span><span class="p">):</span>
+                        <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">required_filename</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">):</span>
+                        <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.getnames: found files </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">filelist</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.basename"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.basename">[docs]</a>    <span class="k">def</span> <span class="nf">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filehandle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Basename of file.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            if archive.basename(filehandle) == &quot;DICOMDIR&quot;:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filehandle: reference to member object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Basename of file: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filehandle</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_longest_prefix</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">required</span><span class="p">):</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">folder</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="c1"># new_prefix = os.path.commonprefix([folder, os.path.normpath(required)])</span>
+            <span class="n">new_prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">commonprefix</span><span class="p">([</span><span class="n">folder</span><span class="p">,</span> <span class="n">required</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_prefix</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="n">new_prefix</span>
+        <span class="k">return</span> <span class="n">prefix</span>
+
+    <span class="k">def</span> <span class="nf">_filehandle_in_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filehandle</span><span class="p">):</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">filehandle</span><span class="o">.</span><span class="n">filename</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_longest_prefix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__files</span>
+
+<div class="viewcode-block" id="ZipfileArchive.open"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open file.</span>
+
+<span class="sd">        Extract the member object to local file space.</span>
+<span class="sd">        This is necessary to allow the seek() operation on open files.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member (Member): Handle to file.</span>
+<span class="sd">            mode (str): Open mode.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            An IO object for the member.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: when file is not found.</span>
+<span class="sd">            PermissionError: When archive is read-only.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">member</span> <span class="o">=</span> <span class="n">Member</span><span class="p">(</span><span class="n">member</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.open: mode </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.open: member </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+                    <span class="s1">&#39;No such file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">local_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span>
+                <span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__tmpdir</span><span class="p">)</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;unpacked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">fh</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">member</span><span class="o">.</span><span class="n">local_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">member</span><span class="o">.</span><span class="n">fh</span>
+        <span class="k">elif</span> <span class="n">mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;w&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
+                    <span class="s1">&#39;Cannot write on an archive opened for read&#39;</span><span class="p">)</span>
+            <span class="c1"># Open local file for write</span>
+            <span class="n">local_file</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">(</span><span class="n">delete</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.open: mode </span><span class="si">%s</span><span class="s1"> file </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">mode</span><span class="p">,</span> <span class="n">local_file</span><span class="p">))</span>
+            <span class="n">fh</span> <span class="o">=</span> <span class="n">WriteFileIO</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="p">,</span> <span class="n">member</span><span class="p">,</span> <span class="n">local_file</span><span class="p">)</span>
+            <span class="c1"># Update info on member file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">Member</span><span class="p">(</span><span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
+                                                   <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;unpacked&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                                                   <span class="n">fh</span><span class="o">=</span><span class="n">fh</span><span class="p">,</span>
+                                                   <span class="n">local_file</span><span class="o">=</span><span class="n">local_file</span>
+                                                   <span class="p">)</span>
+            <span class="k">return</span> <span class="n">fh</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown mode &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.getmembers"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.getmembers">[docs]</a>    <span class="k">def</span> <span class="nf">getmembers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the members of the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files: List of filename matches</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The members of the archive as a list of Filehandles.</span>
+<span class="sd">                The list same order as the members in the archive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">files</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="n">files</span>
+        <span class="k">if</span> <span class="n">wanted_files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> \
+                <span class="p">(</span><span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span>
+                        <span class="n">wanted_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># logger.debug(&#39;ZipfileArchive.getmembers: files {}&#39;.format(len(files)))</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">wanted_files</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">file</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+                        <span class="n">file</span> <span class="o">=</span> <span class="n">file</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">wanted_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">files</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+                    <span class="n">files</span> <span class="o">=</span> <span class="n">files</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">wanted_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="n">files</span><span class="p">,))</span>
+            <span class="c1"># logger.debug(&#39;ZipfileArchive.getmembers: wanted_files {}&#39;.format(len(wanted_files)))</span>
+            <span class="n">found_match</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">))]</span>
+            <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">required_filename</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">required_filename</span><span class="p">):</span>
+                        <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">filename</span><span class="p">])</span>
+                        <span class="n">found_match</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">elif</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">required_filename</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">):</span>
+                        <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">filename</span><span class="p">])</span>
+                        <span class="n">found_match</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Verify that all wanted files are found</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">found</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">found_match</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">wanted_files</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">files</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">filelist</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.to_localfile"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.to_localfile">[docs]</a>    <span class="k">def</span> <span class="nf">to_localfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Access a member object through a local file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: handle to member file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            filename to file guaranteed to be local.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: when file is not found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filehandle_in_files</span><span class="p">(</span><span class="n">member</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">member</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;unpacked&#39;</span><span class="p">]:</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">local_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="n">member</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s1">&#39;unpacked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">member</span>
+        <span class="k">return</span> <span class="n">member</span><span class="o">.</span><span class="n">local_file</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.add_localfile"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.add_localfile">[docs]</a>    <span class="k">def</span> <span class="nf">add_localfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_file</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a local file to the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            local_file: named local file</span>
+<span class="sd">            filename: filename in the archive</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot write on an archive opened for read&#39;</span><span class="p">)</span>
+        <span class="n">member</span> <span class="o">=</span> <span class="n">Member</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;unpacked&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                        <span class="n">local_file</span><span class="o">=</span><span class="n">local_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">local_file</span><span class="p">,</span> <span class="n">arcname</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.add_localfile: local </span><span class="si">{}</span><span class="s1"> as </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">local_file</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">member</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">namelist</span><span class="p">()))</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.writedata"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.writedata">[docs]</a>    <span class="k">def</span> <span class="nf">writedata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write data to a named file in the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename: named file in the archive</span>
+<span class="sd">            data: data to write</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">PermissionError</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot write on an archive opened for read&#39;</span><span class="p">)</span>
+        <span class="n">member</span> <span class="o">=</span> <span class="n">Member</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;unpacked&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__files</span><span class="p">[</span><span class="n">filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">member</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.close"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close zip file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__archive</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__fp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__tmpdir</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.close: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__tmpdir</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ZipfileArchive.is_file"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.zipfilearchive.ZipfileArchive.is_file">[docs]</a>    <span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine whether the named file is a single file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: file member</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            whether named file is a single file (bool)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__files</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filehandle_in_files</span><span class="p">(</span><span class="n">member</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enter context manager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZipfileArchive __enter__: </span><span class="si">{}</span><span class="s2"> mode </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Leave context manager, cleaning up any open files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ZipfileArchive.__exit__:&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

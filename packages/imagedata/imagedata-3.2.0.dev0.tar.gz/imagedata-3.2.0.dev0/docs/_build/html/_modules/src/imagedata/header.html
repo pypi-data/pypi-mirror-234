@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.header &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.imagedata.header</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.header</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Image series header</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pydicom.uid</span>
+<span class="kn">import</span> <span class="nn">pydicom.dataset</span>
+<span class="kn">import</span> <span class="nn">pydicom.datadict</span>
+<span class="kn">from</span> <span class="nn">.formats</span> <span class="kn">import</span> <span class="n">INPUT_ORDER_NONE</span>
+<span class="kn">from</span> <span class="nn">.formats.dicomlib.uid</span> <span class="kn">import</span> <span class="n">get_uid</span>
+<span class="kn">from</span> <span class="nn">.axis</span> <span class="kn">import</span> <span class="n">UniformAxis</span><span class="p">,</span> <span class="n">UniformLengthAxis</span><span class="p">,</span> <span class="n">VariableAxis</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">header_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;input_format&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;modality&#39;</span><span class="p">,</span> <span class="s1">&#39;laterality&#39;</span><span class="p">,</span> <span class="s1">&#39;protocolName&#39;</span><span class="p">,</span> <span class="s1">&#39;bodyPartExamined&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;seriesDate&#39;</span><span class="p">,</span> <span class="s1">&#39;seriesTime&#39;</span><span class="p">,</span> <span class="s1">&#39;seriesNumber&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;seriesDescription&#39;</span><span class="p">,</span> <span class="s1">&#39;imageType&#39;</span><span class="p">,</span> <span class="s1">&#39;frameOfReferenceUID&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;studyInstanceUID&#39;</span><span class="p">,</span> <span class="s1">&#39;studyID&#39;</span><span class="p">,</span> <span class="s1">&#39;seriesInstanceUID&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;SOPClassUID&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;accessionNumber&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;patientName&#39;</span><span class="p">,</span> <span class="s1">&#39;patientID&#39;</span><span class="p">,</span> <span class="s1">&#39;patientBirthDate&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;tags&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;input_sort&#39;</span><span class="p">]</span>
+<span class="n">geometry_tags</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spacing&#39;</span><span class="p">,</span> <span class="s1">&#39;imagePositions&#39;</span><span class="p">,</span> <span class="s1">&#39;orientation&#39;</span><span class="p">,</span> <span class="s1">&#39;transformationMatrix&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;patientPosition&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;photometricInterpretation&#39;</span><span class="p">,</span> <span class="s1">&#39;axes&#39;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Header"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header">[docs]</a><span class="k">class</span> <span class="nc">Header</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Image header object.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        input_order</span>
+<span class="sd">        sort_on</span>
+<span class="sd">        input_format</span>
+<span class="sd">        DicomHeaderDict</span>
+<span class="sd">        seriesNumber</span>
+<span class="sd">        seriesDescription</span>
+<span class="sd">        imageType</span>
+<span class="sd">        frameOfReferenceUID</span>
+<span class="sd">        studyInstanceUID</span>
+<span class="sd">        studyID</span>
+<span class="sd">        seriesInstanceUID</span>
+<span class="sd">        SOPClassUID</span>
+<span class="sd">        accessionNumber</span>
+<span class="sd">        patientName</span>
+<span class="sd">        patientID</span>
+<span class="sd">        patientBirthDate</span>
+<span class="sd">        input_sort</span>
+<span class="sd">        # sliceLocations</span>
+<span class="sd">        tags</span>
+<span class="sd">        spacing</span>
+<span class="sd">        imagePositions</span>
+<span class="sd">        orientation</span>
+<span class="sd">        transformationMatrix</span>
+<span class="sd">        photometricInterpretation</span>
+<span class="sd">        axes</span>
+<span class="sd">        __uid_generator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize image header attributes to defaults</span>
+
+<span class="sd">        This is created in Series.__array_finalize__() and Series.__new__()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_order</span> <span class="o">=</span> <span class="n">INPUT_ORDER_NONE</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_on</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">header_tags</span> <span class="o">+</span> <span class="n">geometry_tags</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__uid_generator</span> <span class="o">=</span> <span class="n">get_uid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">studyInstanceUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_uid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seriesInstanceUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_uid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frameOfReferenceUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_uid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SOPClassUID</span> <span class="o">=</span> <span class="s1">&#39;1.2.840.10008.5.1.4.1.1.7&#39;</span>  <span class="c1"># Secondary Capture Image Storage</span>
+        <span class="c1"># pydicom.datadict.DicomDictionary</span>
+        <span class="c1"># from pydicom.uid import UID</span>
+        <span class="c1"># UID.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DicomHeaderDict</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">header_tags</span> <span class="o">+</span> <span class="n">geometry_tags</span><span class="p">:</span>
+            <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{0!r}</span><span class="s2">: </span><span class="si">{1!r}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="s2">&quot;{&quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;}&quot;</span>
+
+<div class="viewcode-block" id="Header.new_uid"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header.new_uid">[docs]</a>    <span class="k">def</span> <span class="nf">new_uid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Return the next available UID from the UID generator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__uid_generator</span><span class="o">.</span><span class="fm">__next__</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Header.set_default_values"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header.set_default_values">[docs]</a>    <span class="k">def</span> <span class="nf">set_default_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Set default values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DicomHeaderDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># self.axes = copy.copy(axes)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orientation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DicomHeaderDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">tags</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Construct new axes, copy to avoid crosstalk to template axes</span>
+        <span class="k">for</span> <span class="n">_axis</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">:</span>
+            <span class="n">axis</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">_axis</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;slice&#39;</span><span class="p">:</span>
+                <span class="n">slices</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;row&#39;</span><span class="p">,</span> <span class="s1">&#39;column&#39;</span><span class="p">,</span> <span class="s1">&#39;rgb&#39;</span><span class="p">}:</span>
+                <span class="n">tags</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;unknown&#39;</span><span class="p">:</span>
+                    <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_order</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">imagePositions</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_slice</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">tag</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">empty_ds</span><span class="p">())</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span></div>
+
+    <span class="c1"># noinspection PyPep8Naming</span>
+<div class="viewcode-block" id="Header.empty_ds"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header.empty_ds">[docs]</a>    <span class="k">def</span> <span class="nf">empty_ds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="n">SOPInsUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_uid</span><span class="p">()</span>
+
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+
+        <span class="c1"># Add the data elements</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">StudyInstanceUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyInstanceUID</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">StudyID</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">SeriesInstanceUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seriesInstanceUID</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">SOPClassUID</span> <span class="o">=</span> <span class="s1">&#39;1.2.840.10008.5.1.4.1.1.7&#39;</span>  <span class="c1"># Secondary Capture Image Storage</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">SOPInstanceUID</span> <span class="o">=</span> <span class="n">SOPInsUID</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">FrameOfReferenceUID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frameOfReferenceUID</span>
+
+        <span class="n">ds</span><span class="o">.</span><span class="n">PatientName</span> <span class="o">=</span> <span class="s1">&#39;ANONYMOUS&#39;</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">PatientID</span> <span class="o">=</span> <span class="s1">&#39;ANONYMOUS&#39;</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">PatientBirthDate</span> <span class="o">=</span> <span class="s1">&#39;00000000&#39;</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">AccessionNumber</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">Modality</span> <span class="o">=</span> <span class="s1">&#39;SC&#39;</span>
+
+        <span class="k">return</span> <span class="n">ds</span></div>
+
+<div class="viewcode-block" id="Header.add_template"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header.add_template">[docs]</a>    <span class="k">def</span> <span class="nf">add_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Add template data to this header.</span>
+<span class="sd">        Does not add geometry data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            template: template header. Can be None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">template</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">header_tags</span> <span class="ow">and</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;seriesInstanceUID&#39;</span><span class="p">,</span> <span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="s1">&#39;input_format&#39;</span><span class="p">]:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;keep_uid&#39;</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="s1">&#39;seriesInstanceUID&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;seriesInstanceUID&#39;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Make sure tags are set last. Template may be None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__set_tags_from_template</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+        <span class="c1"># Make sure DicomHeaderDict is set last</span>
+        <span class="k">if</span> <span class="n">template</span><span class="o">.</span><span class="n">DicomHeaderDict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">DicomHeaderDict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__make_DicomHeaderDict_from_template</span><span class="p">(</span>
+                <span class="n">template</span><span class="o">.</span><span class="n">DicomHeaderDict</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__get_tags_and_slices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># -&gt; tuple[int, int]:</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">tags</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;slice&#39;</span><span class="p">:</span>
+                    <span class="n">slices</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;row&#39;</span><span class="p">,</span> <span class="s1">&#39;column&#39;</span><span class="p">,</span> <span class="s1">&#39;rgb&#39;</span><span class="p">}:</span>
+                    <span class="n">tags</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span>
+
+    <span class="k">def</span> <span class="nf">__make_DicomHeaderDict_from_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Shallow copy of template Dataset.</span>
+<span class="sd">        When modifying attributes with Series.setDicomAttribute,</span>
+<span class="sd">        new attribute will be set to avoid cross-talk.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">tag_increment</span><span class="p">(</span><span class="n">tuple_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tuple_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">tuple_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">tuple_list</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Difference of last to tags</span>
+
+        <span class="n">DicomHeaderDict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">default_header</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_tags_and_slices</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+            <span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">next_tag</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">template_tag</span> <span class="o">=</span> <span class="n">template</span><span class="p">[</span><span class="n">_slice</span><span class="p">][</span><span class="n">tag</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+                    <span class="c1"># template_tag = tag</span>
+                    <span class="n">template_tag</span> <span class="o">=</span> <span class="n">next_tag</span>
+                <span class="n">next_tag</span> <span class="o">=</span> <span class="n">template_tag</span> <span class="o">+</span> <span class="n">tag_increment</span><span class="p">(</span><span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">])</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">templateHeader</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">template</span><span class="p">[</span><span class="n">_slice</span><span class="p">][</span><span class="n">tag</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+                    <span class="n">templateHeader</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">default_header</span><span class="p">)</span>
+                <span class="n">DicomHeaderDict</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">template_tag</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">templateHeader</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">DicomHeaderDict</span>
+
+    <span class="c1"># def __copy_DicomHeaderDict(self, source, filename=None):</span>
+    <span class="c1">#     sop_ins_uid = self.new_uid()</span>
+    <span class="c1">#</span>
+    <span class="c1">#     # Populate required values for file meta information</span>
+    <span class="c1">#     file_meta = pydicom.dataset.FileMetaDataset()</span>
+    <span class="c1">#     # file_meta.MediaStorageSOPClassUID = template.SOPClassUID</span>
+    <span class="c1">#     file_meta.MediaStorageSOPInstanceUID = sop_ins_uid</span>
+    <span class="c1">#     # file_meta.ImplementationClassUID = &quot;%s.1&quot; % obj.root</span>
+    <span class="c1">#     file_meta.TransferSyntaxUID = pydicom.uid.ImplicitVRLittleEndian</span>
+    <span class="c1">#</span>
+    <span class="c1">#     ds = pydicom.dataset.FileDataset(</span>
+    <span class="c1">#         filename,</span>
+    <span class="c1">#         {},</span>
+    <span class="c1">#         file_meta=file_meta,</span>
+    <span class="c1">#         preamble=b&quot;\0&quot; * 128</span>
+    <span class="c1">#     )</span>
+    <span class="c1">#</span>
+    <span class="c1">#     for element in source.iterall():</span>
+    <span class="c1">#         if element.tag == 0x7fe00010:</span>
+    <span class="c1">#             continue  # Do not copy pixel data, will be added later</span>
+    <span class="c1">#         # ds.add(copy.copy(element))</span>
+    <span class="c1">#         ds.add(element)</span>
+    <span class="c1">#     ds.SOPInstanceUID = sop_ins_uid</span>
+    <span class="c1">#</span>
+    <span class="c1">#     return ds</span>
+
+    <span class="k">def</span> <span class="nf">__set_tags_from_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Set tags from template tags, alternatively from template axes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            template (Header): template header</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            self.tags</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: when no tag axis is found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_last_tags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_tags_and_slices</span><span class="p">()</span>
+        <span class="n">new_tag_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__construct_tags_from_axis</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+            <span class="n">_tags</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">]),</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">template_tag_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">template_tag_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                <span class="n">template_tag_list</span> <span class="o">=</span> <span class="n">_last_tags</span>
+            <span class="c1"># Use original template tags when possible, otherwise calculated tags</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">template_tag_list</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="n">_tags</span> <span class="o">=</span> <span class="n">template_tag_list</span><span class="p">[:</span><span class="n">tags</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">_tags</span> <span class="o">=</span> <span class="n">new_tag_list</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">_tags</span><span class="p">)</span>
+            <span class="n">_last_tags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="n">_slice</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__construct_tags_from_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Construct tag_list from self and template.</span>
+<span class="sd">        Extend tag_list when template has to few tags.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self.input_order</span>
+<span class="sd">            template (Header): template header</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tag_list (np.ndarray): calculated tags</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: when no tag axis is found</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">tag_increment</span><span class="p">(</span><span class="n">tag_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tag_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mf">1.0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">tag_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tag_list</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># Difference of last to tags</span>
+
+        <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_tags_and_slices</span><span class="p">()</span>
+        <span class="n">tag_list</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_order</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+            <span class="c1"># There will be one tag only per slice</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">tag_list</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tag_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tag_list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span>\
+                    <span class="s2">&quot;__construct_tags_from_axis not np.ndarray (is </span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span>
+                        <span class="n">tag_list</span>
+                    <span class="p">))</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">tag_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="k">return</span> <span class="n">tag_list</span>
+
+        <span class="c1"># Multiple tags</span>
+        <span class="c1"># new_tags = [template.axes[0][_].values[0] for _ in range(len(template.axes[0]))]</span>
+        <span class="n">new_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_tags</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="n">new_tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_tags</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">tag_increment</span><span class="p">(</span><span class="n">new_tags</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_tags</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Header.add_geometry"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header.add_geometry">[docs]</a>    <span class="k">def</span> <span class="nf">add_geometry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add geometry data to obj header.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: header or dict</span>
+<span class="sd">            geometry: geometry template header or dict. Can be None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">geometry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">geometry</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">geometry_tags</span> <span class="ow">and</span> <span class="n">attr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;tags&#39;</span><span class="p">,</span> <span class="s1">&#39;axes&#39;</span><span class="p">,</span> <span class="s1">&#39;input_format&#39;</span><span class="p">]:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="c1"># Make sure axes are set last. Geometry may be None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__set_axes_from_template</span><span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="s1">&#39;axes&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__set_axes_from_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geometry_axes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ndim</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">geometry_axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">geometry_axes</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndim</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">axis</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">geometry_axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">geometry_axis</span> <span class="ow">in</span> <span class="n">geometry_axes</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">geometry_axis</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                        <span class="c1"># Ensure geometry_axis length agree with matrix size</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__adjust_axis_from_template</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">geometry_axis</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__adjust_axis_from_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">template</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct new axis from template, retaining axis length.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># UniformLengthAxis is subclassed from UniformAxis, so check first</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">UniformLengthAxis</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                     <span class="n">template</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                                     <span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">),</span>
+                                     <span class="n">template</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">UniformAxis</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">UniformAxis</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                               <span class="n">template</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+                               <span class="n">template</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">template</span><span class="o">.</span><span class="n">step</span><span class="p">,</span>  <span class="c1"># stop</span>
+                               <span class="n">template</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">VariableAxis</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">VariableAxis</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                                <span class="n">template</span><span class="o">.</span><span class="n">values</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">axis</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown template axis class: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="nb">type</span><span class="p">(</span><span class="n">template</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="Header.find_axis"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.Header.find_axis">[docs]</a>    <span class="k">def</span> <span class="nf">find_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find axis with given name</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: Axis name to search for</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            axis object with given name</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: when no axis object has given name</span>
+
+<span class="sd">        Usage:</span>
+<span class="sd">            &gt;&gt;&gt; from imagedata.series import Series</span>
+<span class="sd">            &gt;&gt;&gt; si = Series(np.array([3, 3, 3]))</span>
+<span class="sd">            &gt;&gt;&gt; axis = si.find_axis(&#39;slice&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">axis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">axis</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">axis</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No axis object with name </span><span class="si">%s</span><span class="s2"> exist&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="deepcopy_DicomHeaderDict"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.header.deepcopy_DicomHeaderDict">[docs]</a><span class="k">def</span> <span class="nf">deepcopy_DicomHeaderDict</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deepcopy contents of DicomHeaderDict.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">tag</span><span class="p">,</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">tag</span> <span class="o">==</span> <span class="mh">0x7fe00010</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># Do not copy pixel data, will be added later</span>
+            <span class="n">ds</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+            <span class="c1"># ds.add(element)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># sop_ins_uid = obj.new_uid()</span>
+
+        <span class="c1"># Populate required values for file meta information</span>
+        <span class="n">file_meta</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">FileMetaDataset</span><span class="p">()</span>
+        <span class="c1"># file_meta.MediaStorageSOPClassUID = template.SOPClassUID</span>
+        <span class="c1"># file_meta.MediaStorageSOPInstanceUID = sop_ins_uid</span>
+        <span class="c1"># file_meta.ImplementationClassUID = &quot;%s.1&quot; % obj.root</span>
+        <span class="n">file_meta</span><span class="o">.</span><span class="n">TransferSyntaxUID</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">uid</span><span class="o">.</span><span class="n">ImplicitVRLittleEndian</span>
+
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">pydicom</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">FileDataset</span><span class="p">(</span>
+            <span class="n">filename</span><span class="p">,</span>
+            <span class="p">{},</span>
+            <span class="n">file_meta</span><span class="o">=</span><span class="n">file_meta</span><span class="p">,</span>
+            <span class="n">preamble</span><span class="o">=</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\0</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">128</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">iterall</span><span class="p">():</span>
+            <span class="c1"># print(&#39;deepcopy_DicomHeaderDict: element {} {}&#39;.format(</span>
+            <span class="c1">#    element.tag,</span>
+            <span class="c1">#    get_size(element)))</span>
+            <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">tag</span> <span class="o">==</span> <span class="mh">0x7fe00010</span><span class="p">:</span>
+                <span class="k">continue</span>  <span class="c1"># Do not copy pixel data, will be added later</span>
+            <span class="n">ds</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+            <span class="c1"># ds.add(element)</span>
+
+    <span class="c1"># print(&#39;deepcopy_DicomHeaderDict: {} -&gt; {}&#39;.format(</span>
+    <span class="c1">#    get_size(source),</span>
+    <span class="c1">#    get_size(ds)</span>
+    <span class="c1"># ))</span>
+    <span class="k">return</span> <span class="n">ds</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>imagedata.formats.abstractplugin &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">imagedata.formats.abstractplugin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for imagedata.formats.abstractplugin</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Abstract class for image formats.</span>
+
+<span class="sd">Defines generic functions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4</span>
+<span class="c1"># Copyright (c) 2017-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>  <span class="c1"># , abstractproperty</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">NotImageError</span><span class="p">,</span> <span class="n">shape_to_str</span><span class="p">,</span> <span class="n">INPUT_ORDER_TIME</span>
+<span class="kn">from</span> <span class="nn">..header</span> <span class="kn">import</span> <span class="n">Header</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="NoOtherInstance"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.NoOtherInstance">[docs]</a><span class="k">class</span> <span class="nc">NoOtherInstance</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="AbstractPlugin"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin">[docs]</a><span class="k">class</span> <span class="nc">AbstractPlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class definition for imagedata format plugins.</span>
+<span class="sd">    Plugins must be a subclass of AbstractPlugin and</span>
+<span class="sd">    must define the atttributes set in __init__() and</span>
+<span class="sd">    the following methods:</span>
+
+<span class="sd">    read() method</span>
+<span class="sd">    write_3d_numpy() method</span>
+<span class="sd">    write_4d_numpy() method</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        input_order</span>
+<span class="sd">        tags</span>
+<span class="sd">        transformationMatrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">plugin_type</span> <span class="o">=</span> <span class="s1">&#39;format&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">authors</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">url</span><span class="p">):</span>
+        <span class="nb">object</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__authors</span> <span class="o">=</span> <span class="n">authors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__url</span> <span class="o">=</span> <span class="n">url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_order</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin name</span>
+
+<span class="sd">        Single word string describing the image format.</span>
+<span class="sd">        Typical names: dicom, nifti, itk.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin description</span>
+
+<span class="sd">        Single line string describing the image format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__description</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">authors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin authors</span>
+
+<span class="sd">        Multi-line string naming the author(s) of the plugin.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__authors</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin version</span>
+
+<span class="sd">        String giving the plugin version.</span>
+<span class="sd">        Version scheme: 1.0.0</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__version</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plugin URL</span>
+
+<span class="sd">        URL string to the site of the plugin or the author(s).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__url</span>
+
+<div class="viewcode-block" id="AbstractPlugin.read"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sources</span><span class="p">,</span> <span class="n">pre_hdr</span><span class="p">,</span> <span class="n">input_order</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read image data</span>
+
+<span class="sd">        Generic version for images which will be sorted on their filenames.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sources: list of sources to image data</span>
+<span class="sd">            pre_hdr: DICOM template</span>
+<span class="sd">            input_order: sort order</span>
+<span class="sd">            opts: Input options (dict)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of</span>
+<span class="sd">                - hdr: Header dict</span>
+<span class="sd">                - si[tag,slice,rows,columns]: numpy array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">hdr</span> <span class="o">=</span> <span class="n">Header</span><span class="p">()</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">input_format</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">=</span> <span class="n">input_order</span>
+
+        <span class="c1"># image_list: list of tuples (hdr,si)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AbstractPlugin.read: sources </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sources</span><span class="p">))</span>
+        <span class="n">image_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AbstractPlugin.read: source: </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">source</span><span class="p">))</span>
+            <span class="n">archive</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+            <span class="n">scan_files</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]</span>
+            <span class="c1"># if scan_files is None or len(scan_files) == 0:</span>
+            <span class="c1">#     scan_files = archive.getnames()</span>
+            <span class="c1"># logger.debug(&quot;AbstractPlugin.read: scan_files {}&quot;.format(scan_files))</span>
+            <span class="k">for</span> <span class="n">file_handle</span> <span class="ow">in</span> <span class="n">archive</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">scan_files</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AbstractPlugin.read: file_handle </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_need_local_file</span><span class="p">():</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AbstractPlugin.read: need local file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">file_handle</span><span class="o">.</span><span class="n">filename</span><span class="p">))</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">archive</span><span class="o">.</span><span class="n">to_localfile</span><span class="p">(</span><span class="n">file_handle</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AbstractPlugin.read: local file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                    <span class="n">info</span><span class="p">,</span> <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_image</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">f</span> <span class="o">=</span> <span class="n">archive</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_handle</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;AbstractPlugin.read: file </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">info</span><span class="p">,</span> <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_image</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">hdr</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+                        <span class="k">raise</span>
+                    <span class="k">finally</span><span class="p">:</span>
+                        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="c1"># info is None when no image was read</span>
+                <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">image_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">info</span><span class="p">,</span> <span class="n">si</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No image data read&#39;</span><span class="p">)</span>
+        <span class="n">info</span><span class="p">,</span> <span class="n">si</span> <span class="o">=</span> <span class="n">image_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reduce_shape</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: reduced si </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">image_list</span><span class="p">),)</span> <span class="o">+</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: shape </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">info</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">image_list</span><span class="p">:</span>
+            <span class="c1"># logger.debug(&#39;AbstractPlugin.read: img {} si {} {}&#39;.format(</span>
+            <span class="c1">#     img.shape, si.shape, si.dtype))</span>
+            <span class="n">si</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">img</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: si </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+        <span class="c1"># Simplify shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reduce_shape</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: reduced si </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+        <span class="n">_shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">hdr</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="n">_shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: color&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: _shape </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_shape</span><span class="p">))</span>
+        <span class="n">_ndim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_shape</span><span class="p">)</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">_ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">nz</span> <span class="o">=</span> <span class="n">_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: slices </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nz</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: calling _set_tags&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_tags</span><span class="p">(</span><span class="n">image_list</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">)</span>
+        <span class="c1"># logger.debug(&#39;AbstractPlugin.read: return  _set_tags: {}&#39;.format(hdr))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape read: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape_to_str</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+
+        <span class="c1"># Add any DICOM template</span>
+        <span class="k">if</span> <span class="n">pre_hdr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pre_hdr</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin.read: hdr </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hdr</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span></div>
+
+    <span class="k">def</span> <span class="nf">_need_local_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do the plugin need access to local files?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Boolean</span>
+<span class="sd">                - True: The plugin need access to local filenames</span>
+<span class="sd">                - False: The plugin can access files given by an open file handle</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_read_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">hdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read image data from given file handle</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            f: file handle or filename (depending on self._need_local_file)</span>
+<span class="sd">            opts: Input options (dict)</span>
+<span class="sd">            hdr: Header dict</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of</span>
+<span class="sd">                hdr: Header dict</span>
+<span class="sd">                    Return values:</span>
+<span class="sd">                        - info: Internal data for the plugin</span>
+<span class="sd">                          None if the given file should not be included (e.g. raw file)</span>
+<span class="sd">                si: numpy array (multi-dimensional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_set_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_list</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set header tags.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            image_list: list with (info,img) tuples</span>
+<span class="sd">            hdr: Header dict</span>
+<span class="sd">            si: numpy array (multi-dimensional)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hdr: Header dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractPlugin.write_3d_numpy"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.write_3d_numpy">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">write_3d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 3D Series image</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            si[slice,rows,columns]: Series array</span>
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractPlugin.write_4d_numpy"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.write_4d_numpy">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">write_4d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 4D Series image</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            si[tag,slice,rows,columns]: Series array</span>
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="AbstractPlugin.getTimeline"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.getTimeline">[docs]</a>    <span class="k">def</span> <span class="nf">getTimeline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get timeline</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Timeline in seconds, as numpy array of floats</span>
+<span class="sd">                Delta time is given as seconds. First image is t=0.</span>
+<span class="sd">                Length of array is number of tags.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: tags for dataset is not time tags</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_TIME</span><span class="p">:</span>
+            <span class="n">timeline</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                <span class="n">timeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">timeline</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No timeline tags are available. Input order: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">input_order</span><span class="p">))</span></div>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    def getQform(self):</span>
+<span class="sd">        &quot;&quot;&quot;Get Nifti version of the transformation matrix, aka qform</span>
+
+<span class="sd">        Input:</span>
+<span class="sd">        - self.spacing</span>
+<span class="sd">        - self.imagePositions</span>
+<span class="sd">        - self.orientation</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        - transformation matrix as numpy array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+<span class="sd">        def normalize_column(x,row):</span>
+<span class="sd">            val = np.vdot(x, x)</span>
+
+<span class="sd">            if val &gt; 0:</span>
+<span class="sd">                x = x / math.sqrt(val)</span>
+<span class="sd">            else:</span>
+<span class="sd">                shape = x.shape</span>
+<span class="sd">                x = np.array([0., 0., 0.])</span>
+<span class="sd">                x[row]=1</span>
+<span class="sd">                x.shape = shape</span>
+<span class="sd">            return x</span>
+
+<span class="sd">        #debug = None</span>
+<span class="sd">        debug = True</span>
+
+<span class="sd">        ds,dr,dc    = self.spacing</span>
+<span class="sd">        z,y,x       = self.imagePositions[0]</span>
+<span class="sd">        slices      = len(self.imagePositions)</span>
+<span class="sd">        T0          = self.imagePositions[0]</span>
+<span class="sd">        Tn          = self.imagePositions[slices-1]</span>
+<span class="sd">        orient      = self.orientation</span>
+<span class="sd">        #print(&quot;ds,dr,dc={},{},{}&quot;.format(ds,dr,dc))</span>
+<span class="sd">        #print(&quot;z ,y ,x ={},{},{}&quot;.format(z,y,x))</span>
+
+<span class="sd">        q = np.eye(4)</span>
+<span class="sd">        # Set column 3 and row 3 to zeros, except [3,3]</span>
+<span class="sd">        colr=np.array([[orient[3]], [orient[4]], [orient[5]]])</span>
+<span class="sd">        colc=np.array([[orient[0]], [orient[1]], [orient[2]]])</span>
+<span class="sd">        colr = normalize_column(colr,0)</span>
+<span class="sd">        colc = normalize_column(colc,1)</span>
+<span class="sd">        k=np.cross(colr, colc, axis=0)</span>
+
+<span class="sd">        q[:3, :3] = np.hstack((colr, colc, k))</span>
+<span class="sd">        if debug:</span>
+<span class="sd">            logger.debug(&quot;q&quot;)</span>
+<span class="sd">            logger.debug( q)</span>
+
+<span class="sd">        if debug:</span>
+<span class="sd">            logger.debug(&quot;determinant(q) {}&quot;.format(np.linalg.det(q)))</span>
+<span class="sd">        if np.linalg.det(q) &lt; 0:</span>
+<span class="sd">            q[:3,2] = -q[:3,2]</span>
+
+<span class="sd">        # Scale matrix</span>
+<span class="sd">        diagVox = np.eye(3)</span>
+<span class="sd">        diagVox[0,0] = dc</span>
+<span class="sd">        diagVox[1,1] = dr</span>
+<span class="sd">        diagVox[2,2] = ds</span>
+<span class="sd">        if debug:</span>
+<span class="sd">            logger.debug(&quot;diagVox&quot;)</span>
+<span class="sd">            logger.debug( diagVox)</span>
+<span class="sd">            logger.debug(&quot;q without scaling {}&quot;.format(q.dtype))</span>
+<span class="sd">            logger.debug( q)</span>
+<span class="sd">        q[:3,:3] = np.dot(q[:3,:3],diagVox)</span>
+<span class="sd">        if debug:</span>
+<span class="sd">            logger.debug(&quot;q with scaling {}&quot;.format(q.dtype))</span>
+<span class="sd">            logger.debug( q)</span>
+
+<span class="sd">        # Add translations</span>
+<span class="sd">        q[0,3] = x; q[1,3] = y; q[2,3] = z       # pos x,y,z</span>
+<span class="sd">        if debug:</span>
+<span class="sd">            logger.debug(&quot;q with translations&quot;)</span>
+<span class="sd">            logger.debug( q)</span>
+<span class="sd">        # q now equals dicom_to_patient in spm_dicom_convert</span>
+
+<span class="sd">        return q</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    def setQform(self, A):</span>
+<span class="sd">        &quot;&quot;&quot;Set transformationMatrix from Nifti affine A.&quot;&quot;&quot;</span>
+<span class="sd">        #print(&quot;setQform:  input\n{}&quot;.format(A))</span>
+<span class="sd">        M=np.eye(4)</span>
+<span class="sd">        M[:3,0]=A[2::-1,2]</span>
+<span class="sd">        M[:3,1]=A[2::-1,0]</span>
+<span class="sd">        M[:3,2]=A[2::-1,1]</span>
+<span class="sd">        M[:3,3]=A[2::-1,3]</span>
+<span class="sd">        #print(&quot;setQform: output\n{}&quot;.format(M))</span>
+<span class="sd">        self.transformationMatrix=M</span>
+<span class="sd">        return</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+<div class="viewcode-block" id="AbstractPlugin.getPositionForVoxel"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.getPositionForVoxel">[docs]</a>    <span class="k">def</span> <span class="nf">getPositionForVoxel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">transformation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get patient position for center of given voxel r</span>
+
+<span class="sd">        Use Patient Position and Image Orientation to calculate world</span>
+<span class="sd">        coordinates for given voxel</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            r: (z,y,x) of voxel in voxel coordinates as numpy.array</span>
+<span class="sd">            transformation: transformation matrix when different from self.transformationMatrix</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (z,y,x) of voxel in world coordinates (mm) as numpy.array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">transformation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">transformation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span>
+        <span class="c1"># q = self.getTransformationMatrix()</span>
+
+        <span class="c1"># V = np.array([[r[2]], [r[1]], [r[0]], [1]])  # V is [x,y,z,1]</span>
+
+        <span class="n">newpos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">transformation</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">r</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+
+        <span class="c1"># return np.array([newpos[2,0],newpos[1,0],newpos[0,0]])   # z,y,x</span>
+        <span class="k">return</span> <span class="n">newpos</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="AbstractPlugin.getVoxelForPosition"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.getVoxelForPosition">[docs]</a>    <span class="k">def</span> <span class="nf">getVoxelForPosition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">transformation</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Get voxel for given patient position p</span>
+
+<span class="sd">        Use Patient Position and Image Orientation to calculate world</span>
+<span class="sd">        coordinates for given voxel</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            p: (z,y,x) of voxel in world coordinates (mm) as numpy.array</span>
+<span class="sd">            transformation: transformation matrix when different from self.transformationMatrix</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            (z,y,x) of voxel in voxel coordinates as numpy.array</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">transformation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">transformation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformationMatrix</span>
+        <span class="c1"># q = self.getTransformationMatrix()</span>
+
+        <span class="c1"># V = np.array([[p[2]], [p[1]], [p[0]], [1]])    # V is [x,y,z,1]</span>
+
+        <span class="n">qinv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">transformation</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">qinv</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">p</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+
+        <span class="c1"># z,y,x</span>
+        <span class="c1"># return np.array([int(r[2,0]+0.5),int(r[1,0]+0.5),int(r[0,0]+0.5)], dtype=int)</span>
+        <span class="c1"># return int(r+0.5)[:3]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">r</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)[:</span><span class="mi">3</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="AbstractPlugin.replace_geometry_attributes"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.abstractplugin.AbstractPlugin.replace_geometry_attributes">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">replace_geometry_attributes</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">gim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Replace geometry attributes in image with values from gim</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">im</span><span class="o">.</span><span class="n">SliceLocation</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">SliceLocation</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">ImagePositionPatient</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">ImagePositionPatient</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">ImageOrientationPatient</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">ImageOrientationPatient</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">FrameOfReferenceUID</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">FrameOfReferenceUID</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">PositionReferenceIndicator</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">PositionReferenceIndicator</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">SliceThickness</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">SliceThickness</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">im</span><span class="o">.</span><span class="n">SpacingBetweenSlices</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">SpacingBetweenSlices</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">AcquisitionMatrix</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">AcquisitionMatrix</span>
+        <span class="n">im</span><span class="o">.</span><span class="n">PixelSpacing</span> <span class="o">=</span> <span class="n">gim</span><span class="o">.</span><span class="n">PixelSpacing</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_reduce_shape</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reduce shape when leading shape(s) are 1.</span>
+
+<span class="sd">        Will not reduce to less than 2-dimensional image.</span>
+<span class="sd">        Also reduce axes when reducing shape.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            si[...]: Series array</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: tags for dataset is not time tags</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Color image?</span>
+        <span class="n">mindim</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">mindim</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">while</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="n">mindim</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">si</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+    <span class="k">def</span> <span class="nf">_reorder_to_dicom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reorder data to internal DICOM format.</span>
+
+<span class="sd">        Swap axes, except for rows and columns.</span>
+
+<span class="sd">        5D:</span>
+<span class="sd">        data  order: data[rows,columns,slices,tags,d5]</span>
+<span class="sd">        DICOM order: si  [d5,tags,slices,rows,columns]</span>
+
+<span class="sd">        4D:</span>
+<span class="sd">        data  order: data[rows,columns,slices,tags]</span>
+<span class="sd">        DICOM order: si  [tags,slices,rows,columns]</span>
+
+<span class="sd">        3D:</span>
+<span class="sd">        data  order: data[rows,columns,slices]</span>
+<span class="sd">        DICOM order: si  [slices,rows,columns]</span>
+
+<span class="sd">        2D:</span>
+<span class="sd">        data  order: data[rows,columns]</span>
+<span class="sd">        DICOM order: si  [rows,columns]</span>
+
+<span class="sd">        flip: Whether rows and columns are swapped.</span>
+<span class="sd">        flipud: Whether matrix is transposed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin._reorder_to_dicom: shape in </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">d5</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">d5</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d5</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                        <span class="n">si</span><span class="p">[</span><span class="n">d</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">d</span><span class="p">],</span>
+                                                                      <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+                        <span class="c1"># if flip:</span>
+                        <span class="c1">#    si[d,tag,slice,:,:] = \</span>
+                        <span class="c1">#    (data[:,:,slice,tag,d]).T</span>
+                        <span class="c1">#    #np.fliplr(data[:,:,slice,tag,d]).T</span>
+                        <span class="c1"># else:</span>
+                        <span class="c1">#    si[d,tag,slice,:,:] = data[:,:,slice,tag,d]</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">tags</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">tags</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+                <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                    <span class="n">si</span><span class="p">[</span><span class="n">tag</span><span class="p">,</span> <span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">tag</span><span class="p">],</span>
+                                                               <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+                    <span class="c1"># if flip:</span>
+                    <span class="c1">#    si[tag,slice,:,:] = (data[:,:,slice,tag]).T</span>
+                    <span class="c1">#    #si[tag,slice,:,:] = np.fliplr(data[:,:,slice,tag]).T</span>
+                    <span class="c1"># else:</span>
+                    <span class="c1">#    si[tag,slice,:,:] = data[:,:,slice,tag]</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">slices</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">slices</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                <span class="n">si</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">slice</span><span class="p">],</span> <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+                <span class="c1"># if flip:</span>
+                <span class="c1">#    si[slice,:,:] = (data[:,:,slice]).T</span>
+                <span class="c1">#    #si[slice,:,:] = np.fliplr(data[:,:,slice]).T</span>
+                <span class="c1"># else:</span>
+                <span class="c1">#    si[slice,:,:] = data[:,:,slice]</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">si</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[:],</span> <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+            <span class="c1"># if flip:</span>
+            <span class="c1">#    si[:] = (data[:]).T</span>
+            <span class="c1">#    #si[:] = np.fliplr(data[:]).T</span>
+            <span class="c1"># else:</span>
+            <span class="c1">#    si[:] = data[:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Dimension </span><span class="si">%d</span><span class="s1"> is not implemented&#39;</span> <span class="o">%</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin._reorder_to_dicom: shape out </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">si</span>
+
+    <span class="k">def</span> <span class="nf">_reorder_from_dicom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reorder data from internal DICOM format.</span>
+
+<span class="sd">        Swap axes, except for rows and columns.</span>
+
+<span class="sd">        5D:</span>
+<span class="sd">        DICOM  order: data[d5,tags,slices,rows,columns]</span>
+<span class="sd">        return order: si  [rows,columns,slices,tags,d5]</span>
+
+<span class="sd">        4D:</span>
+<span class="sd">        DICOM  order: data[tags,slices,rows,columns]</span>
+<span class="sd">        return order: si  [rows,columns,slices,tags]</span>
+
+<span class="sd">        3D:</span>
+<span class="sd">        DICOM  order: data[slices,rows,columns]</span>
+<span class="sd">        return order: si  [rows,columns,slices]</span>
+
+<span class="sd">        2D:</span>
+<span class="sd">        DICOM  order: data[rows,columns]</span>
+<span class="sd">        return order: si [rows,columns]</span>
+
+<span class="sd">        flip: Whether rows and columns are swapped.</span>
+<span class="sd">        flipud: Whether matrix is transposed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin._reorder_from_dicom: shape in </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="n">d5</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">d5</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d5</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                        <span class="n">si</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">d</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span>
+                                                                      <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+                        <span class="c1"># if flip:</span>
+                        <span class="c1">#    si[:,:,slice,tag,d] = \</span>
+                        <span class="c1">#    np.fliplr(data[d,tag,slice,:,:]).T</span>
+                        <span class="c1"># else:</span>
+                        <span class="c1">#    si[:,:,slice,tag,d] = data[d,tag,slice,:,:]</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">tags</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">slices</span><span class="p">,</span> <span class="n">tags</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+                <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                    <span class="n">si</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">slice</span><span class="p">,</span> <span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">tag</span><span class="p">,</span> <span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span>
+                                                               <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+                    <span class="c1"># if flip:</span>
+                    <span class="c1">#    si[:,:,slice,tag] = np.fliplr(data[tag,slice,:,:]).T</span>
+                    <span class="c1"># else:</span>
+                    <span class="c1">#    si[:,:,slice,tag] = data[tag,slice,:,:]</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">slices</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">slices</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">slices</span><span class="p">):</span>
+                <span class="n">si</span><span class="p">[:,</span> <span class="p">:,</span> <span class="nb">slice</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+                <span class="c1"># if flip:</span>
+                <span class="c1">#    si[:,:,slice] = np.fliplr(data[slice,:,:]).T</span>
+                <span class="c1"># else:</span>
+                <span class="c1">#    si[:,:,slice] = data[slice,:,:]</span>
+        <span class="k">elif</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="n">flipud</span><span class="p">:</span>
+                <span class="n">rows</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span><span class="p">,</span> <span class="n">rows</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="n">si</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">flip</span><span class="o">=</span><span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="o">=</span><span class="n">flipud</span><span class="p">)</span>
+            <span class="c1"># if flip:</span>
+            <span class="c1">#    si[:] = np.fliplr(data[:]).T</span>
+            <span class="c1"># else:</span>
+            <span class="c1">#    si[:] = data[:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Dimension </span><span class="si">%d</span><span class="s1"> is not implemented&#39;</span> <span class="o">%</span> <span class="n">data</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;AbstractPlugin._reorder_from_dicom: shape out </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">si</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_reorder_slice</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">flip</span><span class="p">,</span> <span class="n">flipud</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">flip</span> <span class="ow">and</span> <span class="n">flipud</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">elif</span> <span class="n">flip</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">fliplr</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">flipud</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">data</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>imagedata.readdata &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">imagedata.readdata</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for imagedata.readdata</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read/Write image files, calling appropriate transport, archive and format plugins</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2013-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">mimetypes</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span>
+<span class="kn">from</span> <span class="nn">.formats</span> <span class="kn">import</span> <span class="n">INPUT_ORDER_NONE</span><span class="p">,</span> <span class="n">input_order_to_str</span><span class="p">,</span> <span class="n">find_plugin</span><span class="p">,</span> <span class="n">get_plugins_list</span>
+<span class="kn">from</span> <span class="nn">.formats</span> <span class="kn">import</span> <span class="n">CannotSort</span><span class="p">,</span> <span class="n">NotImageError</span><span class="p">,</span> <span class="n">UnknownInputError</span><span class="p">,</span> <span class="n">WriteNotImplemented</span>
+<span class="kn">from</span> <span class="nn">.transports</span> <span class="kn">import</span> <span class="n">RootIsNotDirectory</span>
+<span class="kn">from</span> <span class="nn">.archives</span> <span class="kn">import</span> <span class="n">find_mimetype_plugin</span><span class="p">,</span> <span class="n">ArchivePluginNotFound</span>
+
+
+<div class="viewcode-block" id="NoTransportError"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.NoTransportError">[docs]</a><span class="k">class</span> <span class="nc">NoTransportError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NoArchiveError"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.NoArchiveError">[docs]</a><span class="k">class</span> <span class="nc">NoArchiveError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UnknownOptionType"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.UnknownOptionType">[docs]</a><span class="k">class</span> <span class="nc">UnknownOptionType</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="read"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.read">[docs]</a><span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read image data, calling appropriate transport, archive and format plugins</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        urls: list of urls or url to read (list of str, or str)</span>
+<span class="sd">        order: determine how to sort the images (default: auto-detect)</span>
+<span class="sd">        opts: input options (argparse.Namespace or dict)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple of</span>
+<span class="sd">            - hdr: header instance</span>
+<span class="sd">            - si[tag,slice,rows,columns]: numpy array</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: When no sources are given.</span>
+<span class="sd">        UnknownOptionType: When opts cannot be made into a dict.</span>
+<span class="sd">        FileNotFoundError: When specified URL cannot be opened.</span>
+<span class="sd">        UnknownInputError: When the input format could not be determined.</span>
+<span class="sd">        CannotSort: When input data cannot be sorted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;reader.read: urls </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">urls</span><span class="p">))</span>
+    <span class="c1">#    transport,my_urls,files = sanitize_urls(urls)</span>
+    <span class="c1">#    if len(my_urls) &lt; 1:</span>
+    <span class="c1">#        raise ValueError(&quot;No URL(s) where given&quot;)</span>
+    <span class="c1">#    logger.debug(&quot;reader.read: transport {} my_urls {}&quot;.format(transport,my_urls))</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">_get_sources</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No source(s) where given&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;reader.read: sources </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sources</span><span class="p">))</span>
+
+    <span class="c1"># Let in_opts be a dict from opts</span>
+    <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">in_opts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">in_opts</span> <span class="o">=</span> <span class="n">opts</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+        <span class="n">in_opts</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">UnknownOptionType</span><span class="p">(</span><span class="s1">&#39;Unknown opts type (</span><span class="si">{}</span><span class="s1">): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span>
+                                                                    <span class="n">opts</span><span class="p">))</span>
+
+    <span class="c1"># Let the calling party override a default input order</span>
+    <span class="n">input_order</span> <span class="o">=</span> <span class="n">INPUT_ORDER_NONE</span>
+    <span class="k">if</span> <span class="s1">&#39;input_order&#39;</span> <span class="ow">in</span> <span class="n">in_opts</span><span class="p">:</span>
+        <span class="n">input_order</span> <span class="o">=</span> <span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;input_order&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
+        <span class="n">input_order</span> <span class="o">=</span> <span class="n">order</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Input order: </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_order_to_str</span><span class="p">(</span><span class="n">input_order</span><span class="p">)))</span>
+
+    <span class="c1"># Pre-fetch DICOM template</span>
+    <span class="n">pre_hdr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="s1">&#39;template&#39;</span> <span class="ow">in</span> <span class="n">in_opts</span> <span class="ow">and</span> <span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;template&#39;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;readdata.read template </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;template&#39;</span><span class="p">]))</span>
+        <span class="n">template_source</span> <span class="o">=</span> <span class="n">_get_sources</span><span class="p">(</span><span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;template&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">in_opts</span><span class="p">)</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">find_plugin</span><span class="p">(</span><span class="s1">&#39;dicom&#39;</span><span class="p">)</span>
+        <span class="n">pre_hdr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="n">template_source</span><span class="p">,</span> <span class="n">input_order</span><span class="p">,</span> <span class="n">in_opts</span><span class="p">)</span>
+
+    <span class="c1"># Pre-fetch DICOM geometry</span>
+    <span class="n">geom_hdr</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="s1">&#39;geometry&#39;</span> <span class="ow">in</span> <span class="n">in_opts</span> <span class="ow">and</span> <span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;readdata.read geometry </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]))</span>
+        <span class="n">geometry_source</span> <span class="o">=</span> <span class="n">_get_sources</span><span class="p">(</span><span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">in_opts</span><span class="p">)</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">find_plugin</span><span class="p">(</span><span class="s1">&#39;dicom&#39;</span><span class="p">)</span>
+        <span class="n">geom_hdr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="n">geometry_source</span><span class="p">,</span> <span class="n">input_order</span><span class="p">,</span> <span class="n">in_opts</span><span class="p">)</span>
+        <span class="c1"># if pre_hdr is None:</span>
+        <span class="c1">#    pre_hdr = {}</span>
+        <span class="c1"># _add_dicom_geometry(pre_hdr, geom_hdr)</span>
+
+    <span class="c1"># Call reader plugins in turn to read the image data</span>
+    <span class="n">plugins</span> <span class="o">=</span> <span class="n">sorted_plugins_dicom_first</span><span class="p">(</span><span class="n">get_plugins_list</span><span class="p">())</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;readdata.read plugins length </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">plugins</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%20s</span><span class="s2"> (</span><span class="si">%8s</span><span class="s2">) </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span><span class="o">.</span><span class="n">description</span><span class="p">))</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">pclass</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sources</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">input_order</span><span class="p">,</span> <span class="n">in_opts</span><span class="p">)</span>
+            <span class="k">del</span> <span class="n">reader</span>
+
+            <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;readdata.read: close archive </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]))</span>
+                <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s1">&#39;headers_only&#39;</span> <span class="ow">in</span> <span class="n">in_opts</span> <span class="ow">and</span> <span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;headers_only&#39;</span><span class="p">]:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="s1">&#39;separate_series&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">in_opts</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">in_opts</span><span class="p">[</span><span class="s1">&#39;separate_series&#39;</span><span class="p">]:</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">add_template</span><span class="p">(</span><span class="n">pre_hdr</span><span class="p">)</span>
+                <span class="n">hdr</span><span class="o">.</span><span class="n">add_geometry</span><span class="p">(</span><span class="n">geom_hdr</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="n">CannotSort</span><span class="p">):</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">NotImageError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Giving up </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ptype</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Giving up (OTHER) </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ptype</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+            <span class="k">pass</span>
+
+    <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;readdata.read: close archive </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]))</span>
+        <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">urls</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">UnknownInputError</span><span class="p">(</span><span class="s1">&#39;Could not determine input format of &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">urls</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">UnknownInputError</span><span class="p">(</span><span class="s1">&#39;Could not determine input format of &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">urls</span><span class="p">)</span></div>
+
+
+<span class="c1"># def _add_template(hdr, pre_hdr):</span>
+<span class="c1">#    if pre_hdr is not None:</span>
+<span class="c1">#        for key in pre_hdr:</span>
+<span class="c1">#            hdr[key] = copy.copy(pre_hdr[key])</span>
+
+<span class="c1"># def _add_dicom_geometry(pre_hdr, geometry):</span>
+<span class="c1">#        &quot;&quot;&quot;For each slice in geometry, use most of pre_hdr, adding a few attributes from geometry</span>
+<span class="c1">#        &quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#        #logger.debug(&quot;_add_dicom_geometry template %s geometry %s&quot; % (</span>
+<span class="c1">#        #    imagedata.formats.shape_to_str(self.shape),</span>
+<span class="c1">#        #    imagedata.formats.shape_to_str(geometry.shape)))</span>
+<span class="c1">#        pre_hdr[&#39;sliceLocations&#39;] = geometry[&#39;sliceLocations&#39;].copy()</span>
+<span class="c1">#        pre_hdr[&#39;spacing&#39;]        = geometry[&#39;spacing&#39;].copy()</span>
+<span class="c1">#        pre_hdr[&#39;orientation&#39;]    = geometry[&#39;orientation&#39;].copy()</span>
+<span class="c1">#        pre_hdr[&#39;imagePositions&#39;] = {}</span>
+<span class="c1">#        logger.debug(&quot;_add_dicom_geometry:&quot;)</span>
+<span class="c1">#        logger.debug(&quot;_add_dicom_geometry: geometry.imagePositions {}&quot;.format(</span>
+<span class="c1">#            geometry[&#39;imagePositions&#39;].keys()))</span>
+<span class="c1">#        for k in geometry[&#39;imagePositions&#39;].keys():</span>
+<span class="c1">#            pre_hdr[&#39;imagePositions&#39;][k] = geometry[&#39;imagePositions&#39;][k].copy()</span>
+<span class="c1">#        pre_hdr[&#39;axes&#39;] = geometry[&#39;axes&#39;].copy()</span>
+
+<div class="viewcode-block" id="write"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.write">[docs]</a><span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write image data, calling appropriate format plugins</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        si[tag,slice,rows,columns]: Series array</span>
+<span class="sd">        url: output destination url</span>
+<span class="sd">        opts: Output options (argparse.Namespace or dict)</span>
+<span class="sd">        formats: list of output formats, overriding opts.output_format (list or str)</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        UnknownOptionType: When opts cannot be made into a dict.</span>
+<span class="sd">        TypeError: List of output format is not list().</span>
+<span class="sd">        ValueError: Wrong number of destinations given, or no way to write multidimensional image.</span>
+<span class="sd">        imagedata.formats.WriteNotImplemented: Cannot write this image format.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_replace_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">):</span>
+            <span class="n">_pl</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">_p</span> <span class="ow">in</span> <span class="n">url</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+                <span class="n">_pl</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_p</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="o">*</span><span class="n">_pl</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">url</span>
+
+    <span class="c1"># logger.debug(&quot;write: directory_name(si): {}&quot;.format(directory_name(si)))</span>
+
+    <span class="c1"># Let out_opts be a dict from opts</span>
+    <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">out_opts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">out_opts</span> <span class="o">=</span> <span class="n">opts</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+        <span class="n">out_opts</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">UnknownOptionType</span><span class="p">(</span><span class="s1">&#39;Unknown opts type (</span><span class="si">{}</span><span class="s1">): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span>
+                                                                    <span class="n">opts</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="s1">&#39;sernum&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;sernum&#39;</span><span class="p">]:</span>
+        <span class="n">si</span><span class="o">.</span><span class="n">seriesNumber</span> <span class="o">=</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;sernum&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;serdes&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;serdes&#39;</span><span class="p">]:</span>
+        <span class="n">si</span><span class="o">.</span><span class="n">seriesDescription</span> <span class="o">=</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;serdes&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;imagetype&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;imagetype&#39;</span><span class="p">]:</span>
+        <span class="n">si</span><span class="o">.</span><span class="n">imageType</span> <span class="o">=</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;imagetype&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;frame&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;frame&#39;</span><span class="p">]:</span>
+        <span class="n">si</span><span class="o">.</span><span class="n">frameOfReferenceUID</span> <span class="o">=</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;frame&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;SOPClassUID&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;SOPClassUID&#39;</span><span class="p">]:</span>
+        <span class="n">si</span><span class="o">.</span><span class="n">SOPClassUID</span> <span class="o">=</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;SOPClassUID&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Default output format is input format</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">output_formats</span> <span class="o">=</span> <span class="p">[</span><span class="n">si</span><span class="o">.</span><span class="n">input_format</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="n">output_formats</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Default    output format : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_formats</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Overriding output formats: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">formats</span><span class="p">))</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Options: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out_opts</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">formats</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formats</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">output_formats</span> <span class="o">=</span> <span class="n">formats</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">formats</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">output_formats</span> <span class="o">=</span> <span class="p">[</span><span class="n">formats</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;List of output format is not list() (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">formats</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="s1">&#39;output_format&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;output_format&#39;</span><span class="p">]):</span>
+        <span class="n">output_formats</span> <span class="o">=</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;output_format&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">output_formats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">output_formats</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">]</span>  <span class="c1"># Fall-back to dicom output</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Output formats: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_formats</span><span class="p">))</span>
+
+    <span class="c1"># Determine output dtype</span>
+    <span class="n">write_si</span> <span class="o">=</span> <span class="n">si</span>
+    <span class="k">if</span> <span class="s1">&#39;dtype&#39;</span> <span class="ow">in</span> <span class="n">out_opts</span> <span class="ow">and</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">si</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+            <span class="c1"># write_si = si.astype(str_to_dtype(out_opts[&#39;dtype&#39;]))</span>
+            <span class="n">write_si</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">out_opts</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">])</span>
+    <span class="n">_color</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">write_si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+        <span class="n">_color</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># Verify there is one destination only</span>
+    <span class="c1"># destinations = _get_sources(url, mode=&#39;w&#39;)</span>
+    <span class="c1"># if len(destinations) != 1:</span>
+    <span class="c1">#    raise ValueError(&#39;Wrong number of destinations (%d) given&#39; %</span>
+    <span class="c1">#        len(destinations))</span>
+
+    <span class="c1"># Call plugin writers in turn to store the data</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Available plugins </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">get_plugins_list</span><span class="p">())))</span>
+    <span class="n">written</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">get_plugins_list</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">ptype</span> <span class="ow">in</span> <span class="n">output_formats</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Attempt plugin </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ptype</span><span class="p">))</span>
+            <span class="c1"># Create plugin to write data in specified format</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">pclass</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;readdata.write: Created writer plugin of type </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">writer</span><span class="p">)))</span>
+            <span class="c1"># local_url = url.replace(&#39;%p&#39;, ptype)</span>
+            <span class="n">local_url</span> <span class="o">=</span> <span class="n">_replace_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s1">&#39;%p&#39;</span><span class="p">,</span> <span class="n">ptype</span><span class="p">)</span>
+            <span class="n">destinations</span> <span class="o">=</span> <span class="n">_get_sources</span><span class="p">(</span><span class="n">local_url</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">out_opts</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destinations</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong number of destinations (</span><span class="si">%d</span><span class="s1">) given&#39;</span> <span class="o">%</span>
+                                 <span class="nb">len</span><span class="p">(</span><span class="n">destinations</span><span class="p">))</span>
+            <span class="n">destination</span> <span class="o">=</span> <span class="n">destinations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata.write: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">write_si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="n">_color</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">and</span> <span class="n">write_si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c1"># 4D data</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">write_4d_numpy</span><span class="p">(</span><span class="n">write_si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">out_opts</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">write_si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="n">_color</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># 2D-3D data</span>
+                    <span class="n">writer</span><span class="o">.</span><span class="n">write_3d_numpy</span><span class="p">(</span><span class="n">write_si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">out_opts</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Don&#39;t know how to write image of shape </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">write_si</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                <span class="n">written</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">del</span> <span class="n">writer</span>
+            <span class="k">except</span> <span class="n">WriteNotImplemented</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Giving up (OTHER) </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ptype</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ptype</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">written</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span><span class="s2">&quot;Failed writing: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No writer plugin was found for </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output_formats</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+    <span class="c1"># destination[&#39;archive&#39;].close()</span>
+
+
+<div class="viewcode-block" id="sorted_plugins_dicom_first"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.sorted_plugins_dicom_first">[docs]</a><span class="k">def</span> <span class="nf">sorted_plugins_dicom_first</span><span class="p">(</span><span class="n">plugins</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sort plugins such that any Nifti plugin is used early.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ptype</span> <span class="o">==</span> <span class="s1">&#39;nifti&#39;</span><span class="p">:</span>
+            <span class="n">plugins</span><span class="o">.</span><span class="n">remove</span><span class="p">((</span><span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span><span class="p">))</span>
+            <span class="n">plugins</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span><span class="p">))</span>
+            <span class="k">break</span>
+    <span class="sd">&quot;&quot;&quot;Sort plugins such that any DICOM plugin is used first.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ptype</span> <span class="o">==</span> <span class="s1">&#39;dicom&#39;</span><span class="p">:</span>
+            <span class="n">plugins</span><span class="o">.</span><span class="n">remove</span><span class="p">((</span><span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span><span class="p">))</span>
+            <span class="n">plugins</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span><span class="p">))</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="n">plugins</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_location_part</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get location part of URL: scheme, netloc and path&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s1">&#39;[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+        <span class="c1"># Windows: Parse without x:, then reattach drive letter</span>
+        <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+        <span class="n">_path</span> <span class="o">=</span> <span class="n">url</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+        <span class="n">_path</span> <span class="o">=</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span>
+    <span class="c1"># url_tuple = urllib.parse.urlsplit(url, scheme=&#39;file&#39;)</span>
+    <span class="c1"># Strip off query and fragment parts</span>
+    <span class="n">location</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlunsplit</span><span class="p">((</span>
+        <span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+        <span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+        <span class="n">_path</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">location</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;file:///&#39;</span> <span class="ow">and</span> <span class="n">_path</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">location</span><span class="p">[</span><span class="mi">8</span><span class="p">:])</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_location_part: scheme </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_location_part: netloc </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_location_part: path </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">_path</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_location_part: location </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">location</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">location</span>
+
+
+<span class="k">def</span> <span class="nf">_get_query_part</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get query part of URL. This may contain file name&quot;&quot;&quot;</span>
+
+    <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">query</span>
+
+
+<span class="k">def</span> <span class="nf">_get_archive</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get archive plugin for given URL.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_archive: url </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">url</span><span class="p">)</span>
+    <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> \
+            <span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span> <span class="ow">and</span> \
+            <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span> <span class="s1">&#39;[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+        <span class="c1"># Windows: Parse without /x:, then re-attach drive letter</span>
+        <span class="n">_path</span> <span class="o">=</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_path</span> <span class="o">=</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span>
+    <span class="c1"># url_tuple = urllib.parse.urlsplit(url, scheme=&#39;file&#39;)</span>
+    <span class="n">mimetype</span> <span class="o">=</span> <span class="n">mimetypes</span><span class="o">.</span><span class="n">guess_type</span><span class="p">(</span><span class="n">_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">archive</span> <span class="o">=</span> <span class="n">find_mimetype_plugin</span><span class="p">(</span>
+        <span class="n">mimetype</span><span class="p">,</span>
+        <span class="n">url</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">,</span>
+        <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_archive: _mimetypes </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">mimetype</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_archive: archive </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">archive</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">archive</span>
+
+
+<span class="k">def</span> <span class="nf">_common_prefix</span><span class="p">(</span><span class="n">level</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This unlike the os.path.commonprefix version</span>
+<span class="sd">    always returns path prefixes as it compares</span>
+<span class="sd">    path component wise</span>
+<span class="sd">    https://stackoverflow.com/questions/21498939</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cp</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ls</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">level</span><span class="p">]</span>
+    <span class="n">ml</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ls</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ml</span><span class="p">):</span>
+
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ls</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="n">cp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_simplify_locations</span><span class="p">(</span><span class="n">locations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simplify locations by joining file:/// locations to a common prefix.&quot;&quot;&quot;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._simplify_locations: locations </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">locations</span><span class="p">))</span>
+    <span class="n">new_locations</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">paths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">:</span>
+        <span class="c1"># On Windows, any backslash (os.sep) will be replaced by slash in URL</span>
+        <span class="c1"># url_tuple = urllib.parse.urlsplit(location.replace(os.sep, &#39;/&#39;), scheme=&#39;file&#39;)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="s1">&#39;[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+            <span class="c1"># Windows: Parse without x:, then reattach drive letter</span>
+            <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">location</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+            <span class="n">_path</span> <span class="o">=</span> <span class="n">location</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+            <span class="n">_path</span> <span class="o">=</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span>
+        <span class="k">if</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;file&#39;</span><span class="p">:</span>
+            <span class="n">paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_locations</span><span class="p">[</span><span class="n">location</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._simplify_locations: paths </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">paths</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">_common_prefix</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._simplify_locations: prefix </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">))</span>
+        <span class="n">prefix_url</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlunsplit</span><span class="p">((</span>
+            <span class="s1">&#39;file&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;&#39;</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">,</span>
+            <span class="kc">None</span><span class="p">))</span>
+        <span class="c1"># urlunsplit prepends file:/// when a Windows drive is present. Simplify to file://</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">prefix_url</span><span class="p">,</span> <span class="s1">&#39;file:///[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+            <span class="n">prefix_url</span> <span class="o">=</span> <span class="s1">&#39;file://&#39;</span> <span class="o">+</span> <span class="n">prefix_url</span><span class="p">[</span><span class="mi">8</span><span class="p">:]</span>
+        <span class="n">new_locations</span><span class="p">[</span><span class="n">prefix_url</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._simplify_locations: new_locations </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_locations</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">new_locations</span>
+
+
+<span class="k">def</span> <span class="nf">_get_sources</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determine transport, archive and file from each url.</span>
+
+<span class="sd">    Handle both single url, a url tuple, and a url list</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        urls: list, tuple or single string, e.g.:</span>
+<span class="sd">            file://dicom</span>
+<span class="sd">                transport: file, archive: fs, url: dicom</span>
+<span class="sd">            file://dicom.zip?query</span>
+<span class="sd">                transport: file, archive: zip, files: query</span>
+<span class="sd">            file://dicom.tar.gz?query</span>
+<span class="sd">                transport: file, archive: tgz, files: query</span>
+<span class="sd">            http://server:port/dicom.zip</span>
+<span class="sd">                transport: http, archive: zip</span>
+<span class="sd">            dicom://server:port/AET</span>
+<span class="sd">                transport: dicom, archive: fs</span>
+<span class="sd">            xnat://server:port/project/subject/experiment/scan</span>
+<span class="sd">               transport: xnat, archive: zip</span>
+<span class="sd">        mode: &#39;r&#39; or &#39;w&#39; for Read or Write</span>
+<span class="sd">            When mode = &#39;r&#39;, the urls must exist.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        sources: list of dict for each url</span>
+<span class="sd">            - &#39;archive&#39;  : archive plugin</span>
+<span class="sd">            - &#39;files&#39;    : list of file names or regexp. May be empty list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Ensure the input is a list: my_urls</span>
+    <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">opts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">source_urls</span> <span class="o">=</span> <span class="n">urls</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">source_urls</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">urls</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">source_urls</span> <span class="o">=</span> <span class="p">[</span><span class="n">urls</span><span class="p">]</span>
+    <span class="n">my_urls</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">source_urls</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">PurePath</span><span class="p">):</span>
+            <span class="n">my_urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="o">.</span><span class="n">resolve</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">my_urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+    <span class="c1"># Scan my_urls to determine the locations of the inputs</span>
+    <span class="n">locations</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">my_urls</span><span class="p">:</span>
+        <span class="n">locations</span><span class="p">[</span><span class="n">_get_location_part</span><span class="p">(</span><span class="n">url</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">locations</span> <span class="o">=</span> <span class="n">_simplify_locations</span><span class="p">(</span><span class="n">locations</span><span class="p">)</span>
+
+    <span class="c1"># Set up sources for each location, and possibly add files</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">location</span> <span class="ow">in</span> <span class="n">locations</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_sources: location </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">location</span><span class="p">)</span>
+        <span class="n">source_location</span> <span class="o">=</span> <span class="n">location</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;files&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_archive</span><span class="p">(</span><span class="n">source_location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">RootIsNotDirectory</span><span class="p">,</span>
+                <span class="n">ArchivePluginNotFound</span><span class="p">):</span>
+            <span class="c1"># Retry with parent directory</span>
+            <span class="n">source_location</span><span class="p">,</span> <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">source_location</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_sources: retry location </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">source_location</span><span class="p">)</span>
+            <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_archive</span><span class="p">(</span><span class="n">source_location</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">my_urls</span><span class="p">:</span>
+            <span class="n">location_part</span> <span class="o">=</span> <span class="n">_get_location_part</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_sources: compare _get_location_part </span><span class="si">%s</span><span class="s1"> location </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">location_part</span><span class="p">,</span> <span class="n">source_location</span><span class="p">))</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">_get_query_part</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_sources: query </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">query</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">location_part</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">source_location</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">use_query</span><span class="p">():</span>
+                    <span class="n">fname</span> <span class="o">=</span> <span class="n">query</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">query</span><span class="p">:</span>
+                        <span class="n">fname</span> <span class="o">=</span> <span class="n">query</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">fname</span> <span class="o">=</span> <span class="n">location_part</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">source_location</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
+                <span class="c1"># _get_query_part(url)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">source</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+        <span class="n">sources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;readdata._get_sources: sources </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">source</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sources</span>
+
+
+<div class="viewcode-block" id="str_to_dtype"><a class="viewcode-back" href="../../APIReferenceImagedata.html#imagedata.readdata.str_to_dtype">[docs]</a><span class="k">def</span> <span class="nf">str_to_dtype</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert dtype string to numpy dtype.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="s1">&#39;np.&#39;</span> <span class="o">+</span> <span class="n">s</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
