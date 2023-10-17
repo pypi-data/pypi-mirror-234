@@ -1,0 +1,89 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "type": "object",
+    "description": "Settings block",
+    "minProperties": 1,
+    "properties": {
+        "name": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "mitigation": {
+            "type": "string"
+        },
+        "cron": {
+            "type": "string"
+        },
+        "timeout": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "log": {
+            "type": "string"
+        },
+        "logOnFail": {
+            "type": "string"
+        },
+        "logOnPass": {
+            "type": "string"
+        },
+        "rate": {
+            "type": "string"
+        },
+        "count": {
+            "type": "integer",
+            "maximum": 100
+        },
+        "report": {
+            "type": [
+                "string",
+                "array",
+                "boolean"
+            ]
+        },
+        "files": {
+            "type": "boolean"
+        }
+    },
+    "dependencies": {
+        "cron": [
+            "name"
+        ],
+        "rate": [
+            "name"
+        ]
+    },
+    "allOf": [
+        {
+            "anyOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "cron": true
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "rate": false
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "rate": true
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "cron": false
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "additionalProperties": false
+}
