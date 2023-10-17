@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "EntityModel": {
+      "discriminator": {
+        "mapping": {
+          "epics.InterruptVectorVME": "#/$defs/epics_InterruptVectorVME",
+          "epics.InterruptVectorVME2": "#/$defs/epics_InterruptVectorVME2"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/epics_InterruptVectorVME"
+        },
+        {
+          "$ref": "#/$defs/epics_InterruptVectorVME2"
+        }
+      ],
+      "title": "EntityModel"
+    },
+    "epics_InterruptVectorVME": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "epics.InterruptVectorVME",
+          "default": "epics.InterruptVectorVME",
+          "description": "The type of this entity",
+          "title": "Type"
+        },
+        "entity_enabled": {
+          "default": true,
+          "description": "enable or disable this entity instance",
+          "title": "Entity Enabled",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "A name for an interrupt vector variable",
+          "title": "Name",
+          "type": "string"
+        },
+        "test_global_var": {
+          "default": "{{  __utils__.set_var(\"magic_global\", 42) }}",
+          "description": "test global variable setter",
+          "title": "Test Global Var",
+          "type": "string"
+        },
+        "get_global": {
+          "default": "{{  __utils__.get_var(\"magic_global\") }}",
+          "description": "test global variable getter",
+          "title": "Get Global",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "epics_InterruptVectorVME",
+      "type": "object"
+    },
+    "epics_InterruptVectorVME2": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "epics.InterruptVectorVME2",
+          "default": "epics.InterruptVectorVME2",
+          "description": "The type of this entity",
+          "title": "Type"
+        },
+        "entity_enabled": {
+          "default": true,
+          "description": "enable or disable this entity instance",
+          "title": "Entity Enabled",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "A name for an interrupt vector variable",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "epics_InterruptVectorVME2",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "ioc_name": {
+      "description": "Name of IOC instance",
+      "title": "Ioc Name",
+      "type": "string"
+    },
+    "description": {
+      "description": "Description of what the IOC does",
+      "title": "Description",
+      "type": "string"
+    },
+    "entities": {
+      "description": "List of entities this IOC instantiates",
+      "items": {
+        "$ref": "#/$defs/EntityModel"
+      },
+      "title": "Entities",
+      "type": "array"
+    }
+  },
+  "required": [
+    "ioc_name",
+    "description",
+    "entities"
+  ],
+  "title": "NewIOC",
+  "type": "object"
+}
