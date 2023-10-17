@@ -1,0 +1,631 @@
+\chapter{CLI design overview, the [[cli]] module}\label{CLIoverview}
+
+In this chapter we outline the design of the CLI.
+<<nytid description>>=
+f"""
+A CLI for managing TAs and courses.
+"""
+@
+
+The [[nytid]] CLI has a similar design as Git, it consists of various 
+subcommands with different options.
+For instance, [[nytid hr timesheets --help]] will print the help of the 
+[[timesheets]] command.
+In this chapter, we outline the design and document the base of the CLI.
+At the end of the chapter, in \cref{climodule}, we outline the code itself of 
+the [[nytid.cli]] module.
+Each subcommand is a submodule of [[nytid.cli]], for instance the [[timesheet]] 
+command above is located in [[nytid.cli.hr]].
+Each subcommand is documented in one of the subsequent chapters.
+
+\section{Usage: what problems we can solve and how}
+
+In this section we describe the workflow of various scenarios.
+We describe them in chronological order.
+So in essence, this section serves as a how-to-use manual.
+We will also create two scripts to use [[nytid]] to automate some tasks.
+<<nytid.hourly.sh>>=
+<<cronjob header>>
+<<nytid.daily.sh>>=
+<<cronjob header>>
+<<nytid.weekly.sh>>=
+<<cronjob header>>
+<<nytid.monthly.sh>>=
+<<cronjob header>>
+<<cronjob header>>=
+#!/bin/bash
+
+source ${HOME}/.profile
+
+year=$(date +%y)
+@ We will expand on these as we proceed.
+But we can add them to Cron to automate some tasks.
+\begin{minted}{text}
+# m h  dom mon dow   command
+  0 *  *   *   *     ${HOME}/bin/nytid.hourly.sh
+  0 4  *   *   *     ${HOME}/bin/nytid.daily.sh
+  0 5  *   *   1     ${HOME}/bin/nytid.weekly.sh
+  0 6  1   *   *     ${HOME}/bin/nytid.monthly.sh
+\end{minted}
+So we run
+[[<<nytid.hourly.sh>>]] every hour,
+[[<<nytid.daily.sh>>]] every morning at 4,
+[[<<nytid.weekly.sh>>]] every Monday at 5, and
+[[<<nytid.monthly.sh>>]] on the first of every month at 6 in the morning.
+
+\subsection{Setting up a course}
+
+The course responsible must first set up a course.
+Essentially, we just need to provide the URL to the ICS from TimeEdit and the 
+number of students and groups\footnote{%
+  As from planning the schedule in KOPPS.
+}.
+In this series of examples, we'll set up two courses: [[prgi23]] and 
+[[prgm23]].
+\begin{minted}{bash}
+nytid courses new prgi23 \
+  --ics https://cloud.timeedit.net/... \
+  --num-students 160 --num-groups 6
+nytid courses new prgm23 \
+  --ics https://cloud.timeedit.net/... \
+  --num-students 200 --num-groups 6
+\end{minted}
+
+\subsection{Generating the sign-up sheet}
+
+The course responsible must then generate the sign-up sheet.
+This is done by running the following command.
+\begin{minted}{bash}
+nytid signupsheets generate prg[im]23 --edit
+\end{minted}
+The [[--edit]] option opens the generated sign-up sheet (or sheets in our case, 
+since we do this for two courses at the same time) in the default editor 
+(LibreOffice Calc in my case).
+Then we can tweak each sign-up sheet and save it.
+
+The generation will automatically compute the needed number of TAs based on the 
+number of students and groups passed to the [[new]] command above.
+It reads the schedule and the group information to see how many rooms and 
+expected number of students in the rooms.
+
+For this to work, however, we need the Swedish language export of the schedule 
+from TimeEdit.
+The English version does things differently.
+For instance, the Swedish version includes [[grupp A]], [[grupp B]] and [[grupp 
+C]]; whereas the English version includes [[group A-C]].
+That messes with us counting the number of groups.
+
+The default location for the sign-up sheet is in the course's data path.
+We can access this by running
+\begin{minted}{bash}
+nytid courses data shell prgi23
+\end{minted}
+This will spawn a shell in the data directory of [[prgi23]].
+
+Next step is to upload the sign-up sheet to Google Sheets (we must do that 
+manually) and let [[nytid]] know the URL.
+The URL is the one we get when we share the document, it must be set to 
+everyone with the link can read.
+\begin{minted}{bash}
+nytid signupsheets set-url prgi23 https://docs.google.com/spreadsheets/...
+\end{minted}
+
+\subsection{Tweaking the config}
+
+If we want to tweak the config that we just did, we can read and modify it 
+using config commands.
+\begin{minted}{bash}
+nytid config
+nytid courses config prgi23
+\end{minted}
+The first command will work with the personal config,
+the second with the [[prgi23]]-specific course config.
+
+\subsection{Generating data interesting for HR}
+
+% hr               Manage sign-up sheets for teaching                          
+
+HR wants to know who is working on the course.
+We can list the TAs using the
+\begin{minted}{bash}
+nytid hr users prgi23 --detailed
+\end{minted}
+command.
+
+The [[--detailed]] option will try to look up more detailed data about the TA 
+that HR wants.
+In the best case, we look up each TA in LADOK to find their name and 
+personnummer.
+
+This means that we can use this command to generate a list of TAs for HR on a 
+daily basis.
+<<nytid.daily.sh>>=
+# Report new TAs as working to HR
+
+<<TA reporting variables>>
+<<set up [[ta_mail]] function>>
+
+for course in ${HR_REPORTING_COURSES}; do
+  <<skip if [[course]] has no sign-up sheet>>
+  <<report new TAs for [[course]]>>
+done
+<<TA reporting variables>>=
+HR_REPORTING_COURSES="prg[im]${year} datintro${year}p1"
+@
+
+This only makes sense for courses with sign-up sheets.
+<<skip if [[course]] has no sign-up sheet>>=
+nytid courses config ${course} signupsheet.url 2>/dev/null | \
+  grep -q "signupsheet.url = " \
+    || continue
+@
+
+Now, we must keep track of those we've already reported.
+We'll do this by storing the list of TAs in the course's data directory.
+Then we can add all TAs again and count them.
+All TAs that occur only once are the new ones.
+<<report new TAs for [[course]]>>=
+reported_TAs=$(nytid courses config ${course} data_path | \
+               sed "s/data_path = //")/reported_TAs
+tmp_list=$(mktemp)
+test -e ${reported_TAs} && cp ${reported_TAs} ${tmp_list}
+
+current_users=$(nytid hr users ${course} --detailed)
+echo "$current_users" >> ${tmp_list}
+new_TAs=$(sort ${tmp_list} | uniq -c | egrep "^\s*1\s" | sed "s/^\s*1\s//")
+
+<<skip if no new TAs>>
+
+ta_mail "${course}" "${new_TAs}"
+
+echo "$current_users" > ${reported_TAs}
+@
+
+We'll use the [[ta_mail]] function to send the email.
+Here we can prep the message we want to have in the email body.
+<<set up [[ta_mail]] function>>=
+ta_mail() {
+  course="$1"
+  list_TAs="$2"
+
+  echo "
+Hej, hej!
+
+Här kommer en lista med assar som ska jobba på ${course}.
+
+        Daniel
+
+${list_TAs}
+  " | mutt -s "nya assar i ${course}" ${TA_MAIL_ADDR}
+}
+<<TA reporting variables>>=
+TA_MAIL_ADDR=hr
+@
+
+Now, if there are no new TAs, we don't want to send the email to HR.
+So we check if the list is empty.
+The trick here is to [[grep]] for lines with any character to remove empty 
+lines that [[wc]] would count.
+<<skip if no new TAs>>=
+test $(echo "${new_TAs}" | grep "." | wc -l) -gt 0 || continue
+@
+
+Now, we only want to send TAs to HR, not colleagues who also sign up on the 
+course.
+We should add them manually first to be ignored in the automation.
+<<nytid-ignore.sh>>=
+#!/bin/bash
+# Ignore TAs in HR reporting
+# Usage: nytid-ignore.sh <course> <user> [<user> ...]
+
+course="$1"
+shift
+users="$*"
+
+reported_TAs=$(nytid courses config $course data_path | \
+               sed "s/data_path = //")/reported_TAs
+
+for user in $users; do
+  nytid hr users $course --detailed --user $user >> ${reported_TAs}
+done
+@
+
+\subsection{Adding TAs to UG}
+
+If we don't use [[--detailed]], we'll simply get the TA username.
+This can be useful in other circumstances.
+For instance, we might want to add the TAs to the course in UG.
+<<nytid.hourly.sh>>=
+### Set up TAs in UG ###
+
+COURSES="prgm${year} prgi${year} datintro${year}p1"
+
+for course in ${COURSES}
+do
+  <<skip if [[course]] has no sign-up sheet>>
+  <<look up [[ug_path]]>>
+  <<look up [[TAs]]>>
+  <<add TAs in [[TAs]] to UG at [[ug_path]]>>
+done
+@
+
+We need the UG group for the TAs in the course, in the case of [[prgi23]] it's
+\begin{center}
+[[edu.courses.DD.DD1317.20232.1.assistants]].
+\end{center}
+We store this in the config of [[prgi23]]:
+\begin{minted}{bash}
+nytid courses config prgi23 ug.assistants \
+  -s edu.courses.DD.DD1317.20232.1.assistants
+\end{minted}
+That way, we can read it from the config.
+If there is no UG group specified in the cours config, we skip the course.
+<<look up [[ug_path]]>>=
+ug_path=$(nytid courses config ${course} ug.assistants | sed "s/.*= //")
+test "$?" -eq 0 || continue
+@
+
+Note that we could've named [[ug.assistants]] anything, it's just a name we 
+chose in the config.
+It has no special meaning to [[nytid]], only to our scripts.
+The point is, however, that we can add our own things to the config.
+Same thing with storing files in a course's data directory.
+
+Let's continue.
+We can look up the TAs in the same way as we did above.
+<<look up [[TAs]]>>=
+TAs=$(nytid hr users ${course})
+if test "$?" -ne 0; then
+  echo "error: can\'t read users for ${course} in nytid"
+  continue
+fi
+@
+
+Finally, we can add the TAs to the UG group.
+We add one by one, in case of errors.
+If we set all at once, any error will cause no TA to be added.
+One at a time, then only the TA causing the error will not be added.
+<<add TAs in [[TAs]] to UG at [[ug_path]]>>=
+if test -n "${TAs}"; then
+  for ta in ${TAs}; do
+    kthutils ug members add ${ug_path} ${ta}
+  done
+fi
+@
+
+\subsection{Generating amanuensis contracts for HR}
+
+HR also wants data to set up amanuensis contracts for the TAs that qualify.
+We can do this by running the following command.
+\begin{minted}{bash}
+nytid hr amanuensis create prg[im]23 > amanuensis.csv
+\end{minted}
+That command would create the contracts for all the TAs in [[prgi23]] and 
+[[prgm23]] that achieves a minimum workload of 5\% of full time.
+The detailed contracts will be stored on disk\footnote{%
+  The location depends on the personal [[nytid]] config.
+  It will ask you to set it up the first time.
+  Until you've set it up, the detailed contracts will be written to the current 
+  working directory.
+}, a summary for HR will be written to [[amanuensis.csv]] (in the example 
+above).
+
+However, the start date depends on when the TA submitted the application for 
+the position.
+So usually, we must create contracts with specific dates for each TA.
+\begin{minted}{bash}
+nytid hr amanuensis create prg[im]23 \
+  --user dbosk --set-start 2023-08-27 >> amanuensis.csv
+\end{minted}
+We use [[--set-start]] to force the start date of the contract.
+The end date will be computed automatically.
+We also keep all events that the TA signed up for, event if those are before 
+the start date of the contract.
+
+\subsection{Generating time sheets for hourly TAs}
+
+The TAs that are paid by the hour must submit time sheets according to HR.
+However, then we must check them.
+It's better that we generate them automatically from the sign-up sheet, then we 
+know they're correct as long as the sign-up sheet is correct.
+
+We can generate time sheets for [[prgi23]] and [[prgm23]] as follows.
+\begin{minted}{bash}
+nytid hr timesheets generate prg[im]23 --end 2023-10-01
+\end{minted}
+That will generate time sheets for all hourly TAs and include events until end 
+of September (it's not inclusive, so \(<\) 2023-10-01).
+
+With this construction, we can automate the generation of time sheets on a 
+monthly basis.
+Now, we assume that the time sheets are generated on the first of each month, 
+that is, that [[nytid.monthly.sh]] is run on the first of every month.
+<<nytid.monthly.sh>>=
+<<timesheets variables>>
+
+today=$(date +%Y-%m-%d)
+
+for course in ${TIMESHEETS_COURSES}
+do
+  <<skip if [[course]] has no sign-up sheet>>
+  <<generate time sheets for [[course]]>>
+  <<send time sheets for [[course]]>>
+done
+@
+
+We will create time sheets for [[datintro23]], [[prgi23]] and [[prgm23]].
+We'll send one email per course.
+We could make it one regex to send time sheets for all courses in one email.
+<<timesheets variables>>=
+TIMESHEETS_COURSES="datintro${year} prgi${year} prgm${year}"
+@
+
+Now, generating the time sheets will create a lot of files in the current 
+working directory.
+To keep the courses separate, we'll create a temporary directory for each 
+course and create the files there.
+<<generate time sheets for [[course]]>>=
+tmpdir=$(mktemp -d)
+cd ${tmpdir}
+@
+
+Then we generate the time sheets there.
+That will create a [[.xlsx]] file for each TA.
+We'll then convert all of them to PDF.
+<<generate time sheets for [[course]]>>=
+nytid hr timesheets generate ${course} --end ${today}
+loffice --convert-to pdf *.xlsx
+@
+
+Next step is to send all the PDF time sheets for processing.
+<<send time sheets for [[course]]>>=
+echo ${TIMESHEETS_MSG} | \
+  timesheets_mail "${TIMESHEETS_ADDR}" "${course}"
+<<timesheets variables>>=
+TIMESHEETS_ADDR=xxx@kth.se
+TIMESHEETS_MSG="
+Hej, hej!
+
+This month's time sheets are attached.
+
+          Daniel
+"
+@
+
+Now we'll adapt the [[timesheets_mail]] function to our mail client.
+In my case, I use [[mutt]].
+<<timesheets variables>>=
+timesheets_mail() {
+  addr="$1"
+  course="$2"
+  mutt -s "time sheets for ${course}" \
+       -a "*.pdf" -- ${addr}
+}
+@
+
+However, for [[mail]] the command is slightly different:
+\begin{minted}{bash}
+mail -s "time sheets for ${course}" \
+     $(for f in "*.pdf"; do echo "-A ${f}"; done) \
+     ${addr}
+\end{minted}
+
+
+\subsection{Viewing the schedule}
+
+Next thing we might be interested in is the schedule.
+This can be done using the [[nytid schedule]] subcommands.
+We have two commands:
+\begin{minted}{bash}
+nytid schedule show prgi23
+nytid schedule ics prgi23
+\end{minted}
+
+The first command will show the schedule in the terminal in a readable format.
+By default it will show the schedule for today and a week ahead.
+
+The second command does the same, except the output is in ICS format.
+This allows us to export the schedule to our calendar.
+If we write the ICS to a file, say [[dbosk.ics]], in [[~/public_html/nytid]], 
+then we can access it from the web through
+\begin{center}
+[[https://people.kth.se/~dbosk/nytid/dbosk.ics]].
+\end{center}
+
+In [[<<nytid.hourly.sh>>]] we can automate this and do it for all TAs in our 
+courses.
+<<nytid.hourly.sh>>=
+### Generate schedules for TAs ###
+
+ICS_COURSES="(prg[im]${year}|datintro${year}p1)"
+ICS_DIR=/afs/kth.se/home/d/b/dbosk/public_html/nytid
+
+mkdir -p ${ICS_DIR}
+
+for user in $(nytid hr users "${ICS_COURSES}")
+do
+  nytid schedule ics "${ICS_COURSES}" --user ${user} \
+    > ${ICS_DIR}/${user}.ics
+done
+@
+
+Now, I also want to generate a schedule for myself that includes all courses.
+Note that we don't supply any regex for the courses, using the default [[.*]], 
+matching everything.
+<<nytid.hourly.sh>>=
+# Update my schedule again with all courses this time
+nytid schedule ics --user dbosk > ${ICS_DIR}/dbosk.ics 2> >(grep -v WARNING)
+@
+
+When a course has a sign-up sheet, that one will be used.
+Otherwise, the course's schedule will be used.
+This is the ICS-schedule that we supplied to the [[new]] command above.
+If that happens, [[nytid]] will issue warnings.
+Since we want to run this script using Cron, we don't want any output unless a 
+real error occurs, so we filter out all warnings.
+
+
+% courses          Manage courses                                              
+% mine      Manage my courses                                                  
+% registry  Manage course registers                                            
+
+
+\section{Future usage: design plans}
+
+What follows is an outline of the design ideas for the interface and workflow.
+
+\subsection{Adding more teachers to a course}
+
+If there are several teachers, the others can add it after the course 
+responsible has added them as teachers.
+\begin{description}
+\item[Course responsible] \mintinline{bash}{nytid courses teachers prgi23 --add alba}
+\item[alba] \mintinline{bash}{nytid courses add prgi23}
+\end{description}
+
+\subsection{Recruiting TAs}
+
+We want to recruit new TAs to help out on a course.
+We do this is several ways.
+
+We note that a student makes a good presentation, explains well and performs 
+well during the course.
+Then we can add a recommendation.
+\begin{description}
+  \item[Teacher]
+    \mintinline{bash}{nytid recruit recommend --course "prg.*[0-9]{2}" --user student@kth.se}
+\end{description}
+The second scenario is that a student sends an email to the teacher expressing 
+an interest.
+In this case we can also add a recommendation.
+
+The students should also be able to express interest.
+In this case the TA can add courses they're interested in.
+\begin{description}
+  \item[TA]
+    \mintinline{bash}{nytid recruit add-interest --course prgm23 prgcl23}
+\end{description}
+
+Finally, when it's time for to recruit TAs for the course, the teacher can open 
+the recruitment process and send an announcement to the TAs in the pool for the 
+course.
+\begin{description}
+  \item[Teacher]  \mintinline{bash}{nytid recruit open --course "prgi23"}
+  \item[Teacher]  \mintinline{bash}{nytid recruit send --course "prgi23"}
+\end{description}
+
+\subsection{TA schedule and sign-up}
+
+\begin{description}
+  \item[TA]  \mintinline{bash}{nytid schedule mine --set  https://timeedit...}
+  \item[TA]
+    \mintinline{bash}{nytid schedule signed --set ~/public_html/TA.ics}
+  \item[TA] \mintinline{bash}{nytid signup -c "prgi23"}
+\end{description}
+
+\subsection{Managing TA time}
+
+We need to manage the TAs during the course.
+For instance, we must track bookings and who actually worked.
+This way, we can automatically generate time reports.
+
+\begin{description}
+  \item[Teacher] \mintinline{bash}{nytid checkin -c prgi23 --next }
+  \item TimeEdit to automate running check-in.
+  \item Email or Zulip (or Slack) API to send reminders to check in.
+  \item[Teacher] \mintinline{bash}{nytid confirm -c prgi23 --now TA1 TA2 TA3}
+  \item[Teacher]
+    \mintinline{bash}{nytid confirm -c prgi23 --time "2023-09-31 13:15"}
+  \item[Teacher] \mintinline{bash}{nytid report}
+\end{description}
+
+
+\section{The structure of the [[cli]] module}\label{climodule}
+
+We use the Typer package to create the CLI.
+This means that each command module will have the same structure as the main 
+CLI module.
+That structure looks like this:
+<<init.py>>=
+"""The CLI of nytid"""
+
+import typer
+<<import subcommand modules>>
+
+<<configure logging>>
+
+cli = typer.Typer(help=<<nytid description>>,
+                  epilog="Copyright (c) 2022--2023 Daniel Bosk, "
+                         "2022 Alexander Baltatzis.")
+
+<<add subcommand typer to cli>>
+
+if __name__ == "__main__":
+  cli()
+@
+
+One nice side effect of this design is that each such module can be run on its 
+own and will then work as an independent program.
+For instance, [[python3 -m nytid.cli.timesheet -h]] will be the same as running 
+[[nytid timesheet -h]].
+
+To add a command, there are two options.
+If a command has several subcommands, we can do as above.
+For instance, the [[courses]] command (and module).
+We simply import the module and add its Typer instance.
+This requires that each command in turn consist of subcommands, which is the 
+case for [[courses]].
+<<import subcommand modules>>=
+from nytid.cli import courses
+<<add subcommand typer to cli>>=
+cli.add_typer(courses.cli, name="courses")
+@
+
+For the [[config]] command, we will use the [[typerconf]] package.
+This doesn't have subcommands, we must thus do it slightly differently.
+The [[typerconf]] package has added a function [[add_config_cmd]] that takes 
+the Typer instance as argument, and uses that when it create the function for 
+the command.
+See [[pydoc3 typerconf]] for details.
+<<import subcommand modules>>=
+import typerconf
+<<add subcommand typer to cli>>=
+typerconf.add_config_cmd(cli)
+@
+
+\subsection{Adding more subcommands}
+
+\paragraph{Schedule} The schedule subcommands.
+
+<<import subcommand modules>>=
+from nytid.cli import schedule
+<<add subcommand typer to cli>>=
+cli.add_typer(schedule.cli, name="schedule")
+@
+
+\paragraph{Sign-up sheets} The sign-up sheets related subcommands.
+
+<<import subcommand modules>>=
+from nytid.cli import signupsheets
+<<add subcommand typer to cli>>=
+cli.add_typer(signupsheets.cli, name="signupsheets")
+@
+
+\paragraph{HR} The HR related subcommands.
+
+<<import subcommand modules>>=
+from nytid.cli import hr
+<<add subcommand typer to cli>>=
+cli.add_typer(hr.cli, name="hr")
+@
+
+
+\section{Configure logging}
+
+We want to use Python's built-in [[logging]] module to emit errors.
+<<configure logging>>=
+import logging
+import sys
+
+logging.basicConfig(format=f"nytid: %(levelname)s: %(message)s")
+@
