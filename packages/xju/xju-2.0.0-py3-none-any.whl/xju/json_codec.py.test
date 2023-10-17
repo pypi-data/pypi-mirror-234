@@ -1,0 +1,1215 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2022 Trevor Taylor
+# coding: utf-8
+# 
+# Permission to use, copy, modify, and/or distribute this software for
+# any purpose with or without fee is hereby granted, provided that all
+# copyright notices and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+from sys import path
+import ipaddress
+from os.path import dirname
+if path[0]==dirname(__file__): path.pop(0)
+
+from xju.json_codec import codec, JsonType, AnyJsonCodecImpl, SelfCodecImpl
+from xju.json_codec import TypeScriptSourceCode, TypeScriptNamespace, CustomClassCodec
+
+from typing import cast, Type, Literal, Any, Self, NewType, Generic, TypeVar
+from types import NoneType
+from dataclasses import dataclass, field
+import re
+import sys
+import ipaddress
+from enum import Enum
+
+from xju.assert_ import Assert
+import xju.newtype
+from xju.xn import readable_repr
+from xju.time import Timestamp
+
+x:Any
+
+
+# int,str,bool,float,None map directly
+
+Assert(codec(int).decode(3))==3
+Assert(codec(str).decode('fred'))=='fred'
+Assert(codec(bool).decode(True))==True
+Assert(codec(float).decode(5.5))==5.5
+Assert(codec(float).decode(5))==5
+
+Assert(codec(int).encode(3))==3
+Assert(codec(str).encode('fred'))=='fred'
+Assert(codec(bool).encode(True))==True
+Assert(codec(float).encode(5.5))==5.5
+Assert(codec(float).encode(5))==5
+
+# and can use typing.NewType of int,str,bool,float
+Colour = NewType('Colour',str)
+Assert(codec(Colour).decode('red'))==Colour('red')
+Assert(codec(Colour).encode(Colour('red')))=='red'
+Milligrams = NewType('Milligrams',float)
+Assert(codec(Milligrams).decode(7.6))==Milligrams(7.6)
+Assert(codec(Milligrams).encode(Milligrams(7.6)))==7.6
+Votes = NewType('Votes',int)
+Assert(codec(Votes).decode(7))==Votes(7)
+Assert(codec(Votes).encode(Votes(7)))==7
+Enabled = NewType('Enabled',bool)
+Assert(codec(Enabled).decode(True))==Enabled(True)
+Assert(codec(Enabled).decode(False))==Enabled(False)
+Assert(codec(Enabled).encode(Enabled(True)))==True
+Assert(codec(Enabled).encode(Enabled(False)))==False
+
+# note None is a not a type, its type is NoneType
+Assert(codec(NoneType).decode(None))==None
+Assert(codec(NoneType).encode(None))==None
+
+
+# list maps to list...
+Assert(codec(list).decode([5, 'fred']))==[5, 'fred']
+Assert(codec(list).encode([5, 'fred']))==[5, 'fred']
+
+# ... but must be given a list
+try:
+    x=codec(list).decode(8)
+except Exception as e:
+    Assert("8 is not a list").isIn(str(e))
+else:
+    assert False, x
+    pass
+# ... note element types are not checked (it is assumed
+# result will be given to json.dumps, which will fail), e.g.
+# we can happily put print, which has no mapping to a json type,
+# into a non-type-adorned list and encode that list:
+Assert(codec(list).encode([print]))==[print]
+
+
+# type-adorned list maps to list...
+Assert(codec(list[int]).decode([5, 6]))==[5, 6]
+Assert(codec(list[int]).encode([5, 6]))==[5, 6]
+
+# ... but must be given a list...
+try:
+    x=codec(list[int]).decode(8)
+except Exception as e:
+    Assert("8 is not a list").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# ... and all values must have correct type
+try:        
+    x=codec(list[int]).decode([5, 'fred'])
+except Exception as e:
+    Assert("'fred' (of type <class 'str'>) is not a <class 'int'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+
+tuple_codec=codec(tuple[int,str])
+Assert(tuple_codec.decode([5, 'fred']))==(5, 'fred')
+Assert(tuple_codec.encode((5, 'fred')))==[5, 'fred']
+
+# for list to decode as tuple, it must be a list in the first place...
+try:        
+    x=tuple_codec.decode({'x':6, 'y':8})
+except Exception as e:
+    Assert("{'x': 6, 'y': 8} is not a list").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# ... it must have expected number of elements each of the expected type...
+try:        
+    x=tuple_codec.decode([5, 6, 7])
+except Exception as e:
+    Assert("[5, 6, 7] does not have 2 items (it has 3 items)").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# ... each element must have correct type...
+try:
+    x=tuple_codec.decode([5, 6])
+except Exception as e:
+    Assert("6 (of type <class 'int'>) is not a <class 'str'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# encoding also rejects wrong number of elements, but this would be
+# rejected by type checker anyway
+try:
+    x=tuple_codec.encode((5, 6, 7))  # type: ignore
+except Exception as e:
+    Assert("(5, 6, 7) does not have 2 items (it has 3 items)").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+
+# dict with no type hints allows any keys with any value types (key must be string)
+Assert(codec(dict).decode({'fred':5, 'jock': 'nine'}))=={'fred':5, 'jock':'nine'}
+Assert(codec(dict).encode({'fred':5, 'jock': 'nine'}))=={'fred':5, 'jock':'nine'}
+
+# dict with specific value type, keys can be str...
+Assert(codec(dict[str,int]).decode({'fred':5, 'jock': 9}))=={'fred':5, 'jock':9}
+Assert(codec(dict[str,int]).encode({'fred':5, 'jock': 9}))=={'fred':5, 'jock':9}
+
+#... or xju.newtype.Str or anything that with str encoding
+class SurnameTag:pass
+class Surname(xju.newtype.Str[SurnameTag]):pass
+
+Assert(codec(dict[Surname,int]).encode({Surname('fred'):5, Surname('jock'): 9}))=={'fred':5, 'jock':9}
+Assert(codec(dict[Surname,int]).decode({'fred':5, 'jock':9}))=={Surname('fred'):5, Surname('jock'): 9}
+
+# ... must be given a dict...
+try:
+    x=codec(dict).decode(7)
+except Exception as e:
+    Assert("7 is not a dict").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=codec(dict[str,int]).decode(7)
+except Exception as e:
+    Assert("7 is not a dict").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# ... expects all elements to have that value type incorrect dict value type
+try:
+    x=codec(dict[str,int]).decode({'jock': 'fred'})
+except Exception as e:
+    Assert("'fred' (of type <class 'str'>) is not a <class 'int'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# dict keys must be strings or xju.newtype.Str...
+try:
+    x=codec(dict).encode({6: 'fred'})
+except Exception as e:
+    Assert(str(e)).matches("6 is not a <class 'str'>")
+else:
+    assert False, x
+    pass
+try:
+    x=codec(dict[int,int]).encode({7:5}) # type: ignore
+except Exception as e:
+    Assert("produced non-str 7 from dict key 7").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# ... must be given a dict...
+try:
+    x=codec(dict).encode(7) # type: ignore
+except Exception as e:
+    Assert("7 is not a dict").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=codec(dict[str,int]).encode(7) # type: ignore
+except Exception as e:
+    Assert("7 is not a dict").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+#xju.newtype.Int support
+class AgeInYearsTag:pass
+class AgeInYears(xju.newtype.Int[AgeInYearsTag]):pass
+
+Assert(codec(AgeInYears).decode(3))==AgeInYears(3)
+Assert(codec(AgeInYears).encode(AgeInYears(3)))==3
+
+try:
+    x=codec(AgeInYears).decode('fred')
+except Exception as e:
+    Assert("'fred' (of type <class 'str'>) is not an int").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+try:        
+    x=codec(AgeInYears).encode(8) # type: ignore
+except Exception as e:
+    Assert("8 is not a <class '__main__.AgeInYears'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+#xju.newtype.Float support
+class MetresTag:pass
+class Metres(xju.newtype.Float[MetresTag]):pass
+
+Assert(codec(Metres).decode(3.8))==Metres(3.8)
+Assert(codec(Metres).encode(Metres(3.8)))==3.8
+Assert(codec(Metres).decode(3))==Metres(3)
+Assert(codec(Metres).encode(Metres(3)))==3
+
+try:
+    x=codec(Metres).decode('fred')
+except Exception as e:
+    Assert("'fred' (of type <class 'str'>) is not a float (or an int)").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+try:
+    x=codec(Metres).encode('fred') # type: ignore
+except Exception as e:
+    Assert("'fred' is not a <class '__main__.Metres'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+#xju.newtype.Str support
+Assert(codec(Surname).decode('Ang'))==Surname('Ang')
+Assert(codec(Surname).encode(Surname('Ang')))=='Ang'
+
+try:
+    x=codec(Surname).decode(17)
+except Exception as e:
+    Assert("17 (of type <class 'int'>) is not an str").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+try:
+    x=codec(Surname).encode(17) # type: ignore
+except Exception as e:
+    Assert("17 is not a <class '__main__.Surname'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+
+#enum support...
+
+class O(Enum):
+    a='fred'
+    b=7
+    pass
+
+#... member codecs...
+Assert(codec(O.a).decode('fred'))==O.a
+Assert(codec(O.a).encode(O.a))=='fred'
+try:
+    x=codec(O.a).decode(7)  # type: ignore
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode 7 to a O.a because\nfailed to deocde 7 as O.a because\n7 (of type <class 'int'>) is not a <class 'str'>."
+else:
+    assert False, x
+try:
+    x=codec(O.a).decode('jock')  # type: ignore
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode jock to a O.a because\nfailed to deocde 'jock' as O.a because\n'jock' is not 'fred'."
+else:
+    assert False, x
+try:
+    x=codec(O.a).encode(O.b)  # type: ignore
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to encode <O.b: 7> as a O.a because\n7 is not a <class 'str'>."
+else:
+    assert False, x
+
+#... enum codec itself
+Assert(codec(O).decode('fred'))==O.a
+Assert(codec(O).decode(7))==O.b
+Assert(codec(O).encode(O.a))=='fred'
+Assert(codec(O).encode(O.b))==7
+try:
+    x=codec(O).decode(8)
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode 8 to a <enum 'O'> because\nfailed to decode 8 as enum O value because\n- failed to decode as O.a because\n  failed to deocde 8 as O.a because\n  8 (of type <class 'int'>) is not a <class 'str'>; and\n- failed to decode as O.b because\n  failed to deocde 8 as O.b because\n  8 is not 7."
+else:
+    assert False, x
+try:
+    x=codec(O).decode('jock')
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode jock to a <enum 'O'> because\nfailed to decode 'jock' as enum O value because\n- failed to decode as O.a because\n  failed to deocde 'jock' as O.a because\n  'jock' is not 'fred'; and\n- failed to decode as O.b because\n  failed to deocde 'jock' as O.b because\n  'jock' (of type <class 'str'>) is not a <class 'int'>."
+else:
+    assert False, x
+try:
+    x=codec(O).encode(7.1)  # type: ignore
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to encode <enum 'O'> value 7.1 because\n7.1 (of type float) is not a O."
+else:
+    assert False, x
+    
+
+# type unions, e.g. str|int match either type
+
+union_codec=codec(str|int)
+Assert(union_codec.decode('fred'))=='fred'
+Assert(union_codec.decode(9))==9
+Assert(union_codec.encode('fred'))=='fred'
+Assert(union_codec.encode(9))==9
+
+#incorrect dict value type
+try:
+    x=union_codec.decode(5.7)
+except Exception as e:
+    Assert(str(e)).matches("failed to decode 5.7 to a str | int because.*failed to decode as <class 'str'> because 5.7 (of type <class 'float'>) is not a <class 'str'> and failed to decode as <class 'int'> because 5.7 (of type <class 'float'>) is not a <class 'int'>")
+else:
+    assert False, x
+    pass
+
+
+# class (object) support:
+#   - encoding is dictionary containing each object attribute (except that string literal
+#     attributes are treated specially, see string literal attributes below)
+#   - when decoding, class is always initialised via keyword args (note that
+#     dataclass generates __init__ function that supports keyword args)
+#   - class may implement CustomClassCodec protocol for custom encodings, see
+#     IpAddr below
+@dataclass
+class Address:
+    street:'Street'
+    suburb:'Suburb'
+    postcode:'Postcode'
+
+class StreetTag:pass
+class Street(xju.newtype.Str[StreetTag]):pass
+
+class SuburbTag:pass
+class Suburb(xju.newtype.Str[SuburbTag]):pass
+
+class PostcodeTag:pass
+class Postcode(xju.newtype.Int[PostcodeTag]):pass
+
+Assert(codec(Address).decode({
+    'street':'alba',
+    'suburb': 'bocca',
+    'postcode': 3365}))==Address(Street('alba'),Suburb('bocca'),Postcode(3365))
+        
+Assert(codec(Address).encode(Address(Street('alba'),Suburb('bocca'),Postcode(3365))))=={
+    'street':'alba',
+    'suburb': 'bocca',
+    'postcode': 3365}
+        
+#incorrect Address value type
+try:
+    x=codec(Address).decode({'jock': 'fred'})
+except Exception as e:
+    Assert(str(e)).matches(re.escape("failed to decode {'jock': 'fred'} to a <class '__main__.Address'> because"))
+    Assert(str(e)).endswith("missing 3 required positional arguments: 'street', 'suburb', and 'postcode'")
+else:
+    assert False, x
+    pass
+
+try:
+    x=codec(Address).encode(7) # type: ignore
+except Exception as e:
+    Assert(str(e)).endswith("7 (of type <class 'int'>) is not a <class '__main__.Address'>")
+else:
+    assert False, x
+    pass
+
+bad_postcode=Address(Street('alba'),Suburb('bocca'),3365)  # type: ignore
+try:
+    x=codec(Address).encode(bad_postcode)
+except Exception as e:
+    Assert(str(e)).endswith("3365 is not a <class '__main__.Postcode'>")
+else:
+    assert False, x
+    pass
+
+class UnitTag: pass
+class Unit(xju.newtype.Str[UnitTag]):
+    pass
+
+@dataclass
+class ManagerName:
+    a: str
+    b: int
+
+# class inheritance...
+@dataclass
+class UnitAddress(Address,ManagerName):
+    unit:Unit
+
+Assert(codec(UnitAddress).decode({
+    'street':'alba',
+    'suburb': 'bocca',
+    'postcode': 3365,
+    'unit': '17a',
+    'a': 'fred',
+    'b': 17}))==UnitAddress('fred',17,Street('alba'),Suburb('bocca'),Postcode(3365),Unit('17a'))
+
+# ... encode will order attrs per python mro()
+Assert(codec(UnitAddress).encode(
+    UnitAddress('fred',17,Street('alba'),Suburb('bocca'),Postcode(3365),unit=Unit('17a'))))=={
+        'a': 'fred',
+        'b': 17,
+        'street':'alba',
+        'suburb': 'bocca',
+        'postcode': 3365,
+        'unit': '17a'}
+Assert(list(cast(dict,codec(UnitAddress).encode(
+    UnitAddress('fred',17,Street('alba'),Suburb('bocca'),Postcode(3365),unit=Unit('17a')))).keys()))==[
+        'a',
+        'b',
+        'street',
+        'suburb',
+        'postcode',
+        'unit']
+
+# custom class encoding by implementing CustomClassCodec protocol, for example
+# to support encoding of external types with control over their json representation
+class IpV4Addr(ipaddress.IPv4Address):
+    __xju_json_codec=codec(str)
+
+    @staticmethod
+    def xju_json_codec_encode(x:object) -> JsonType:
+        assert isinstance(x,IpV4Addr)
+        return IpV4Addr.__xju_json_codec.encode(x.exploded)
+    @staticmethod
+    def xju_json_codec_decode(x:JsonType) -> object:
+        return IpV4Addr(IpV4Addr.__xju_json_codec.decode(x))
+    @staticmethod
+    def xju_json_codec_get_json_schema(definitions:dict[str,dict]) -> dict:
+        '''return json schema for T'''
+        '''- may add any supporting definitions to definitions'''
+        return IpV4Addr.__xju_json_codec.get_json_schema()
+    @staticmethod
+    def xju_json_codec_get_typescript_isa(
+            expression:TypeScriptSourceCode,
+            namespace: TypeScriptNamespace) -> TypeScriptSourceCode:
+        '''return typescript source code that turns {expression} into a bool indicating whether the expression is a T'''
+        '''- may add any supporting definitions to namespace, e.g. type for T itself'''
+        return IpV4Addr.__xju_json_codec.get_typescript_isa(expression,namespace)
+
+    @staticmethod
+    def xju_json_codec_get_typescript_asa(
+            expression:TypeScriptSourceCode,
+            namespace: TypeScriptNamespace) -> TypeScriptSourceCode:
+        '''return typescript source code that safely casts {expression} to a T, throwing an Error if {expression} is not valid as a T'''
+        '''- may add any supporting definitions to namespace, e.g. type for T itself'''
+        return IpV4Addr.__xju_json_codec.get_typescript_asa(expression,namespace)
+    pass
+
+Assert(IpV4Addr).isSubclassOf(CustomClassCodec)
+Assert(codec(IpV4Addr).encode(IpV4Addr('172.18.12.1')))=='172.18.12.1'
+Assert(codec(IpV4Addr).decode('172.18.12.1')).isInstanceOf(IpV4Addr)
+Assert(codec(IpV4Addr).decode('172.18.12.1'))==IpV4Addr('172.18.12.1')
+
+
+# REVISIT: adjust IpAddrWithPrefix to generate a typescript alias
+@dataclass
+class IpAddrWithPrefix(ipaddress.IPv4Interface):
+    """An IP host address in a network, e.g. 10.1.1.49/24"""
+    if_str: str
+    __codec=codec(str)
+    def __post_init__(self):
+        super().__init__(self.if_str)
+    @staticmethod
+    def xju_json_codec_decode(x:JsonType) -> object:
+        return IpAddrWithPrefix(IpAddrWithPrefix.__codec.decode(x))
+    @staticmethod
+    def xju_json_codec_encode(x:object) -> JsonType:
+        assert isinstance(x,IpAddrWithPrefix)
+        return IpAddrWithPrefix.__codec.encode(x.if_str)
+    @staticmethod
+    def xju_json_codec_get_json_schema(definitions:dict[str,dict]) -> dict:
+        '''return json schema for T'''
+        '''- may add any supporting definitions to definitions'''
+        return IpAddrWithPrefix.__codec.get_json_schema()
+    @staticmethod
+    def xju_json_codec_get_typescript_isa(
+            expression:TypeScriptSourceCode,
+            namespace: TypeScriptNamespace) -> TypeScriptSourceCode:
+        '''return typescript source code that turns {expression} into a bool indicating whether the expression is a T'''
+        '''- may add any supporting definitions to namespace, e.g. type for T itself'''
+        return IpAddrWithPrefix.__codec.get_typescript_isa(expression,namespace)
+
+    @staticmethod
+    def xju_json_codec_get_typescript_asa(
+            expression:TypeScriptSourceCode,
+            namespace: TypeScriptNamespace) -> TypeScriptSourceCode:
+        '''return typescript source code that safely casts {expression} to a T, throwing an Error if {expression} is not valid as a T'''
+        '''- may add any supporting definitions to namespace, e.g. type for T itself'''
+        return IpAddrWithPrefix.__codec.get_typescript_asa(expression,namespace)
+
+@dataclass
+class Router:
+    name: str
+    ifv4: IpAddrWithPrefix
+
+Assert(codec(Router).decode({'name':'fred','ifv4':'10.1.7.44/22'}))==Router(name='fred',ifv4=IpAddrWithPrefix('10.1.7.44/22'))
+Assert(codec(Router).decode({'name':'fred','ifv4':'10.1.7.44/22'}).ifv4.network)==ipaddress.IPv4Network("10.1.4.0/22")
+Assert(codec(Router).encode(Router(name='fred',ifv4=IpAddrWithPrefix('10.1.7.44/22'))))=={'name':'fred','ifv4':'10.1.7.44/22'}
+
+
+Assert(codec(Literal['fred']).decode('fred'))=='fred'
+Assert(codec(Literal['fred']).encode('fred'))=='fred'
+
+Assert(codec(Literal['fred','jock']).decode('fred'))=='fred'
+Assert(codec(Literal['fred','jock']).decode('jock'))=='jock'
+Assert(codec(Literal['fred','jock']).encode('fred'))=='fred'
+Assert(codec(Literal['fred','jock']).encode('jock'))=='jock'
+
+Assert(codec(Literal[7]).decode(7))==7
+Assert(codec(Literal[7]).encode(7))==7
+
+Assert(codec(Literal[7,8]).decode(7))==7
+Assert(codec(Literal[7,8]).decode(8))==8
+Assert(codec(Literal[7,8]).encode(7))==7
+Assert(codec(Literal[7,8]).encode(8))==8
+
+Assert(codec(Literal[True]).decode(True))==True
+Assert(codec(Literal[False]).encode(False))==False
+
+Assert(codec(Literal[True,False]).decode(True))==True
+Assert(codec(Literal[True,False]).decode(False))==False
+Assert(codec(Literal[True,False]).encode(True))==True
+Assert(codec(Literal[True,False]).encode(False))==False
+
+
+Assert(codec(Literal[6,'jock']).decode(6))==6
+Assert(codec(Literal[6,'jock']).decode('jock'))=='jock'
+Assert(codec(Literal[6,'jock']).encode(6))==6
+Assert(codec(Literal[6,'jock']).encode('jock'))=='jock'
+
+
+#float literal not yet implemented
+try:
+    x=codec(Literal[7.6]).decode(7.6) # type: ignore
+except Exception as e:
+    Assert("failed to create codec for literal value 7.6 because\n<class 'float'> literals are not supported (only support str, int, bool)").isIn(readable_repr(e))
+else:
+    assert False, x
+    pass
+
+
+#encode wrong type
+try:
+    x=(codec(Literal['fred','jock'])
+       .encode(7)) # type: ignore
+except Exception as e:
+    Assert("7 is not 'fred'").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=(codec(Literal[7,8])
+       .encode(True)) # type: ignore
+except Exception as e:
+    Assert("True is not 7").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=(codec(Literal[False,True])
+       .encode('fred')) # type: ignore
+except Exception as e:
+    Assert("'fred' is not False").isIn(str(e))
+else:
+    assert False, x
+    pass
+#decode wrong type
+try:
+    x=codec(Literal['fred']).decode(7)
+except Exception as e:
+    Assert("7 is not a string").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=codec(Literal[7]).decode('fred')
+except Exception as e:
+    Assert("'fred' is not a int").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=codec(Literal[False]).decode(7)
+except Exception as e:
+    Assert("7 is not a boolean").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# decode wrong value
+try:
+    x=codec(Literal['fred','ann']).decode('jock')
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode jock to a typing.Literal['fred', 'ann'] because\nfailed to decode 'jock' as one of ('fred', 'ann') because\n- failed to decode as 'fred' because\n  'jock' is not 'fred'; and\n- failed to decode as 'ann' because\n  'jock' is not 'ann'."
+else:
+    assert False, x
+    pass
+try:
+    x=codec(Literal[6,7]).decode(8)
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode 8 to a typing.Literal[6, 7] because\nfailed to decode 8 as one of (6, 7) because\n- failed to decode as 6 because\n  8 is not 6; and\n- failed to decode as 7 because\n  8 is not 7."
+else:
+    assert False, x
+    pass
+try:
+    x=codec(Literal[False]).decode(True)
+except Exception as e:
+    Assert("True is not False").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+# literal attributes match that string literal...
+@dataclass
+class Add:
+    a:int
+    b:int
+    op_type: Literal['add'] # = 'add' not recommended - see Caution below
+
+Assert(codec(Add).decode(
+    {
+        'op_type':'add',
+        'a': 7,
+        'b': 8
+    }))==Add(7,8,op_type='add')
+        
+Assert(codec(Add).decode({
+    'op_type':'add',
+    'a': 7,
+    'b': 8}).op_type)=='add'
+        
+Assert(codec(Add).encode(Add(7,8,op_type='add'))=={
+    'op_type':'add',
+    'a': 7,
+    'b': 8})
+        
+# ... and rejected other values...
+try:
+    x=codec(Add).decode({
+        'op_type':'subtract',
+        'a': 7,
+        'b': 8})
+except Exception as e:
+    Assert(str(e)).contains("'subtract' is not 'add'")
+else:
+    assert False, x
+    pass
+
+# ... allowing them to be used as type descriminators...
+@dataclass
+class MissingDefault:
+    op_type: Literal['op']
+    sub_type: Literal['plus']
+    a:int
+    b:int
+    pass
+
+Assert(codec(MissingDefault).decode({
+    'op_type':'op',
+    'sub_type':'plus',
+    'a': 7,
+    'b': 8}))==MissingDefault('op', 'plus', 7, 8)
+
+# ... but always need to be passed literal value.
+
+# Caution, giving the literal attribute a default seems
+# like a useful shortcut since we know exactly what value
+# to give it:
+@dataclass
+class Sub:
+    a:int
+    b:int
+    op_type: Literal['sub'] = 'sub'
+
+# ... but that will also match json with no op_type:
+Assert(codec(Add|Sub).decode({
+    'a': 7,
+    'b': 8}))==Sub(7,8)
+
+
+
+# misc coverage
+Assert(repr(codec(int)))=="<class 'int'> json codec"
+
+
+Assert(codec(int|None).decode(None))==None
+Assert(codec(int|None).encode(None))==None # type: ignore
+
+try:
+    x=codec(int|None).decode('fred')
+except Exception as e:
+    Assert(str(e)).contains("'fred' is not None")
+else:
+    assert False, x
+    pass
+
+try:
+    x=codec(int|None).encode('fred')  # type: ignore
+except Exception as e:
+    Assert(str(e)).contains("'fred' is not None")
+else:
+    assert False, x
+    pass
+
+
+# Codec can generate corresponding json schema (http://json-schema.org)
+# "null", "boolean", "object", "array", "number", "string", or "integer"
+Assert(codec(NoneType).get_json_schema())=={'type': 'null', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(int).get_json_schema())=={'type': 'integer', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(bool).get_json_schema())=={'type': 'boolean', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(str).get_json_schema())=={'type': 'string', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(float).get_json_schema())=={'type': 'number', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(list).get_json_schema())=={'type': 'array', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(list[int]).get_json_schema())=={'type': 'array', 'items': { 'type': 'integer'}, 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(tuple[int,str]).get_json_schema())=={'type': 'array', 'prefixItems': [ { 'type': 'integer'},{ 'type': 'string'}], 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(codec(JsonType).get_json_schema())=={'oneOf': [{'type': 'null'}, {'type': 'boolean'}, {'type': 'object'}, {'type': 'array'}, {'type': 'number'}, {'type': 'string'}], 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(codec(dict).get_json_schema())=={'type': 'object', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(codec(dict[str,int]).get_json_schema())=={'type': 'object', 'additionalProperties': {'type': 'integer'}, 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(AnyJsonCodecImpl().get_json_schema({},None))== {'oneOf': [{'type': 'null'}, {'type': 'boolean'}, {'type': 'object'}, {'type': 'array'}, {'type': 'number'}, {'type': 'string'}]}
+
+Assert(codec(AgeInYears).get_json_schema())=={'description': 'AgeInYears', 'type': 'integer', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(codec(Street).get_json_schema())=={'description': 'Street', 'type': 'string', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(codec(Metres).get_json_schema())=={'description': 'Metres', 'type': 'number', 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+
+Assert(codec(Literal['fred']).get_json_schema())=={'type': 'string', 'enum': ['fred'], 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(Literal[7,8]).get_json_schema())=={'oneOf': [{'type': 'number', 'enum': [7]}, {'type': 'number', 'enum': [8]}], '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema', 'definitions': {}}
+Assert(codec(Literal[False]).get_json_schema())=={'type': 'boolean', 'enum': [False], 'definitions': {}, '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema'}
+Assert(codec(O).get_json_schema())=={'oneOf': [{'type': 'string', 'enum': ['fred']}, {'type': 'integer', 'enum': [7]}], '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema', 'definitions': {}}
+
+Assert(codec(Address).get_json_schema())=={
+    '$ref': '#/definitions/Address',
+    '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema',
+    'definitions':{
+        'Address':{
+            'description': 'Address',
+            'type': 'object',
+            'properties': {'street': {'description': 'Street', 'type': 'string'}, 'suburb': {'description': 'Suburb', 'type': 'string'}, 'postcode': {'description': 'Postcode', 'type': 'integer'}}}}}
+Assert(codec(IpV4Addr).get_json_schema())=={'type': 'string', '$id': 'https://example.com/address.schema.json', '$schema': 'https://json-schema.org/draft/2020-12/schema', 'definitions': {}}
+
+
+
+# recursive via Self
+class LeafTag:pass
+class Leaf(xju.newtype.Int[LeafTag]):pass
+
+@dataclass
+class Branch:
+    shoots: list[Leaf|Self]
+    pass
+
+Tree = Branch|Leaf
+
+Assert(codec(Branch).encode(Branch([Branch([Leaf(1),Leaf(2)]),Leaf(3)])))=={'shoots':[{'shoots':[1,2]},3]}
+Assert(codec(Branch).decode({'shoots':[{'shoots':[1,2]},3]}))==Branch([Branch([Leaf(1),Leaf(2)]),Leaf(3)])
+Assert(codec(Branch).get_json_schema())=={
+    '$ref': '#/definitions/Branch',
+    '$id': 'https://example.com/address.schema.json',
+    '$schema': 'https://json-schema.org/draft/2020-12/schema',
+    'definitions': {
+        'Branch': {'description': 'Branch', 'type': 'object', 'properties': {
+            'shoots': {'type': 'array', 'items': {'oneOf': [
+                {'description': 'Leaf', 'type': 'integer'},
+                {'$ref': '#/definitions/Branch'}]}}}}}}
+
+@dataclass
+class Graph:
+    value: int
+    next: list[Self]
+    pass
+
+Assert(codec(Graph).encode(
+    Graph(1, [Graph(2,[]),Graph(3,[])])))=={
+        'value':1,'next':[
+            {'value':2, 'next':[]},
+            {'value':3, 'next':[]}]}
+Assert(codec(Graph).get_json_schema())=={
+    '$ref': '#/definitions/Graph',
+    '$id': 'https://example.com/address.schema.json',
+    '$schema': 'https://json-schema.org/draft/2020-12/schema',
+    'definitions': {
+        'Graph': {'description': 'Graph', 'type': 'object', 'properties': {
+            'value': {'type': 'integer'},
+            'next': {'type': 'array', 'items': {'$ref': '#/definitions/Graph'}}}}}}
+
+def fail_back_ref_encode(x: Any) -> JsonType:
+    raise Exception('back_ref fail')
+try:
+    SelfCodecImpl().encode(7,fail_back_ref_encode)
+except Exception as e:
+    Assert(readable_repr(e))=='Failed to encode 7 as a Self because\nback_ref fail.'
+else:
+    assert False
+    pass
+
+def fail_back_ref_decode(x: JsonType) -> Any:
+    raise Exception('back_ref fail')
+try:
+    SelfCodecImpl().decode(7,fail_back_ref_decode)
+except Exception as e:
+    Assert(readable_repr(e))=='Failed to deocde 7 as a Self because\nback_ref fail.'
+else:
+    assert False
+    pass
+
+try:
+    import jsonschema # type: ignore
+except:
+    print('WARNING: skipped json_codec json_schema tests because json_schema not importable',
+          file=sys.stderr)
+else:
+    jsonschema.validate(None,codec(NoneType).get_json_schema())
+    jsonschema.validate(7,codec(int).get_json_schema())
+    jsonschema.validate(True,codec(bool).get_json_schema())
+    jsonschema.validate('fred',codec(str).get_json_schema())
+    jsonschema.validate(8.8,codec(float).get_json_schema())
+    jsonschema.validate([1,True],codec(list).get_json_schema())
+    jsonschema.validate([1,2],codec(list[int]).get_json_schema())
+    jsonschema.validate([7,'fred'],codec(tuple[int,str]).get_json_schema())
+
+    jsonschema.validate(None,codec(JsonType).get_json_schema())
+    jsonschema.validate(True,codec(JsonType).get_json_schema())
+    jsonschema.validate({},codec(JsonType).get_json_schema())
+    jsonschema.validate([],codec(JsonType).get_json_schema())
+    jsonschema.validate(9.9,codec(JsonType).get_json_schema())
+    jsonschema.validate('fred',codec(JsonType).get_json_schema())
+
+    jsonschema.validate({},codec(dict).get_json_schema())
+
+    jsonschema.validate({'fred':2, 'jock':3},codec(dict[str,int]).get_json_schema())
+
+    jsonschema.validate(None,AnyJsonCodecImpl().get_json_schema({},None))
+    jsonschema.validate(True,AnyJsonCodecImpl().get_json_schema({},None))
+    jsonschema.validate({},AnyJsonCodecImpl().get_json_schema({},None))
+    jsonschema.validate([],AnyJsonCodecImpl().get_json_schema({},None))
+    jsonschema.validate(9.9,AnyJsonCodecImpl().get_json_schema({},None))
+    jsonschema.validate('fred',AnyJsonCodecImpl().get_json_schema({},None))
+
+    jsonschema.validate(77,codec(AgeInYears).get_json_schema())
+
+    jsonschema.validate('pole',codec(Street).get_json_schema())
+
+    jsonschema.validate(8.8,codec(Metres).get_json_schema())
+
+    jsonschema.validate('fred',codec(Literal['fred']).get_json_schema())
+    jsonschema.validate({
+        'street':'alba',
+        'suburb': 'bocca',
+        'postcode': 3365},codec(Address).get_json_schema())
+    jsonschema.validate(
+        {'shoots':[{'shoots':[1,2]},3]},
+        codec(Branch).get_json_schema())
+    jsonschema.validate(
+        {'shoots':[{'shoots':[1,2]},3]},
+        codec(Branch).get_json_schema())
+    jsonschema.validate(
+        'fred',
+        codec(O.a).get_json_schema())
+    pass
+
+# internal: codecs' encode()s must verify correct type passed in, otherwise
+# UnionCodec encode try-each algorithm is invalid
+try:
+    x=(codec(int)
+       .encode('fred'))  # type: ignore
+except Exception as e:
+    Assert("'fred' is not a <class 'int'>").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=(codec(list[int])
+       .encode('fred'))  # type: ignore
+except Exception as e:
+    Assert("'fred' is not a list").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=(codec(list)
+       .encode('fred'))  # type: ignore
+except Exception as e:
+    Assert("'fred' is not a list").isIn(str(e))
+else:
+    assert False, x
+    pass
+try:
+    x=(codec(tuple[int])
+       .encode('fred'))  # type: ignore
+except Exception as e:
+    Assert("'fred' is not a tuple").isIn(str(e))
+else:
+    assert False, x
+    pass
+
+
+# ensure JsonType (Union) selects correct codec to encode dict
+@dataclass
+class Y:
+    x: JsonType
+    pass
+
+Assert(codec(Y).encode(Y({ 'z': 'fred' })))=={'x':{'z':'fred'}}
+Assert(codec(Y).decode({'x':{'z':'fred'}}))==Y({ 'z': 'fred' })
+Assert(codec(Y).get_json_schema())=={
+    '$ref': '#/definitions/Y',
+    '$id': 'https://example.com/address.schema.json',
+    '$schema': 'https://json-schema.org/draft/2020-12/schema',
+    'definitions': {
+        'Y': {
+            'description': 'Y', 'type': 'object', 'properties': {
+                'x': {
+                    'oneOf': [
+                        {'type': 'null'},
+                        {'type': 'boolean'},
+                        {'type': 'object'},
+                        {'type': 'array'},
+                        {'type': 'number'},
+                        {'type': 'string'}]}}}}}
+
+
+# type hint strings are supported, allowing forward-decls
+@dataclass
+class ShirtSize:
+    size: 'SizeCode'
+    pass
+
+Small=Literal['S']
+Large=Literal['L']
+SizeCode=Small|Large
+
+Assert(codec(ShirtSize).decode(
+    {
+        'size': 'S',
+    }
+))==ShirtSize('S')
+
+
+# coverage of class decode initialisation failure
+class Fred:
+    x: str
+    def __init__(self, x:str):
+        if x=='jock':
+            raise Exception('jock forbidden')
+        pass
+    pass
+
+try:
+    codec(Fred).decode({'x':'jock'})
+except Exception as e:
+    Assert(readable_repr(e))=="Failed to decode {'x': 'jock'} to a <class '__main__.Fred'> because\nfailed to deocde {'x': 'jock'} as a <class '__main__.Fred'> because\nfailed to init <class '__main__.Fred'> with keyword arguments {'x': 'jock'} because\njock forbidden."
+else:
+    assert False
+    pass
+
+# multiple defaults values, including list type, can omit any or all defaulted attributes
+# use kw_only to allow any ordering of attributes in class definition
+# it seems clever but I don't think jsonschema or typescript generation works properly
+# (typescript and jsonschema will insist on the default fields being specified). Note
+# encoding from python will always include the value even if it came from default.
+@dataclass(kw_only=True)
+class Person:
+    first_name: str
+    middle_names: list[str] = field(default_factory=list)
+    last_name: str
+    phobias: list[str] = field(default_factory=list)
+    pass
+
+Assert(codec(Person).decode({'first_name':'fred','last_name':'jones'}))==Person(first_name='fred',last_name='jones')
+Assert(codec(Person).decode({'first_name':'fred','phobias':['spiders'],'last_name':'jones'}))==Person(first_name='fred',last_name='jones',phobias=['spiders'])
+Assert(codec(Person).decode({'first_name':'fred','middle_names':['arachnid'],'last_name':'jones'}))==Person(first_name='fred',last_name='jones',middle_names=['arachnid'])
+
+
+# non-defaulted "optional" attribute (of type X|None) must still appear in json (with value null)
+@dataclass
+class Opt:
+    x: str|None
+    pass
+
+Assert(codec(Opt).decode({'x':None}))==Opt(x=None)
+try:
+    codec(Opt).decode({})
+except Exception as e:
+    Assert(readable_repr(e)).contains("Failed to decode {} to a <class '__main__.Opt'> because\nfailed to deocde {} as a <class '__main__.Opt'> because\nfailed to init <class '__main__.Opt'> with keyword arguments {} because\nOpt.__init__() missing 1 required positional argument: 'x'.")
+else:
+    assert False
+    pass
+
+
+# specialisation based on descriminator
+@dataclass
+class Court:
+    width:Metres
+    length:Metres
+    game:str
+    pass
+
+@dataclass
+class NetballCourt(Court):
+    game:Literal['netball'] = 'netball'
+    pass
+
+@dataclass
+class BasketballCourt(Court):
+    game:Literal['basketball'] = 'basketball'
+    pass
+
+court_codec=codec(NetballCourt|BasketballCourt|Court)
+Assert(court_codec.decode({'game':'netball', 'width':8, 'length': 10})).isInstanceOf(NetballCourt)
+Assert(court_codec.decode({'game':'basketball', 'width':8, 'length': 10})).isInstanceOf(BasketballCourt)
+Assert(court_codec.decode({'game':'badminton', 'width':8, 'length': 10})).isInstanceOf(Court)
+Assert(court_codec.encode(NetballCourt(width=Metres(8),length=Metres(10)))=={'game':'netball', 'width':8, 'length': 10})
+Assert(court_codec.encode(BasketballCourt(width=Metres(8),length=Metres(10)))=={'game':'basketball', 'width':8, 'length': 10})
+Assert(court_codec.encode(Court(game='badminton',width=Metres(8),length=Metres(10)))=={'game':'badminton', 'width':8, 'length': 10})
+
+
+# generic class codecs are supported, for example a messages might
+# carry generic payloads:
+
+@dataclass
+class Msg:
+    msg_type: str
+    pass
+
+Payload=TypeVar('Payload')
+
+@dataclass
+class SetMsg(Generic[Payload],Msg):
+    msg_type: Literal['set_new_value']
+    new_value: Payload
+    pass
+
+SetSurnameMsg=SetMsg[Surname]
+
+Assert(codec(SetSurnameMsg).decode({'msg_type':'set_new_value','new_value':'knox'}))==SetSurnameMsg(msg_type='set_new_value',new_value=Surname('knox'))
+
+@dataclass
+class SetMultiMsg(Generic[Payload],Msg):
+    msg_type: Literal['set_new_values']
+    new_values: list[Payload]
+    pass
+
+SetSurnamesMsg=SetMultiMsg[Surname]
+
+Assert(codec(SetSurnamesMsg).decode({'msg_type':'set_new_values','new_values':['knox','garden']}))==SetSurnamesMsg(msg_type='set_new_values',new_values=[Surname('knox'),Surname('garden')])
+
+
+# codec can generate a typescript "cast" ("as-a") and "type guard" ("is a") matching its
+# json encoding. Non-class codecs generate inline typescript source code, see
+# codec.get_typescripte_asa() and codec.get_typescript_isa(). For classes, codec
+# also generates functions in corresponding namespace, for example:
+
+typescript_namespace=TypeScriptNamespace({})
+
+timestamp_codec=codec(Timestamp)
+# ensure typescript_namespace has as-a and is-a functions for xju.time.Timestamp,
+# xju.time.asInstanceOfTimestamp(), xju.time.isInstanceOfTimestamp():
+timestamp_codec.ensure_typescript_defs(typescript_namespace)
+
+Assert(codec(IpV4Addr).get_typescript_isa(TypeScriptSourceCode('7'),typescript_namespace))==TypeScriptSourceCode("(typeof (7) == 'string')")
+Assert(codec(IpV4Addr).get_typescript_asa(TypeScriptSourceCode('7'),typescript_namespace))==TypeScriptSourceCode("""((v: any): string => {
+    if (typeof v !== 'string') throw new Error(`${v} is not a string it is a ${typeof v}`);
+    return v as string;
+})(7)""")
+
+codec(O).ensure_typescript_defs(typescript_namespace)
+
+# ... get_formatted_defs() generates the typescript source code:
+Assert(typescript_namespace.get_formatted_defs())==TypeScriptSourceCode(
+    '''\
+namespace xju {
+    export namespace time {
+        export type Timestamp = {
+            _Timestamp__value: number;
+        };
+        export function asInstanceOfTimestamp(v: any): xju.time.Timestamp
+        {
+            try{
+                if (Array.isArray(v)) throw new Error(`${v} is an array`);
+                if (v == null) throw new Error(`${v} is not an object it is null`);
+                if (typeof v !== 'object') throw new Error(`${v} is not an object it is a ${typeof v}`);
+                const attr_asa=function(name:string, asa:any):any{
+                    try{
+                        asa(v[name]);
+                    }
+                    catch(e:any){
+                        throw new Error(`attribute ${name} is invalid because ${e}`);
+                    }
+                }
+                attr_asa('_Timestamp__value',(x:any)=>((v: any): number => {
+                    if (typeof v !== 'number') throw new Error(`${v} is not a number it is a ${typeof v}`);
+                    return v as number;
+                })(x));
+                return v as xju.time.Timestamp;
+            }
+            catch(e:any){
+                throw new Error(`${v} is not a xju.time.Timestamp because ${e}`);
+            }
+        }
+        export function isInstanceOfTimestamp(v:any): v is xju.time.Timestamp
+        {
+            return (
+                !Array.isArray(v) &&
+                v !== null &&        typeof v === 'object' &&
+                (typeof (v["_Timestamp__value"]) == 'number'))}
+    }
+}
+
+enum O {
+    a = "fred",
+    b = 7
+};
+
+function asInstanceOfO(v: any): O
+{
+    return ((v: any): O => {try{
+        var es = new Array<string>();
+        try{
+            ((v: any): O.a => {
+                if (v !== O.a) throw new Error(`the ${typeof v} ${v} is not O.a`);
+                return v as O.a;
+            })(v);
+            return v as O;
+        }
+        catch(e:any){
+            es.push(e.message);
+        };
+        try{
+            ((v: any): O.b => {
+                if (v !== O.b) throw new Error(`the ${typeof v} ${v} is not O.b`);
+                return v as O.b;
+            })(v);
+            return v as O;
+        }
+        catch(e:any){
+            es.push(e.message);
+        };
+        throw new Error(es.join(' and '));
+    }catch(e:any)
+    {
+        throw new Error(`${v} is not a O because ${e}`);
+    }})(v);
+}
+function isInstanceOfO(v:any): v is O
+{
+    return ((v:any): v is O=>{
+        return false ||
+           (v === O.a) ||
+           (v === O.b);
+    })(v);
+}''')
+
