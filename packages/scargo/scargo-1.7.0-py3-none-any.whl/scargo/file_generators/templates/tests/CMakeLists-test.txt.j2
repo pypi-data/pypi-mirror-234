@@ -1,0 +1,47 @@
+# #
+# Copyright (C) 2022 SpyroSoft Solutions. All rights reserved.
+# #
+
+cmake_minimum_required(VERSION 3.22)
+
+{% if tests %}
+{% if tests.cc %}
+set(CMAKE_C_COMPILER   "{{ tests.cc }}")
+{% endif %} {# tests.cc #}
+
+{% if tests.cxx %}
+set(CMAKE_CXX_COMPILER "{{ tests.cxx }}")
+{% endif %} {# tests.cxx #}
+
+set(CMAKE_CXX_STANDARD {{ cxxstandard }})
+
+{% if tests.cflags %}
+set(CMAKE_C_FLAGS   "{{ tests.cflags }}")
+{% endif %} {# tests.cflags #}
+
+{% if tests.cxxflags %}
+set(CMAKE_CXX_FLAGS "{{ tests.cxxflags }}")
+{% endif %} {# tests.cxxflags #}
+
+{% if tests.extras %}
+{% for key, value in tests.extras.items() %}
+SET({{ key }} {{ value }})
+{% endfor %}
+{% endif %} {# tests.extras #}
+{% endif %} {# tests #}
+
+project(tests LANGUAGES C CXX ASM)
+
+if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    conan_basic_setup()
+endif()
+
+enable_testing()
+
+set(PROJECT_ROOT_DIR "${PROJECT_SOURCE_DIR}/..")
+set(SOURCES_DIR "${PROJECT_ROOT_DIR}/{{ target.source_dir }}/")
+
+add_subdirectory(mocks)
+add_subdirectory(ut)
+add_subdirectory(it)
