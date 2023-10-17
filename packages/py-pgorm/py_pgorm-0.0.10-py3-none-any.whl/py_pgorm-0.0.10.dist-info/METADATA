@@ -1,0 +1,60 @@
+Metadata-Version: 2.1
+Name: py-pgorm
+Version: 0.0.10
+Summary: simple postgres orm for python
+Home-page: http://github.com/ahuigo/py-pgorm
+Author: ahuigo
+Author-email: ahui132@qq.com
+License: MIT
+Keywords: orm,python,postgres
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Software Development :: Testing
+Classifier: Topic :: Utilities
+Requires-Python: >=3.6.1
+Description-Content-Type: text/markdown
+Requires-Dist: psycopg2-binary >=2.9.9
+
+# Pgorm
+Pgorm is a simple orm for postgre in python
+
+## install
+
+    pip install py-pgorm==0.0.8
+
+## Usage
+
+    import pgorm 
+    def getCursor():
+        dbconf={
+            "database":"<dbname>",
+            "user":"<user>", 
+            "password": "<password>"
+        }
+        cursor = pgorm.getDbCursor(dbconf)
+        return cursor
+
+    def test_create_table():
+    
+        cursor = getCursor()
+        sql = '''
+            drop table t;
+            create table if not exists t(
+                code varchar(10) not null, 
+                label real not null
+            );'''
+
+        try:
+            cursor.execute(sql) 
+        except Exception as e:
+            pass
+    
+
+## Examples
+Refer to [examples](https://github.com/ahuigo/py-pgorm/blob/master/tests)
