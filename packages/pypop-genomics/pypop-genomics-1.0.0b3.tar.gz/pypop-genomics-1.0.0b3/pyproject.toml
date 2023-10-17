@@ -1,0 +1,34 @@
+[tool.cibuildwheel]
+skip = ["*-win32", "*_i686", "*-musllinux_*", "pp37-win_*", "pp310*", "cp312-*linux*"]  # skip certain builds, including 32-bit, musllinux and others
+test-extras = ["test"]
+test-command = "pytest -v {package}/tests"
+# Skip trying to test arm64 builds on Intel Macs as per
+# https://cibuildwheel.readthedocs.io/en/stable/faq/#apple-silicon
+test-skip = "*-macosx_arm64 *-macosx_universal2:arm64"
+
+[tool.cibuildwheel.linux]
+# for CentOS-based runners, local cibuildwheel docker
+before-all="yum install -y swig gsl-devel"
+# GitHub runners use Ubuntu
+#before-all="apt install swig libgsl-dev"
+
+[tool.cibuildwheel.macos]
+before-all = "brew install swig gsl"
+# FIXME: on MacOS, cibuildwheel team suggests building these from
+# source within the container, rather than using 'brew'
+
+# support cross-compilation on Apple Silicon
+archs = ["x86_64", "arm64"]  
+
+[tool.cibuildwheel.windows]
+# use nuget to install gsl on Windows, and manually supply paths
+before-all = "nuget install gsl-msvc14-x64 -Version 2.3.0.2779"
+environment = { CPATH="gsl-msvc14-x64.2.3.0.2779\\\\build\\\\native", LIBRARY_PATH="gsl-msvc14-x64.2.3.0.2779\\\\build\\\\native\\\\static" }
+
+[build-system]
+build-backend = "setuptools.build_meta:__legacy__"
+requires = ["setuptools>=42",
+	    "setuptools_scm[toml]>=6.2",
+	    "importlib-metadata; python_version <= '3.8'"
+	    ]
+
