@@ -1,0 +1,142 @@
+Metadata-Version: 2.1
+Name: rvtools2azmigrate
+Version: 0.1.3
+Summary: Convert an RVTools export to an Azure Migrate CSV inventory file
+Home-page: https://github.com/lrivallain/rvtools2azmigrate
+Author: Ludovic Rivallain
+License: MIT license
+Keywords: rvtools2azmigrate
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: AUTHORS.md
+Requires-Dist: coloredlogs
+Requires-Dist: Click
+Requires-Dist: openpyxl
+Requires-Dist: rich
+
+# rvtools2azmigrate
+
+Convert an [RVTools](https://www.robware.net/rvtools/) export to an [Azure Migrate CSV inventory file](https://learn.microsoft.com/en-us/azure/migrate/tutorial-discover-import).
+
+* Free software: MIT license
+
+# Features
+
+* Convert an RVTools export to an Azure Migrate CSV inventory file
+* Anonymize the VM data by replacing the hostname with UUIDs
+* Filter powered-off VMs
+
+# Installation
+
+## Using `PIP`
+
+```bash
+pip install rvtools2azmigrate
+```
+
+## From sources
+
+The sources for `rvtools2azmigrate` can be downloaded from the [`Github repo`](https://github.com/lrivallain/rvtools2azmigrate).
+
+You can either clone the public repository:
+
+```bash
+git clone git://github.com/lrivallain/rvtools2azmigrate
+```
+
+Or download the [`tarball`](https://github.com/lrivallain/rvtools2azmigrate/tarball/master):
+
+```bash
+curl -OJL https://github.com/lrivallain/rvtools2azmigrate/tarball/master
+```
+
+Once you have a copy of the source, you can install it with:
+
+```bash
+python setup.py install
+```
+
+or
+
+```bash
+pip install .
+```
+
+# Usage
+
+```bash
+rvtools2azmigrate --help
+# Output
+Usage: rvtools2azmigrate [OPTIONS] COMMAND[ARGS]...
+
+Options:
+  --debug
+  --help   Show this message and exit.
+
+Commands:
+  convert  Convert RVTools file to Azure Migrate format
+```
+
+## Convert RVTools file to Azure Migrate format
+
+```bash
+rvtools2azmigrate convert --help
+# Output
+Usage: rvtools2azmigrate convert [OPTIONS]
+
+Convert RVTools file to Azure Migrate format
+
+Options:
+  -i, --rvtools PATH  RVTools input file  [required]
+  -o, --output PATH   Ouptut file  [required]
+  --anonymized        Anonymize the output file by replacing VM names with UUIDs
+  --filter-off-vms    Filter the powered-off VMs
+  --help              Show this message and exit.
+```
+
+### Examples
+
+#### Anonymized
+
+```bash
+rvtools2azmigrate convert -i rvtools.xlsx -o azuremigrate.csv --anonymized
+```
+
+This will provide a CSV file to be imported in Azure Migrate manual discovery section. VMs names will be replaced by their UUID to anonymize the content of the exported file.
+
+#### Filter off VMs
+
+```bash
+rvtools2azmigrate convert -i rvtools.xlsx -o azuremigrate.csv --filter-off-vms
+```
+
+This will provide a CSV file to be imported in Azure Migrate manual discovery section. Powered-Off VMs will not be exported to the CSV file.
+
+
+# History
+
+## 0.1.3 (2023-10-11)
+
+* Fix #2: Incorrect output if RV Tools input has a VM name with spaces in it
+
+## 0.1.2 (2023-02-16)
+
+* Fix import issue when used as installed module
+
+## 0.1.1 (2023-02-03)
+
+* Filter Powered-off VMs
+* Automatic MiB/MB detection
+* Intermediate `RvToolsVM` and `AzMigrateVM` objects
+
+## 0.1.0 (2022-12-22)
+
+* First release on GitHub.
