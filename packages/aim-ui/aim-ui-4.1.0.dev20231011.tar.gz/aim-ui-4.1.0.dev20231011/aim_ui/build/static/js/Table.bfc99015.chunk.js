@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkui=self.webpackChunkui||[]).push([[2388],{82944:function(e,o,s){s.r(o);var c=s(57678),n=s(80184);o.default=function(e){return(0,n.jsx)(c.iA,{data:e.data,focusedRowIndex:e.options.focused_row_index,selectedIndices:e.options.selected_row_indices,withSelect:e.options.selectable_rows,onRowFocus:e.callbacks.on_row_focus,onRowSelect:e.callbacks.on_row_select})}}}]);
+//# sourceMappingURL=Table.bfc99015.chunk.js.map
