@@ -1,0 +1,196 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-vcs"]
+
+
+[project]
+name = "spatialdata"
+description = "Spatial data format."
+authors = [
+    {name = "scverse"},
+]
+maintainers = [
+    {name = "scverse", email = "giov.pll@gmail.com"},
+]
+urls.Documentation = "https://spatialdata.readthedocs.io/"
+urls.Source = "https://github.com/scverse/spatialdata.git"
+urls.Home-page = "https://github.com/scverse/spatialdata.git"
+requires-python = ">=3.9"
+dynamic= [
+  "version" # allow version to be set by git tags
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+dependencies = [
+    "anndata>=0.9.1",
+    "numpy",
+    "xarray",
+    "zarr",
+    "ome_zarr>=0.7.0",
+    "spatial_image>=0.3.0",
+    "multiscale_spatial_image>=0.11.2",
+    "xarray-schema",
+    "pygeos",
+    "geopandas",
+    "shapely>=2.0.1",
+    "rich",
+    "pyarrow",
+    "typing_extensions>=4.8.0",
+    "dask-image",
+    "networkx",
+    "xarray-spatial>=0.3.5",
+    "tqdm",
+    "fsspec<=2023.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bump2version",
+]
+docs = [
+    "sphinx>=4.5",
+    "sphinx-book-theme>=1.0.0",
+    "sphinx_rtd_theme",
+    "myst-nb",
+    "sphinxcontrib-bibtex>=1.0.0",
+    "sphinx-autodoc-typehints",
+    "sphinx-design",
+    # For notebooks
+    "ipython>=8.6.0",
+    "sphinx-copybutton",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+torch = [
+    "torch"
+]
+extra  = [
+    "napari-spatialdata>=0.2.4",
+    "spatialdata-plot",
+    "spatialdata-io",
+]
+
+[tool.coverage.run]
+source = ["spatialdata"]
+omit = [
+    "**/test_*.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+xfail_strict = true
+addopts = [
+#    "-Werror",  # if 3rd party libs raise DeprecationWarnings, just use filterwarnings below
+    "--import-mode=importlib",  # allow using test files with same name
+    "-s"  # print output from tests
+]
+# info on how to use this https://stackoverflow.com/questions/57925071/how-do-i-avoid-getting-deprecationwarning-from-inside-dependencies-with-pytest
+filterwarnings = [
+    #     "ignore:.*U.*mode is deprecated:DeprecationWarning",
+]
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+
+[tool.jupytext]
+formats = "ipynb,md"
+
+[tool.hatch.build.targets.wheel]
+packages = ['src/spatialdata']
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "_version.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".tox",
+    "__pycache__",
+    "build",
+    "docs/_build",
+    "dist",
+    "setup.py",
+]
+ignore = [
+    # Do not assign a lambda expression, use a def -> lambda expression assignments are convenient
+    "E731",
+    # allow I, O, l as variable names -> I is the identity matrix, i, j, k, l is reasonable indexing notation
+    "E741",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in __init__
+    "D107",
+    # Missing docstring in magic method
+    "D105",
+    # Do not perform function calls in argument defaults.
+    "B008",
+    # Missing docstring in magic method
+    "D105",
+]
+line-length = 120
+select = [
+    "D", # flake8-docstrings
+    "I", # isort
+    "E", # pycodestyle
+    "F", # pyflakes
+    "W", # pycodestyle
+    "Q", # flake8-quotes
+    "SIM", # flake8-simplify
+    "TID",  # flake-8-tidy-imports
+    "NPY",  # NumPy-specific rules
+    "PT",  # flake8-pytest-style
+    "B", # flake8-bugbear
+    "UP", # pyupgrade
+    "C4", # flake8-comprehensions
+    "BLE", # flake8-blind-except
+    "T20",  # flake8-print
+    "RET", # flake8-raise
+    "PGH", # pygrep-hooks
+]
+unfixable = ["B", "C4", "UP", "BLE", "T20", "RET"]
+target-version = "py39"
+[tool.ruff.per-file-ignores]
+    "tests/*" = ["D", "PT", "B024"]
+    "*/__init__.py" = ["F401", "D104", "D107", "E402"]
+    "docs/*" = ["D","B","E","A"]
+    "src/spatialdata/transformations/transformations.py" = ["D101","D102", "D106", "B024", "T201", "RET504", "UP006", "UP007"]
+    "src/spatialdata/transformations/operations.py" = ["D101","D102", "D106", "B024","D401", "T201", "RET504", "RET506", "RET505", "RET504", "UP006", "UP007"]
+    "src/spatialdata/transformations/ngff/*.py" = ["D101","D102", "D106", "D401", "E501","RET506", "RET505", "RET504", "UP006", "UP007"]
+    "src/spatialdata/transformations/*" = ["RET", "D", "UP006", "UP007"]
+    "src/spatialdata/models/models.py" = ["D101", "B026"]
+    "src/spatialdata/dataloader/datasets.py" = ["D101"]
+    "tests/test_models/test_models.py" = ["NPY002"]
+    "tests/conftest.py"= ["E402"]
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+# pyupgrade typing rewrite TODO: remove at some point from per-file ignore
+# "UP006", "UP007"
