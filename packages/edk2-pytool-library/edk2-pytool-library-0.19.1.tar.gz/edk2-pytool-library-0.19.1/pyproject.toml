@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edk2-pytool-library"
+maintainers = [{name = "EDK2 Pytool Maintainers", email = "edk2-pytools@microsoft.com"}]
+dynamic = ["version"]
+description = "Python library supporting UEFI EDK2 firmware development"
+readme = {file = "readme.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = [
+    "pyasn1 >= 0.4.8",
+    "pyasn1-modules >= 0.2.8",
+    "cryptography >= 39.0.1",
+    "joblib >= 1.3.2",  
+    "GitPython >= 3.1.30"
+]
+classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: BSD License",
+        "Operating System :: OS Independent",
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12"
+    ]
+
+[project.urls]
+homepage = "https://github.com/tianocore/edk2-pytool-library/"
+documentation = "https://www.tianocore.org/edk2-pytool-library/"
+issues = "https://github.com/tianocore/edk2-pytool-library/issues/"
+
+[project.optional-dependencies]
+dev = [
+    "ruff == 0.0.292",
+    "pytest == 7.4.2",
+    "coverage == 7.3.2",
+    "pre-commit == 3.4.0",
+]
+publish = [
+    "setuptools == 68.2.2",
+    "build == 1.0.3",
+    "twine == 4.0.2",
+]
+docs = [
+    "black==23.9.1",
+    "mkdocs==1.5.3",
+    "mkdocs-material==9.4.4",
+    "mkdocstrings[python]==0.23.0",
+    "mkdocstrings-python==1.7.2",
+    "markdown-include==0.8.1",
+    "mkdocs-gen-files==0.5.0",
+    "mkdocs-exclude==1.0.2",
+    "mkdocs-awesome-pages-plugin==2.9.2",
+]
+
+[tool.setuptools_scm]
+
+[tool.coverage.run]
+include = ["edk2toollib/*"]
+
+[tool.ruff]
+src = ["edk2toollib"]
+select = [
+    "E", # Pycodestyle errors
+    "W", # Pycodestyle warnings
+    "F", # PyFlakes
+    "D", # pydocstyle
+    "I", # isort
+    "PIE", # flake8 - PIE
+]
+line-length = 120
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests.unit"
+]
