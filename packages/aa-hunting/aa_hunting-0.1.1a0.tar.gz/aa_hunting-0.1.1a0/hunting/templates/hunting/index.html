@@ -1,0 +1,85 @@
+{% extends "hunting/base.html" %}
+{% load i18n %}
+{% load humanize %}
+{% load evelinks %}
+{% load hunting %}
+{% load static %}
+{% block page_title %}
+    {% translate "Hunting" %}
+{% endblock page_title %}
+{% block details %}
+    <div class="row">
+        {% for target in targets %}
+            <div class="col-lg-3">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title">{{ target.character.character_name }}</div>
+                    </div>
+                    <div class="panel-body">
+                        <img src="{{ target.character.portrait_url }}"
+                            alt="{{ target.character.character_name }}"
+                            width="64"
+                            height="64"/>
+                        <img src="{{ target.character.corporation_logo_url }}"
+                            alt="{{ target.character.corporation_name }}"
+                            width="64"
+                            height="64"/>
+                        <img src="{{ target.character.alliance_logo_url }}"
+                    alt="{{ target.character.alliance_name }}"
+                            width="64"
+                            height="64"/>
+                        <img src="{{ target.ship.icon_url }}"
+                            alt="{{ target.ship.name }}"
+                            width="64"
+                            height="64"/>
+                        <br/>
+                        {% trans "Location" %}:
+                        {% if target.last_locatecharmsg %}
+                            {% if target.last_locatecharmsg.solar_system.is_high_sec %}
+                                <a class="label label-danger"
+                                    href="{{ target.last_locatecharmsg.solar_system|dotlan_jump_range:'Super Capital' }}">{{ target.last_locatecharmsg.solar_system }}</a>
+                                <span class="label label-danger">{{ target.last_locatecharmsg.constellation }}</span>
+                                <span class="label label-danger">{{ target.last_locatecharmsg.region }}</span>
+                            {% elif target.last_locatecharmsg.solar_system.is_low_sec %}
+                                <a class="label label-warning"
+                                    href="{{ target.last_locatecharmsg.solar_system|dotlan_jump_range:'Super Capital' }}">{{ target.last_locatecharmsg.solar_system }}</a>
+                                <span class="label label-warning">{{ target.last_locatecharmsg.constellation }}</span>
+                                <span class="label label-warning">{{ target.last_locatecharmsg.region }}</span>
+                            {% elif target.last_locatecharmsg.solar_system.is_null_sec %}
+                                <a class="label label-success"
+                                    href="{{ target.last_locatecharmsg.solar_system|dotlan_jump_range:'Super Capital' }}">{{ target.last_locatecharmsg.solar_system }}</a>
+                                <span class="label label-success">{{ target.last_locatecharmsg.constellation }}</span>
+                                <span class="label label-success">{{ target.last_locatecharmsg.region }}</span>
+                            {% endif %}
+                            {% if target.last_locatecharmsg.station %}
+                                <span class="label label-default">{{ target.last_locatecharmsg.station }}</span>
+                            {% endif %}
+                        {% endif %}
+                        <br/>
+                        {% trans "Timestamp" %}:
+                        {% if target.last_locatecharmsg_oneday %}
+                            <span class="label label-danger">{{ target.last_locatecharmsg.timestamp|naturaltime }}</span>
+                        {% elif target.last_locatecharmsg_onehour %}
+                            <span class="label label-warning">{{ target.last_locatecharmsg.timestamp|naturaltime }}</span>
+                        {% else %}
+                            <span class="label label-default">{{ target.last_locatecharmsg.timestamp|naturaltime }}</span>
+                        {% endif %}
+                        <br/>
+                        {% trans "Alts" %}:
+                        {% for alt in target.alts.all %}<span class="label label-default">{{ alt.character.character_name }}</span>{% endfor %}
+                        <br/>
+                        <a class="btn btn-default"
+                            href="{% url 'hunting:target_details' target.id %}"
+                            role="button">{% trans "Details" %}</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock details %}
+{% block extra_javascript %}
+{% endblock extra_javascript %}
+{% block extra_css %}
+{% endblock extra_css %}
+{% block extra_script %}
+{% endblock extra_script %}
