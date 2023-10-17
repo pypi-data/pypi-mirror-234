@@ -1,0 +1,34 @@
+objective: # can also use the key moo
+    metrics:
+        - name: rmse
+          metric: RMSE
+          noise_sd: .1
+
+generation_strategy:
+    steps:
+        - model: SOBOL
+          num_trials: 5
+        - model: GPEI
+          num_trials: -1
+scheduler:
+    total_trials: 20
+
+parameters:
+    x0:
+        'bounds': [ -5, 10 ]
+        'type': 'range'
+        'value_type': 'float'
+    x1:
+        'bounds': [ 0, 15 ]
+        'type': 'range'
+        'value_type': 'float'
+
+# options only needed by the model and not BOA
+# You can put anything here that your model might need
+model_options:
+    input_size: 15
+
+script_options:
+    wrapper_path: ./script_wrappers.py
+    wrapper_name: BraninWrapper
+    append_timestamp: True
