@@ -1,0 +1,128 @@
+import sys
+import os
+import re
+
+paths = ["src"]
+root_files = [".gitignore"]
+header_path = "license"
+extensions = [".gitignore", ".py"]
+
+header_files = {}
+file_list = []
+file_list = root_files + file_list
+
+check_only = True
+overwrite = False
+remove = False
+
+
+def has_extension(ext, file):
+    return file.endswith(ext) or file.endswith(ext.lower()) or file.endswith(ext.upper())
+
+
+def shebang(f):
+    try:
+        with open(file, "r") as f:
+            m = re.match(r'(#!.+\n)', f.read())
+        try:
+            shebang_ = m.group(0)
+            #print("Shebang found: " + shebang_)
+        except Exception:
+            shebang_ = None
+    except Exception:
+        shebang_ = None
+    if shebang_ is None:
+        shebang_ = ""
+    return shebang_
+
+
+def has_header(ext, file):
+    try:
+        with open(file, "r") as f:
+            data = f.read()
+    except Exception:
+        raise IOError
+    return data.startswith(shebang(file) + header_files[ext])
+
+
+def overwrite_header(ext, file):
+    print("\tPrepending the header...")
+    shebang_= shebang(file)
+    with open(file, 'r') as original:
+        data = original.read()
+        if shebang_ != "":
+            #print(shebang_)
+            data = data.replace(shebang_, "", 1)
+    with open(file, 'w') as modified:
+        modified.write(shebang_ + header_files[ext] + data)
+
+
+def remove_header(ext, file):
+    print("\tRemoving the header...")
+    with open(file, 'r') as original:
+        data = original.read()
+    with open(file, 'w') as modified:
+        modified.write(data.replace(header_files[ext], ""))
+
+
+for i in range(len(sys.argv)):
+    if sys.argv[i] == "--overwrite":
+        print("Adding the header in the source files")
+        overwrite = True
+        check_only = False
+        break
+    if sys.argv[i] == "--remove":
+        print("Removing the header from the source files")
+        remove = True
+        check_only = False
+        break
+if check_only:
+    print("Checking the presence of the header in the source files")
+
+for r, d, f in os.walk(header_path):
+    for file in f:
+        for ext in extensions:
+            if file.endswith(ext):
+                with open(os.path.join(r, file), 'r') as h:
+                    header_files[ext] = h.read()
+                break
+
+valid = True
+
+return_code = 1
+
+for path in paths:
+    for r, d, f in os.walk(path):
+        for file in f:
+            n = os.path.join(r, file)
+            file_list.append(n)
+
+for file in file_list:
+    for ext in extensions:
+        if has_extension(ext, file):
+ #           print("File " + file + " has a valid extension")
+            try:
+                is_header = has_header(ext, file)
+            except IOError:
+                valid = False
+                print("\tFile " + file + " cannot be read! Please check the encoding!")
+                break
+            if not is_header and not remove:
+                if not overwrite:
+                    valid = False
+                print("\tFile " + file + " does not start with the license header!")
+                if overwrite:
+                    overwrite_header(ext, file)
+            if is_header and remove:
+                remove_header(ext, file)
+            break
+if valid:
+    return_code = 0
+
+exit(return_code)
+
+
+
+
+
+

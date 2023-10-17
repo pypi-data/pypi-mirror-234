@@ -1,0 +1,64 @@
+#project variables:
+#TESTPYPI_TOKEN
+
+stages:
+  - license
+  - local_install
+  - deploy
+
+variables:
+  DOCKER_IMAGE: "bscalya/python"
+
+license:
+  stage: license 
+  script:
+    - export PYTHONUNBUFFERED=1
+    - python3 license/license_manager
+  only:
+    - master
+    - merge_requests
+
+local_install:
+  stage: local_install
+  script:
+    - python3 -m pip install --upgrade pip
+    - touch setup.cfg
+    - python3 -m pip install -e .
+    - rm setup.cfg
+    - gazix help 
+  allow_failure: false
+  only:
+    - master
+    - merge_requests
+
+testpypi_deploy:mr:
+  stage: deploy
+  script:
+    - VERSION=`grep version pyproject.toml | cut -d "\"" -f 2`
+    - python3 -m pip install --upgrade build
+    - python3 -m build
+    - python3 -m pip install --upgrade twine
+    - python3 -m twine upload -u __token__ -p $TESTPYPI_TOKEN --repository testpypi dist/*
+    - python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps gazix==$VERSION
+    - gazix help 
+  allow_failure: false
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - pyproject.toml
+
+pypi_deploy:master:
+  stage: deploy
+  script:
+    - VERSION=`grep version pyproject.toml | cut -d "\"" -f 2`
+    - python3 -m pip install --upgrade build
+    - python3 -m build
+    - python3 -m pip install --upgrade twine
+    - python3 -m twine upload -u __token__ -p $PYPI_TOKEN --repository pypi dist/*
+    - python3 -m pip install --index-url https://pypi.org/simple/ --no-deps gazix==$VERSION
+    - gazix help 
+  allow_failure: false
+  only:
+    refs:
+      - master
