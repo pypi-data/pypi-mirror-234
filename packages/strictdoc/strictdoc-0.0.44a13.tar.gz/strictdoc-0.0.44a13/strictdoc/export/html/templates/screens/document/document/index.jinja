@@ -1,0 +1,86 @@
+{% set template_type = 'Document' %}
+
+{% extends "base.jinja.html" %}
+
+{% block head_css %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ link_renderer.render_static_url('tree.css') }}"/>
+{% endblock head_css %}
+
+{% block head_scripts %}
+  {%- if not standalone -%}
+  <script type="text/javascript" src="{{ link_renderer.render_static_url('viewtype_menu.js') }}"></script>
+  {%- endif -%}
+  <script type="text/javascript" src="{{ link_renderer.render_static_url('resizable_bar.js') }}"></script>
+
+  {%- if project_config.is_running_on_server and not standalone -%}
+  <script type="module">
+    import hotwiredTurbo from "{{ link_renderer.render_static_url('turbo.min.js') }}";
+    import { Application, Controller } from "{{ link_renderer.render_static_url('stimulus.min.js') }}";
+    window.Stimulus = Application.start();
+    window.Controller = Controller;
+  </script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/anchor_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/collapsible_list_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/draggable_list_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/dropdown_menu_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/editable_field_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/deletable_field_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/movable_field_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/modal_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/scroll_into_view_controller.js') }}"></script>
+  {%- endif -%}
+
+  {%- if project_config.is_activated_mathjax() -%}
+  <script id="MathJax-script" async src="{{ link_renderer.render_static_url('mathjax/tex-mml-chtml.js') }}"></script>
+  {%- endif -%}
+  {%- if project_config.is_activated_mermaid() -%}
+    <script src="{{ link_renderer.render_static_url('mermaid/mermaid.min.js') }}"></script>
+    <script type="module">
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+  {%- endif -%}
+  {{ super() }}
+{% endblock head_scripts %}
+{% block title %}{{ document.title }} - {{ template_type }}{% endblock title %}
+{% block viewtype %}{{ "document" if not standalone else "standalone_document" }}{% endblock viewtype %}
+
+{% block layout_nav %}
+  {%- if not standalone -%}
+  {% include "_shared/nav.jinja.html" %}
+  {%- endif -%}
+{% endblock layout_nav %}
+
+{% block tree_content %}
+  {% include "screens/document/_shared/resizable_bar_with_project_tree.jinja" %}
+{% endblock tree_content %}
+
+{% block toc_content %}
+  {% include "screens/document/_shared/resizable_bar_with_toc.jinja" %}
+{% endblock toc_content %}
+
+{%- if not standalone -%}
+  {%- set header_items = [
+        "screens/document/_shared/frame_header_document_title.jinja",
+        "screens/document/_shared/viewtype_menu.jinja"
+      ]
+  -%}
+{%- else -%}
+  {%- set header_items = [
+        "screens/document/_shared/frame_header_document_title.jinja",
+      ]
+  -%}
+{%- endif -%}
+
+{% block header_content %}
+  {%- with
+      header__items=header_items,
+      header__last="screens/document/document/actions.jinja"
+  -%}
+    {% include "components/header/index.jinja" %}
+  {%- endwith -%}
+{% endblock header_content %}
+
+{% block main_content %}
+  {% include "screens/document/document/main.jinja" %}
+{% endblock main_content %}

@@ -1,0 +1,69 @@
+{% set template_type = 'Deep Traceability' %}
+
+{% extends "base.jinja.html" %}
+
+{% block head_css %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ link_renderer.render_static_url('requirement-tree.css') }}"/>
+{% endblock head_css %}
+
+{% block head_scripts %}
+  <script type="text/javascript" src="{{ link_renderer.render_static_url('viewtype_menu.js') }}"></script>
+  <script type="text/javascript" src="{{ link_renderer.render_static_url('resizable_bar.js') }}"></script>
+
+  {%- if project_config.is_running_on_server and not standalone -%}
+  <script type="module">
+    import hotwiredTurbo from "{{ link_renderer.render_static_url('turbo.min.js')}}";
+    import { Application, Controller } from "{{ link_renderer.render_static_url('stimulus.min.js') }}";
+    window.Stimulus = Application.start();
+    window.Controller = Controller;
+  </script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/collapsible_list_controller.js') }}"></script>
+  <script type="module" src="{{ link_renderer.render_static_url('controllers/modal_controller.js') }}"></script>
+  {%- endif -%}
+
+  {%- if project_config.is_activated_mathjax() -%}
+  <script id="MathJax-script" async src="{{ link_renderer.render_static_url('mathjax/tex-mml-chtml.js') }}"></script>
+  {%- endif -%}
+  {%- if project_config.is_activated_mermaid() -%}
+    <script src="{{ link_renderer.render_static_url('mermaid/mermaid.min.js') }}"></script>
+    <script type="module">
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+  {%- endif -%}
+  {# only for deep-trace: #}
+  <script type="text/javascript" src="{{ link_renderer.render_static_url('pan_with_space.js') }}"></script>
+  {{ super() }}
+{% endblock head_scripts %}
+{% block title %}{{ document.title }} - {{ template_type }}{% endblock title %}
+{% block viewtype %}deep_traceability{% endblock viewtype %}
+
+{% block layout_nav %}
+  {%- if not standalone -%}
+  {% include "_shared/nav.jinja.html" %}
+  {%- endif -%}
+{% endblock layout_nav %}
+
+{% block tree_content %}
+  {% include "screens/document/_shared/resizable_bar_with_project_tree.jinja" %}
+{% endblock tree_content %}
+
+{% block toc_content %}
+  {% include "screens/document/_shared/resizable_bar_with_toc.jinja" %}
+{% endblock toc_content %}
+
+{% block header_content %}
+  {%- with
+      header__items=[
+        "screens/document/_shared/frame_header_document_title.jinja",
+        "screens/document/_shared/viewtype_menu.jinja"
+      ]
+  -%}
+    {% include "components/header/index.jinja" %}
+  {%- endwith -%}
+{% endblock header_content %}
+
+{% block main_content %}
+  {% include "screens/document/traceability_deep/main.jinja" %}
+{% endblock main_content %}
+{% block scripts %}{% endblock scripts %}
