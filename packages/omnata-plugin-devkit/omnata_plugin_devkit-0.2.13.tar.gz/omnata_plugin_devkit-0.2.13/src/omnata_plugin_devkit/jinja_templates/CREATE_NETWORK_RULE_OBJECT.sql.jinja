@@ -1,0 +1,47 @@
+create or replace procedure PLUGIN.CREATE_NETWORK_RULE_OBJECT(RULE_NAME VARCHAR,VALUE_LIST ARRAY)
+   returns object
+   language javascript
+   execute as owner
+as
+$$
+try{
+   // cannot seem to get bindings to work with the network rule value list.
+   // unfortunately we'll just have to sanitise the input manually and interpolate
+   VALUE_LIST.forEach(function(domainName) {
+        if (domainName.includes("'")){
+            throw `Domain name cannot contain a quote mark: ${domainName}`
+        }
+    });
+   var networkAddressList = VALUE_LIST.map(x => `'${x}'`)
+   var valueListString = networkAddressList.join(',')
+
+   var networkAddressBindingQmarks = VALUE_LIST.map(x => `?`)
+   snowflake.createStatement( {
+      sqlText: `CREATE OR REPLACE NETWORK RULE IDENTIFIER(?)
+                  MODE = EGRESS
+                  TYPE = HOST_PORT
+                  VALUE_LIST = (${valueListString})`,
+      binds:[RULE_NAME]
+   } ).execute();
+   snowflake.createStatement( {
+      sqlText: `grant usage on network rule IDENTIFIER(?) to application role OMNATA_MANAGEMENT`,
+      binds:[RULE_NAME]
+   } ).execute();
+   return {
+        "success": true,
+        "data": null
+   }
+}
+catch(e){
+   return {
+      "success": false,
+      "error": `CREATE_NETWORK_RULE_OBJECT: ${String(e)}`
+   }
+}
+
+$$
+;
+
+grant usage on procedure PLUGIN.CREATE_NETWORK_RULE_OBJECT(VARCHAR,ARRAY)
+to application role OMNATA_MANAGEMENT;
+

@@ -1,0 +1,187 @@
+import streamlit as st
+import os,json
+from snowflake.snowpark.context import get_active_session
+
+plugin_app_database = get_active_session().get_current_database().replace('"','')
+
+st.set_page_config(
+    page_title="Plugin Configuration",
+    layout="wide"
+)
+
+st.header("Plugin Setup")
+plugin_info = json.loads(get_active_session().sql(f"select PLUGIN.OMNATA_PLUGIN_INFO()").collect()[0][0])
+manifest = plugin_info['manifest']
+developer_id = manifest['developer_id']
+# TODO: this should really come from the Omnata engine rather than reimplement the same logic
+plugin_id = manifest['plugin_id']
+plugin_fqn = f"{developer_id}__{plugin_id}".upper()
+plugin_application_role_name = f"PLUGIN_{plugin_fqn}"
+
+# first, check for an existing registration
+registrations = get_active_session().sql(f"select APPLICATION_NAME,EXTERNAL_ACCESS_INTEGRATIONS from DATA.OMNATA_REGISTRATION").collect()
+if len(registrations)==0:
+    omnata_app_name = st.text_input(label="Omnata App name",
+        value="OMNATA_SYNC_ENGINE")
+    # if there's no registration, prep for registration by making the plugin app visible to the engine
+    applications_list = get_active_session().sql(f"show databases like '{omnata_app_name}' in account").collect()
+    if len(applications_list)==0:
+        st.write("""To start using an Omnata plugin, you must grant the Omnata Sync Engine visibility of this plugin application and then register it:""")
+        st.code(f"""
+        -- as ACCOUNTADMIN
+        grant application role {plugin_app_database}.OMNATA_MANAGEMENT 
+        to application {omnata_app_name};
+        call {omnata_app_name}.API.REGISTER_PLUGIN('{plugin_app_database}');
+        """,language='sql')
+        clicked_1 = st.button(label="Show next step",key="next_step_button_1")
+        if clicked_1:
+            st.info("Plugin was not registered, please try following the above instructions again")
+        st.stop()
+    else:
+        st.write("""To start using an Omnata plugin, you must register it:""")
+        st.code(f"""
+        -- as ACCOUNTADMIN
+        call {omnata_app_name}.API.REGISTER_PLUGIN('{plugin_app_database}');
+        """,language='sql')
+        clicked_3 = st.button(label="Show next step",key="next_step_button_3")
+        if clicked_3:
+            st.info("Plugin was not registered, please try following the above instructions again")
+        st.stop()
+elif len(registrations)>1:
+    st.error(f"There are {len(registrations)}, this should never happen. Remove this plugin application and reinstall")
+else:
+    registration = registrations[0]
+    omnata_app_name = registration.APPLICATION_NAME
+    test_callback_result = json.loads(get_active_session().sql(f"call PLUGIN.TEST_CALLBACK('{omnata_app_name}')").collect()[0][0])
+    if test_callback_result['success'] is False:
+        st.error(test_callback_result['error'])
+        st.stop()
+    elif test_callback_result['data'] is False:
+        st.write("""Now, you must complete the final registration step by granting the plugin application access to its Omnata app role:""")
+        st.code(f"""grant application role {omnata_app_name}.{plugin_application_role_name}
+to application {plugin_app_database};""",language='sql')
+        clicked_2 = st.button(label="Show next step",key="next_step_button_2")
+        if clicked_2:
+            st.info("Plugin was not registered, please try following the above instructions again")
+        st.stop()
+
+st.success("Plugin is registered and ready to use")
+st.write('---')
+registration = registrations[0]
+integrations = json.loads(registration.EXTERNAL_ACCESS_INTEGRATIONS)
+st.subheader('External Access and Secrets')
+st.write(f"### External Access Integrations used by plugin")
+for integration_name,details in integrations.items():
+    if 'oauth_secret' not in details:
+        details['oauth_secret'] = None
+    if 'other_secret' not in details:
+        details['other_secret'] = None
+    st.write(f"#### {integration_name}")
+    col1,col2 = st.columns([2,6])
+    with col1:
+        st.write(f"**OAuth secret:**")
+    with col2:
+        st.code(details['oauth_secret'])
+    col1,col2 = st.columns([2,6])
+    with col1:
+        st.write(f"**Other secrets:**")
+    with col2:
+        st.code(details['other_secret'])
+    if details['oauth_secret'] is not None:
+        oauth_secret = details['oauth_secret']
+        st.write(f"**Secret details: {oauth_secret}**")
+        secret_contents = json.loads(get_active_session().sql(f"call PLUGIN.RETRIEVE_SECRETS($${oauth_secret}$$,null)").collect()[0][0])
+        if secret_contents['success'] is False:
+            st.error(f"Error retrieving secrets contents: {str(secret_contents['error'])}")
+        else:
+            col1,col2 = st.columns([2,6])    
+            with col1:
+                st.write(f"**Retrieval test:**")
+            with col2:
+                st.info("Secret contents were retrieved successfully")
+
+    if details['other_secret'] is not None:
+        other_secret = details['other_secret']
+        st.write(f"**Secret details: {other_secret}**")
+        secret_contents = json.loads(get_active_session().sql(f"call PLUGIN.RETRIEVE_SECRETS(null,$${other_secret}$$)").collect()[0][0])
+        if secret_contents['success'] is False:
+            st.error(f"Error retrieving secrets contents: {str(secret_contents['error'])}")
+        else:    
+            col1,col2 = st.columns([2,6])    
+            with col1:
+                st.write(f"**Retrieval test:**")
+            with col2:
+                st.info("Secret contents were retrieved successfully")
+            col1,col2 = st.columns([2,6])    
+            with col1:
+                st.write(f"**Secret parameters:**")
+            with col2:
+                st.code('\n'.join(secret_contents['data'].keys()))
+
+st.write('---')
+st.subheader('Plugin information')
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Anaconda packages imported:**")
+with col2:
+    st.code(','.join(plugin_info['anaconda_packages']))
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**PyPi packages bundled:**")
+with col2:
+    st.code(','.join(plugin_info['bundled_packages']))
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Plugin runtime version:**")
+with col2:
+    st.code(plugin_info['plugin_runtime_version'])
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Developer ID:**")
+with col2:
+    st.code(manifest['developer_id'])
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Developer Name:**")
+with col2:
+    st.code(manifest['developer_name'])
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Plugin ID:**")
+with col2:
+    st.code(manifest['plugin_id'])
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Plugin Name:**")
+with col2:
+    st.code(manifest['plugin_name'])
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Docs URL:**")
+with col2:
+    st.write(manifest['docs_url'])
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Supports Inbound:**")
+with col2:
+    st.code('Yes' if manifest['supports_inbound'] is True else 'No')
+
+outbound_strategy_names = [s['name'] for s in manifest['supported_outbound_strategies']]
+
+col1,col2 = st.columns([2,6])
+with col1:
+    st.write(f"**Supports Outbound:**")
+with col2:
+    st.code('Yes' if len(outbound_strategy_names) > 0 else 'No')
+if len(outbound_strategy_names) > 0:
+    col1,col2 = st.columns([2,6])
+    with col1:
+        st.write(f"**Outbound Strategies:**")
+    with col2:
+        st.code(','.join(outbound_strategy_names))
+
+st.write('')
+st.write('')
+st.write('')
+st.write('')
+st.write('')
