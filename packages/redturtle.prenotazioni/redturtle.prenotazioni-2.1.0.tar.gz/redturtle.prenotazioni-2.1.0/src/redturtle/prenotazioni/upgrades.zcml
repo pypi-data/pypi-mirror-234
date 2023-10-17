@@ -1,0 +1,209 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- -*- extra stuff goes here -*- -->
+
+  <genericsetup:upgradeStep
+      title="Upgrade to 1001"
+      description=""
+      profile="redturtle.prenotazioni:default"
+      source="1000"
+      destination="1001"
+      handler=".upgrades.to_1001"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1001"
+      description=""
+      profile="redturtle.prenotazioni:default"
+      source="1001"
+      destination="1002"
+      handler=".upgrades.to_1002"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1100"
+      description=""
+      profile="redturtle.prenotazioni:default"
+      source="1002"
+      destination="1100"
+      handler=".upgrades.to_1100"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1200"
+      description="Enable p.a.caching"
+      profile="redturtle.prenotazioni:default"
+      source="1100"
+      destination="1200"
+      handler=".upgrades.update_registry"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1300"
+      description="Upgrade contentrules"
+      profile="redturtle.prenotazioni:default"
+      source="1200"
+      destination="1300"
+      handler=".upgrades.update_contentrules"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1400"
+      description="Upgrade prenotazioni_workflow"
+      profile="redturtle.prenotazioni:default"
+      source="1300"
+      destination="1400"
+      handler=".upgrades.to_1400"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1401"
+      description="Upgrade prenotazioni_workflow + add type"
+      profile="redturtle.prenotazioni:default"
+      source="1400"
+      destination="1401"
+      handler=".upgrades.to_1401"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade to 1402"
+      description="Load new content rule: booking-confirm"
+      profile="redturtle.prenotazioni:default"
+      source="1401"
+      destination="1402"
+      handler=".upgrades.to_1402"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade to 1403"
+      description="Add new index to Prenotazioni c.t."
+      profile="redturtle.prenotazioni:default"
+      source="1402"
+      destination="1403"
+      handler=".upgrades.to_1403"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade to 1500"
+      description="Remove unused type"
+      profile="redturtle.prenotazioni:default"
+      source="1403"
+      destination="1500"
+      handler=".upgrades.to_1500"
+      />
+
+  <genericsetup:upgradeStep
+      title="Upgrade to 1501"
+      description="Add new bundle for custom widget"
+      profile="redturtle.prenotazioni:default"
+      source="1500"
+      destination="1501"
+      handler=".upgrades.update_registry"
+      />
+  <genericsetup:upgradeStep
+      title="Upgrade to 1502"
+      description="Add new indexer `gate` to portal_catalog"
+      profile="redturtle.prenotazioni:default"
+      source="1501"
+      destination="1502"
+      handler=".upgrades.to_1502"
+      />
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1501"
+      destination="1600"
+      >
+    <genericsetup:upgradeStep
+        title="Popolate templates"
+        handler=".upgrades.to_1600_popolate_templates"
+        />
+    <genericsetup:upgradeStep
+        title="Remove all the deprecated contentrules"
+        handler=".upgrades.to_1600_upgrade_contentrules"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1600"
+      destination="1601"
+      >
+    <genericsetup:upgradeStep
+        title="Update Prenotazione c.t. SearchableText indexer"
+        handler=".upgrades.to_1601"
+        />
+
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1601"
+      destination="1700"
+      >
+    <genericsetup:upgradeStep
+        title="Fix timezones"
+        handler=".upgrades.to_1700"
+        />
+
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1700"
+      destination="1800"
+      >
+    <genericsetup:upgradeStep
+        title="Fix same_day_booking_disallowed"
+        handler=".upgrades.to_1800"
+        />
+
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1800"
+      destination="1801"
+      >
+    <genericsetup:upgradeStep
+        title="Update rolemap"
+        handler=".upgrades.update_rolemap"
+        />
+    <genericsetup:upgradeStep
+        title="Update sharing"
+        handler=".upgrades.update_sharing"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1801"
+      destination="1802"
+      >
+    <genericsetup:upgradeStep
+        title="Updat booking code"
+        handler=".upgrades.update_booking_code"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1802"
+      destination="1803"
+      >
+    <genericsetup:upgradeStep
+        title="Remove Contributor from package permissions"
+        handler=".upgrades.update_rolemap"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1803"
+      destination="1804"
+      >
+    <genericsetup:upgradeStep
+        title="Set up PrenotazioniFolder.max_bookings_allowed default value(2)"
+        handler=".upgrades.to_1804"
+        />
+  </genericsetup:upgradeSteps>
+  <genericsetup:upgradeSteps
+      profile="redturtle.prenotazioni:default"
+      source="1804"
+      destination="1805"
+      >
+    <genericsetup:upgradeStep
+        title="Convert PrenotazioniFolder.cosa_serve type to RichText"
+        handler=".upgrades.to_1805"
+        />
+  </genericsetup:upgradeSteps>
+</configure>
