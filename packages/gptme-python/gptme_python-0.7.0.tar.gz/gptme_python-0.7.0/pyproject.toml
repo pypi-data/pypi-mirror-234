@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "gptme-python"
+version = "0.7.0"
+description = "A fancy CLI to interact with LLMs in a Chat-style interface, with additional capabilities like executing commands on the local machine."
+authors = ["Erik Bjäreholt <erik@bjareho.lt>"]
+readme = "README.md"
+license = "MIT"
+packages = [
+    { include = "gptme" },
+]
+
+[tool.poetry.scripts]
+gptme = "gptme.cli:main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+openai = "^0.27"
+click = "^8.0"
+python-dotenv = "^1.0.0"
+rich = "^13.5.2"
+pick = "^2.2.0"
+tiktoken = "^0.5.1"
+tomlkit = "^0.12.1"
+
+# optionals
+llama-cpp-python = {extras = ["server"], version = "^0.1.57", optional=true}
+playwright = {version = "^1.37.0", optional=true}
+jedi = {version = "^0.19.0", optional=true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2"
+pytest-cov = "*"
+pytest-profiling = "^1.7.0"
+mypy = "*"
+ruff = "*"
+black = "*"
+
+[tool.poetry.extras]
+server = ["llama-cpp-python"]
+browser = ["playwright"]
+
+[tool.ruff]
+ignore = ["E402", "E501"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "serial",
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
