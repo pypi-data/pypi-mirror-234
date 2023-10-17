@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "readfish"
+authors = [
+    { name = "Alexander Payne" },
+    { name = "Rory Munro", email = "rory.munro@nottingham.ac.uk" },
+    { name = "Matt Loose", email = "matt.loose@nottingham.ac.uk"}
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.8"
+description = "ONT adaptive sampling"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+keywords = []
+dependencies = [
+    "minknow_api",
+    "numpy",
+    "cattrs",
+    "rtoml",
+    "more_itertools",
+    'exceptiongroup ; python_version<"3.11"',
+    "readfish_summarise >= 0.2.5",
+    "readfish[all]",
+]
+dynamic = ["version"]
+
+[project.scripts]
+readfish = "readfish._cli_base:main"
+
+[project.optional-dependencies]
+# Development dependencies
+docs = ["sphinx-copybutton", "furo", "myst-parser", "faqtory"]
+tests = ["pytest", "coverage[toml]"]
+tests-mappy = ["readfish[tests,mappy,guppy]"]
+dev = ["readfish[all,docs,tests]"]
+# Running dependencies, this is a little bit clunky but works for now
+mappy = ["mappy"]
+mappy-rs = ["mappy-rs >= 0.0.6"]
+guppy = ["ont_pyguppy_client_lib"]
+all = ["readfish[mappy,mappy-rs,guppy]"]
+
+[project.urls]
+# Documentation = "https://looselab.github.io/readfish"
+"Bug Tracker" = "https://github.com/LooseLab/readfish/issues"
+"Source Code" = "https://github.com/LooseLab/readfish"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+path = "src/readfish/__about__.py"
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+ignore = ["E501"]
+
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests/*test.py",
+    "src/readfish",
+]
+markers = [
+    "alignment: marks tests which rely on loading or using Mappy or Mappy-rs aligners, used to test with both. (deselect with '-m \"not slow\", select with '-k alignment')",
+]
+addopts = ["-ra", "--doctest-modules", "--ignore=src/readfish/read_until/base.py"]
