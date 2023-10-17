@@ -1,0 +1,247 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+<!--
+Unreleased template stuff
+
+## [Unreleased]
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+-->
+
+## [Unreleased]
+
+
+## [0.5.0]
+
+### Added
+
+ - Added some minor comments to the `torii.sim.core` module about the function of some of the objects.
+ - Added `torii.vendor.gowin.GowinPlatform`.
+ - Added support for Xilinx Atrix UltraScale+ part numbers.
+ - Added `env` argument to `BuildPlan.execute_local`.
+ - Allowed removing `src` attributes on RTLIL output.
+
+### Changed
+
+ - Moved the Lattice platform defs into their own submodule `torii.platform.vendor.lattice`.
+ - Replaced the `distutils.ccompiler` with the `setuptools.command.build_ext` module for `torii.tools.cxx`.
+ - Disabled the warning emitted on `~True`/`~False` when using it as a value in Torii in Python versions older than 3.12.
+ - Relaxed the `PyVCD` dependency version to now also include `0.5`.
+ - Ensured `Value.__abs__` now returns `unsigned` `Shape`.
+ - Restructured the `torii.lib.coding` module away from being a monolithic file.
+ - Prohibited absolute paths in `BuildPlan.add_file`.
+ - Added lowering of `Memory`'s directly to RTLIL `$mem_v2` cells.
+ - Ensured `Part` offsets are always unsigned.
+ - Disallowed `signed(0)` values.
+
+### Deprecated
+
+ - Old Lattice platform names have been deprecated in favor of the new platform location.
+ - Deprecated `Repl` in favor of `Value.replicate`.
+### Removed
+
+ - Removed the `torii.cli` module
+ - Removed the `remote-build` category from the `setup.py` `extra_requires` due to removal of remote builds.
+### Fixed
+
+ - Fixed an issue where the `IrDAResource` was not imported into the `torii.platform.resources` `__init__.py`
+ - Fixed the `torii.utils.tracer` module to properly handle `STORE_DEREF` and `EXTENDED_ARG`s.
+ - Fixed signed value normalization inside `Const`.
+ - Fixed issue with `Value.rotate_left`/`Value.rotate_right` on 0-width values.
+ - Fixed a semantic issue with range handling inside `Shape.cast`.
+ - Fixed an off-by-one issue in the validation of `Slice`es.
+ - Fixed the signedness of the resulting `Shape` when doing subtraction.
+ - Fixed handling of `ValueKey.__eq__`.
+ - Fixed source-location attribution for `Slice`es.
+ - Fixed the order of when `Value.cast` should have been called in the `Part` and `Slice` constructors.
+ - Fixed a warning on python 3.12 with the `pyrtl` simulator warning about bitwise negations on booleans.
+ - Fixed a test case failure that would only occur on Windows due to it's backwards path separator.
+ - Ensured `Value.cast` is inside `Part`'s and `Slice`s constructor.
+ - Fixed  test case that was having issues on Windows paths.
+ - Removed translation of empty subfragments as that would cause unintentional blackboxing on Vivado and Yosys.
+
+## [0.4.5]
+
+### Added
+
+ - Added `-norom` and `-proc` options to verilog generation if available in Yosys.
+ - Added [a small tutorial](https://torii.shmdn.link/tutorials/external_modules.html) on using `platform.add_file` with `Instance` for referencing external modules.
+ - Added conversion helpers to/from picoseconds.
+### Changed
+
+ - Updated the minimum Yosys version to `0.15`.
+ - Minor typing updates.
+ - `Value.matches` now returns `Const(1)` when no value is supplied.
+ - `Platform.build` now allows for lists of strings to be passed for argument.
+ - Invocations of `read_ilang` in Yosys scripts has been replaced with `read_rtlil` as `read_ilang` has been deprecated for a while now.
+ - Replaced `sim_case` in `ToriiTestCase` with `ToriiTestCase.simulation` and added two attributes for defining the simulation domain `ToriiTestCase.comb_domain` and `ToriiTestCase.sync_domain`, the latter of which takes a `domain = ` param to specify which synchronous domain it is using.
+ - The default platform in `ToriiTestCase` has been replaced with `None`, rather than `MockPlatform`
+ - Gated the initialization of the `ToriiTestCase` `dut` behind a check to prevent non-simulating tests, and tests that don't use the DUT from exploding.
+ - Made the `connectors` property on `Platform`'s optional, it now currently defaults to an empty list.
+ - Updated [rich](https://github.com/Textualize/rich) dependency version from `~=12.6.0` to `>=12.6.0`
+### Deprecated
+
+ - Deprecated the current `torii.cli.*` methods in anticipation of replacing them.
+### Removed
+
+ - Removed remote SSH build support
+ - Removed `Value.__hash__`
+
+### Fixed
+
+ - Corrected how environment variables were extracted making them more consistent.
+ - Fixed the `ToriiTestCase` so it's now properly functional
+ - Clarified the usage of `Cat` in the language documentation, noting that it can take more than two arguments for concatenation.
+ - Added a warning on potential off-by-one errors when invoking `Signal` with a `range` and having the reset value be the same as the end of the range.
+
+## [0.4.4]
+
+### Added
+
+ - Handle `Repl`'s in `ValueKey`
+ - Allow for `IntEnum`'s in `Value.cast`
+ - Added proper testing for the `torii.util.units` module.
+ - Added proper testing for the `torii.util.string` module.
+ - Added support for `name = ` in property checks, such as `Assert`, etc.
+ - Added exports for `convert` and `convert_fragment` for rtlil, cxxrtl, and verilog into the root `torii.back` module.
+
+### Changed
+
+ - Updated the copyright years in the license file.
+ - Hardened the RTLIL backend against generating Yosys reserved port names.
+ - Removed warning on `IntEnum`'s in `Cat` (meow)
+ - Ensured that files are always are written with Unix `LF` line endings.
+ - Renamed the `_toolchain` module to `tools`.
+ - Moved the `tool_env_var` from `torii.tools` into `torii.util.string`.
+ - Renamed nox session names for `flake8` and `mypy` into `lint` and `typecheck`
+ - Renamed nox session names for `build_dists` and `upload_dist` into `build` and `upload`
+ - Added a default help formatter for the built-in CLI stub.
+
+### Deprecated
+
+ - Deprecated the remote SSH builds.
+ - Deprecated passing non `Elaboratable` or `Fragment` objects to `Fragment.get`.
+
+### Removed
+
+ - Removed `Shape` and `tuple` casts and comparisons.
+ - Removed `UserValue` and associated machinery.
+ - Removed default ports from `rtlil_convert` and `verilog_convert`.
+ - Removed `step` from `core.Simulator` in favor of `advance`.
+ - Removed support for the `AMARANTH_ENV_*` environment variables.
+ - Removed the `_BuiltinYosys` proxy object and associated bits.
+
+### Fixed
+
+ - Fixed an issue with the `TORII_` environment variables not being recognized.
+ - Fixed missing f-strings in the `cxxrtl`, `ast`, and `intel` modules.
+ - Fixed an issue in the `LatticeECP5` platform that would have caused broken SystemVerilog inclusions.
+ - Fixed a bunch of miscellaneous spelling things.
+ - Fixed an issue where `src` attributes would be added to generated RTLIL even if the `emit_src` attribute was `False`.
+ - Fixed an issue where the tracer would encounter an unknown opcode and would return None.
+ - Fixed the `iec_size` utility method to behave a bit better with strange sizes.
+ - Fixed the `tcl_quote` string method that would leave un-escaped `"`'s causing the TCL script to fail due to invalid syntax.
+ - Fixed an issue in the `LatticeICE40` platform where the `IceStorm` toolchain environment variable was not being normalized properly.
+
+## [0.4.3]
+
+### Fixed
+
+- Fixed a small issue with the newline changes that caused synthesis to fail
+- Fixed up the ULPI instance to properly handle the `clk` signal and constrain it
+
+## [0.4.2]
+
+### Fixed
+
+- Fixed the project URLs for the documentation and package.
+- Fixed some minor issues in the install documentation.
+- Fixed the line endings on generated *nix build scripts.
+- Fixed an issue where the built-in test harness was broken with writing VCDs.
+
+## [0.4.1]
+
+### Fixed
+
+- Fixed issue with `invoke_tool` not emitting the environment variable properly
+
+## [0.4.0]
+
+### Added
+
+- Folded in `stdio` library components.
+- Folded in `soc` library components.
+- Folded in resources from [torii-boards](https://github.com/shrine-maiden-heavy-industries/torii-boards) into the `torii.platform.resources` module.
+- Added [flake8](https://flake8.pycqa.org/en/latest/) configuration file.
+- Added [mypy](http://mypy-lang.org/) configuration file.
+- Added [Code Of Conduct](https://github.com/shrine-maiden-heavy-industries/torii-hdl/blob/main/CODE_OF_CONDUCT.md).
+- Added a `noxfile.py` for use with [nox](https://nox.thea.codes/en/stable/).
+- Added an updated python unittest wrapper for use with Torii.
+- Added string utility module.
+- Added units utility module.
+- Added dependency `rich`.
+- Added `CANResource` to `torii.platform.resources.interface`.
+- Added `ice40warmboot` to `torii.lib.vendor.lattice.ice40`.
+- Added empty `torii.lib.vendor.xilinx` module.
+- Added `VGADACResource` to `torii.platform.resources.display`.
+- Added preliminary support for the yosys+nextpnr-xilinx flow on the Xilinx platform.
+- Added [Changelog](https://github.com/shrine-maiden-heavy-industries/torii-hdl/blob/main/CHANGELOG.md) file.
+- Added `QSPIFlashResource` to `torii.platform.resources.memory`.
+- Added `JTAGResource` to `torii.platform.resources.interface`.
+- Added `EthernetResource` to `torii.platform.resources.interface`.
+
+### Changed
+
+- Refactored the [documentation](https://shrine-maiden-heavy-industries.github.io/torii-hdl/).
+- Migrated string escape functions from the `TemplatedPlatform` into the new strings utility module.
+- Moved `log2_int` and `bits_for` into the new units utility module.
+- Moved vendor modules into `torii.platform.vendor`.
+- Replaced deprecated `abstractproperties` with `property`/`abstractmethod` combo.
+- Moved the `tracer` module into `torii.util`.
+- Moved the `_unused` module into `torii.hdl`.
+
+### Removed
+
+- Removed the `nMigen` compatibility layer.
+- Removed the `migen` compatibility layer.
+- Removed the compatibility tests.
+- Removed the RPC server.
+- Removed the old FHDL test case.
+- Removed the `tuple` case from `Shape`.
+- Removed the warning from `rtlil.convert` and `verilog.convert` about implicit ports.
+- Removed the `_ignore_deprecated` decorator.
+- Removed the `C` alias for `Const`.
+
+### Fixed
+
+- Fixed the package name.
+- Fixed the package authors.
+- Fixed the package trove classifiers.
+- Fixed all flake8 warnings on the entire codebase.
+- Fixed indentation.
+- Fixed docstring formatting.
+
+## [0.1.0] - [0.3.0]
+
+No changelog is provided for these versions as they are all older tagged releases of [Amaranth](https://github.com/amaranth-lang/amaranth) from before the fork.
+
+
+[unreleased]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.5.0...main
+[0.5.0]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.4.5...v0.5.0
+[0.4.5]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.4.4...v0.4.5
+[0.4.4]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.4.3...v0.4.4
+[0.4.3]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.4.2...v0.4.3
+[0.4.2]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.4.1...v0.4.2
+[0.4.1]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/amaranth-fork...v0.4.0
+[0.3.0]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/amaranth-v0.3...amaranth-fork
+[0.1.0]: https://github.com/shrine-maiden-heavy-industries/torii-hdl/compare/amaranth-v0.1...amaranth-fork
