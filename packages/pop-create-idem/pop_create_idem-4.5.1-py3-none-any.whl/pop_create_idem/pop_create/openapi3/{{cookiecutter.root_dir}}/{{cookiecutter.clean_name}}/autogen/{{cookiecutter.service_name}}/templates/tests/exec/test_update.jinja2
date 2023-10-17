@@ -1,0 +1,39 @@
+{# templates/test_update.jinja2 #}
+    # Test - Update existing resource
+    global PARAMETER
+
+    assert PARAMETER.get("resource_id", None), "The resource might not have been created"
+
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        # TODO: replace call param values as necessary
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    assert resource
+    # TODO: Add manual validations
+
+    # Now get the resource
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.get_call_params %}
+        {{function.get_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    assert resource
+    # TODO: Add manual validations

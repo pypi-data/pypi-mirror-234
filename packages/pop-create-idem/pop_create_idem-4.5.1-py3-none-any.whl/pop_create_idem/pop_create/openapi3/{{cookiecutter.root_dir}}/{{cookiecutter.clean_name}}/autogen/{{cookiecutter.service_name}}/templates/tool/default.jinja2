@@ -1,0 +1,41 @@
+{# templates/tool.jinja2 #}
+    result = dict(comment=[], ret=None, result=True)
+
+    # TODO: Change request param mapping as necessary
+    payload = {{ function.hardcoded.request_mappings|default("{}", true) }}
+
+    ret = await hub.tool.{{ function.hardcoded.service_name }}.session.request(
+        ctx,
+        method="{{ function.hardcoded.method }}",
+        path="{{ function.hardcoded.path }}".format(
+            **{{ parameter.mapping.path|default({}) }}
+        ),
+        query_params={{ parameter.mapping.query|default({}) }},
+        data=payload,
+        headers={{ parameter.mapping.header|default({}) }},
+    )
+
+    if not ret["result"]:
+        result["comment"].append(ret["comment"])
+        result["result"] = False
+        return result
+
+    {% if function.hardcoded.response_mappings %}
+    # Convert raw response into present format
+    raw_resource = ret["ret"]
+
+    resource_in_present_format = {}
+    resource_parameters = OrderedDict(
+    {{ function.hardcoded.response_mappings|pprint|indent(12,true) }}
+    )
+
+    for parameter_raw, parameter_present in resource_parameters.items():
+        if parameter_raw in raw_resource and raw_resource.get(parameter_raw):
+            resource_in_present_format[parameter_present] = raw_resource.get(parameter_raw)
+
+    result["ret"] = resource_in_present_format
+    {% else %}
+    result["ret"] = ret["ret"]
+    {% endif %}
+
+    return result

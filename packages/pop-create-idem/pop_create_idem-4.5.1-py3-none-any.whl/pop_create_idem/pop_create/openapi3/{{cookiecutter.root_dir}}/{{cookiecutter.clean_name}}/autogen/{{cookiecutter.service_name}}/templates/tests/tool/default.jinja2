@@ -1,0 +1,13 @@
+{# templates/default.jinja2 #}
+    # TODO: replace call param values as necessary
+    ret = await hub.tool.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    # TODO: Add manual validations

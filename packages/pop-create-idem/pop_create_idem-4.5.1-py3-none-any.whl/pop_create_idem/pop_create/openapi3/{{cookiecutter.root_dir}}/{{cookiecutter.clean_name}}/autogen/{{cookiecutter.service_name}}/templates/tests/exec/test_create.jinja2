@@ -1,0 +1,36 @@
+{# templates/test_create.jinja2 #}
+    # Test - create new resource
+    global PARAMETER
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    assert resource
+    PARAMETER["resource_id"] = resource.get("resource_id", None)
+    assert PARAMETER["resource_id"]
+    # TODO: Add manual validations
+
+    # Now get the resource
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.get_call_params %}
+        {{function.get_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    assert resource
+    # TODO: Add manual validations

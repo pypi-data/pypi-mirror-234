@@ -1,0 +1,22 @@
+{# templates/describe.jinja2 #}
+    result = {}
+
+    # TODO: Add other required parameters from: {{ parameter.mapping.kwargs|default({}) }}
+    ret = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.list(
+        ctx
+    )
+
+    if not ret or not ret["result"]:
+        hub.log.debug(f"Could not describe {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }} {ret['comment']}")
+        return result
+
+    for resource in ret["ret"]:
+        # TODO: Look for respective identifier in **{{ function.hardcoded.resource_attributes }}
+        resource_id = resource.get("resource_id")
+        result[resource_id] = {
+            "{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.present": [
+                {parameter_key: parameter_value}
+                for parameter_key, parameter_value in resource.items()
+            ]
+        }
+    return result

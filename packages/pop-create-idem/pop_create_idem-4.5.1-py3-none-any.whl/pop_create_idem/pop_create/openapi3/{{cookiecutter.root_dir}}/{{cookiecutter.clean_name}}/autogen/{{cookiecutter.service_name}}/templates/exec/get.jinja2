@@ -1,0 +1,57 @@
+{# templates/get.jinja2 #}
+    result = dict(comment=[], ret=None, result=True)
+
+    # TODO: Change function methods params if needed
+    get = await hub.tool.{{ function.hardcoded.service_name }}.session.request(
+        ctx,
+        method="{{ function.hardcoded.method }}",
+        path="{{ function.hardcoded.path }}".format(
+            **{{ parameter.mapping.path|default({}) }}
+        ),
+        query_params={{ parameter.mapping.query|default({}) }},
+        data={},
+        headers={{ parameter.mapping.header|default({}) }},
+    )
+
+    if not get["result"]:
+        # Send empty result for not found
+        if get["status"] == 404:
+            result["comment"].append(f"Get '{name}' result is empty")
+            return result
+
+        result["comment"].append(get["comment"])
+        result["result"] = False
+        return result
+
+    # Case: Empty results
+    if not get["ret"]:
+        result["comment"].append(
+            f"Get '{name}' result is empty"
+        )
+        return result
+
+    {% if function.hardcoded.response_mappings %}
+    # Convert raw response into present format
+    raw_resource = get["ret"]
+
+    # TODO: Make sure resource_id is mapped in get response
+    resource_in_present_format = {
+        "name": name,
+        "resource_id": resource_id
+    }
+    resource_parameters = OrderedDict(
+    {{ function.hardcoded.response_mappings|pprint|indent(12,true) }}
+    )
+
+    for parameter_raw, parameter_present in resource_parameters.items():
+        if parameter_raw in raw_resource and raw_resource.get(parameter_raw):
+            resource_in_present_format[parameter_present] = raw_resource.get(parameter_raw)
+
+    result["ret"] = resource_in_present_format
+    {% else %}
+    # TODO: Make sure resource_id is mapped in get response
+    get["ret"]["resource_id"] = resource_id
+    result["ret"] = get["ret"]
+    {% endif %}
+
+    return result

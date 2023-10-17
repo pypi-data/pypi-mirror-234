@@ -1,0 +1,32 @@
+{# templates/test_delete.jinja2 #}
+    # Test - Delete existing resource
+    global PARAMETER
+    assert PARAMETER.get("resource_id", None), "The resource might not have been created"
+
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name="",
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.method_call_params %}
+            {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert not ret["ret"]
+
+    # Now get the resource
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.get_call_params %}
+            {{function.get_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"] is None
+    assert "result is empty" in str(ret["comment"])

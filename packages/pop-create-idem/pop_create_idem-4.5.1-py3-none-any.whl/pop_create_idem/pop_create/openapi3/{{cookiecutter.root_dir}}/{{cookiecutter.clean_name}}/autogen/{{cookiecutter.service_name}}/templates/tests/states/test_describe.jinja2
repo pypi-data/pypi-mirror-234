@@ -1,0 +1,17 @@
+{# templates/test_describe.jinja2 #}
+    global PARAMETER
+    assert PARAMETER.get("resource_id", None), "The resource might not have been created"
+    # TODO: replace call param values as necessary
+    ret = await hub.states.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif %}
+    )
+    resource_id = PARAMETER["resource_id"]
+    assert resource_id in ret
+    assert "{{ function.service_name }}.{{ function.hardcoded.resource_name }}.present" in ret[resource_id]
+    described_resource = ret[resource_id].get(
+        "{{ function.service_name }}.{{ function.hardcoded.resource_name }}.present"
+    )
+    # TODO: Add manual verification as necessary
