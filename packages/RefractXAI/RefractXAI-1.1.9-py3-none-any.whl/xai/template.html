@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Explainable AI Application</title>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1" name="viewport" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+     frame-ancestors 'none' == X-Frame-Options: SAMEORIGIN
+     script-src 'self' https://www.googletagmanager.com/ https://www.google-analytics.com/ https://googleads.g.doubleclick.net/
+     https://cdn.mouseflow.com/ https://*.clarity.ms/ https://tag.demandbase.com/ https://www.googleadservices.com/ https://cdn.jsdelivr.net/
+     https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js
+     https://cdnjs.cloudflare.com/ajax/libs/echarts/5.3.2/echarts.min.js https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js
+     https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js 'unsafe-inline' 'unsafe-eval';"
+    />
+    
+    <link
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <style>
+      html {
+        scroll-behavior: smooth;
+        transition: 0.3s all;
+      }
+
+      body {
+        font-family: "Work Sans,sans-serif" !important;
+      }
+
+      a.nav-link {
+        color: #000;
+      }
+
+      .navbar-brand i {
+        color: #0ba2db;
+      }
+
+      nav a:hover {
+        color: #000;
+      }
+
+      .navbar-brand {
+        color: #000;
+        font-weight: 600;
+        text-shadow: 1px 1px #fff;
+        font-size: 24px;
+        margin: 18px 0 0 12%;
+      }
+
+      .navbar-nav {
+        margin-right: 12%;
+        margin-top: 18px;
+      }
+
+      .navbar-nav li.nav-item {
+        padding: 0 10px 0 10px;
+      }
+
+      .navbar-default.scrolled {
+        background: linear-gradient(to right, #00001e, #eae0f3);
+        margin-top: -15px;
+      }
+
+      .navbar-nav li a:hover,
+      a.nav-link.active {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      .navbar-toggler-icon {
+        width: 2px;
+        height: 22px;
+        background-color: #fff;
+      }
+
+      .navbar-toggler {
+        background-color: #202020;
+        transform: rotate(90deg);
+        padding: 10px;
+      }
+
+      .text-grey {
+        color: #808080;
+        font-size: 18px;
+        letter-spacing: 0.1em;
+      }
+
+      #CalibrationMetricTestDataset {
+        display: none;
+      }
+
+      #CalibrationMetricTrainDataset {
+        display: none;
+      }
+
+      #ConfusionMatrixReportTestDataset {
+        display: none;
+      }
+
+      #ConfusionMatrixReportTrainDataset {
+        display: none;
+      }
+
+      #PerformanceReport {
+        display: none;
+      }
+
+      #ROCReportTestDataset {
+        display: none;
+      }
+
+      #ROCReportTrainDataset {
+        display: none;
+      }
+
+      #SegmentPerformanceTestDataset {
+        display: none;
+      }
+
+      #SegmentPerformanceTrainDataset {
+        display: none;
+      }
+
+      #SimpleModelComparison {
+        display: none;
+      }
+
+      #TrainTestPredictionDrift {
+        display: none;
+      }
+
+      #UnusedFeatures {
+        display: none;
+      }
+
+      #BoostingOverfit {
+        display: none;
+      }
+
+      #ModelErrorAnalysis {
+        display: none;
+      }
+
+      #ModelInferenceTimeTestDataset {
+        display: none;
+      }
+
+      #ModelInferenceTimeTrainDataset {
+        display: none;
+      }
+
+      #RegressionErrorDistributionTestDataset {
+        display: none;
+      }
+
+      #RegressionErrorDistributionTrainDataset {
+        display: none;
+      }
+
+      #RegressionSystematicErrorTestDataset {
+        display: none;
+      }
+
+      #RegressionSystematicErrorTrainDataset {
+        display: none;
+      }
+
+      #TrainTestFeatureDrift {
+        display: none;
+      }
+
+      #TrainTestLabelDrift {
+        display: none;
+      }
+
+      #CategoryMismatchTrainTest {
+        display: none;
+      }
+
+      #DatasetsSizeComparison {
+        display: none;
+      }
+
+      #DateTrainTestLeakageDuplicates {
+        display: none;
+      }
+
+      #DateTrainTestLeakageOverlap {
+        display: none;
+      }
+
+      #FeatureLabelCorrelationChange {
+        display: none;
+      }
+
+      #IdentifierLeakageTestDataset {
+        display: none;
+      }
+
+      #IdentifierLeakageTrainDataset {
+        display: none;
+      }
+
+      #IndexTrainTestLeakage {
+        display: none;
+      }
+
+      #NewLabelTrainTest {
+        display: none;
+      }
+
+      #StringMismatchComparison {
+        display: none;
+      }
+
+      #TrainTestSamplesMix {
+        display: none;
+      }
+
+      #WholeDatasetDrift {
+        display: none;
+      }
+
+      #ConflictingLabels {
+        display: none;
+      }
+
+      #DataDuplicates {
+        display: none;
+      }
+
+      #FeatureLabelCorrelation {
+        display: none;
+      }
+
+      #MixedDataTypes {
+        display: none;
+      }
+
+      #MixedNulls {
+        display: none;
+      }
+
+      #OutlierSampleDetection {
+        display: none;
+      }
+
+      #SingleValueinColumn {
+        display: none;
+      }
+
+      #SpecialCharacters {
+        display: none;
+      }
+
+      #StringLengthOutOfBounds {
+        display: none;
+      }
+
+      #StringMismatch {
+        display: none;
+      }
+
+      #test_file1_method1 {
+        display: none;
+      }
+
+      #test_file1_method2 {
+        display: none;
+      }
+
+      #test_filter_snowpark_data_frame_by_value {
+        display: none;
+      }
+
+      canvas {
+        width: 100% !important;
+      }
+
+      .container-fluid {
+        padding: 0 !important;
+      }
+
+      .modelstats h3 {
+        color: #4c1183;
+        font-size: 36px;
+      }
+
+      .card {
+        border: 1px solid #f0f0f0;
+      }
+
+      .card-header {
+        font-size: 1.2vw;
+        color: #252631;
+        font-weight: 500;
+        padding: 1.5vw;
+        background: transparent;
+        border: none;
+      }
+
+      .card-body {
+        padding: 0 1.5vw 1.5vw;
+      }
+
+      #multi_classlabels_roc {
+        padding: 2vw 1.5vw;
+      }
+
+      #modelstats_overview {
+        display: flex;
+        flex-direction: column;
+        gap: 1vw;
+      }
+    </style>
+  </head>
+  <body data-offset="50" data-spy="scroll" data-target=".navbar">
+    <script>
+      $(window).scroll(function () {
+        $("nav").toggleClass("scrolled", $(this).scrollTop() > 50);
+      });
+    </script>
+    <script>
+      function loadScript(scriptPath, callback) {
+      var script = document.createElement('script');
+      script.setAttribute('src', scriptPath);
+      script.onload = callback();
+      document.head.appendChild(script);
+      }
+      
+      var libraries = [
+      'jquery.min.js',
+      'popper.min.js',
+      'echarts.min.js',
+      'bootstrap.min.js',
+      'jquery.dataTables.js',
+      ];
+
+      for (let i = 0; i < libraries.length; i++) {
+
+      loadScript('https://' + window.location.hostname + '/ai/' + libraries[i], function () {});
+
+    }
+    </script>
+    <div class="container-fluid">
+      <nav class="navbar navbar-default navbar-expand-md fixed-top">
+        <div class="refract-logo">
+          <img
+            src="data:image/svg+xml,%3Csvg%20width%3D%22116%22%20height%3D%2224%22%20viewBox%3D%220%200%20116%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20clip-path%3D%22url%28%23clip0_671_3555%29%22%3E%3Cpath%20d%3D%22M11.135%201.67459H0V24H11.135V1.67459Z%22%20fill%3D%22url%28%23paint0_linear_671_3555%29%22%2F%3E%3Cpath%20d%3D%22M22.2849%201.67459L16.7092%207.25706L11.135%2012.838V1.67459H22.2849Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M33.4481%206.15005H36.305V8.20949C36.9995%206.89894%2038.2343%206.15005%2039.9914%206.15005H41.5675V8.87814H39.564C37.2399%208.87814%2036.3317%2010.107%2036.3317%2012.89V19.5215H33.4481V6.15005Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M42.7429%2012.8886C42.7429%208.95841%2045.7601%205.88263%2049.6854%205.88263C53.639%205.88263%2056.5493%208.74444%2056.5493%2012.7014V13.8262H45.4929C45.8669%2015.8841%2047.4697%2017.2437%2049.7967%2017.2437C51.6133%2017.2437%2053.0024%2016.2808%2053.6969%2014.8366L56.0462%2016.1471C54.8708%2018.3403%2052.7619%2019.7846%2049.7967%2019.7846C45.5731%2019.7875%2042.7429%2016.7652%2042.7429%2012.8886ZM45.6265%2011.3908H53.6405C53.2131%209.45915%2051.7439%208.39675%2049.6869%208.39675C48.7759%208.38105%2047.8849%208.66561%2047.1512%209.20661C46.4176%209.7476%2045.8818%2010.5151%2045.6265%2011.3908Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M57.6445%206.15007H59.9211V5.45468C59.9211%201.2838%2061.2034%200%2065.3959%200H65.6363V2.64785C63.0985%202.64785%2062.8047%203.07578%2062.8047%205.48143V6.15007H65.6363V8.71768H62.7987V19.5201H59.9211V8.71768H57.6505L57.6445%206.15007Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M67.8208%206.15005H70.6777V8.20949C71.3722%206.89894%2072.607%206.15005%2074.3626%206.15005H75.9387V8.87814H73.9352C71.6126%208.87814%2070.7044%2010.107%2070.7044%2012.89V19.5215H67.8208V6.15005Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M77.1143%2012.8351C77.1143%208.55722%2080.2932%205.88263%2083.7926%205.88263C85.5557%205.88263%2087.2372%206.65826%2088.2255%207.88857V6.15009H91.0869V19.523H88.2241V17.6746C87.209%2018.9852%2085.5275%2019.7875%2083.7644%2019.7875C80.3733%2019.7875%2077.1143%2017.0862%2077.1143%2012.8351ZM88.3843%2012.8083C88.3843%2010.4309%2086.5945%208.47698%2084.1651%208.47698C81.7906%208.47698%2079.9459%2010.3745%2079.9459%2012.8083C79.9459%2015.2422%2081.7876%2017.1664%2084.1651%2017.1664C86.5945%2017.1664%2088.3843%2015.214%2088.3843%2012.8083Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M93.3516%2012.8351C93.3516%208.90492%2096.4236%205.88263%20100.327%205.88263C103.295%205.88263%20105.641%207.56762%20106.656%209.97327L104.092%2011.0699C103.425%209.51859%20102.063%208.55722%20100.327%208.55722C97.9522%208.55722%2096.1609%2010.4547%2096.1609%2012.8351C96.1609%2015.1872%2097.976%2017.1129%20100.38%2017.1129C102.197%2017.1129%20103.532%2015.9896%20104.145%2014.4933L106.736%2015.5884C105.668%2018.0491%20103.451%2019.7875%20100.327%2019.7875C99.4101%2019.7994%2098.5003%2019.628%2097.6507%2019.2832C96.8011%2018.9384%2096.0288%2018.4272%2095.3791%2017.7797C94.7295%2017.1321%2094.2155%2016.3612%2093.8673%2015.5121C93.5191%2014.663%2093.3438%2013.7529%2093.3516%2012.8351Z%22%20fill%3D%22%23B450FF%22%2F%3E%3Cpath%20d%3D%22M108.014%206.15005H110.283V2.99552L113.168%201.41751V6.15005H115.998V8.71766H113.168V14.0386C113.168%2016.4443%20113.542%2016.8187%20115.998%2016.8187V19.52H115.574C111.514%2019.52%20110.285%2018.2362%20110.285%2014.0654V8.71617H108.014V6.15005Z%22%20fill%3D%22%23B450FF%22%2F%3E%3C%2Fg%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22paint0_linear_671_3555%22%20x1%3D%225.56826%22%20y1%3D%2224%22%20x2%3D%225.56826%22%20y2%3D%221.67459%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%3Cstop%20offset%3D%220.15%22%20stop-color%3D%22%23B450FF%22%2F%3E%3Cstop%20offset%3D%220.21%22%20stop-color%3D%22%23B450FF%22%20stop-opacity%3D%220.93%22%2F%3E%3Cstop%20offset%3D%220.6%22%20stop-color%3D%22%23B450FF%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%220.88%22%20stop-color%3D%22%23B450FF%22%20stop-opacity%3D%220.12%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23B450FF%22%20stop-opacity%3D%220%22%2F%3E%3C%2FlinearGradient%3E%3CclipPath%20id%3D%22clip0_671_3555%22%3E%3Crect%20width%3D%22116%22%20height%3D%2224%22%20fill%3D%22white%22%2F%3E%3C%2FclipPath%3E%3C%2Fdefs%3E%3C%2Fsvg%3E"
+          />
+        </div>
+        <button
+          aria-controls="navbarCollapse"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+          class="navbar-toggler collapsed"
+          data-target="#navbarCollapse"
+          data-toggle="collapse"
+          type="button"
+        >
+          <span class="navbar-toggler-icon"> </span>
+          <span class="navbar-toggler-icon"> </span>
+          <span class="navbar-toggler-icon"> </span>
+        </button>
+        <div
+          class="collapse navbar-collapse justify-content-end"
+          id="navbarCollapse"
+        >
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="#modelstats"> Model Stats </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#globalxai"> Global Explanations </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#localxai"> Local Explanations </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+      <!-----------------------------Model Stats---------------------------------->
+      <div class="modelstats pd-4" id="modelstats">
+        <div class="row">
+          <div class="col">
+            <div class="card card-header-actions h-100">
+              <style>
+                #modelstats_overview_metrics table {
+                  border-collapse: collapse;
+                  width: 100%;
+                  border: none;
+                }
+
+                #modelstats_overview_metrics table thead {
+                  background-color: #efe8f6;
+                }
+
+                #modelstats_overview_metrics table thead tr th:first-child,
+                #modelstats_overview_metrics table tbody tr td:first-child {
+                  padding-left: 1.6vw;
+                }
+
+                #modelstats_overview_metrics table thead tr th {
+                  color: #252631 !important;
+                  font-weight: 500;
+                }
+
+                #modelstats_overview_metrics table tbody tr td {
+                  color: #424242;
+                  font-weight: 400;
+                }
+
+                #modelstats_overview_metrics table thead tr th,
+                #modelstats_overview_metrics table tbody tr td {
+                  font-size: 0.729 !important;
+                  padding: 0.8vw 0;
+                }
+
+                #modelstats_overview_metrics table tbody tr {
+                  border-bottom: 1px solid #f0f0f0;
+                  padding: 0.8vw 0;
+                }
+
+                table {
+                  border-collapse: collapse;
+                  font-family: Sans-Serif;
+                  color: #000;
+                }
+              </style>
+              <div class="card-header">Model Performance Metrics</div>
+              <div id="modelstats_overview_metrics"></div>
+              <div id="multi_classlabels_roc">
+                <label for="datarowsroc"> Class name: </label>
+
+                <select
+                  id="list_class_labels_roc"
+                  onchange="getmulticlasslabelsroc()"
+                >
+                  <option>0</option>
+
+                  <option>1</option>
+
+                  '
+                </select>
+              </div>
+              <div style="display: flex">
+                <div
+                  id="modelstats_overview_plots"
+                  style="width: 70%; height: 400px"
+                ></div>
+                <div id="modelstats_overview"></div>
+              </div>
+            </div>
+          </div>
+          <script id="modelstats_overview_script" type="text/javascript">
+            $(window).on("load", function (){
+              getModelMetrics();
+              getConfusionMatrix();
+              getmulticlasslabelsroc();
+            });
+            function getModelMetrics() {
+              let data =
+                "<table><thead><tr><th><b>Metric</b></th><th><b>Value</b></th></tr></thead><tbody><tr><td>Accuracy Score </td><td>1.0</td></tr><tr><td>F1 Score</td><td>1.0</td></tr><tr><td>Recall Score</td><td>1.0</td></tr><tr><td>Precision Score</td><td>1.0</td></tr></tbody></table>";
+              document.getElementById("modelstats_overview_metrics").innerHTML =
+                data;
+            }
+
+            function getConfusionMatrix() {
+              let table =
+                "<b>Confusion Matrix:</b></br><table><tr><td style='border:hidden'></td><td style='border:hidden'>0</td><td style='border:hidden'>1</td></tr><tr><td style='border:hidden'>0</td><td style='background: hsl(310, 100%,99%); color:#000'>2242</td><td style='background: hsl(310, 100%,0%); color:#FFF'>0</td></tr><tr><td style='border:hidden'>1</td><td style='background: hsl(310, 100%,0%); color:#FFF'>0</td><td style='background: hsl(310, 100%,100%); color:#000'>2244</td></tr></table>";
+              document.getElementById("modelstats_overview").innerHTML = table;
+            }
+
+            function getmulticlasslabelsroc() {
+              var classname = $("#list_class_labels_roc").val();
+              var rocpaylod = getrocpaylod(classname);
+              var data = rocpaylod["payload"];
+              var maxvalue = rocpaylod["maxvalue"];
+              getRocAucCurve(data, maxvalue);
+            }
+
+            function getrocpaylod(classname) {
+              var data = {
+                0: {
+                  payload: [
+                    [0.0, 0.0],
+                    [1.0, 0.0],
+                    [1.0, 0.0008920606601248885],
+                    [1.0, 0.001784121320249777],
+                    [1.0, 0.004014272970561998],
+                    [1.0, 0.00847457627118644],
+                    [1.0, 1.0],
+                  ],
+                  auc_score: "0.0",
+                  maxvalue: 1.0,
+                },
+
+                1: {
+                  payload: [
+                    [0.0, 0.0],
+                    [0.0, 1.0],
+                    [0.0008920606601248885, 1.0],
+                    [0.001784121320249777, 1.0],
+                    [0.004014272970561998, 1.0],
+                    [0.00847457627118644, 1.0],
+                    [1.0, 1.0],
+                  ],
+                  auc_score: "1.0",
+                  maxvalue: 1.0,
+                },
+              };
+              return data[classname];
+            }
+
+            function getRocAucCurve(data, maxvalue) {
+              var myChart = echarts.init(
+                document.getElementById("modelstats_overview_plots")
+              );
+              option = {
+                title: {
+                  text: "Roc-Auc Curve",
+                  x: "center",
+                },
+                tooltip: {
+                  trigger: "axis",
+                  axisPointer: {
+                    type: "shadow",
+                  },
+                },
+                xAxis: {
+                  name: "FP Rate",
+                },
+                yAxis: {
+                  name: "True Positive Rate",
+                },
+                series: [
+                  {
+                    data: data,
+                    type: "line",
+                  },
+                  {
+                    data: [0, maxvalue],
+                    type: "line",
+                    color: "red",
+                  },
+                ],
+              };
+              myChart.setOption(option);
+            }
+          </script>
+        </div>
+      </div>
+      <!---------Global Xai----------------------------------------->
+      <div class="globalxai pd-4" id="globalxai">
+        <!---------------------------------Feature Importance---------------------------------->
+        <div class="featureimportance" id="featureimportance">
+          <div class="row">
+            <div class="col">
+              <div class="card card-header-actions h-100">
+                <!-- header -->
+                <div class="card-header">Feature Importance</div>
+                <div class="card-body" id="feature_importance">
+                  <br />
+                  <br />
+                  <div id="multi_classlabels">
+                    <label for="datarows"> Class name: </label>
+
+                    <select
+                      id="list_class_labels"
+                      onchange="getmulticlasslabels()"
+                    >
+                      <option>0</option>
+
+                      <option>1</option>
+
+                      '
+                    </select>
+                  </div>
+                  <div
+                    class="featureimportance_graph"
+                    id="featureimportance_graph"
+                    style="width: 100%; height: 700px"
+                  ></div>
+                  <div id="feature_importance_info"></div>
+                  <script id="featureimportance_script" type="text/javascript">
+                    $(window).on("load", function () {
+                      featureimp = getfeatureimportanceinfo();
+                      classcounts = getclassescount(featureimp);
+                      loadfeatureimportance(classcounts, featureimp);
+                    });
+
+                    function loadfeatureimportance(
+                      classcounts,
+                      featureimpinfo
+                    ) {
+                      if (classcounts == 1) {
+                        var data = featureimpinfo["predictions"];
+                        const keysinfo = [];
+                        const valuesinfo = [];
+                        for (key in data) {
+                          keysinfo.push(key);
+                          valuesinfo.push(data[key]);
+                        }
+                        loadcorehtml(
+                          keysinfo,
+                          valuesinfo,
+                          " Target: <b>Low Risk</b>"
+                        );
+                      }
+                      if (classcounts > 1) {
+                        loadclasswiseimportance(featureimpinfo);
+                      }
+                    }
+
+                    function getmulticlasslabels() {
+                      var featureimpinfo = getfeatureimportanceinfo();
+                      loadclasswiseimportance(featureimpinfo);
+                    }
+
+                    function loadclasswiseimportance(featureimpinfo) {
+                      var class_name = $("#list_class_labels").val();
+                      var data = featureimpinfo[class_name];
+                      const keysinfo = [];
+                      const valuesinfo = [];
+                      for (key in data) {
+                        keysinfo.push(key);
+                        valuesinfo.push(data[key]);
+                      }
+                      loadcorehtml(
+                        keysinfo,
+                        valuesinfo,
+                        "Class: <b>" + class_name + "</b>"
+                      );
+                    }
+
+                    function getclassescount(classinfo) {
+                      var count = 0;
+                      for (var i in classinfo) {
+                        if (classinfo.hasOwnProperty(i)) count++;
+                      }
+                      return count;
+                    }
+
+                    function getfeatureimportanceinfo() {
+                      var map_objects = {}
+                      return map_objects;
+                    }
+
+                    function load_chart_info(keys, values, target_name_var) {
+                      importance = values.slice(-1)[0];
+                      feature_name = keys.slice(-1)[0];
+                      html_content =
+                        "<div style='padding-top:10px'><b style='color:#c033c9'>Description :</b> Plot shows the importances of the featues by thier impact percentages on Model Prediction of " +
+                        target_name_var +
+                        "</br>Its seen that highest impact made on prediction by the feature: <b>" +
+                        feature_name +
+                        "</b> and it's Importance is:<b>" +
+                        importance.toString() +
+                        "%</b></div>";
+                      document.getElementById(
+                        "feature_importance_info"
+                      ).innerHTML = html_content;
+                    }
+
+                    function loadcorehtml(
+                      keysinfo,
+                      valuesinfo,
+                      target_name_var
+                    ) {
+                      load_chart_info(keysinfo, valuesinfo, target_name_var);
+                      var myChart = echarts.init(
+                        document.getElementById("featureimportance_graph")
+                      );
+                      option = {
+                        title: {
+                          text: "Feature Importance",
+                          x: "center",
+                        },
+                        tooltip: {
+                          trigger: "axis",
+                          axisPointer: {
+                            type: "shadow",
+                          },
+                        },
+                        legend: {},
+                        grid: {
+                          left: "3%",
+                          right: "4%",
+                          bottom: "3%",
+                          containLabel: true,
+                        },
+                        xAxis: {
+                          type: "value",
+                          boundaryGap: [0, 0.01],
+                          name: "Percentage",
+                          min: "0",
+                          nameGap: 0,
+                          nameTextStyle: {
+                            align: "right",
+                            verticalAlign: "top",
+                            padding: [30, 0, 0, 0],
+                          },
+                        },
+                        yAxis: {
+                          type: "category",
+                          data: keysinfo,
+                          name: "Features",
+                        },
+                        series: [
+                          {
+                            type: "bar",
+                            data: valuesinfo,
+                          },
+                        ],
+                      };
+                      myChart.setOption(option);
+                    }
+                  </script>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- PDP Plot -->
+        <div class="card card-header-actions h-100">
+          <div class="card-header">Partial dependence Plots (PDP)</div>
+          <div class="card-body" id="pdp_plot">
+            <div class="row" style="padding-left: 20px; padding-top: 20px">
+              <div id="pdp_dropdown_list">
+                <label>
+                  <b> Feature name : </b>
+                </label>
+
+                <select id="pdp_feature_name" onchange="getpdpplots()">
+                  <option></option>
+                  '
+                </select>
+              </div>
+              <div id="pdp_class_list" style="padding-left: 40px">
+                <label>
+                  <b> Class : </b>
+                </label>
+
+                <select id="pdp_class_name" onchange="getpdpplots()">
+                  <option>1</option>
+
+                  '
+                </select>
+              </div>
+            </div>
+            <div
+              class="pdp_plots_local"
+              id="pdp_plots_local_exp"
+              style="width: 100%; height: 700px"
+            ></div>
+            <div id="pdp_info"></div>
+            <script id="script_pdp_plots" type="text/javascript">
+              $(window).on("load", function () {
+                getpdpplots();
+              });
+
+              function getpdpplots() {
+                var pdp_feature_name = $("#pdp_feature_name").val();
+                var pdpcontent = getpdpinfo(pdp_feature_name);
+                var regMode = pdpcontent["regressionMode"];
+                plotPDP(regMode, pdpcontent);
+                pdp_info(pdp_feature_name, regMode);
+              }
+
+              function pdp_info(feature_name, regMode) {
+                if (regMode) {
+                  html_content =
+                    "<div style='padding-left:40px'><b style='color:#c033c9'>Description :</b>Above plots shows the relation between average prediction values made by model Vs range of feature values of <b>" +
+                    feature_name.toString() +
+                    "</b> on keeping all other featues at constant values.</div>";
+                  document.getElementById("pdp_info").innerHTML = html_content;
+                } else {
+                  html_content =
+                    "<div style='padding-left:40px'><b style='color:#c033c9'>Description :</b>Above plots shows the relation between average prediction probabilities made by model Vs range of feature values of <b>" +
+                    feature_name.toString() +
+                    "</b> on keeping all other featues at constant values.</div>";
+                  document.getElementById("pdp_info").innerHTML = html_content;
+                }
+              }
+
+              function plotPDP(regMode, pdpcontent) {
+                if (!regMode) {
+                  var classId = $("#pdp_class_name").val();
+                  //var classId = 'class_0'
+                  //var classArrayInfo = classId.split('_')[1]
+                  var fdata = pdpcontent["feature_data"];
+                  var pdata = pdpcontent["pdp_value"][classId];
+                  var fname = pdpcontent["feature_name"];
+                  load_pdp_echarts(fname, fdata, pdata);
+                }
+                if (regMode) {
+                  var fdata = pdpcontent["feature_data"];
+                  var pdata = pdpcontent["pdp_value"];
+                  var fname = pdpcontent["feature_name"];
+                  load_pdp_echarts(fname, fdata, pdata);
+                }
+              }
+
+              function getpdpinfo(feature_name) {
+                var map_object = {}
+                return map_objects[feature_name];
+              }
+
+              function load_pdp_echarts(fname, fdata, pdata) {
+                var pdpChart = echarts.init(
+                  document.getElementById("pdp_plots_local_exp")
+                );
+                option = {
+                  title: {
+                    text: "Partial dependence plot",
+                    x: "center",
+                  },
+                  tooltip: {
+                    trigger: "axis",
+                    axisPointer: {
+                      type: "shadow",
+                    },
+                  },
+                  xAxis: {
+                    name: fname,
+                    type: "category",
+                    data: fdata,
+                    nameGap: 0,
+                    nameTextStyle: {
+                      align: "right",
+                      verticalAlign: "top",
+                      padding: [30, 0, 0, 0],
+                    },
+                  },
+                  yAxis: {
+                    name: "Partial Dependency",
+                    type: "value",
+                  },
+                  series: [
+                    {
+                      data: pdata,
+                      type: "line",
+                    },
+                  ],
+                };
+                pdpChart.setOption(option);
+              }
+            </script>
+          </div>
+        </div>
+      </div>
+      <!-- End of PDP > -->
+      <!---------------Local Xai------------------------------------>
+      <div class="localxai" id="localxai">
+        <!-- Start of Decision Tree -->
+        <div class="row">
+          <div class="col">
+            <div class="card card-header-actions h-100">
+              <div class="card-header">Decision Plot</div>
+              <div class="card-body" id="decision_plot">
+                <div class="row" style="padding-left: 20px; padding-top: 20px">
+                  <div id="list_dplot_rows_content">
+                    <label for="dataRow">
+                      <b> Index no : </b>
+                    </label>
+
+                    <select id="list_dplot_row" onchange="getdplotrows()">
+                      <option>11682</option>
+
+                      <option>10729</option>
+
+                      <option>3138</option>
+
+                      <option>6637</option>
+
+                      <option>9999</option>
+
+                      <option>5157</option>
+
+                      <option>9745</option>
+
+                      <option>12767</option>
+
+                      <option>8570</option>
+
+                      <option>4824</option>
+
+                      <option>13187</option>
+
+                      <option>5172</option>
+
+                      <option>2192</option>
+
+                      <option>4537</option>
+
+                      <option>4875</option>
+
+                      <option>3588</option>
+
+                      <option>2481</option>
+
+                      <option>906</option>
+
+                      <option>10474</option>
+
+                      <option>10275</option>
+
+                      <option>12222</option>
+
+                      <option>623</option>
+
+                      <option>388</option>
+
+                      <option>10584</option>
+
+                      <option>8069</option>
+
+                      <option>978</option>
+
+                      <option>10324</option>
+
+                      <option>416</option>
+
+                      <option>2057</option>
+
+                      <option>8446</option>
+
+                      <option>929</option>
+
+                      <option>12143</option>
+
+                      <option>9760</option>
+
+                      <option>5961</option>
+
+                      <option>3995</option>
+
+                      <option>5492</option>
+
+                      <option>12412</option>
+
+                      <option>6615</option>
+
+                      <option>9923</option>
+
+                      <option>4366</option>
+
+                      <option>4569</option>
+
+                      <option>12610</option>
+
+                      <option>4287</option>
+
+                      <option>12251</option>
+
+                      <option>4245</option>
+
+                      <option>6433</option>
+
+                      <option>5675</option>
+
+                      <option>206</option>
+
+                      <option>1937</option>
+
+                      <option>8067</option>
+
+                      <option>6875</option>
+
+                      <option>5624</option>
+
+                      <option>5383</option>
+
+                      <option>9284</option>
+
+                      <option>10766</option>
+
+                      <option>1383</option>
+
+                      <option>4940</option>
+
+                      <option>86</option>
+
+                      <option>3601</option>
+
+                      <option>8816</option>
+
+                      <option>485</option>
+
+                      <option>6300</option>
+
+                      <option>3383</option>
+
+                      <option>10838</option>
+
+                      <option>7585</option>
+
+                      <option>10400</option>
+
+                      <option>12821</option>
+
+                      <option>4566</option>
+
+                      <option>10965</option>
+
+                      <option>5330</option>
+
+                      <option>3292</option>
+
+                      <option>13329</option>
+
+                      <option>4056</option>
+
+                      <option>11822</option>
+
+                      <option>1786</option>
+
+                      <option>12914</option>
+
+                      <option>11309</option>
+
+                      <option>13386</option>
+
+                      <option>12644</option>
+
+                      <option>8858</option>
+
+                      <option>10958</option>
+
+                      <option>10932</option>
+
+                      <option>8348</option>
+
+                      <option>7795</option>
+
+                      <option>10910</option>
+
+                      <option>6934</option>
+
+                      <option>706</option>
+
+                      <option>1330</option>
+
+                      <option>4660</option>
+
+                      <option>5204</option>
+
+                      <option>12305</option>
+
+                      <option>6502</option>
+
+                      <option>11592</option>
+
+                      <option>9501</option>
+
+                      <option>3934</option>
+
+                      <option>7535</option>
+
+                      <option>5241</option>
+
+                      <option>12584</option>
+
+                      <option>1028</option>
+
+                      <option>3712</option>
+
+                      '
+                    </select>
+                  </div>
+                  <div id="list_dplot_classes" style="padding-left: 40px">
+                    <label for="dataClasses">
+                      <b> Class : </b>
+                    </label>
+
+                    <select id="dplot_class_name" onchange="getdplotrows()">
+                      <option>0</option>
+
+                      <option>1</option>
+
+                      '
+                    </select>
+                  </div>
+                </div>
+                <div
+                  class="dpplot_plots_global_exp"
+                  id="dplot_plots_global_exp"
+                  style="width: 100%; height: 700px"
+                ></div>
+                <div id="dplot_info"></div>
+                <script id="script_dplot_plots" type="text/javascript">
+                  $(window).on("load", function () {
+                    getdplotrows();
+                  });
+
+                  function getdplotrows() {
+                    var row_number = $("#list_dplot_row").val();
+                    var class_name = $("#dplot_class_name").val();
+                    var dplotcontent = getdplotinfo(row_number, class_name);
+                    loaddplotchart(dplotcontent);
+                    loaddplotinfo(dplotcontent, class_name);
+                  }
+
+                  function getModeltype() {
+                    return classification;
+                  }
+
+                  function loaddplotinfo(dplotcontent, classname = undefined) {
+                    max_value = dplotcontent["data"][0];
+                    mean_value = dplotcontent["meanValue"];
+                    target_name = dplotcontent["target_name"];
+                    if (classname) {
+                      html_content =
+                        "<div style='padding-top:10px'><b style='color:#c033c9'>Description :</b> Plot explains the Model Prediction behavior for current index on <b>Prediction Probability vs Features</b>. </br>Green line indicates the average prediction made by all indexes for class :<b>" +
+                        classname +
+                        "</b>.</br>Final Predictive Prabability:<b>" +
+                        max_value.toString() +
+                        "</b></br>Mean Predictive Probability :<b>" +
+                        mean_value.toString() +
+                        "</b></div>";
+                      document.getElementById("dplot_info").innerHTML =
+                        html_content;
+                    }
+                    if (!classname) {
+                      html_content =
+                        "<div style='padding-top:10px'><b style='color:#c033c9'>Description :</b> Plot explains the  Model Prediction behavior for current index on Target Column <b>" +
+                        target_name.toString() +
+                        "Vs Features</b>.</br>Green line indicates the average prediction made by all indexes.</br>Final Predictive " +
+                        target_name.toString() +
+                        " Value:<b>" +
+                        max_value.toString() +
+                        "</b></br>Mean Predictive " +
+                        target_name.toString() +
+                        "Value :<b>" +
+                        mean_value.toString() +
+                        "</b></div>";
+                      document.getElementById("dplot_info").innerHTML =
+                        html_content;
+                    }
+                  }
+
+                  function getdplotinfo(row_number, class_name = undefined) {
+                    var map_objects = {}
+          if (class_name) {
+                      return map_objects[class_name][row_number];
+                    }
+                    return map_objects[row_number];
+                  }
+
+                  function loaddplotchart(dplotdata) {
+                    var dplotChart = echarts.init(
+                      document.getElementById("dplot_plots_global_exp")
+                    );
+                    option = {
+                      title: {
+                        text: "Decision Plot",
+                        x: "center",
+                      },
+                      tooltip: {
+                        trigger: "axis",
+                        axisPointer: {
+                          type: "shadow",
+                        },
+                      },
+                      yAxis: {
+                        name: "Feature Names",
+                        type: "category",
+                        data: dplotdata["features_display"],
+                      },
+                      xAxis: {
+                        name: dplotdata["target_name"],
+                        type: "value",
+                        min: dplotdata["min"],
+                        max: dplotdata["max"],
+                      },
+                      series: [
+                        {
+                          data: dplotdata["data"],
+                          type: "line",
+                          smooth: true,
+                        },
+                        {
+                          data: [
+                            [dplotdata["meanValue"], dplotdata["start_y"]],
+                            [dplotdata["meanValue"], dplotdata["end_y"]],
+                          ],
+                          type: "line",
+                        },
+                      ],
+                    };
+                    dplotChart.setOption(option);
+                  }
+                </script>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card card-header-actions h-100">
+            <!-- header -->
+            <div class="card-header">
+              Local Interpretable Model Agnostic Explanations Plot - LIME
+            </div>
+            <!-- body -->
+            <div class="card-body" id="lime_plot">
+              <div class="row" style="padding-left: 20px; padding-top: 20px">
+                <div id="lime_row_dropdown_list" style="float: left">
+                  <label for="datarows"> Index no: </label>
+
+                  <select id="list_lime__rows" onchange="getlimerows()">
+                    <option>11682</option>
+
+                    <option>10729</option>
+
+                    <option>3138</option>
+
+                    <option>6637</option>
+
+                    <option>9999</option>
+
+                    <option>5157</option>
+
+                    <option>9745</option>
+
+                    <option>12767</option>
+
+                    <option>8570</option>
+
+                    <option>4824</option>
+
+                    <option>13187</option>
+
+                    <option>5172</option>
+
+                    <option>2192</option>
+
+                    <option>4537</option>
+
+                    <option>4875</option>
+
+                    <option>3588</option>
+
+                    <option>2481</option>
+
+                    <option>906</option>
+
+                    <option>10474</option>
+
+                    <option>10275</option>
+
+                    <option>12222</option>
+
+                    <option>623</option>
+
+                    <option>388</option>
+
+                    <option>10584</option>
+
+                    <option>8069</option>
+
+                    <option>978</option>
+
+                    <option>10324</option>
+
+                    <option>416</option>
+
+                    <option>2057</option>
+
+                    <option>8446</option>
+
+                    <option>929</option>
+
+                    <option>12143</option>
+
+                    <option>9760</option>
+
+                    <option>5961</option>
+
+                    <option>3995</option>
+
+                    <option>5492</option>
+
+                    <option>12412</option>
+
+                    <option>6615</option>
+
+                    <option>9923</option>
+
+                    <option>4366</option>
+
+                    <option>4569</option>
+
+                    <option>12610</option>
+
+                    <option>4287</option>
+
+                    <option>12251</option>
+
+                    <option>4245</option>
+
+                    <option>6433</option>
+
+                    <option>5675</option>
+
+                    <option>206</option>
+
+                    <option>1937</option>
+
+                    <option>8067</option>
+
+                    <option>6875</option>
+
+                    <option>5624</option>
+
+                    <option>5383</option>
+
+                    <option>9284</option>
+
+                    <option>10766</option>
+
+                    <option>1383</option>
+
+                    <option>4940</option>
+
+                    <option>86</option>
+
+                    <option>3601</option>
+
+                    <option>8816</option>
+
+                    <option>485</option>
+
+                    <option>6300</option>
+
+                    <option>3383</option>
+
+                    <option>10838</option>
+
+                    <option>7585</option>
+
+                    <option>10400</option>
+
+                    <option>12821</option>
+
+                    <option>4566</option>
+
+                    <option>10965</option>
+
+                    <option>5330</option>
+
+                    <option>3292</option>
+
+                    <option>13329</option>
+
+                    <option>4056</option>
+
+                    <option>11822</option>
+
+                    <option>1786</option>
+
+                    <option>12914</option>
+
+                    <option>11309</option>
+
+                    <option>13386</option>
+
+                    <option>12644</option>
+
+                    <option>8858</option>
+
+                    <option>10958</option>
+
+                    <option>10932</option>
+
+                    <option>8348</option>
+
+                    <option>7795</option>
+
+                    <option>10910</option>
+
+                    <option>6934</option>
+
+                    <option>706</option>
+
+                    <option>1330</option>
+
+                    <option>4660</option>
+
+                    <option>5204</option>
+
+                    <option>12305</option>
+
+                    <option>6502</option>
+
+                    <option>11592</option>
+
+                    <option>9501</option>
+
+                    <option>3934</option>
+
+                    <option>7535</option>
+
+                    <option>5241</option>
+
+                    <option>12584</option>
+
+                    <option>1028</option>
+
+                    <option>3712</option>
+
+                    '
+                  </select>
+                </div>
+                <div
+                  id="lime_row_class_list"
+                  style="float: left; padding-left: 70px"
+                >
+                  <label for="dataClasses"> Class : </label>
+
+                  <select id="list_lime_class" onchange="getlimerows()">
+                    <option>0</option>
+
+                    <option>1</option>
+
+                    '
+                  </select>
+                </div>
+              </div>
+              <!-- 1 -->
+              <!-- 2 -->
+              <div class="row">
+                <div class="col-md-3">
+                  <div
+                    id="lime_class_percentage"
+                    style="margin-top: 40px"
+                  ></div>
+                </div>
+                <div class="col-md-5">
+                  <div id="boxes" style="height: 700px">
+                    <div
+                      id="lime_bar_plot"
+                      style="height: 100%; margin-top: 40px"
+                    ></div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div
+                    id="row_tablecontent"
+                    style="height: 100%; margin-top: 35px"
+                  ></div>
+                </div>
+              </div>
+              <!-- 4 -->
+              <script id="lime_plot_data_script" type="text/javascript">
+                $(window).on("load", function () {
+                  getlimerows();
+                });
+
+                function getModelType() {
+                  return "classification";
+                }
+
+                function getlimerows() {
+                  var lime_row_number = $("#list_lime__rows").val();
+                  var lime_class_name = $("#list_lime_class").val();
+                  var limecontent = getlimeinfo(
+                    lime_row_number,
+                    lime_class_name
+                  );
+                  var modelType = getModelType();
+                  getLimePercentageTable(
+                    limecontent,
+                    modelType,
+                    (lime_class_name = lime_class_name)
+                  );
+                }
+
+                function getLimePercentageTable(
+                  limecontent,
+                  modelType,
+                  lime_class_name = undefined
+                ) {
+                  if (modelType == "regression") {
+                    var predictPerct = limecontent["predicted_value"];
+                    var listInfo = limecontent["list"];
+                    var featureInfo = limecontent["feature_values"];
+
+                    loadlimepercenthtml(predictPerct, (mode = modelType));
+                    loadlimebarplots(listInfo);
+
+                    loadrowtablecontent(featureInfo);
+                  } else {
+                    var predictPerct = limecontent.get("predicted_value");
+                    var listInfo = limecontent.get("list");
+                    var featureInfo = limecontent.get("feature_values");
+
+                    loadlimepercenthtml(
+                      predictPerct,
+                      lime_class_name,
+                      (mode = modelType)
+                    );
+
+                    loadlimebarplots(listInfo);
+
+                    loadrowtablecontent(featureInfo);
+                  }
+                }
+
+                function loadrowtablecontent(featureInfo) {
+                  html_content = "<b>Feature Values</b></br>";
+                  html_content += "<table style='border-style: solid'>";
+                  for (var i in featureInfo) {
+                    if (featureInfo[i][2] == "positive") {
+                      html_content +=
+                        '<tr><td style="background-color:#ff9966;border:solid">' +
+                        featureInfo[i][1].toString() +
+                        '</td><td style="background-color:#ff9966;border:solid">' +
+                        featureInfo[i][0].toString() +
+                        "</td></tr>";
+                    }
+                    if (featureInfo[i][2] == "negative") {
+                      html_content +=
+                        '<tr><td style="background-color:#80aaff;border:solid">' +
+                        featureInfo[i][1].toString() +
+                        '</td><td style="background-color:#80aaff;border:solid">' +
+                        featureInfo[i][0].toString() +
+                        "</td></tr>";
+                    }
+                  }
+
+                  html_content += "</table>";
+                  document.getElementById("row_tablecontent").innerHTML =
+                    html_content;
+                }
+
+                function loadlimebarplots(listInfo) {
+                  var listKeys = [];
+                  var listValues = [];
+                  console.log(listKeys, listValues);
+                  for (var key in listInfo) {
+                    listKeys.push(key);
+                    if (listInfo[key] < 0) {
+                      var valueInfo = {
+                        value: listInfo[key],
+                        label: "labelRight",
+                        itemStyle: { color: "#80aaff" },
+                      };
+                      listValues.push(valueInfo);
+                    }
+                    if (listInfo[key] >= 0) {
+                      var valueInfo = {
+                        value: listInfo[key],
+                        itemStyle: { color: "#ff9966" },
+                      };
+                      listValues.push(valueInfo);
+                    }
+                  }
+                  var limeChart = echarts.init(
+                    document.getElementById("lime_bar_plot")
+                  );
+                  const labelRight = {
+                    position: "right",
+                  };
+                  option = {
+                    title: {
+                      text: "Local Feature Importance ",
+                      x: "center",
+                    },
+                    tooltip: {
+                      trigger: "axis",
+                      axisPointer: {
+                        type: "shadow",
+                      },
+                    },
+                    xAxis: {
+                      type: "value",
+                      position: "top",
+                    },
+                    yAxis: {
+                      type: "category",
+                      axisLine: { show: false },
+                      axisLabel: { show: false },
+                      axisTick: { show: false },
+                      splitLine: { show: false },
+                      data: listKeys,
+                    },
+                    series: [
+                      {
+                        name: "Cost",
+                        type: "bar",
+                        stack: "Total",
+                        label: {
+                          show: true,
+                          formatter: "{b}",
+                        },
+                        data: listValues,
+                      },
+                    ],
+                  };
+                  limeChart.setOption(option);
+                }
+
+                function getlimeinfo(lime_row_number, lime_class = undefined) {
+                  var map_objects = new Map ()
+                  if (lime_class) {
+                    return map_objects
+                      .get(parseInt(lime_row_number))
+                      .get(lime_class);
+                  }
+                  return map_objects[lime_row_number];
+                }
+
+                function loadlimepercenthtml(
+                  predictPerct,
+                  classname,
+                  mode = "regression"
+                ) {
+                  console.log(predictPerct, classname, mode);
+                  if (mode == "regression") {
+                    var maxValue = predictPerct["maxValue"].toFixed(0);
+                    var target_name = "None";
+                    var minValue = predictPerct["minValue"].toFixed(0);
+                    var predictedValue =
+                      predictPerct["predictedValue"].toFixed(0);
+                    var classValue =
+                      (predictedValue - minValue) / (maxValue - minValue);
+                    var classPercentageValue = (classValue * 100).toFixed(0);
+                    var html_content =
+                      "<label>Predicted " +
+                      target_name +
+                      " value: <b>" +
+                      predictedValue.toString() +
+                      "</b></label>";
+                    html_content +=
+                      "<p> Confidence Interval (CI) : <br>( <b>" +
+                      minValue.toString() +
+                      "</b>,<b>" +
+                      maxValue.toString() +
+                      "</b> )</p>";
+                    html_content += "<table style='width:100%'>";
+                    html_content +=
+                      "<p>CI is the range of reasonable predicted values on similar data for the current instance</p>";
+                    html_content +=
+                      "<p>Current prediction value is <b>" +
+                      classPercentageValue.toString() +
+                      "%</b> of Confidence Interval </p>";
+                    html_content +=
+                      "<tr><td style='border:solid'><div style='width: " +
+                      classPercentageValue.toString() +
+                      "%; background-color: #ff9966;float:left;'>&nbsp;</div>" +
+                      classPercentageValue.toString() +
+                      "%</td></tr>";
+                    html_content += "</table>";
+                    html_content += "</br>";
+                    html_content +=
+                      "<div><div style='width: 10%; background-color: #ff9966;float:left;'>&nbsp;</div><div style='padding-left:30px'> Postive </div></div>";
+                    html_content += "</br>";
+                    html_content +=
+                      "<div><div style='width: 10%; background-color: #80aaff;float:left;'>&nbsp;</div><div style='padding-left:30px'> Negative </div></div>";
+                    document.getElementById("lime_class_percentage").innerHTML =
+                      html_content;
+                  } else {
+                    var classValue = parseFloat(predictPerct[classname]);
+                    var classPercentageValue = (classValue * 100).toFixed(0);
+                    var html_content = "<table>";
+                    html_content += "<p><b>Predictive Percentage</b></p>";
+                    html_content +=
+                      "<tr style='width :100%'><td style='border:solid'><b>Positive</b></td><td style='width:100% ;border:solid'><div style='width: " +
+                      classPercentageValue.toString() +
+                      "%; background-color: #ff9966;float:left;'>&nbsp;</div></br>" +
+                      classPercentageValue.toString() +
+                      "%</td></tr>";
+                    html_content +=
+                      "<tr style='width :100%'><td style='border:solid'><b>Negative</b></td><td style='width:100% ;border:solid'><div style='width: " +
+                      (100 - classPercentageValue).toString() +
+                      "%; background-color: #80aaff;float:left;'>&nbsp;</div></br>" +
+                      (100 - classPercentageValue).toString() +
+                      "%</td></tr>";
+                    html_content += "</table>";
+                    html_content +=
+                      "<p>For current index, probability of prediction made for the class:<b>" +
+                      classname.toString() +
+                      "</b> is:<b>" +
+                      classPercentageValue.toString() +
+                      "%</b></p>";
+                    html_content += "</br>";
+                    html_content +=
+                      "<div><div style='width: 10%; background-color: #ff9966;float:left;'>&nbsp;</div><div style='padding-left:30px'> Postive </div></div>";
+                    html_content += "</br>";
+                    html_content +=
+                      "<div><div style='width: 10%; background-color: #80aaff;float:left;'>&nbsp;</div><div style='padding-left:30px'> Negative </div></div>";
+                    document.getElementById("lime_class_percentage").innerHTML =
+                      html_content;
+                  }
+                }
+              </script>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- -----------------------Tabs content -->
+    </div>
+  </body>
+</html>
