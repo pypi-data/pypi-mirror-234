@@ -1,0 +1,7 @@
+
+
+
+
+def OPEN_STUDIES ():
+	import LYMPHATIC.STUDIES as STUDIES
+	STUDIES.OPEN ()
