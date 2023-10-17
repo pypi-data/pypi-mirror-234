@@ -1,0 +1,50 @@
+Metadata-Version: 2.1
+Name: fairpredictor
+Version: 0.0.16
+Summary: A package for running predictions using fAIr
+Home-page: https://github.com/kshitijrajsharma/fairpredictor
+Author: Kshitij Raj Sharma
+Author-email: skshitizraj@gmail.com
+License: MIT
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+## fAIr Predictor
+
+Run your fAIr Model Predictions anywhere ! 
+
+Example on Collab 
+```python
+# Install 
+!pip install fairpredictor
+
+# Import 
+from predictor import predict
+
+# Parameters for your predictions 
+bbox=[100.56228021333352,13.685230854641182,100.56383321235313,13.685961853747969]
+model_path='checkpoint.h5'
+zoom_level=20
+tms_url='https://tiles.openaerialmap.org/6501a65c0906de000167e64d/0/6501a65c0906de000167e64e/{z}/{x}/{y}'
+
+# Run your prediction 
+my_predictions=predict(bbox,model_path,zoom_level,tms_url)
+print(my_predictions)
+
+## Visualize your predictions 
+
+import geopandas as gpd
+import matplotlib.pyplot as plt
+gdf = gpd.GeoDataFrame.from_features(my_predictions)
+gdf.plot()
+plt.show()
+```
+
+Works on CPU ! Can work on serverless functions, No other dependencies to run predictions 
