@@ -1,0 +1,5 @@
+__author__ = "Cristiano Henrique"
+__license__ = "BSD-3-Clause"
+__version__ = "0.1.13"
+__maintainer__ = "Cristiano Henrique"
+__status__ = "Production"
