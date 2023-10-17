@@ -1,0 +1,161 @@
+{% set show_site_op_in_footer = False %}
+{% set show_printed_time = False %}
+{%- block bottomleft %}{%- endblock %}
+{%- block bottomright %}{%- endblock %}
+
+{%- extends "weasyprint/base.weasy.html" -%}
+{%- block pagesize %}portrait{%- endblock %}
+
+{%- block footer %}
+{% set site_op = settings.SITE.site_config.site_company %}
+{% if site_op  %}
+<div class="footer_div">
+<table class="footer">
+<tr>
+<td>
+{% for ln in site_op.get_address_lines() %}
+{{ln}},
+{% endfor %}
+{#{site_op.get_address_html(sep=', ')}#}
+{{tostring(site_op.contact_details)}}
+</td><td style="text-align:right">
+{{babelattr(obj.journal, 'printed_name')}} {{obj.number}}/{{obj.accounting_period.year}}
+<br/>
+<span class="page_num_of"></span>
+{%- if show_printed_time -%}
+<br/>
+<span class="printed_time"></span>
+{%- endif %}
+</td></tr></table>
+</div>
+{%- endif %}
+{%- endblock footer %}
+
+{%- block main %}
+<div style="height:15mm;"></div>
+
+<div class="recipient">
+{{_("Recipient")}}:<br>
+{{obj.recipient.get_address_html()}}
+</div>
+
+<div style="height:5mm;"></div>
+
+<p style="text-align:right;">{{_("Date")}}: {{fdl(obj.voucher_date)}}</p>
+
+<h1>{{babelattr(obj.journal, 'printed_name')}} {{obj.number}}/{{obj.accounting_period.year}}</h1>
+
+<table class="preamble">
+<tr>
+<td>
+{{_("Our reference")}}: {{obj}}
+<br>{{_("Your reference")}}: {{obj.your_ref}}
+{% if  getattr(obj, 'invoicing_min_date', None) %}
+<br>{{_("Period from {} to {}").format(obj.invoicing_min_date, obj.invoicing_min_date)}}
+{% endif %}
+</td>
+<td>
+{{_("Your VAT id")}}: {{obj.partner.vat_id or _("N/A")}} ({{obj.vat_regime}})
+<br>{{_("Your customer id")}}: {{obj.partner.id}}
+</td></tr></table>
+
+{% if obj.intro %}
+<div style="height:2mm;"></div>
+{% if obj.intro.startswith("<") %}
+{{obj.intro}}
+{% else %}
+{{restify(obj.intro)}}
+{% endif %}
+<div style="height:2mm;"></div>
+{% else %}
+<div style="height:10mm;"></div>
+{% endif %}
+
+
+<div>
+{% block body %}
+<table border="1" width="100%">
+<tr>
+<th>{{_("Description")}}</th>
+<th>{{dd.plugins.invoicing.invoiceable_label}}</th>
+<th>{{_("Quantity")}}</th>
+</tr>
+{%- set sums_by_product = SumCollector() -%}
+{%- for item in obj.items.order_by('seqno') -%}
+  {{- sums_by_product.collect(item.product, item.qty) or '' -}}
+  <tr>
+  <td>
+  {%- if item.description -%}
+  <p><b>{{item.title}}</b></p>
+  {% if item.description.startswith("<") %}
+  {{item.description}}
+  {% else %}
+  {{restify(item.description)}}
+  {% endif %}
+  {% else %}
+  <p>{{item.title}}</p>
+  {% endif %}
+  </td>
+  <td>
+  {% if item.invoiceable %}
+  <p>{{item.invoiceable}}</p>
+  {% else %}
+  <p></p>
+  {%- endif -%}
+  </td>
+  <td class="number-cell">
+  {{decfmt(item.qty)}}
+  </td>
+  </tr>
+{%- endfor -%}
+</table>
+
+<ul>
+{%- for product, qty in sums_by_product.items() -%}
+<li>{{qty}} x {{product}}</li>
+{%- endfor -%}
+</ul>
+
+{%- endblock -%}
+</div>
+
+<div style="height:5mm;"></div>
+
+<div style="page-break-inside: avoid;">
+
+{% block payment %}
+<p class="Default">
+{% if obj.due_date %}
+{{_("Due date")}} : {{fds(obj.due_date)}}
+<br/>
+{% endif %}
+{% if obj.payment_term %}
+{{_("Payment terms")}} : {{obj.payment_term}}
+{% endif %}
+</p>
+{% endblock payment %}
+
+<div style="clear:right;"></div>
+
+{% block ending %}
+<p class="Default"">
+{{_("With best regards.")}}
+<br>
+<br>
+<br>{{this.user}}
+</p>
+{% if show_site_op_in_footer %}
+<p class="Default"">
+{% set site_op = settings.SITE.site_config.site_company %}
+{% for ln in site_op.get_address_lines() %}
+{{ln}},
+{% endfor %}
+{#{site_op.get_address_html(sep=', ')}#}
+{{tostring(site_op.contact_details)}}
+</p>
+{% endif %}
+{% endblock ending %}
+
+</div>
+
+{%- endblock main %}
