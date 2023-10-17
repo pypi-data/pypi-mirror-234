@@ -1,0 +1,21 @@
+my_cloud_agent:
+  infra:
+    type: ec2
+    instance_type: t2.micro
+    ami_image: ami-01c647eace872fc02
+  requirements: requirements.txt
+  matrix:
+    max_concurrency: 4
+    dimension1: ["VAR1", "VAR2", "VAR2", "VAR3"]
+    dimension2: ["VARA", "VARB"]
+  entrypoint:
+    type: script
+    cmd: python <script name>.py --dim1 {{ matrix.dimension1 }} --dim2 {{ matrix.dimension2 }}
+  env:
+    SNOWFLAKE_ACCOUNT: '{{ env("SNOWFLAKE_ACCOUNT") }}'
+    SNOWFLAKE_DATABASE: '{{ env("SNOWFLAKE_DATABASE") }}'
+    SNOWFLAKE_PASSWORD: '{{ env("SNOWFLAKE_PASSWORD") }}'
+    SNOWFLAKE_ROLE: '{{ env("SNOWFLAKE_ROLE") }}'
+    SNOWFLAKE_SCHEMA: '{{ env("SNOWFLAKE_SCHEMA") }}'
+    SNOWFLAKE_USER: '{{ env("SNOWFLAKE_USER") }}'
+    SNOWFLAKE_WAREHOUSE: '{{ env("SNOWFLAKE_WAREHOUSE") }}'
