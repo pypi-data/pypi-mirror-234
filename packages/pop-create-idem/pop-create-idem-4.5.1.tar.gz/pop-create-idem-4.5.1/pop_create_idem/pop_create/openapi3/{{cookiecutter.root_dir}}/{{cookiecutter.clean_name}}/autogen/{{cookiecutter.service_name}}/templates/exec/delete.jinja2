@@ -1,0 +1,21 @@
+{# templates/delete.jinja2 #}
+    result = dict(comment=[], ret=[], result=True)
+
+    delete = await hub.tool.{{ function.hardcoded.service_name }}.session.request(
+        ctx,
+        method="{{ function.hardcoded.method }}",
+        path="{{ function.hardcoded.path }}".format(
+            **{{ parameter.mapping.path|default({}) }}
+        ),
+        query_params={{ parameter.mapping.query|default({}) }},
+        data={},
+        headers={{ parameter.mapping.header|default({}) }},
+    )
+
+    if not delete["result"]:
+        result["comment"].append(delete["comment"])
+        result["result"] = False
+        return result
+
+    result["comment"].append(f"Deleted '{name}'")
+    return result

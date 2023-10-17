@@ -1,0 +1,44 @@
+{# templates/absent.jinja2 #}
+    result = dict(
+            comment=[], old_state={}, new_state={}, name=name, result=True, rerun_data=None
+        )
+
+    if not resource_id:
+        resource_id = (ctx.old_state or {}).get("resource_id")
+
+    if not resource_id:
+        result["comment"].append(f"'{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}' already absent")
+        return result
+
+    before = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=name,
+        resource_id=resource_id,
+    )
+
+    if before["ret"]:
+        if ctx.test:
+            result["comment"] = f"Would delete {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}"
+            return result
+
+        delete_ret = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.delete(
+            ctx,
+            name=name,
+            resource_id=resource_id,
+        )
+        result["result"] = delete_ret["result"]
+
+        if result["result"]:
+            result["comment"].append(f"Deleted {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}")
+        else:
+            # If there is any failure in delete, it should reconcile.
+            # The type of data is less important here to use default reconciliation
+            # If there are no changes for 3 runs with rerun_data, then it will come out of execution
+            result["rerun_data"] = resource_id
+            result["comment"].append(delete_ret["result"])
+    else:
+        result["comment"].append(f"{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name} already absent")
+        return result
+
+    result["old_state"] = before.ret
+    return result

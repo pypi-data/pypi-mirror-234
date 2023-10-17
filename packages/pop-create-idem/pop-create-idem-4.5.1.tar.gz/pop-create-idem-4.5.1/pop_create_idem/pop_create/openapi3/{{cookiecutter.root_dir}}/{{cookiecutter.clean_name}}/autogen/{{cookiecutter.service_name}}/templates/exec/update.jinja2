@@ -1,0 +1,38 @@
+{# templates/update.jinja2 #}
+    result = dict(comment=[], ret=[], result=True)
+
+    desired_state = {
+        k: v
+        for k, v in locals().items()
+        if k not in ("hub", "ctx", "result") and v is not None
+    }
+
+    # TODO: Change request param mapping as necessary
+    resource_to_raw_input_mapping = {{ function.hardcoded.request_mappings|default("{}", true) }}
+
+    payload = {}
+    for key, value in desired_state.items():
+        if key in resource_to_raw_input_mapping.keys() and value is not None:
+            payload[resource_to_raw_input_mapping[key]] = value
+
+    if payload:
+        update = await hub.tool.{{ function.hardcoded.service_name }}.session.request(
+            ctx,
+            method="{{ function.hardcoded.method }}",
+            path="{{ function.hardcoded.path }}".format(
+                **{{ parameter.mapping.path|default({}) }}
+            ),
+            query_params={{ parameter.mapping.query|default({}) }},
+            data=payload,
+            headers={{ parameter.mapping.header|default({}) }},
+        )
+
+        if not update["result"]:
+            result["comment"].append(update["comment"])
+            result["result"] = False
+            return result
+
+        result["ret"] = update["ret"]
+        result["comment"].append(f"Updated {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }} '{name}'",)
+
+    return result

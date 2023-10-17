@@ -1,0 +1,78 @@
+{# templates/test_present.jinja2 #}
+    global PARAMETER
+    ctx["test"] = __test
+    # Create the resource
+    # TODO: replace call param values as necessary
+    ret = await hub.states.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret["result"], ret["comment"]
+    resource = ret["new_state"]
+    if __test:
+        assert f"Would create {{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']}" in ret["comment"]
+    else:
+        assert f"Created {{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']}" in ret["comment"]
+
+    PARAMETER["resource_id"] = resource["resource_id"]
+    assert not ret["old_state"] and ret["new_state"]
+    assert PARAMETER["name"] == resource.get("name")
+
+    # Now get the resource with exec
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.get_call_params %}
+        {{function.get_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    assert PARAMETER["name"] == resource.get("name")
+    # TODO: Add manual verification as necessary
+
+    # Now Update the resource
+    # TODO: update resource attributes
+    # TODO: replace call param values as necessary
+    ret = await hub.states.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+
+    if __test:
+        assert f"Would update {{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']}" in ret["comment"]
+    else:
+        assert f"Updated {{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']}" in ret["comment"]
+        assert ret["result"], ret["comment"]
+
+    assert ret.get("old_state") and ret.get("new_state")
+    resource = ret["new_state"]
+    # TODO: Add manual verification as necessary
+
+    # Now get the resource with exec again
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.get_call_params %}
+        {{function.get_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    assert PARAMETER["name"] == resource.get("name")
+    # TODO: Add manual verification as necessary

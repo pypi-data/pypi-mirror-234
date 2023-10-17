@@ -1,0 +1,33 @@
+{# templates/test_get.jinja2 #}
+    # Test - Invalid/Not-Found resource lookup
+    global PARAMETER
+    assert PARAMETER.get("resource_id", None), "The resource might not have been created"
+
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id="invalid_resource_id",
+        {%- if function.method_call_params %}
+            {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"] is None
+    assert "result is empty" in str(ret["comment"])
+
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.method_call_params %}
+            {{function.method_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"]
+    resource = ret["ret"]
+    # TODO: Add manual validations

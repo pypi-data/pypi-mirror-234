@@ -1,0 +1,88 @@
+{# templates/present.jinja2 #}
+    result = dict(
+            comment=[], old_state={}, new_state={}, name=name, result=True, rerun_data=None
+        )
+
+    desired_state = {
+        k: v
+        for k, v in locals().items()
+        if k not in ("hub", "ctx", "kwargs", "result") and v is not None
+    }
+
+    if resource_id:
+        # Possible parameters: **{{ parameter.mapping.kwargs|default({}) }}
+        before = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.get(
+            ctx,
+            name=name,
+            resource_id=resource_id,
+        )
+
+        if not before["result"] or not before["ret"]:
+            result["result"] = False
+            result["comment"] = before["comment"]
+            return result
+
+        result["old_state"] = before.ret
+
+        result["comment"].append(f"'{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}' already exists")
+
+        # If there are changes in desired state from existing state
+        changes = differ.deep_diff(before.ret if before.ret else {}, desired_state)
+
+        if bool(changes.get("new")):
+            if ctx.test:
+                result["new_state"] = hub.tool.{{ function.hardcoded.service_name }}.test_state_utils.generate_test_state(
+                    enforced_state={},
+                    desired_state=desired_state
+                )
+                result["comment"].append(f"Would update {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}")
+                return result
+            else:
+                # Update the resource
+                update_ret = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.update(
+                    ctx,
+                    **{{ parameter.mapping.kwargs|default({}) }}
+                )
+                result["result"] = update_ret["result"]
+
+                if result["result"]:
+                    result["comment"].append(f"Updated '{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}'")
+                else:
+                    result["comment"].append(update_ret["comment"])
+    else:
+        if ctx.test:
+            result["new_state"] = hub.tool.{{ function.hardcoded.service_name }}.test_state_utils.generate_test_state(
+                enforced_state={},
+                desired_state=desired_state
+            )
+            result["comment"] = (f"Would create {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}",)
+            return result
+        else:
+            create_ret = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.create(
+                ctx,
+                **{{ parameter.mapping.kwargs|default({})}}
+            )
+            result["result"] = create_ret["result"]
+
+            if result["result"]:
+                result["comment"].append(f"Created '{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}: {name}'")
+                resource_id = create_ret["ret"]["resource_id"]
+                # Safeguard for any future errors so that the resource_id is saved in the ESM
+                result["new_state"] = dict(name=name, resource_id=resource_id)
+            else:
+                result["comment"].append(create_ret["comment"])
+
+    if not result["result"]:
+        # If there is any failure in create/update, it should reconcile.
+        # The type of data is less important here to use default reconciliation
+        # If there are no changes for 3 runs with rerun_data, then it will come out of execution
+        result["rerun_data"] = dict(name=name, resource_id=resource_id)
+
+    # Possible parameters: **{{ parameter.mapping.kwargs|default({}) }}
+    after = await hub.exec.{{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=name,
+        resource_id=resource_id,
+    )
+    result["new_state"] = after.ret
+    return result

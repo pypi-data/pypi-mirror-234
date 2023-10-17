@@ -1,0 +1,42 @@
+{# templates/list.jinja2 #}
+
+    result = dict(comment=[], ret=[], result=True)
+
+    # TODO: Change function methods params if needed
+    list = await hub.tool.{{ function.hardcoded.service_name }}.session.request(
+        ctx,
+        method="{{ function.hardcoded.method }}",
+        path="{{ function.hardcoded.path }}",
+        query_params={{ parameter.mapping.query|default({}) }},
+        data={},
+        headers={{ parameter.mapping.header|default({}) }},
+    )
+
+    if not list["result"]:
+        result["comment"].append(list["comment"])
+        result["result"] = False
+        return result
+
+    for resource in list["ret"]:
+        {% if function.hardcoded.response_mappings %}
+        # Convert raw response into present format
+        resource_in_present_format = {
+            # TODO: Make sure name, resource_id is mapped accordingly
+            "name": "name",
+            "resource_id": "resource_id"
+        }
+        resource_parameters = OrderedDict(
+        {{ function.hardcoded.response_mappings|pprint|indent(16,true) }}
+        )
+
+        for parameter_raw, parameter_present in resource_parameters.items():
+            if parameter_raw in resource and resource.get(parameter_raw):
+                resource_in_present_format[parameter_present] = resource.get(parameter_raw)
+
+        result["ret"].append(resource_in_present_format)
+        {% else %}
+        # TODO: Map resource_id from response
+        resource["resource_id"] = ""
+        result["ret"].append(resource)
+        {% endif %}
+    return result

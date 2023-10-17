@@ -1,0 +1,36 @@
+{# templates/create.jinja2 #}
+    result = dict(comment=[], ret=[], result=True)
+
+    desired_state = {
+        k: v
+        for k, v in locals().items()
+        if k not in ("hub", "ctx", "result") and v is not None
+    }
+
+    # TODO: Change request param mapping as necessary
+    resource_to_raw_input_mapping = {{ function.hardcoded.request_mappings|default("{}", true) }}
+
+    payload = {}
+    for key, value in desired_state.items():
+        if key in resource_to_raw_input_mapping.keys() and value is not None:
+            payload[resource_to_raw_input_mapping[key]] = value
+
+    create = await hub.tool.{{ function.hardcoded.service_name }}.session.request(
+        ctx,
+        method="{{ function.hardcoded.method }}",
+        path="{{ function.hardcoded.path }}",
+        query_params={{ parameter.mapping.query|default({}) }},
+        data=payload,
+        headers={{ parameter.mapping.header|default({}) }},
+    )
+
+    if not create["result"]:
+        result["comment"].append(create["comment"])
+        result["result"] = False
+        return result
+
+    result["comment"].append(f"Created {{ function.hardcoded.service_name }}.{{ function.hardcoded.resource_name }} '{name}'",)
+
+    result["ret"] = create["ret"]
+    # TODO: add "resource_id" to returned response by mapping to correct resource identifier
+    return result

@@ -1,0 +1,54 @@
+{# templates/test_absent.jinja2 #}
+    global PARAMETER
+    assert PARAMETER.get("resource_id", None), "The resource might not have been created"
+    ctx["test"] = __test
+    # Delete the resource
+    # TODO: replace call param values as necessary
+    ret = await hub.states.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+
+    if __test:
+        assert f"Would delete {{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']}" in ret["comment"]
+    else:
+        assert f"Deleted {{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']}" in ret["comment"]
+
+    assert ret["result"], ret["comment"]
+    assert ret.get("old_state") and not ret.get("new_state")
+    resource = ret.get("old_state")
+
+    # Now get the resource with exec - Should not exist
+    # TODO: replace call param values as necessary
+    ret = await hub.exec.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.get(
+        ctx,
+        name=PARAMETER["name"],
+        resource_id=PARAMETER["resource_id"],
+        {%- if function.get_call_params %}
+        {{function.get_call_params}}
+        {% endif -%}
+    )
+    assert ret
+    assert ret["result"], ret["comment"]
+    assert ret["ret"] is None
+    assert "result is empty" in str(ret["comment"])
+
+    # Try deleting the resource again
+    # TODO: replace call param values as necessary
+    ret = await hub.states.{{ function.service_name }}.{{ function.hardcoded.resource_name }}.{{ function.method_call_name }}(
+        ctx,
+        name=PARAMETER["name"],
+        {%- if function.method_call_params %}
+        {{function.method_call_params}}
+        {% endif -%}
+    )
+
+    assert f"{{ function.service_name }}.{{ function.hardcoded.resource_name }}: {PARAMETER['name']} already absent" in ret["comment"]
+    assert ret["result"], ret["comment"]
+    assert (not ret["old_state"]) and (not ret["new_state"])
+    if not __test:
+        PARAMETER.pop("resource_id")
