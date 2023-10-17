@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <title>GBD Benchmark Database</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}" />
+    <!--<script src="{{ url_for('static', filename='jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='sorttable.js') }}"></script>
+    <script src="{{ url_for('static', filename='w3.js') }}"></script>-->
+</head>
+
+<body>
+<div class="main">
+    <header>
+        <img center src="{{ url_for('static', filename='img/gbd_logo_small.png') }}" alt="GBD-Logo">
+        <form method="post" id="mainform">
+            <fieldset>
+                <legend>Select feature database for display</legend>
+                {% for dbname in databases %}
+                    {% if dbname == selected %}
+                    <input type="radio" id="{{ dbname }}" name="selected_db" value="{{ dbname }}" checked>
+                    {% else %}
+                    <input type="radio" id="{{ dbname }}" name="selected_db" value="{{ dbname }}">
+                    {% endif %}
+                    <label for="{{ dbname }}"><a href="{{ url_for('get_database_file', database=dbname) }}" title="Download Database">{{ dbname }}</a></label>
+                {% endfor %}
+            </fieldset>
+            <br />
+            <fieldset>
+                <legend>Filter for specific instances</legend>
+                <input type="text" id="query" name="query" class="query" placeholder="Query for Instances" value="{{ query }}">
+                <button type="submit" class="submit" formaction="{{ url_for('quick_search') }}" form="mainform" id="action1" name="action1" value="show" title="Query for instances and selected features">Show</button>
+                <button type="submit" class="submit" formaction="{{ url_for('get_url_file') }}" form="mainform" id="action2" name="action2" value="download" title="Download Instance URLs">Download</button>
+                <br />
+                Query Shortcuts: <a href="{{ url_for('quick_search', track='main_2022') }}">Main 2022</a>, <a href="{{ url_for('quick_search', track='anni_2022') }}">Anniversary 2022</a>
+            </fieldset>
+            <br />
+            <div class="info">
+                Found {{ total }} Benchmark Instances.
+            </div>
+        </form>
+        <div class="help">
+            <fieldset>
+                <legend>Quickstart</legend>
+                <b>Feature Databases:</b>
+                    Use the radiobuttons to select a feature database to display its features.
+                    Click on the database name to download it.
+                    <br /><br />
+                <b>Query for Instances:</b>
+                    Queries are of the form: "featurename ( '&lt;' | '&gt;' | '=' ) value".
+                    Multiple queries can be combined using the logical operators "and" and "or". 
+                    <br /><br />
+                <b>Download Instances:</b>
+                    The download button generates a text file with the selected instance's URLs. 
+                    Use this file to fetch the instances, e.g., with <i>wget --content-disposition -i /path/to/file</i>.
+            </fieldset>
+        </div>
+    </header>
+    
+    <div class="content">
+        <table>
+            <tr>
+                <th>hash</th>
+                {% for feature in features %}
+                <th>{{ feature }}</th>
+                {% endfor %}
+            </tr>
+            
+            {% for row in result %}
+            <tr>
+                {% for item in row %}
+                    {% if loop.index == 1 %}
+                        <td><a href="{{ url_for('get_file', hashvalue=item) }}">{{ item }}</a></td>
+                    {% elif item and item is link_field %}
+                        <td><a href="{{ item }}">{{ item }}</a></td>
+                    {% else %}
+                        <td>{{ item }}</td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <footer>
+        <div style="display: inline-block; vertical-align: center">
+            
+            {% if pages > 0 %}
+                Showing 1000 of {{ total }} instances. Select page: 
+                {% for i in range(0, pages) %}
+                    {% if i == page %}
+                    <button type="submit" formaction="/" form="mainform" name="page" value="{{ i }}" style="color:var(--link-color-1);">{{ i + 1 }}</button>
+                    {% else %}
+                    <button type="submit" formaction="/" form="mainform" name="page" value="{{ i }}">{{ i + 1 }}</button>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                Found {{ total }} instances.
+            {% endif %}
+        </div>
+        <div style="float: right;">
+            If you find this useful, please cite: <a href="https://easychair.org/publications/paper/jQXv">A Problem Meta-Data Library for Research in SAT</a>
+        </div>
+    </footer>
+</div>
+</body>
+</html>
