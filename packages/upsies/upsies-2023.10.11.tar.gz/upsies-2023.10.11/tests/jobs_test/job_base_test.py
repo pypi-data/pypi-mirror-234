@@ -1,0 +1,1036 @@
+import asyncio
+import collections
+import errno
+import os
+import re
+from unittest.mock import AsyncMock, Mock, PropertyMock, call
+
+import pytest
+
+from upsies import errors
+from upsies.jobs import JobBase
+from upsies.utils import signal
+
+
+class FooJob(JobBase):
+    name = 'foo'
+    label = 'Foo'
+
+    def initialize(self, foo=None, bar=None):
+        assert self.name == 'foo'
+        assert self.label == 'Foo'
+        assert self.output == ()
+        self.initialize_was_called = True
+
+    def execute(self):
+        assert self.name == 'foo'
+        assert self.label == 'Foo'
+        assert self.output == ()
+        self.execute_was_called = True
+
+
+@pytest.fixture
+def job(tmp_path):
+    return FooJob(home_directory=tmp_path, cache_directory=tmp_path, ignore_cache=False)
+
+
+@pytest.mark.parametrize(
+    argnames='path, exp_exception',
+    argvalues=(
+        ('path/to/home', None),
+        ('', None),
+        (None, None),
+        ('/root/upsies/test', errors.ContentError('/root/upsies/test: Permission denied')),
+    ),
+)
+def test_home_directory_property(path, exp_exception, tmp_path):
+    if path is None:
+        job = FooJob()
+        assert job.home_directory == ''
+    else:
+        job = FooJob(home_directory=tmp_path / path)
+        if exp_exception:
+            with pytest.raises(type(exp_exception), match=rf'^{re.escape(str(exp_exception))}$'):
+                job.home_directory
+        else:
+            assert job.home_directory == tmp_path / path
+            assert os.path.exists(job.home_directory)
+
+
+@pytest.mark.parametrize(
+    argnames='path',
+    argvalues=(
+        'path/to/cache',
+        '',
+        None,
+    ),
+)
+def test_cache_directory_property(path, tmp_path, mocker):
+    mocker.patch('upsies.constants.DEFAULT_CACHE_DIRECTORY', tmp_path / 'cache/path')
+    if not path:
+        job = FooJob()
+        assert job.cache_directory == tmp_path / 'cache/path'
+    else:
+        job = FooJob(cache_directory=tmp_path / path)
+        assert job.cache_directory == tmp_path / path
+        assert os.path.exists(job.cache_directory)
+
+
+def test_ignore_cache_property(tmp_path):
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, ignore_cache=False).ignore_cache is False
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, ignore_cache=True).ignore_cache is True
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, ignore_cache='').ignore_cache is False
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, ignore_cache=1).ignore_cache is True
+
+
+def test_no_output_is_ok_property(tmp_path):
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, no_output_is_ok=False).no_output_is_ok is False
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, no_output_is_ok=True).no_output_is_ok is True
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, no_output_is_ok=0).no_output_is_ok is False
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, no_output_is_ok='maybe').no_output_is_ok is True
+
+
+def test_hidden_property(tmp_path):
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, hidden=False).hidden is False
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, hidden=True).hidden is True
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, hidden='').hidden is False
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, hidden=1).hidden is True
+
+
+@pytest.mark.parametrize(
+    argnames='autostart_argument, exp_autostart',
+    argvalues=(
+        (True, True),
+        (1, True),
+        (False, False),
+        ('', False),
+    ),
+)
+def test_autostart(autostart_argument, exp_autostart, tmp_path):
+    job = FooJob(
+        home_directory=tmp_path,
+        cache_directory=tmp_path,
+        autostart=autostart_argument,
+    )
+    assert job.autostart is exp_autostart
+
+
+precondition_test_cases = pytest.mark.parametrize(
+    argnames='precondition, exp_exception',
+    argvalues=(
+        (Mock(), None),
+        ('foo', TypeError("Not callable: 'foo'")),
+        ('', TypeError("Not callable: ''")),
+        (True, TypeError("Not callable: True")),
+        (False, TypeError("Not callable: False")),
+    ),
+)
+
+@precondition_test_cases
+def test_precondition_argument(precondition, exp_exception, tmp_path):
+    if exp_exception:
+        with pytest.raises(type(exp_exception), match=rf'^{re.escape(str(exp_exception))}$'):
+            FooJob(home_directory=tmp_path, cache_directory=tmp_path, precondition=precondition)
+    else:
+        job = FooJob(home_directory=tmp_path, cache_directory=tmp_path, precondition=precondition)
+        assert job.precondition is precondition
+
+
+@pytest.mark.parametrize(
+    argnames='is_started, exp_RuntimeError',
+    argvalues=(
+        (False, None),
+        (True, RuntimeError('Cannot set precondition after job has been started')),
+    ),
+)
+@precondition_test_cases
+def test_precondition_property(precondition, exp_exception, is_started, exp_RuntimeError, tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    mocker.patch.object(type(job), 'is_started', PropertyMock(return_value=is_started))
+    if exp_RuntimeError:
+        with pytest.raises(type(exp_RuntimeError), match=rf'^{re.escape(str(exp_RuntimeError))}$'):
+            job.precondition = precondition
+    elif exp_exception:
+        with pytest.raises(type(exp_exception), match=rf'^{re.escape(str(exp_exception))}$'):
+            job.precondition = precondition
+    else:
+        job.precondition = precondition
+        assert job.precondition is precondition
+
+
+@pytest.mark.parametrize(
+    argnames='precondition, prejobs, exp_is_enabled',
+    argvalues=(
+        (Mock(return_value=True), (Mock(is_finished=True, is_enabled=True), Mock(is_finished=True, is_enabled=True)), True),
+        (Mock(return_value=False), (Mock(is_finished=True, is_enabled=True), Mock(is_finished=True, is_enabled=True)), False),
+
+        (Mock(return_value=True), (Mock(is_finished=True, is_enabled=True), Mock(is_finished=True, is_enabled=False)), True),
+        (Mock(return_value=True), (Mock(is_finished=True, is_enabled=True), Mock(is_finished=False, is_enabled=True)), False),
+        (Mock(return_value=True), (Mock(is_finished=True, is_enabled=True), Mock(is_finished=False, is_enabled=False)), True),
+
+        (Mock(return_value=True), (Mock(is_finished=True, is_enabled=False), Mock(is_finished=True, is_enabled=True)), True),
+        (Mock(return_value=True), (Mock(is_finished=False, is_enabled=True), Mock(is_finished=True, is_enabled=True)), False),
+        (Mock(return_value=True), (Mock(is_finished=False, is_enabled=False), Mock(is_finished=True, is_enabled=True)), True),
+    ),
+)
+def test_is_enabled_property(precondition, prejobs, exp_is_enabled, tmp_path):
+    job = FooJob(
+        home_directory=tmp_path,
+        cache_directory=tmp_path,
+        precondition=precondition,
+        prejobs=prejobs,
+    )
+    assert job.is_enabled is exp_is_enabled
+
+
+def test_kwargs_property(tmp_path):
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, foo='a').kwargs.get('foo') == 'a'
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, foo='a').kwargs.get('bar') is None
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, bar='b').kwargs.get('bar') == 'b'
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, bar='b').kwargs.get('foo') is None
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, foo='a', bar='b').kwargs.get('foo') == 'a'
+    assert FooJob(home_directory=tmp_path, cache_directory=tmp_path, foo='a', bar='b').kwargs.get('bar') == 'b'
+
+
+def test_signal_property(job):
+    assert isinstance(job.signal, signal.Signal)
+    assert set(job.signal.signals) == {
+        'output',
+        'info',
+        'warning',
+        'error',
+        'executed',
+        'finished',
+        'refresh_job_list',
+    }
+    assert set(job.signal.recording) == {'output'}
+
+
+@pytest.mark.parametrize(
+    argnames='is_started, exp_RuntimeError',
+    argvalues=(
+        (False, None),
+        (True, RuntimeError('Cannot set prejobs after job has been started')),
+    ),
+)
+def test_prejobs_property(is_started, exp_RuntimeError, job, mocker):
+    assert isinstance(job.prejobs, tuple)
+    assert job.prejobs is job._prejobs
+
+    mocker.patch.object(type(job), 'is_started', PropertyMock(return_value=is_started))
+    if exp_RuntimeError:
+        with pytest.raises(type(exp_RuntimeError), match=rf'^{re.escape(str(exp_RuntimeError))}$'):
+            job.prejobs = [1, 2, 3]
+    else:
+        job.prejobs = [1, 2, 3]
+        assert job.prejobs == (1, 2, 3)
+
+
+@pytest.mark.parametrize(
+    argnames='presignals, emissions, exp_is_enabled_after_all_emissions',
+    argvalues=(
+        (
+            [],
+            [],
+            True,
+        ),
+        (
+            [],
+            [
+                {'emission': ('info', 'Info.'), 'exp_is_enabled': True, 'refresh_job_list_calls': []},
+            ],
+            True,
+        ),
+        (
+            ['info'],
+            [
+                {'emission': ('output', 'Output.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('info', 'Info.'), 'exp_is_enabled': True, 'refresh_job_list_calls': [call()]},
+                {'emission': ('warning', 'Warning.'), 'exp_is_enabled': True, 'refresh_job_list_calls': []},
+            ],
+            True,
+        ),
+        (
+            ['info', 'output'],
+            [
+                {'emission': ('output', 'Output 1.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('warning', 'Warning 1.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('output', 'Output 2.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('info', 'Info 1.'), 'exp_is_enabled': True, 'refresh_job_list_calls': [call()]},
+                {'emission': ('warning', 'Warning 2.'), 'exp_is_enabled': True, 'refresh_job_list_calls': []},
+            ],
+            True,
+        ),
+        (
+            ['info', 'output'],
+            [
+                {'emission': ('output', 'Output 1.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('warning', 'Warning 1.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('output', 'Output 2.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+                {'emission': ('warning', 'Warning 2.'), 'exp_is_enabled': False, 'refresh_job_list_calls': []},
+            ],
+            False,
+        ),
+    ),
+)
+def test_presignal(presignals, emissions, exp_is_enabled_after_all_emissions, job):
+    job_list_refreshed = Mock()
+    job.signal.register('refresh_job_list', job_list_refreshed)
+
+    class BarJob(JobBase):
+        name = 'bar'
+        label = 'Bar'
+
+    other_job = BarJob()
+
+    for presignal in presignals:
+        job.presignal(other_job, presignal)
+
+    # Check registered presignals
+    if presignals:
+        assert dict(job.presignals) == {
+            other_job: {ps: False for ps in presignals}
+        }
+    else:
+        assert dict(job.presignals) == {}
+
+    assert job.is_enabled is (False if presignals else True)
+
+    # Emit emissions in random order
+    for state in emissions:
+        signal, payload = state['emission']
+        other_job.signal.emit(signal, payload)
+
+        assert job.is_enabled is state['exp_is_enabled']
+
+        assert job_list_refreshed.call_args_list == state['refresh_job_list_calls']
+        job_list_refreshed.reset_mock()
+
+    assert job.is_enabled is exp_is_enabled_after_all_emissions
+
+    # Check registered presignals
+    emitted_signals = list(set(
+        state['emission'][0]
+        for state in emissions
+        if state['emission'][0] in presignals
+    ))
+    if presignals:
+        exp_presignals = {
+            other_job: {ps: ps in emitted_signals for ps in presignals}
+        }
+    else:
+        exp_presignals = {}
+    assert dict(job.presignals) == dict(exp_presignals)
+
+@pytest.mark.parametrize(
+    argnames='is_started, exp_RuntimeError',
+    argvalues=(
+        (False, None),
+        (True, RuntimeError('Cannot set presignal after job has been started')),
+    ),
+)
+def test_presignal_after_job_is_started(is_started, exp_RuntimeError, job, mocker):
+    class BarJob(JobBase):
+        name = 'bar'
+        label = 'Bar'
+
+    other_job = BarJob()
+
+    mocker.patch.object(type(job), 'is_started', PropertyMock(return_value=is_started))
+    if exp_RuntimeError:
+        with pytest.raises(type(exp_RuntimeError), match=rf'^{re.escape(str(exp_RuntimeError))}$'):
+            job.presignal(other_job, 'finished')
+    else:
+        job.presignal(other_job, 'finished')
+
+
+def test_initialize_is_called_after_object_creation(job):
+    assert job.initialize_was_called
+
+
+def test_callbacks_argument(tmp_path):
+    class BarJob(FooJob):
+        def initialize(self):
+            self.signal.add('greeted')
+
+    cb = Mock()
+    job = BarJob(
+        home_directory=tmp_path,
+        cache_directory=tmp_path,
+        callbacks={
+            'output': cb.output,
+            'finished': cb.finished,
+            'greeted': (cb.hello, cb.hey),
+        },
+    )
+    assert cb.output in job.signal.signals['output']
+    assert cb.finished in job.signal.signals['finished']
+    assert cb.hello in job.signal.signals['greeted']
+    assert cb.hey in job.signal.signals['greeted']
+
+
+def test_presignals_argument(mocker):
+    class BarJob(FooJob):
+        def initialize(self):
+            self.signal.add('a')
+            self.signal.add('b')
+            self.signal.add('c')
+
+    class BazJob(FooJob):
+        def initialize(self):
+            self.signal.add('baz')
+
+    mocker.patch('upsies.jobs.base.JobBase.presignal')
+
+    presignals = {
+        BarJob(): ['a', 'c'],
+        BazJob(): ['baz'],
+    }
+    job = BarJob(presignals=presignals)
+    assert job.presignal.call_args_list == [
+        call(job, signal)
+        for job, signals in presignals.items()
+        for signal in signals
+    ]
+
+
+def test_start_does_nothing_if_job_is_already_finished(job):
+    job.finish()
+    assert job.is_finished is True
+    job.start()
+    assert job.is_started is False
+    assert job.is_finished is True
+
+def test_start_does_nothing_if_job_is_not_enabled(job):
+    job.precondition = lambda: False
+    assert job.is_enabled is False
+    assert job.is_started is False
+    job.start()
+    assert job.is_started is False
+
+def test_start_sets_started_property(job):
+    assert job.is_started is False
+    job.start()
+    assert job.is_started is True
+
+def test_start_is_called_multiple_times(job):
+    job.start()
+    with pytest.raises(RuntimeError, match=r'^start\(\) was already called$'):
+        job.start()
+
+def test_start_reads_cache_from_previous_job(tmp_path):
+    class BarJob(FooJob):
+        def _read_cache(self):
+            return True
+
+    executed_cb = Mock()
+    job = BarJob(home_directory=tmp_path, cache_directory=tmp_path, callbacks={'executed': executed_cb})
+    assert executed_cb.call_args_list == []
+    job.start()
+    assert executed_cb.call_args_list == []
+    assert not hasattr(job, 'execute_was_called')
+    assert job.is_finished is True
+
+def test_start_finishes_if_reading_from_cache_fails(tmp_path):
+    class BarJob(FooJob):
+        def _read_cache(self):
+            raise RuntimeError('I found god')
+
+    job = BarJob(home_directory=tmp_path, cache_directory=tmp_path)
+    with pytest.raises(RuntimeError, match=r'I found god'):
+        job.start()
+    assert job.is_finished is True
+    assert not hasattr(job, 'execute_was_called')
+
+def test_start_executes_job_if_no_cached_output_is_found(job):
+    executed_cb = Mock()
+    job.signal.register('executed', executed_cb)
+    assert executed_cb.call_args_list == []
+    job.start()
+    assert executed_cb.call_args_list == [call(job)]
+    assert job.execute_was_called is True
+    assert job.is_finished is False
+
+
+@pytest.mark.asyncio
+async def test_wait_returns_when_finish_is_called(tmp_path, event_loop):
+    class BarJob(FooJob):
+        calls = collections.deque()
+
+        def execute(self):
+            event_loop.call_later(0.1, self.finish)
+
+        def finish(self):
+            self.calls.append('finish() called')
+            super().finish()
+
+        async def wait(self):
+            await super().wait()
+            self.calls.append('wait() returned')
+
+    job = BarJob(home_directory=tmp_path, cache_directory=tmp_path)
+    job.start()
+    await job.wait()
+    assert list(job.calls) == ['finish() called', 'wait() returned']
+
+
+@pytest.mark.parametrize(
+    argnames='is_started, is_finished, is_enabled, exp_finished',
+    argvalues=(
+        (True, True, True, False),
+        (True, True, False, False),
+        (True, False, True, True),
+        (False, True, True, False),
+        (True, False, False, True),
+        (False, False, True, True),
+        (False, True, False, False),
+        (False, False, False, True),
+    ),
+)
+@pytest.mark.asyncio
+async def test_finish(is_started, is_finished, is_enabled, exp_finished, job, mocker):
+    mocker.patch.object(type(job), 'is_started', PropertyMock(return_value=is_started))
+    mocker.patch.object(type(job), 'is_finished', PropertyMock(return_value=is_finished))
+    mocker.patch.object(type(job), 'is_enabled', PropertyMock(return_value=is_enabled))
+
+    cb = Mock()
+    job.signal.register('finished', cb)
+    mocker.patch.object(job, '_write_cache')
+    job._tasks = [
+        Mock(done=Mock(return_value=False)),
+        Mock(done=Mock(return_value=True)),
+        Mock(done=Mock(return_value=False)),
+    ]
+
+    job.start()
+
+    for i in range(1):
+        job.finish()
+        if exp_finished:
+            assert cb.call_args_list == [call(job)]
+
+            # for task in job._tasks:
+            #     assert task.done.call_args_list == [call()]
+            # assert job._tasks[0].cancel.call_args_list == [call()]
+            # assert job._tasks[1].cancel.call_args_list == []
+            # assert job._tasks[2].cancel.call_args_list == [call()]
+
+            assert job._write_cache.call_args_list == [call()]
+        else:
+            assert cb.call_args_list == []
+
+            # for task in job._tasks:
+            #     assert task.done.call_args_list == []
+            # assert job._tasks[0].cancel.call_args_list == []
+            # assert job._tasks[1].cancel.call_args_list == []
+            # assert job._tasks[2].cancel.call_args_list == []
+
+            assert job._write_cache.call_args_list == []
+
+
+@pytest.mark.asyncio
+async def test_is_finished(job, event_loop):
+    event_loop.call_soon(job.finish)
+    job.start()
+    assert job.is_finished is False
+    await job.wait()
+    assert job.is_finished is True
+
+
+@pytest.mark.parametrize('is_finished', (True, False))
+@pytest.mark.parametrize(
+    argnames='errors, raised, output, no_output_is_ok, exp_exit_code',
+    argvalues=(
+        ([Exception('Something went wrong')], [], ['Some output'], False, 1),
+        ([], [Exception('Something went really bad')], ['Some output'], False, 1),
+        ([], [], ['Some output'], False, 0),
+        ([], [], [], False, 1),
+        ([], [], [], True, 0),
+    ),
+    ids=lambda v: str(v),
+)
+def test_exit_code_is_None_if_job_is_not_finished(is_finished, errors, raised, output, no_output_is_ok,
+                                                  exp_exit_code,
+                                                  job, mocker):
+    mocker.patch.object(type(job), 'is_finished', PropertyMock(return_value=is_finished))
+    mocker.patch.object(type(job), 'errors', PropertyMock(return_value=errors))
+    mocker.patch.object(type(job), 'raised', PropertyMock(return_value=raised))
+    mocker.patch.object(type(job), 'output', PropertyMock(return_value=output))
+    mocker.patch.object(type(job), 'no_output_is_ok', PropertyMock(return_value=no_output_is_ok))
+
+    if not is_finished:
+        assert job.exit_code is None
+    else:
+        assert job.exit_code is exp_exit_code
+
+
+def test_send_emits_output_signal(job, mocker):
+    mocker.patch.object(job.signal, 'emit')
+    job.start()
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+    ]
+    job.send('foo')
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+        call('output', 'foo'),
+    ]
+    job.send([1, 2])
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+        call('output', 'foo'),
+        call('output', '[1, 2]'),
+    ]
+    job.send('')
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+        call('output', 'foo'),
+        call('output', '[1, 2]'),
+        call('output', ''),
+    ]
+
+def test_send_on_finished_job(job):
+    job.start()
+    job.send('foo')
+    job.finish()
+    assert job.output == ('foo',)
+    job.send('bar')
+    assert job.output == ('foo',)
+
+def test_send_fills_output_property(job, mocker):
+    job.start()
+    assert job.output == ()
+    job.send('foo')
+    assert job.output == ('foo',)
+    job.send([1, 2])
+    assert job.output == ('foo', '[1, 2]')
+
+
+def test_output(job):
+    job.start()
+    assert job.output == ()
+    job._output = ['foo', 'bar', 'baz']
+    assert job.output == ('foo', 'bar', 'baz')
+
+
+def test_info(job):
+    job.start()
+    cb = Mock()
+    job.signal.register('info', cb)
+    assert job.info == ''
+    assert cb.call_args_list == []
+    job.info = 'foo'
+    assert job.info == 'foo'
+    assert cb.call_args_list == [call('foo')]
+
+
+def test_warn(job):
+    job.start()
+    assert job.warnings == ()
+    job.warn('foo')
+    assert job.warnings == ('foo',)
+    job.warn('bar')
+    assert job.warnings == ('foo', 'bar')
+    job.finish()
+    job.warn('baz')
+    assert job.warnings == ('foo', 'bar')
+
+def test_warnings(job):
+    job.start()
+    assert job.warnings == ()
+    job._warnings = ['a', 'b', 'c']
+    assert job.warnings == ('a', 'b', 'c')
+
+def test_clear_warnings_on_unfinished_job(job):
+    job.start()
+    job.clear_warnings()
+    assert job.warnings == ()
+    job.warn('foo')
+    assert job.warnings == ('foo',)
+    job.clear_warnings()
+    assert job.warnings == ()
+
+def test_clear_warnings_on_finished_job(job):
+    job.start()
+    job.warn('foo')
+    assert job.warnings == ('foo',)
+    job.finish()
+    job.clear_warnings()
+    assert job.warnings == ('foo',)
+
+
+def test_errors(job):
+    job.start()
+    assert job.errors == ()
+    job._errors = ['foo', 'bar', 'baz']
+    assert job.errors == ('foo', 'bar', 'baz')
+
+@pytest.mark.parametrize('error', ('foo', errors.ContentError('bar')))
+def test_error_emits_error_signal(error, job, mocker):
+    mocker.patch.object(job.signal, 'emit')
+    job.start()
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+    ]
+    job.error(error)
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+        call('error', error),
+        call('finished', job),
+    ]
+
+@pytest.mark.parametrize(
+    argnames='finish, exp_finished',
+    argvalues=(
+        (None, True),
+        (True, True),
+        (False, False),
+    ),
+)
+def test_error_finishes_job(finish, exp_finished, job, mocker):
+    job.start()
+    assert not job.is_finished
+    if finish is None:
+        job.error('foo')
+    else:
+        job.error('foo', finish=finish)
+    assert job.is_finished is exp_finished
+
+def test_error_on_finished_job(job, mocker):
+    mocker.patch.object(job.signal, 'emit')
+    job.start()
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+    ]
+    job.finish()
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+        call('finished', job),
+    ]
+    job.error('foo')
+    assert job.signal.emit.call_args_list == [
+        call('executed', job),
+        call('finished', job),
+    ]
+
+@pytest.mark.parametrize('error', ('foo', errors.ContentError('bar')))
+def test_error_appends_to_errors_property(error, job, mocker):
+    job.start()
+    assert job.errors == ()
+    job.error(error)
+    assert job.errors == (error,)
+
+
+@pytest.mark.asyncio
+async def test_exception_on_finished_job(job):
+    job.start()
+    job.finish()
+    job.exception(TypeError('Sorry, not my type.'))
+    assert job.is_finished
+    for _ in range(5):
+        with pytest.raises(TypeError, match=r'^Sorry, not my type\.$'):
+            await job.wait()  # No exception
+        assert type(job.raised) is TypeError
+        assert str(job.raised) == 'Sorry, not my type.'
+
+@pytest.mark.asyncio
+async def test_exception_sets_exception_that_is_raised_by_wait(job):
+    job.start()
+    job.exception(TypeError('Sorry, not my type.'))
+    for _ in range(5):
+        with pytest.raises(TypeError, match=r'^Sorry, not my type\.$'):
+            await job.wait()
+        assert type(job.raised) is TypeError
+        assert str(job.raised) == 'Sorry, not my type.'
+
+@pytest.mark.asyncio
+async def test_exception_finishes_job(job):
+    job.start()
+    assert not job.is_finished
+    job.exception(TypeError('Sorry, not my type.'))
+    assert job.is_finished
+
+
+@pytest.mark.asyncio
+async def test_attach_task_to_finished_job(job, mocker):
+    job.start()
+    job.finish()
+    with pytest.raises(RuntimeError, match=rf'^Job is already finished: {job.name}$'):
+        job.attach_task('mock coro')
+    assert job._tasks == []
+
+@pytest.mark.asyncio
+async def test_attached_task_returns_return_value(job, mocker):
+    job.start()
+    coro = AsyncMock(return_value='foo')()
+    job.attach_task(coro)
+    assert await job._tasks[0] == 'foo'
+    assert not job.is_finished
+    assert job.raised is None
+
+@pytest.mark.asyncio
+async def test_attached_task_passes_return_value_to_callback(job, mocker):
+    job.start()
+    callback = Mock()
+    coro = AsyncMock(return_value='foo')()
+    job.attach_task(coro, callback=callback)
+    assert await job._tasks[0] == 'foo'
+    assert not job.is_finished
+    assert job.raised is None
+    assert callback.call_args_list == [call('foo')]
+
+@pytest.mark.asyncio
+async def test_attached_task_catches_exceptions_from_coro(job, mocker):
+    job.start()
+    callback = Mock()
+    coro = AsyncMock(side_effect=TypeError('foo'))()
+    job.attach_task(coro, callback=callback)
+    with pytest.raises(TypeError, match=r'^foo$'):
+        await job._tasks[0]
+    assert job.is_finished
+    assert isinstance(job.raised, TypeError)
+    assert str(job.raised) == 'foo'
+    assert callback.call_args_list == []
+
+@pytest.mark.asyncio
+async def test_attached_task_catches_exceptions_from_callback(job, mocker):
+    job.start()
+    callback = Mock(side_effect=TypeError('foo'))
+    coro = AsyncMock(return_value='foo')()
+    job.attach_task(coro, callback=callback)
+    await job._tasks[0]
+    assert job.is_finished
+    assert isinstance(job.raised, TypeError)
+    assert str(job.raised) == 'foo'
+    assert callback.call_args_list == [call('foo')]
+
+@pytest.mark.parametrize('finish_when_done', (False, True))
+@pytest.mark.asyncio
+async def test_attached_task_ignores_CancelledError(finish_when_done, job, mocker):
+    job.start()
+    callback = Mock()
+    coro = AsyncMock(side_effect=asyncio.CancelledError())()
+    job.attach_task(coro, callback=callback, finish_when_done=finish_when_done)
+    await job._tasks[0]  # No CancelledError raised
+    assert job.is_finished == finish_when_done
+    assert job.raised is None
+    assert callback.call_args_list == [call(None)]
+
+@pytest.mark.asyncio
+async def test_await_tasks(job, mocker):
+    job._tasks = [
+        asyncio.create_task(AsyncMock()())
+        for i in range(3)
+    ]
+    for task in job._tasks:
+        assert not task.done()
+    await job.await_tasks()
+    for task in job._tasks:
+        assert task.done()
+
+
+@pytest.mark.parametrize(
+    argnames='emissions, exit_code, cache_file, is_executed',
+    argvalues=(
+        ((), 0, 'path/to/cache_file', True),
+        ((('output', {'args': ('foo',), 'kwargs': {'bar': 'baz'}}),), 1, 'path/to/cache_file', True),
+        ((('output', {'args': ('foo',), 'kwargs': {'bar': 'baz'}}),), 0, '', True),
+        ((('output', {'args': ('foo',), 'kwargs': {'bar': 'baz'}}),), 0, None, True),
+        ((('output', {'args': ('foo',), 'kwargs': {'bar': 'baz'}}),), 1, 'path/to/cache_file', False),
+    ),
+)
+def test_write_cache_does_nothing(emissions, exit_code, cache_file, is_executed, job, mocker):
+    mocker.patch.object(type(job.signal), 'emissions', PropertyMock(return_value=emissions))
+    mocker.patch.object(type(job), 'exit_code', PropertyMock(return_value=exit_code))
+    mocker.patch.object(type(job), 'cache_file', PropertyMock(return_value=cache_file))
+    mocker.patch.object(job, '_is_executed', is_executed)
+    open_mock = mocker.patch('upsies.jobs.base.open')
+    job._write_cache()
+    assert open_mock.call_args_list == []
+
+def test_write_cache_writes_signal_emissions(tmp_path, mocker):
+    class BarJob(FooJob):
+        def execute(self):
+            pass
+
+    job = BarJob(home_directory=tmp_path, cache_directory=tmp_path)
+    job.send('Foo')
+    job.start()
+    job.finish()
+    mocker.patch.object(type(job.signal), 'emissions', PropertyMock(return_value='emissions mock'))
+    job._write_cache()
+    serialized_emissions = open(job.cache_file, 'rb').read()
+    assert job._deserialize_from_cache(serialized_emissions) == 'emissions mock'
+
+@pytest.mark.parametrize(
+    argnames='exception, error',
+    argvalues=(
+        (OSError('No free space left'), 'No free space left'),
+        (OSError(errno.EISDIR, 'Is directory'), 'Is directory'),
+    ),
+)
+def test_write_cache_fails_to_write_cache_file(exception, error, job, mocker):
+    open_mock = mocker.patch('upsies.jobs.base.open', side_effect=exception)
+    mocker.patch.object(type(job.signal), 'emissions', PropertyMock(return_value='emissions mock'))
+    mocker.patch.object(type(job), 'exit_code', PropertyMock(return_value=0))
+    mocker.patch.object(type(job), 'cache_file', PropertyMock(return_value='path/to/cache'))
+    mocker.patch.object(job, '_is_executed', True)
+    with pytest.raises(RuntimeError, match=(rf'^Unable to write cache '
+                                            rf'{re.escape(job.cache_file)}: {error}$')):
+        job._write_cache()
+    assert open_mock.call_args_list == [call(job.cache_file, 'wb')]
+
+@pytest.mark.asyncio
+async def test_cache_is_properly_written_when_repeating_command(tmp_path):
+    class BarJob(FooJob):
+        execute_counter = 0
+        read_output_cache_counter = 0
+
+        def execute(self):
+            self.execute_counter += 1
+            self.send('asdf')
+            self.finish()
+
+        def _read_cache(self):
+            self.read_output_cache_counter += 1
+            return super()._read_cache()
+
+    for i in range(5):
+        job = BarJob(home_directory=tmp_path, cache_directory=tmp_path)
+        assert job.is_finished is False
+        assert job.output == ()
+        job.start()
+        await job.wait()
+        assert job.is_finished is True
+        assert job.output == ('asdf',)
+        assert job.execute_counter == (1 if i == 0 else 0)
+        assert job.read_output_cache_counter == 1
+
+
+@pytest.mark.parametrize(
+    argnames='ignore_cache, cache_file, cache_file_exists',
+    argvalues=(
+        (True, 'path/to/cache_file', True),
+        (1, 'path/to/cache_file', True),
+        (False, '', True),
+        (False, None, True),
+        (1, 'path/to/cache_file', False),
+    ),
+)
+def test_read_cache_does_nothing(ignore_cache, cache_file, cache_file_exists, job, mocker):
+    mocker.patch.object(job, '_ignore_cache', ignore_cache)
+    mocker.patch.object(type(job), 'cache_file', PropertyMock(return_value=cache_file))
+    mocker.patch('os.path.exists', Mock(return_value=cache_file_exists))
+    open_mock = mocker.patch('upsies.jobs.base.open')
+    assert job._read_cache() is False
+    assert open_mock.call_args_list == []
+
+@pytest.mark.parametrize(
+    argnames='exception, error',
+    argvalues=(
+        (OSError('No such file'), 'No such file'),
+        (OSError(errno.EISDIR, 'Is directory'), 'Is directory'),
+    ),
+)
+def test_read_cache_fails_to_read_cache_file(exception, error, job, mocker):
+    mocker.patch('os.path.exists', return_value=True)
+    open_mock = mocker.patch('upsies.jobs.base.open', side_effect=exception)
+    with pytest.raises(RuntimeError, match=rf'^Unable to read cache {job.cache_file}: {error}$'):
+        job._read_cache()
+    assert open_mock.call_args_list == [call(job.cache_file, 'rb')]
+
+def test_read_cache_replays_signal_emissions(job, mocker):
+    open(job.cache_file, 'wb').write(job._serialize_for_cache('emissions mock'))
+    replay_mock = mocker.patch.object(type(job.signal), 'replay')
+    assert job._read_cache() is True
+    assert replay_mock.call_args_list == [call('emissions mock')]
+
+def test_read_cache_ignores_empty_signal_emission_cache(job, mocker):
+    open(job.cache_file, 'wb').write(job._serialize_for_cache(''))
+    replay_mock = mocker.patch.object(type(job.signal), 'replay')
+    assert job._read_cache() is False
+    assert replay_mock.call_args_list == []
+
+
+def test_cache_file_when_cache_id_is_None(tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    mocker.patch.object(type(job), 'cache_id', PropertyMock(return_value=None))
+    assert job.cache_file is None
+
+@pytest.mark.parametrize('cache_id_value', ('', {}, ()), ids=lambda v: repr(v))
+def test_cache_file_when_cache_id_is_falsy(cache_id_value, tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    mocker.patch.object(type(job), 'cache_id', PropertyMock(return_value=cache_id_value))
+    assert job.cache_file == str(tmp_path / f'{job.name}.out')
+
+def test_cache_file_when_cache_id_is_too_long(tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    job._max_filename_len = 20
+    long_cache_id = ''.join(str(n % 10) for n in range(job._max_filename_len))
+    mocker.patch.object(type(job), 'cache_id', PropertyMock(return_value=long_cache_id))
+    mocker.patch.object(type(job), '_cache_id_as_string', Mock(return_value=long_cache_id))
+    assert job.cache_file == str(tmp_path / f'{job.name}.01234…56789.out')
+
+def test_cache_file_when_cache_id_is_not_too_long(tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    mocker.patch.object(type(job), 'cache_id', PropertyMock(return_value='something'))
+    assert job.cache_file == str(tmp_path / f'{job.name}.something.out')
+
+def test_cache_file_masks_illegal_characters(tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    mocker.patch.object(type(job), 'cache_id', PropertyMock(return_value='hey you there'))
+    mocker.patch('upsies.utils.fs.sanitize_filename', side_effect=lambda path: path.replace(' ', '#'))
+    assert job.cache_file == str(tmp_path / f'{job.name}.hey#you#there.out')
+
+
+def test_cache_id(tmp_path):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    assert job.cache_id == ''
+
+
+def test_cache_id_as_string_when_cache_id_is_nonstring(mocker, tmp_path):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    assert job._cache_id_as_string(123) == '123'
+
+def test_cache_id_as_string_when_cache_id_is_nonstring_iterable(mocker, tmp_path):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    assert job._cache_id_as_string((1, 2, 3)) == '1,2,3'
+
+@pytest.mark.parametrize('value', (object(), print, lambda: None), ids=lambda v: str(v))
+def test_cache_id_as_string_when_cache_id_is_mapping_with_nonstringable_key(value, mocker, tmp_path):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    with pytest.raises(RuntimeError, match=rf'^{re.escape(str(type(value)))} has no string representation$'):
+        job._cache_id_as_string({1: 'foo', value: 'bar', 3: 'baz'})
+
+@pytest.mark.parametrize('value', (object(), print, lambda: None), ids=lambda v: str(v))
+def test_cache_id_as_string_when_cache_id_is_mapping_with_nonstringable_value(value, mocker, tmp_path):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    with pytest.raises(RuntimeError, match=rf'^{re.escape(str(type(value)))} has no string representation$'):
+        job._cache_id_as_string({1: 'foo', 2: value, 3: 'baz'})
+
+@pytest.mark.parametrize('value', (object(), print, lambda: None), ids=lambda v: str(v))
+def test_cache_id_as_string_when_cache_id_is_sequence_with_nonstringable_item(value, mocker, tmp_path):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    with pytest.raises(RuntimeError, match=rf'^{re.escape(str(type(value)))} has no string representation$'):
+        job._cache_id_as_string((1, value, 3))
+
+def test_cache_id_as_string_normalizes_existing_paths(tmp_path):
+    some_dir = tmp_path / 'foo' / 'bar'
+    some_path = some_dir / 'baz.txt'
+    some_dir.mkdir(parents=True)
+    some_path.write_text('some thing')
+    abs_path = some_path
+    rel_path = some_path.relative_to(tmp_path)
+    orig_cwd = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        job1 = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+        job2 = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+        assert job1._cache_id_as_string(abs_path) == job2._cache_id_as_string(rel_path)
+    finally:
+        os.chdir(orig_cwd)
+
+def test_cache_id_as_string_normalizes_multibyte_characters(tmp_path, mocker):
+    job = FooJob(home_directory=tmp_path, cache_directory=tmp_path)
+    mocker.patch.object(type(job), 'cache_id', PropertyMock(return_value='kožušček'))
+    assert job.cache_file == str(tmp_path / f'{job.name}.kozuscek.out')

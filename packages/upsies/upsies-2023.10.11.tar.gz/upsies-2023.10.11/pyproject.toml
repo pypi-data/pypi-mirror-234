@@ -1,0 +1,74 @@
+[project]
+name = "upsies"
+description = "Media metadata aggregator"
+readme = "README.rst"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+  { name="plotski", email="plotski@example.org" },
+]
+dynamic = ["version"]  # Get version from PROJECT/__version__
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+]
+requires-python = ">=3.8"
+dependencies = [
+    'beautifulsoup4==4.*',
+    'countryguess==0.*',
+    'aiobtclientapi==1.1.*',
+    'guessit==3.*,>=3.5.0',
+    'httpx==0.*,>=0.20.0',
+    'langcodes==3.*',
+    'natsort==8.*',
+    'packaging',
+    'prompt_toolkit==3.*,>=3.0.6',
+    'pyimgbox==1.*',
+    'async-lru==2.*',
+    'pyxdg',
+    'torf==4.*,>=4.1.2',
+    'Unidecode==1.3.*',
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    "trustme",
+    "pytest-httpserver",
+
+    "tox",
+
+    "coverage",
+    "pytest-cov",
+
+    "ruff",
+    "flake8",
+    "isort",
+]
+
+[project.scripts]
+upsies = "upsies.uis.tui:main"
+
+[project.urls]
+Repository = "https://codeberg.org/plotski/upsies"
+Documentation = "https://upsies.readthedocs.io"
+"Bug Tracker" = "https://codeberg.org/plotski/upsies/issues"
+Changelog = "https://codeberg.org/plotski/upsies/raw/branch/master/NEWS"
+
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+# For some unknown reason, we need to specify explicity to scan the project
+# directory with default parameters or setuptools gets confused about
+# directories like "docs" or "venv".
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "upsies.__version__"}
