@@ -1,0 +1,72 @@
+Metadata-Version: 2.1
+Name: prindent
+Version: 1.0.0
+Summary: Print with auto indentation
+Author-email: Gabriele Maurina <gabrielemaurina95@gmail.com>
+Project-URL: Homepage, https://github.com/GabrieleMaurina/prindent
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# prindent
+Python module to print with automatic indentation
+
+```python
+from prindent import prindent
+
+prindent('first loop')
+for i in range(2):
+    prindent('i:', i)
+    prindent('second loop')
+    for j in range(2):
+        prindent('j:', j)
+        if j == 1:
+            prindent('j=1')
+
+# first loop
+#     i: 0
+#     second loop
+#         j: 0
+#         j: 1
+#             j=1
+#     i: 1
+#     second loop
+#         j: 0
+#         j: 1
+#             j=1
+```
+
+You can also pass a custom string for indentation:
+
+```python
+if True:
+    if True:
+        for i in range(2):
+            prindent('Custom indent', indent='---> ')
+
+# ---> ---> ---> Custom indent
+# ---> ---> ---> Custom indent
+```
+
+`prindent`` handles multiple lines:
+
+```python
+if True:
+    prindent('String\nwith\nnewline')
+
+#     String
+#     with
+#     newline
+```
+
+`prindent` accepts multiple `args` and `kwargs` just like `print()`:
+
+```python
+if True:
+    prindent('first', 'second', end='$')
+
+#     first second$
+```
