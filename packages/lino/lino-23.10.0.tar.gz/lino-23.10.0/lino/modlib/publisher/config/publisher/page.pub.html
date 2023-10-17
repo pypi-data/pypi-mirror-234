@@ -1,0 +1,36 @@
+{% extends "bootstrap3/base.html" %}
+
+{% block content %}
+<div class="row-fluid">
+  {% for chunk in obj.as_page(ar) %}
+    {{ chunk }}
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block header %}
+<div class="container-fluid lino-bs-header">
+  {% if ar -%}
+    {% if ar.request and ar.request.path != '/' -%}
+        <a href="{{ar.get_home_url()}}">{{_("Home")}}</a>
+    {% endif -%}
+    {% if site.kernel.editing_front_end.url_prefix -%}
+        <a href="/{{site.kernel.editing_front_end.url_prefix}}/">{{_("Admin")}}</a>
+    {% endif -%}
+    {% if len(site.languages) > 1 -%}
+      {% for lang in site.languages -%}
+        {% if lang.django_code == requested_language -%}
+            {{lang.django_code}}
+        {% else -%} {# URL_PARAM_USER_LANGUAGE #}
+            <a href="{{ar.get_request_url(ul=lang.django_code)}}">{{lang.django_code}}</a>
+        {% endif -%}
+      {% endfor -%}
+    {% endif -%}
+    {%- if site.kernel.admin_ui -%}
+        &mdash;
+        <a href="{{site.kernel.admin_ui.build_plain_url()}}/">{{site.kernel.admin_ui.ui_label}}</a>
+    {%- endif -%}
+{% endif -%}
+
+</div>
+{% endblock %}

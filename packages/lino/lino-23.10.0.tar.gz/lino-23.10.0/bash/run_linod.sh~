@@ -1,0 +1,17 @@
+#!/bin/bash
+mount -a # 20131217 make sure that /mnt/oshz_home_server is ready
+PROJECT=myproject
+PROJECT_DIR="/usr/local/django/$PROJECT"
+#PID="$PROJECT_DIR/watch_tim/watch_tim.pid"
+PID="$PROJECT_DIR/watch_tim/pid"
+STDERR="$PROJECT_DIR/watch_tim/error.log"
+STDOUT="$PROJECT_DIR/watch_tim/stdout.log"
+DJANGO_SETTINGS_MODULE=$PROJECT.settings
+. $PROJECT_DIR/env/bin/activate
+python $PROJECT_DIR/manage.py linod \
+  --traceback \
+  --pidfile $PID \
+  --stdout $STDOUT \
+  --stderr $STDERR \
+  /mnt/oeshz_home_server/ANWPROG/TIM/CPAS/changelog
+
