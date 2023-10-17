@@ -1,0 +1,1 @@
+function radio(a,c,b){a.checked=c.value;if(c.text!==null){a.parentNode.insertBefore(document.createTextNode(c.text),a.nextSibling);};if(typeof b.css!=='undefined'){for(var d in b.css){a.style[d]=b.css[d];}}}

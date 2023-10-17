@@ -1,0 +1,1 @@
+function codeEditor(b,c,a){if(a.stringify){b.setValue(JSON.stringify(c,null,2));}else{b.setValue(c);}Object.keys(a).forEach(function(c){b.setOption(c,a[c]);});}

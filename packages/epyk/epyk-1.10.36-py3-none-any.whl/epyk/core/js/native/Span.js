@@ -1,0 +1,1 @@
+function span(c,a,b){if(b.templateMode=='loading'){a=b.templateLoading(a);}else if(b.templateMode=='error'){a=b.templateError(a);}else if(typeof b.template!=='undefined'&&a){a=b.template(a);}if(b.showdown){var d=new showdown.Converter(b.showdown);a=d.makeHtml(a);}if(b._children>0){c.appendChild(document.createTextNode(a));}else{c.innerHTML=a;}}

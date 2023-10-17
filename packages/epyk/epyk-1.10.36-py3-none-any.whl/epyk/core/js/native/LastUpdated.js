@@ -1,0 +1,1 @@
+function lastUpdated(c,b,a){if(typeof a.template==="undefined"){if(a.showdown){var d=new showdown.Converter(a.showdown);b=d.makeHtml(b);}if(a._children>0){c.appendChild(document.createTextNode(b));}else{if(a.icon){c.innerHTML=b+'&nbsp;&nbsp;<i class="'+a.icon+'"></i>';}else{c.innerHTML=b;}};}else{c.innerHTML=a.template(b);}c.setAttribute('data-value',b);}

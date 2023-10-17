@@ -1,0 +1,1 @@
+function emoji(c,d,a){c.innerHTML=d;if(typeof a.css!=='undefined'){for(var b in a.css){c.style[b]=a.css[b];}}}

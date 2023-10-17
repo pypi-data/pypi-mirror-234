@@ -1,0 +1,1 @@
+function htmlQRCode(a,c,b){a.innerHTML="";window[a.id+'_obj']=new QRCode(a,Object.assign({'text':c},b));window[a.id+'_obj']._el.querySelector("img").style["margin"]=0;}

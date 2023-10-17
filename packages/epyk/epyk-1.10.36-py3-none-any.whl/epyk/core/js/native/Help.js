@@ -1,0 +1,1 @@
+function help(c,d,a){c.setAttribute("title",d);if(typeof a.css!=='undefined'){for(var b in a.css){c.style[b]=a.css[b];}}}

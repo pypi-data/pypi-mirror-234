@@ -1,0 +1,1 @@
+function listTournaments(b,c,a){a.init=c;$(b).bracket(a);}

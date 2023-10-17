@@ -1,0 +1,1 @@
+function elapsed(d,c,h){var e=new Date(c.year,c.month-1,c.day);var f=new Date().getTime();var g=f-e.getTime();var a=Math.floor(g/(1000*60*60*24));var b=0;if(a>365){b=Math.floor(a/365);a=a-b*365;}if(b>0){d.querySelector("span[name=clock]").innerHTML="<b>"+b+"y, "+a+"d </b>";}else{d.querySelector("span[name=clock]").innerHTML="<b>"+a+"d </b>";}}

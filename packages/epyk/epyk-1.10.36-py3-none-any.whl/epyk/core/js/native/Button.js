@@ -1,0 +1,1 @@
+function button(c,a,b){if(b.templateMode=='loading'){a=b.templateLoading(a);}else if(b.templateMode=='error'){a=b.templateError(a);}else if(typeof b.template!=='undefined'&&a){a=b.template(a);}c.setAttribute('data-processing',false);c.innerHTML=a;}

@@ -1,0 +1,1 @@
+function vChars(a,b){return a;}

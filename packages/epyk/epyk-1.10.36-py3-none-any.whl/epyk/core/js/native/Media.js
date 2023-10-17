@@ -1,0 +1,1 @@
+function media(d,e,b){var a=document.createElement("source");d.innerHTML="";a.setAttribute('src',e.path+"/"+e.video);for(var c in b){if(c==='autoplay'){d.autoplay=b.autoplay;}else{a.setAttribute(c,b[c]);}};d.appendChild(a);}

@@ -1,0 +1,1 @@
+function buttonData(a,b,c){a.setAttribute("data-content",JSON.stringify(b));a.setAttribute("title",""+b.length+" row loaded: "+(new Date()).toISOString().slice(0,19).replace("T"," "));if(b.length>0){a.style.visibility="visible";}}

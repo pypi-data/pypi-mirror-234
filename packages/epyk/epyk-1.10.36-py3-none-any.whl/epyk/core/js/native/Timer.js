@@ -1,0 +1,1 @@
+function timer(b,d,c){var e=d.minutes*60,f=b,a=e;window["time_"+b.id]=setInterval(function(){if(a<0){if(typeof c.end!=='undefined'){eval(c.end);}clearInterval(window["time_"+b.id]);}if(a>=0){var h=a--,g=(h/60)>>0,e=(h-g*60)+'';f.textContent=d.text+' '+g+':'+(e.length>1?'':'0')+e;}a!=0||(a=0);},1000);}

@@ -1,0 +1,1 @@
+function dataLink(c,a,b){if(b.templateMode=='loading'){a.text=b.templateLoading(a);}else if(b.templateMode=='error'){a.text=b.templateError(a);}else if(typeof b.template!=='undefined'&&a){a.text=b.template(a);}var d=new Blob([a.value]);c.href=URL.createObjectURL(d);c.innerHTML=a.text;}

@@ -1,0 +1,1 @@
+function title(c,b,a){if(a.templateMode=='loading'){b=a.templateLoading(b);}else if(a.templateMode=='error'){b=a.templateError(b);}else if(typeof a.template!=='undefined'&&b){b=a.template(b);}if(a.showdown){var e=new showdown.Converter(a.showdown);c.innerHTML=e.makeHtml(b);}else{c.innerHTML=b;}if(typeof a.css!=='undefined'){for(var d in a.css){c.style[d]=a.css[d];}}}

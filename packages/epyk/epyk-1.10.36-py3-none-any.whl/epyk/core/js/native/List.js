@@ -1,0 +1,1 @@
+function list(a,c,b){a.innerHTML="";c.forEach(function(d,e){var c=document.createElement(b.item_type);c.innerHTML=d;a.appendChild(c);});}

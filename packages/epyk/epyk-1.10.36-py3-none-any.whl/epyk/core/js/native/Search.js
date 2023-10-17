@@ -1,0 +1,1 @@
+function search(a,b,c){a.find('input').val(b);}

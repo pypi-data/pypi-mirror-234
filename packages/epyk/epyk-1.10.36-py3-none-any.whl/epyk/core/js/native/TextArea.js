@@ -1,0 +1,1 @@
+function textArea(a,b,c){a.value=b;}

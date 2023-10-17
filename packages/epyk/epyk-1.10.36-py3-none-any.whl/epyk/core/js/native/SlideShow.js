@@ -1,0 +1,1 @@
+function slideShow(a,c,b){if(typeof window[a.id+'_obj']!=='undefined'){window[a.id+'_obj'].destroy();}window[a.id+'_obj']=tns(b);}

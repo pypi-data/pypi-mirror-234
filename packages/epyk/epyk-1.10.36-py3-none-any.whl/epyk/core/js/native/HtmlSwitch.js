@@ -1,0 +1,1 @@
+function htmlSwitch(a,b,c){if(b.off==b.checked){a.querySelector("input").checked=false;a.querySelector("p").innerHTML=b.off;}else{a.querySelector("input").checked=true;a.querySelector("p").innerHTML=b.on;};window[a.getAttribute('id')+"_data"]=b;}

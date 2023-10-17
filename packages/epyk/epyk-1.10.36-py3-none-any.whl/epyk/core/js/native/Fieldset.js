@@ -1,0 +1,1 @@
+function fieldset(c,b,a){if(a.templateMode=='loading'){b=a.templateLoading(b);}else if(a.templateMode=='error'){b=a.templateError(b);}else if(typeof a.template!=='undefined'&&b){b=a.template(b);}c.firstChild.innerHTML=b;if(typeof a.css!=='undefined'){Object.keys(a.css).forEach(function(b){c.firstChild.style[b]=a.css[b];});}}
