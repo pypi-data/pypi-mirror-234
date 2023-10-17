@@ -1,0 +1,64 @@
+{% if dockerfile %}
+{{ dockerfile }}
+{% else %}
+
+FROM {{vars.base_image}} as builder
+
+{% if maintainer %}
+{{ maintainer }}
+{% else %}
+MAINTAINER ybyang7@iflytek.com
+{% endif %}
+
+# packages.txt
+{% if vars.packages_txt %}
+RUN --mount=target=/root/packages.txt,source={{vars.packages_txt}}  apt-get update && xargs -r -a /root/packages.txt apt-get install -y && rm -rf /var/lib/apt/lists/*
+{% endif %}
+
+{% if vars.pip_source %}
+RUN pip config set global.index-url {{vars.pip_source}}
+{% else %}
+RUN pip config set global.index-url https://pypi.mirrors.ustc.edu.cn/simple/
+{% endif %}
+
+# requirements.txt
+{% if vars.requirements_txt %}
+RUN pip install --no-cache-dir pip==22.3.1
+COPY {{vars.requirements_txt}} requirements.txt
+# RUN --mount=target=requirements.txt,source={{vars.requirements_txt}}  	pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+{% else %}
+
+{% endif %}
+
+{% if vars.extra_pip_packages %}
+RUN pip install --no-cache-dir  {{vars.extra_pip_packages }}
+
+{% endif %}
+
+
+{% if vars.model  %}
+ENV MODE_NAME={{vars.model}}
+{% endif %}
+{% if vars.model_path  %}
+ENV MODE_NAME={{vars.model_path}}
+{% endif %}
+
+{% if vars.workdir  %}
+WORKDIR  {{vars.workdir}}
+{% else %}
+WORKDIR /home/aiges
+{% endif %}
+ENV PYTHONPATH=/home/aiges
+
+COPY wrapper /home/aiges
+
+{% if vars.entrypoint  %}
+ENTRYPOINT {{vars.entrypoint}}
+{% endif %}
+
+{% if vars.cmd  %}
+CMD {{vars.cmd}}
+{% endif %}
+# endif dockerfile
+{% endif %}
