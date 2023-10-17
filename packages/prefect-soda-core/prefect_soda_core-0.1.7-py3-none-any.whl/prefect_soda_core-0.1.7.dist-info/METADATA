@@ -1,0 +1,149 @@
+Metadata-Version: 2.1
+Name: prefect-soda-core
+Version: 0.1.7
+Summary: Prefect 2.0 collection for Soda Core
+Home-page: https://github.com/sodadata/prefect-soda-core
+Author: Soda Data NV.
+Author-email: vijay@soda.io
+License: Apache License 2.0
+Keywords: prefect
+Classifier: Natural Language :: English
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Topic :: Software Development :: Libraries
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: prefect >=2.0.0
+Requires-Dist: prefect-shell
+Requires-Dist: soda-core
+Provides-Extra: athena
+Requires-Dist: soda-core-athena ; extra == 'athena'
+Provides-Extra: bigquery
+Requires-Dist: soda-core-bigquery ; extra == 'bigquery'
+Provides-Extra: db2
+Requires-Dist: soda-core-db2 ; extra == 'db2'
+Provides-Extra: dev
+Requires-Dist: pytest ; extra == 'dev'
+Requires-Dist: black ; extra == 'dev'
+Requires-Dist: flake8 ; extra == 'dev'
+Requires-Dist: mypy ; extra == 'dev'
+Requires-Dist: mkdocs ; extra == 'dev'
+Requires-Dist: mkdocs-material ; extra == 'dev'
+Requires-Dist: mkdocstrings[python] ; extra == 'dev'
+Requires-Dist: isort ; extra == 'dev'
+Requires-Dist: pre-commit ; extra == 'dev'
+Requires-Dist: pytest-asyncio ; extra == 'dev'
+Requires-Dist: mkdocs-gen-files ; extra == 'dev'
+Requires-Dist: interrogate ; extra == 'dev'
+Requires-Dist: coverage ; extra == 'dev'
+Requires-Dist: pyfakefs ; extra == 'dev'
+Requires-Dist: mock ; (python_version < "3.8") and extra == 'dev'
+Provides-Extra: mysql
+Requires-Dist: soda-core-mysql ; extra == 'mysql'
+Provides-Extra: postgres
+Requires-Dist: soda-core-postgres ; extra == 'postgres'
+Provides-Extra: redshift
+Requires-Dist: soda-core-redshift ; extra == 'redshift'
+Provides-Extra: snowflake
+Requires-Dist: soda-core-snowflake ; extra == 'snowflake'
+Provides-Extra: spark-df
+Requires-Dist: soda-core-spark-df ; extra == 'spark-df'
+Provides-Extra: sqlserver
+Requires-Dist: soda-core-sqlserver ; extra == 'sqlserver'
+Provides-Extra: trino
+Requires-Dist: soda-core-trino ; extra == 'trino'
+
+# prefect-soda-core
+
+## Welcome!
+
+Prefect 2.0 collection for Soda Core
+
+## Getting Started
+
+### Python setup
+
+Requires an installation of Python 3.7+.
+
+We recommend using a Python virtual environment manager such as pipenv, conda or virtualenv.
+
+These tasks are designed to work with Prefect 2.0. For more information about how to use Prefect, please refer to the [Prefect documentation](https://orion-docs.prefect.io/).
+
+### Installation
+
+
+`prefect-soda-core` is based on `soda-core`.  
+As `soda-core` requires you to specify the right option for your database, so does `prefect-soda-core`.  
+I.e. to use `prefect-soda-core` with Snowflake, run the following:
+
+```bash
+pip install prefect-soda-core[snowflake]
+```
+
+You can find the list of supported options in `setup.py`.
+
+**Please note that since this integration is built on top of Soda CLI, it is not possible to run data quality checks using Spark.**
+
+### Write and run a flow
+
+```python
+from prefect import flow
+from prefect_soda_core.soda_configuration import SodaConfiguration
+from prefect_soda_core.sodacl_check import SodaCLCheck
+from prefect_soda_core.tasks import soda_scan_execute
+
+
+@flow
+def run_soda_scan():
+    soda_configuration_block = SodaConfiguration(
+        configuration_yaml_path="/path/to/config.yaml"
+    )
+    soda_check_block = SodaCLCheck(
+        sodacl_yaml_path="/path/to/checks.yaml"
+    )
+    
+    # Using the flow_run_name as the name of the file to store the scan results
+    flow_run_name = get_run_context().flow_run.name
+    scan_results_file_path = f"{flow_run_name}.json"
+    
+    return soda_scan_execute(
+        data_source_name="my_datasource",
+        configuration=soda_configuration_block,
+        checks=soda_check_block,
+        variables={"var": "value"},
+        scan_results_file=scan_results_file_path,
+        verbose=True
+        return_scan_result_file_content=False,
+        shell_env={"SNOWFLAKE_PASSWORD": "********"}
+    )
+
+run_soda_scan()
+```
+
+## Resources
+
+If you encounter any bugs while using `prefect-soda-core`, feel free to open an issue in the [prefect-soda-core](https://github.com/sodadata/prefect-soda-core) repository.
+
+If you have any questions or issues while using `prefect-soda-core`, you can find help in either the [Prefect Discourse forum](https://discourse.prefect.io/) or the [Prefect Slack community](https://prefect.io/slack).
+
+## Development
+
+If you'd like to install a version of `prefect-soda-core` for development, clone the repository and perform an editable install with `pip`:
+
+```bash
+git clone https://github.com/sodadata/prefect-soda-core.git
+
+cd prefect-soda-core/
+
+pip install -e ".[dev]"
+
+# Install linting pre-commit hooks
+pre-commit install
+```
