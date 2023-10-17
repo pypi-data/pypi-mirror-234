@@ -1,0 +1,125 @@
+
+[project]
+name = "RoughPy"
+author = "The RoughPy Authors"
+author_email = "info@datasig.ac.uk"
+#license = {file = "LICENSE.txt" }
+license = { text = "BSD-3-Clause" }
+keywords = [
+    "data",
+    "streams",
+    "rough-paths",
+    "signatures"
+]
+
+include_package_data = true
+packages = ["roughpy"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS"
+]
+#dependencies=[
+#    "intel-openmp; platform_system!='Windows'"
+#]
+
+dynamic = ["version", "readme"]
+
+[build-system]
+requires = [
+    "scikit-build-core[pyproject]",
+    "pybind11",
+    "ninja; platform_system!='Windows'",
+    "oldest-supported-numpy",
+    "mkl-devel; platform_machine in 'x86_64 x86 AMD64'",
+    "mkl-static; platform_machine in 'x86_64 x86 AMD64'",
+    "tbb-devel; platform_system =='Windows'",
+    "intel-openmp; platform_machine in 'x86_64 x86' and platform_system!='Windows'"
+]
+build-backend = "scikit_build_core.build"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+
+[tool.scikit-build]
+wheel.packages = []
+cmake.verbose = true
+logging.level = "INFO"
+cmake.build-type = "Release"
+experimental=true
+metadata.readme.provider = "scikit_build_core.metadata.fancy_pypi_readme"
+
+[tool.scikit-build.metadata.version]
+provider = "version_from_file"
+provider-path = "tools"
+regex = "^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$"
+
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+text = "# Changelog\n\n"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "CHANGELOG"
+
+# From the documentation
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+# Literal TOML strings (single quotes) need no escaping of backslashes.
+pattern = '\[(.+?)\]\(((?!https?://)\S+?)\)'
+replacement = '[\1](https://github.com/datasig-ac-uk/roughpy/tree/main/\g<2>)'
+
+[tool.scikit-build.cmake.define]
+ROUGHPY_BUILD_TESTS = "OFF"
+
+[tool.setuptools_scm]
+write_to = "VERSION.txt"
+tag_regex = "^(?P<prefix>v)?(?P<version>[^\\+]+)(?P<suffix>.*)?$"
+version_scheme = "release-branch-semver"
+local_scheme = "no-local-scheme"
+
+[tool.cibuildwheel]
+skip = [
+    "*win32",
+    "*-musl*",
+    "pp*",
+    "*linux_i686",
+    "*arm64",
+    "*universal2",
+    "cp3{6,7}-*",
+    "cp3{8,9}-macos*"
+]
+build-verbosity=1
+
+test-requires = ["pytest", "numpy"]
+test-command = [
+    "pytest {project}/tests"
+]
+before-all = "bash tools/ci/before-all-common.sh"
+environment= "CMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake VCPKG_OVERLAY_TRIPLETS=./tools/ci/triplets"
+
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} --ignore-in-wheel {wheel}"
+
+
+[tool.cibuildwheel.linux]
+repair-wheel-command = "auditwheel show {wheel} && auditwheel repair -w {dest_dir} {wheel}"
