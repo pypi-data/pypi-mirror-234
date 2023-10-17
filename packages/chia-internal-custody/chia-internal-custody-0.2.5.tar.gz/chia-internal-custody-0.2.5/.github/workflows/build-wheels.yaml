@@ -1,0 +1,88 @@
+# The wheel here isn't platform specific, so can build on linux and it works anywhere
+name: Build Wheel
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+  pull_request:
+
+concurrency:
+  # SHA is added to the end if on `main` to let all main workflows run
+  group: ${{ github.ref }}-${{ github.workflow }}-${{ github.event_name }}-${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/long_lived/')) && github.sha || '' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-wheels:
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux_2_24_x86_64
+
+    steps:
+      - name: Add safe git directory
+        uses: Chia-Network/actions/git-mark-workspace-safe@main
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Create venv
+        run: /opt/python/cp38-cp38/bin/python3 -m venv venv
+
+      - name: Create Wheel
+        run: |
+          . ./venv/bin/activate
+          pip wheel -w dist --no-deps .
+
+      - name: Create source dist
+        run: |
+          . ./venv/bin/activate
+          pip install build
+          python -m build --sdist --outdir dist .
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheels
+          path: ./dist
+
+  upload:
+    name: Upload to PyPI
+    runs-on: ubuntu-latest
+    needs:
+      - build-wheels
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set Env
+        uses: Chia-Network/actions/setjobenv@main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: wheels
+          path: ./dist
+
+      - name: Publish distribution to PyPI
+        if: env.RELEASE == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true
+
+      - name: Publish distribution to Test PyPI
+        if: env.PRE_RELEASE == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          skip-existing: true
