@@ -1,0 +1,128 @@
+[project]
+name = "{{ project_name }}"
+version = "0.1.0"
+description = "Project description."
+homepage-url = "www.hello-world.com"
+
+{% if bin_name %}
+bin_name = "{{ bin_name }}"
+{% endif %}
+{% if lib_name %}
+lib_name = "{{ lib_name }}"
+{% endif %}
+target = "{{ target.id }}"
+build-env = "{{ build_env }}"
+docker-file = ".devcontainer/Dockerfile-custom"
+docker-image-tag = "{{ docker_image_tag }}"
+
+{% if target.cc %}
+cc  = "{{ target.cc }}"
+{% endif %}
+{% if target.cxx %}
+cxx = "{{ target.cxx }}"
+{% endif %}
+cxxstandard = "17"
+
+cflags   = "{{ cflags }}"
+cxxflags = "{{ cxxflags }}"
+
+in-repo-conan-cache = false
+
+[profile.Debug]
+cflags   = "-g"
+cxxflags = "-g"
+
+[profile.Release]
+cflags   = "-O3 -DNDEBUG"
+cxxflags = "-O3 -DNDEBUG"
+
+[profile.RelWithDebInfo]
+cflags   = "-O2 -g -DNDEBUG"
+cxxflags = "-O2 -g -DNDEBUG"
+
+[profile.MinSizeRel]
+cflags   = "-Os -DNDEBUG"
+cxxflags = "-Os -DNDEBUG"
+
+[check]
+exclude = []
+
+[check.pragma]
+exclude = []
+
+[check.copyright]
+description = "Copyright"
+exclude = []
+
+[check.todo]
+keywords = ["tbd", "todo", "TODO", "fixme"]
+exclude = []
+
+[check.clang-format]
+exclude = []
+
+[check.clang-tidy]
+exclude = []
+
+[check.cyclomatic]
+exclude = []
+
+[tests]
+cc  = "gcc"
+cxx = "g++"
+
+cflags   = "-Wall -Wextra -Og --coverage -fkeep-inline-functions -fkeep-static-consts"
+cxxflags = "-Wall -Wextra -Og --coverage -fkeep-inline-functions -fkeep-static-consts"
+
+gcov-executable = "" # Empty string -> use default gcov executable
+
+# Underhood scargo use conan. All string valid for conan tool are valid here. eg "gtest/1.13.0"
+[dependencies]
+#general -> public conan dependencies of project they will be added to package info (eg. bianry dynamic linkage libary) they will be added also to scargo test.
+general = [
+]
+#build -> private conan dependencies usedn only during build process(eg. private static linkage library)
+build = [
+]
+#tool -> special conan "not library" dependencies like cmake/3.22.
+tool = [
+]
+#test-> conan dependencies used only for testing targets
+test = [
+    "gtest/1.13.0"
+]
+
+[conan.repo]
+#Passing conancenter here is not nessary as scargo adds it by default
+#Below example of private binary artifacts repository
+#gitlab = "https://git.my_extra_gitlab_server.com"
+
+{% if target.family == "esp32" %}
+[esp32]
+chip = "{{ chip_label|lower }}"
+extra_component_dirs=[]
+partitions = [
+    "nvs,      data, nvs,     0x9000,  0x4000,",
+    "otadata,  data, ota,     0xd000,  0x2000,",
+    "phy_init, data, phy,     0xf000,  0x1000,",
+    "ota_0,    app,  ota_0,   0x10000, 0x180000,",
+    "ota_1,    app,  ota_1,   0x190000,0x180000,",
+    "spiffs,   data, spiffs,  0x310000,0x6000,"
+]
+{% elif target.family == "stm32" %}
+[stm32]
+chip = "{{ chip_label }}"
+flash-start = 0x08000000
+{% elif target.family == "atsam" %}
+[atsam]
+chip = "{{ chip_label }}"
+cpu = "{{ cpu }}"
+{% endif %}
+
+[scargo]
+console-log-level = "INFO"
+file-log-level = "WARNING"
+update-exclude = []
+
+[docker-compose]
+ports = []

@@ -1,0 +1,164 @@
+Metadata-Version: 2.1
+Name: scargo
+Version: 1.7.0
+Summary: C/C++ package and software development life cycle manager inspired by RUST cargo idea.
+Keywords: scargo,Package manager,C++
+Author-email: "Spyrosoft Solutions S.A." <aak@spyro-soft.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Topic :: Software Development :: Embedded Systems
+Classifier: Environment :: Console
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Dist: clang==16.0.1.1
+Requires-Dist: cmake==3.25.2
+Requires-Dist: coloredlogs==15.0.1
+Requires-Dist: conan==1.59.0
+Requires-Dist: docker==6.0.1
+Requires-Dist: esptool==4.5.1
+Requires-Dist: jinja2==3.1.2
+Requires-Dist: libclang==16.0.0
+Requires-Dist: lizard==1.17.10
+Requires-Dist: pydantic==1.10.6
+Requires-Dist: shellingham==1.5.0.post1
+Requires-Dist: toml==0.10.2
+Requires-Dist: tomlkit==0.11.6
+Requires-Dist: typer==0.7.0
+Requires-Dist: typing-extensions==4.6.0
+Requires-Dist: paramiko==3.3.1
+Requires-Dist: pyyaml==6.0
+Requires-Dist: black ; extra == "dev"
+Requires-Dist: coverage~=6.0 ; extra == "dev"
+Requires-Dist: flake8>=3.2.0 ; extra == "dev"
+Requires-Dist: flit==3.8.0 ; extra == "dev"
+Requires-Dist: gcovr>=5.2 ; extra == "dev"
+Requires-Dist: isort==5.11.4 ; extra == "dev"
+Requires-Dist: matplotlib ; extra == "dev"
+Requires-Dist: mypy==1.0.1 ; extra == "dev"
+Requires-Dist: pre-commit ; extra == "dev"
+Requires-Dist: pyclean==2.2.0 ; extra == "dev"
+Requires-Dist: pyelftools ; extra == "dev"
+Requires-Dist: pyfakefs ; extra == "dev"
+Requires-Dist: PyInstaller ; extra == "dev"
+Requires-Dist: pylint ; extra == "dev"
+Requires-Dist: pytest-cov ; extra == "dev"
+Requires-Dist: pytest-mock ; extra == "dev"
+Requires-Dist: pytest-subprocess ; extra == "dev"
+Requires-Dist: pytest ; extra == "dev"
+Requires-Dist: pytest-assume==2.4.3 ; extra == "dev"
+Requires-Dist: pytest-xdist==3.3.1 ; extra == "dev"
+Requires-Dist: pytest-order==1.1.0 ; extra == "dev"
+Requires-Dist: types-clang==0.14.3 ; extra == "dev"
+Requires-Dist: types-toml ; extra == "dev"
+Requires-Dist: unittest-xml-reporting ; extra == "dev"
+Requires-Dist: pyopenssl==23.2.0 ; extra == "dev"
+Requires-Dist: types-pyOpenSSL==23.2.0 ; extra == "dev"
+Requires-Dist: types-PyYAML==6.0.12.12 ; extra == "dev"
+Requires-Dist: recommonmark ; extra == "doc"
+Requires-Dist: sphinx-rtd-theme==1.1.1 ; extra == "doc"
+Requires-Dist: Sphinx ; extra == "doc"
+Requires-Dist: sphinxcontrib-plantuml==0.24.1 ; extra == "doc"
+Project-URL: Documentation, https://spyro-soft.github.io/scargo/index.html
+Project-URL: Source, https://github.com/spyro-soft/scargo
+Project-URL: Tracker, https://github.com/Spyro-Soft/scargo/issues
+Provides-Extra: dev
+Provides-Extra: doc
+
+# Scargo
+Scargo project was written by Spyrosoft team. Find more information at [spyro-soft.com](https://spyro-soft.com/career).
+<p align="center">
+    <img src="https://raw.githubusercontent.com/Spyro-Soft/scargo/develop/docs/source/_static/spyrosoft_solutions_logo_color.png" alt="drawing" width="200"/>
+</p>
+
+# Overview
+This is the documentation for scargo - a Python-based C/C++ package and software development life cycle manager inspired by RUST cargo idea.
+
+scargo can:
+
+- Create a new project (binary or library)
+- Build the project
+- Run static code analyzers
+- Fix chosen problem automatically based on the checker analysis
+- Run unit tests
+- Generate documentation from the source code
+- Work with the predefined docker environment depending on the chosen architecture
+
+# Installation
+Scargo is available on [pypi](https://pypi.org/project/scargo/), so you can install it with pip:
+
+```pip install scargo```
+
+If system does not find 'scargo' command after installing, add the installation directory to your env paths. On Ubuntu you can find installation directory by running:
+
+```$ find / -name "scargo"```
+
+Then add to  PATH:
+
+```$ export PATH=~/.local/bin:${PATH}```
+
+# Working with scargo
+You can find all information on how to work with scargo on official documentation webpage: https://spyro-soft.github.io/scargo/index.html
+![Scargo flow animation](https://raw.githubusercontent.com/Spyro-Soft/scargo/develop/docs/source/_static/scargo_flow_docker.svg)
+
+# Project dependencies
+## Working with docker (recommended)
+- docker
+- docker-compose
+- pip
+- python3
+
+## Working natively (not recommended, a lot of env setup)
+Base:
+
+- python >= 3.8
+- cmake >= 3.24.2
+- cppcheck lib32z1 clang clang-format clang-tidy gcovr doxygen libcmocka0 libcmocka-dev
+- lizard
+
+Depending on the architecture:
+
+- compiler (e.g. gcc-arm-none-eabi-9-2020-q2-update gcc-arm-none-eabi)
+- flashing tools
+- uC HAL and dependent files
+- much more....
+
+# Work environment
+You can always change work environment between docker or native after project is created.
+Just edit the scargo.toml file ([project] -> build-env = "docker" or build-env = "native").
+
+## Working in docker
+1) If you create a new project, run `docker compose run scargo-dev` to run project development image depending on chosen architecture. All dependencies should be already there.
+Run scargo commands as you would do natively.
+
+2) If you create a project with --docker flag (`scargo new <my_proj> --docker ...`) or with any docker flag, by default each scargo command will be triggered in docker.
+
+## Working natively
+1) Create a project with --no-docker flag (`scargo new <my_proj> --no-docker ...`).
+
+## Testing custom scargo generated project locally
+You can make changes in scargo and install it locally using ```pip install .``` command when you are in the main project folder.
+To test the custom scargo version and have this custom scargo available also inside the docker (crucial for testing), in created project update  docker-compose.yaml:
+
+    volumes:
+
+      - ..:/workspace
+      - /dev:/dev
+      - ~/.local/lib/python3.10/site-packages/scargo:/usr/local/lib/python3.8/dist-packages/scargo
+
+Where ```~/.local/lib/python3.10/site-packages/scargo``` is a path to scargo on your local machine. It the following path is not working, find installation dir using ```pip show scargo```.
+
+To keep this setup between ```scargo update``` commands, in scargo.toml file update also ```update-exclude``` as in following example:
+
+    update-exclude = [".devcontainer/docker-compose.yaml"]
+# Contributing
+
+See contributing guide on https://spyro-soft.github.io/scargo/contributing.html
+
