@@ -1,0 +1,16 @@
+from spaceone.core import utils
+
+from spaceone.repository.error import *
+from spaceone.repository.manager.repository_manager import RepositoryManager
+
+
+class LocalRepositoryManager(RepositoryManager):
+
+    def register_repository(self, params):
+        # Assume there is only one local repository
+        local_repo_vo = self.get_local_repository()
+        if local_repo_vo is not None:
+            raise ERROR_LOCAL_REPOSITORY_ALREADY_EXIST()
+
+        params['repository_id'] = utils.generate_id('repo')
+        return self.repo_model.create(params)
