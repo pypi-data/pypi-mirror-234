@@ -1,0 +1,140 @@
+Metadata-Version: 2.1
+Name: persisty
+Version: 0.0.15
+Summary: A better persistence layer for python
+Home-page: https://github.com/tofarr/lambsync
+Author: Tim O'Farrell
+Author-email: tofarr@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+Requires-Dist: pyaes~=1.6
+Requires-Dist: servey~=2.8
+Provides-Extra: dev
+Requires-Dist: black~=23.3; extra == "dev"
+Requires-Dist: pytest~=7.2; extra == "dev"
+Requires-Dist: pytest-cov~=4.0; extra == "dev"
+Requires-Dist: pytest-xdist~=3.2; extra == "dev"
+Requires-Dist: pylint~=2.17; extra == "dev"
+Requires-Dist: boto3~=1.26; extra == "dev"
+Requires-Dist: moto~=3.1; extra == "dev"
+Provides-Extra: server
+Requires-Dist: servey[server]~=2.8; extra == "server"
+Provides-Extra: serverless
+Requires-Dist: servey[serverless]~=2.8; extra == "serverless"
+Requires-Dist: opensearch-py~=2.2; extra == "serverless"
+Provides-Extra: sql
+Requires-Dist: SQLAlchemy~=1.4; extra == "sql"
+Provides-Extra: sqldev
+Requires-Dist: alembic~=1.12; extra == "sqldev"
+Provides-Extra: scheduler
+Requires-Dist: servey[scheduler]~=2.8; extra == "scheduler"
+Provides-Extra: all
+Requires-Dist: pytest-xdist~=3.2; extra == "all"
+Requires-Dist: alembic~=1.12; extra == "all"
+Requires-Dist: servey[server]~=2.8; extra == "all"
+Requires-Dist: pytest-cov~=4.0; extra == "all"
+Requires-Dist: pytest~=7.2; extra == "all"
+Requires-Dist: servey[scheduler]~=2.8; extra == "all"
+Requires-Dist: opensearch-py~=2.2; extra == "all"
+Requires-Dist: SQLAlchemy~=1.4; extra == "all"
+Requires-Dist: boto3~=1.26; extra == "all"
+Requires-Dist: moto~=3.1; extra == "all"
+Requires-Dist: servey[serverless]~=2.8; extra == "all"
+Requires-Dist: pylint~=2.17; extra == "all"
+Requires-Dist: black~=23.3; extra == "all"
+
+# Persisty - a better persistence Layer for Python
+
+The objective of this project is to provide a resource oriented approach
+accommodating both security and caching rich enough to handle most use
+cases while still being independant of the underlying persistence 
+mechanism. 
+
+Using [Servey](https://github.org/tofarr/servey) to provide access via 
+REST and GraphQL in either a hosted environment or AWS lambda 
+environemnt, the project includes out of the box support for both 
+SQL (via SQLAlchemy) and Dynamodb.
+
+## Concepts
+
+### Stored Items
+
+Stored items are marked by the [stored](persisty/stored.py) decorator.
+This decorator is similar to dataclass, and allows specifying attributes,
+keys, schemas, and indexes.
+
+### Stores
+
+A [Store](persisty/store/StoreABC.py) provides a unified interface for
+interacting with stored items. [StoreMeta](persisty/store_meta.py) contains
+info on what exactly a store supports
+
+Standard Actions are:
+
+* **create** an item
+* **read** and item given its key
+* **update** an item
+* **delete** and item given its key
+* **search** for items given filter and sort criteria
+* **count** items given filter criteria
+* **read_batch** read a batch of items given a list of keys
+* **edit_batch** execute a batch of edits (create, update, delete operations)
+
+### Keys
+
+Each item within a store has a string key, derived from the item. (Possibly based on 
+one or more of it's attributes) A [KeyConfig](persisty/key_config/key_config_abc.py)
+controls this process
+
+### Attributes
+
+Stored items have [Attributes](persisty/attr/attr.py) associated with them, similar
+to columns in a relational database. Attributes can have generators associated with
+them.
+
+## SearchFilters
+
+Search operations can have [SearchFilters](persisty/search_filter/search_filter_abc.py) 
+These can be natively supported (Converted to SQL or dynamodb query / scan criteria)
+or run locally in python.
+
+## Auto User Interfaces
+
+Since this is built on top of OpenAPI, user interface options supplied by [Ewey](https://github.com/tofar/ewey)
+
+## Examples
+
+[The Messager Example App](examples/messager_1) demonstrates a step by step build of an
+application with security and business logic.
+
+
+## Future Ideas
+
+* REDIS Storage
+* Elastic Search Storage
+* Remote HTTP Storage
+* A user app with support for OIDC, SAML and SCIM
+* A Rate Limiting app / Rate Limit Access Control
+* An Event Bridge Project (Backed by AWS Event bridge in AWS, or celery in other environments)
+
+* A Distributed Lock
+* An explicit custom index (Spatial RTree)
+* A Z order index
+
+
+## Installing local development dependencies
+
+```
+python setup.py install easy_install "persisty[all]"
+```
+
+## Release Procedure
+
+![status](https://github.com/tofarr/persisty/actions/workflows/quality.yml/badge.svg?branch=main)
+
+The typical process here is:
+* Create a PR with changes. Merge these to main (The `Quality` workflows make sure that your PR
+  meets the styling, linting, and code coverage standards).
+* New releases created in github are automatically uploaded to pypi
