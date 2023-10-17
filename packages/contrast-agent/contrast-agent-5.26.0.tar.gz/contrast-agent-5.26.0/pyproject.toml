@@ -1,0 +1,93 @@
+[project]
+name = "contrast-agent"
+authors = [{ name = "Contrast Security, Inc.", email = "python@contrastsecurity.com"}]
+classifiers=[
+    "Development Status :: 5 - Production/Stable",
+    # Audience
+    "Intended Audience :: Developers",
+    # License; commercial
+    # supported languages
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dynamic = ["version", "dependencies"]
+description = "Contrast Security's agent for Python web frameworks"
+keywords = ["security development"]
+license = { file = "LICENSE.txt" }
+requires-python = ">=3.7,<3.12"
+readme = "README.md"
+[project.urls]
+"Contrast" = "https://www.contrastsecurity.com"
+"Change Log" = "https://docs.contrastsecurity.com/en/python-agent-release-notes-and-archive.html"
+"Support" = "https://support.contrastsecurity.com"
+"Trouble Shooting" = "https://support.contrastsecurity.com/hc/en-us/search?utf8=%E2%9C%93&query=Python"
+"Wiki" = "https://docs.contrastsecurity.com/"
+[project.scripts]
+"contrast-python-run" = "contrast.scripts:runner"
+"contrast-fix-interpreter-permissions" = "contrast.scripts:fix_interpreter_permissions"
+"contrast-validate-config" = "contrast.scripts:validate_config"
+"contrast-propagator-check" = "contrast.scripts:propagator_check"
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools_scm]
+write_to = "src/contrast/version.py"
+
+[tool.black]
+line-length = 88
+target-version = ['py37']
+exclude = '''
+(
+  /(
+    | src/contrast_vendor/*
+    | src/contrast/assess_extensions/*
+    | src/contrast/data/*
+    | tests/agent/data/*
+    | tests/extern/*
+    | .eggs/*
+    | build/*
+  )/ |
+  framework_test/django-2\.2\.1/app/view_definitions\.py |
+  framework_test/django-3\.0\.6/app/view_definitions\.py
+)
+'''
+
+[tool.pytest.ini_options]
+testpaths = "tests integration-tests/test-create-config-script"
+filterwarnings = [
+  "error::DeprecationWarning",
+  # for DeprecatedWarning which doesn't work for some reason if not like this
+  "error:.*Call to deprecated.*",
+  "error::PendingDeprecationWarning",
+  "error::pytest.PytestUnhandledThreadExceptionWarning",
+  "error::pytest.PytestUnhandledCoroutineWarning",
+  "error::pytest.PytestUnraisableExceptionWarning",
+  "error::RuntimeWarning:asyncio.*",
+  "ignore::DeprecationWarning:pip._vendor.*",
+  "ignore::DeprecationWarning:wrapt.*",
+  "ignore::DeprecationWarning:jinja2.*",
+  "ignore::DeprecationWarning:pyramid.*",
+  "ignore::DeprecationWarning:aiohttp.*",
+  # TODO: PYT-2887 Just helps us through Py37 deprecation
+  "ignore:pkg_resources.*:DeprecationWarning",
+  "ignore:python 3.7 is end of life.*:DeprecationWarning",
+  # defusedxml was deprecated long ago but we still test it.
+  "ignore:.*defusedxml.lxml:DeprecationWarning",
+  # turn off YAMLLoadWarning about unsafe yaml since we have to test for unsafe use
+  "ignore:.*calling yaml.load.*as the default Loader is unsafe.*",
+  # we still test these functions
+  "ignore:.*'flask.helpers.safe_join' is deprecated.*",
+  "ignore:.*'utils.escape' is deprecated.*",
+  "ignore:.*unicode_internal codec has been deprecated.*",
+  "ignore:.*'cgi' is deprecated.*",
+]
+asyncio_mode = "auto"
+addopts = "--ignore=tests/performance"
