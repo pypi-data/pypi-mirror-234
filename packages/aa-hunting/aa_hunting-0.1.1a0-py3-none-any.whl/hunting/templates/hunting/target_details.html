@@ -1,0 +1,172 @@
+{% extends "hunting/base.html" %} {% load i18n %} {% load humanize %} {% load
+evelinks %} {% load hunting %} {% load static %} {% block page_title %} {%
+translate "Target Details" %} - {{ target.character.character_name }} - {{
+target.ship.name }} {% endblock page_title %} {% block details %}
+<div class="row">
+    {% include "hunting/target_details/locate_history.html" %}
+    <div class="col-lg-4">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <div class="panel-title">{% translate "Notes" %}</div>
+            </div>
+            <div class="panel-body">
+                <table class="table">
+                    {% for note in target.note_set.all %}
+                    <tr>
+                        <td>
+                            {{ note.author }} - {{ note.created_at|naturaltime
+                            }}
+                        </td>
+                        <td>{{ note.text }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <div class="panel-title">{% translate "Killmails WIP" %}</div>
+            </div>
+            <div class="panel-body">
+                <table class="table">
+                    {% for kill in killmails %}{% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    {% for alt in target.alts.all %}
+    <div class="col-lg-3">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    {% translate "Alt" %} - {{ alt.character.character_name }}
+                </div>
+            </div>
+            <div class="panel-body">
+                {% trans "Location" %}: {% if alt.last_locatecharmsg %} {% if
+                alt.last_locatecharmsg.solar_system.is_high_sec %}
+                <a
+                    class="label label-danger"
+                    href="{{ alt.last_locatecharmsg.solar_system|dotlan_jump_range:'Super Capital' }}"
+                    >{{ alt.last_locatecharmsg.solar_system }}</a
+                >
+                <span class="label label-danger"
+                    >{{ alt.last_locatecharmsg.constellation }}</span
+                >
+                <span class="label label-danger"
+                    >{{ alt.last_locatecharmsg.region }}</span
+                >
+                {% elif alt.last_locatecharmsg.solar_system.is_low_sec %}
+                <a
+                    class="label label-warning"
+                    href="{{ alt.last_locatecharmsg.solar_system|dotlan_jump_range:'Super Capital' }}"
+                    >{{ alt.last_locatecharmsg.solar_system }}</a
+                >
+                <span class="label label-warning"
+                    >{{ alt.last_locatecharmsg.constellation }}</span
+                >
+                <span class="label label-warning"
+                    >{{ alt.last_locatecharmsg.region }}</span
+                >
+                {% elif alt.last_locatecharmsg.solar_system.is_null_sec %}
+                <a
+                    class="label label-success"
+                    href="{{ alt.last_locatecharmsg.solar_system|dotlan_jump_range:'Super Capital' }}"
+                    >{{ alt.last_locatecharmsg.solar_system }}</a
+                >
+                <span class="label label-success"
+                    >{{ alt.last_locatecharmsg.constellation }}</span
+                >
+                <span class="label label-success"
+                    >{{ alt.last_locatecharmsg.region }}</span
+                >
+                {% endif %} {% if alt.last_locatecharmsg.station %}
+                <span class="label label-default"
+                    >{{ alt.last_locatecharmsg.station }}</span
+                >
+                {% endif %} {% endif %}
+                <br />
+                {% trans "Timestamp" %}: {% if alt.last_locatecharmsg_oneday %}
+                <span class="label label-danger"
+                    >{{ alt.last_locatecharmsg.timestamp|naturaltime }}</span
+                >
+                {% elif alt.last_locatecharmsg_onehour %}
+                <span class="label label-warning"
+                    >{{ alt.last_locatecharmsg.timestamp|naturaltime }}</span
+                >
+                {% else %}
+                <span class="label label-default"
+                    >{{ alt.last_locatecharmsg.timestamp|naturaltime }}</span
+                >
+                {% endif %}
+                <br />
+                {% if alt.hard_cyno %}
+                <span class="label label-success"
+                    >{% translate "Hard Cyno" %}</span
+                >
+                {% endif %} {% if alt.pilot %}
+                <span class="label label-success">{% translate "Pilot" %}</span>
+                {% endif %} {% if alt.hard_cyno %}
+                <span class="label label-info"
+                    >{% translate "Beacon Cyno" %}</span
+                >
+                {% endif %} {% if alt.hard_cyno %}
+                <span class="label label-default">{% translate "Scout" %}</span>
+                {% endif %}
+                <br />
+                <a
+                    class="btn btn-default"
+                    href="{% url 'hunting:alt_details' alt.id %}"
+                    role="button"
+                    >{% trans "Details" %}</a
+                >
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock details %}
+{% block extra_javascript %}
+    {% include"bundles/datatables-js.html" %}
+    {% include "bundles/moment-js.html" %}
+{% endblock extra_javascript %}
+{% block extra_css %}
+    {% include "bundles/datatables-css.html" %}
+{% endblock extra_css %}
+{% block extra_script %}
+    $(document).ready(function(){
+    $('#table-locate-history').DataTable({
+    "ajax": {
+    "url": "{% url 'hunting:locate_history' %}",
+    "dataSrc": "locate_history",
+    "data": {
+    "character_id": {{ target.character.character_id }},
+    }
+    },
+    columns: [
+    {
+    data: "timestamp"
+    },
+    {
+    data: "solar_system__name"
+    },
+    {
+    data: 'constellation__name'
+    },
+    {
+    data: "region__name"
+    },
+    {
+    data: "station__name"
+    },
+    ],
+    "processing": true,
+    "stateSave": true,
+    "stateDuration": 0
+    } );
+    });
+{% endblock extra_script %}
