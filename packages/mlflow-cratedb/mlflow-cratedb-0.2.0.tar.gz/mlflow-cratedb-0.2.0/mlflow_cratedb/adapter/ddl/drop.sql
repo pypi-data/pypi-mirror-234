@@ -1,0 +1,15 @@
+DROP TABLE IF EXISTS "datasets";
+DROP TABLE IF EXISTS "experiment_tags";
+DROP TABLE IF EXISTS "experiments";
+DROP TABLE IF EXISTS "inputs";
+DROP TABLE IF EXISTS "input_tags";
+DROP TABLE IF EXISTS "latest_metrics";
+DROP TABLE IF EXISTS "metrics";
+DROP TABLE IF EXISTS "model_versions";
+DROP TABLE IF EXISTS "model_version_tags";
+DROP TABLE IF EXISTS "params";
+DROP TABLE IF EXISTS "registered_models";
+DROP TABLE IF EXISTS "registered_model_aliases";
+DROP TABLE IF EXISTS "registered_model_tags";
+DROP TABLE IF EXISTS "runs";
+DROP TABLE IF EXISTS "tags";
