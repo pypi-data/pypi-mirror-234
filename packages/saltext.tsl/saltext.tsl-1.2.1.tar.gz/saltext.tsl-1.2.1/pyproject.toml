@@ -1,0 +1,81 @@
+[project]
+name = "saltext.tsl"
+version = "1.2.1"
+description = "TSL - The State Library Module"
+readme = "README.md"
+requires-python = ">=3.5"
+license.file = "LICENSE"
+keywords = ["salt-extension"]
+authors = [
+  {name = "TurtleTraction", email = "info@turtletraction.com" }
+]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+dependencies = [
+    "salt>=3004"
+]
+
+[project.optional-dependencies]
+tests = [
+    "pytest==7.4.2",
+    "pytest-salt-factories==0.912.2"
+]
+dev = [
+    "nox==2023.04.22",
+    "pre-commit==3.4.0",
+    "pylint<3.0",
+    "SaltPyLint",
+    "twine",
+    "build",
+]
+docs = [
+    "sphinx",
+    "sphinx-pyproject",
+    "furo",
+    "sphinx-copybutton",
+    "sphinx-prompt",
+    "sphinxcontrib-spelling",
+    'importlib_metadata; python_version < "3.8"'
+]
+docsauto = [
+    "sphinx-autobuild",
+]
+
+[project.entry-points."salt.loader"]
+"saltext.tsl" = "saltext.tsl"
+
+[project.urls]
+"Homepage" = "https://www.turtletraction.com/state-library"
+"Bug Reports" = "https://gitlab.com/turtletraction-oss/saltext-tsl/-/issues"
+"Source" = "https://gitlab.com/turtletraction-oss/saltext-tsl"
+
+[build-system]
+requires = ["setuptools>=68", "wheel", "setuptools-declarative-requirements"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests"]
+
+[tool.black]
+line-length = 100
+
+[tool.build_sphinx]
+source-dir = "docs"
+build-dir = "build/sphinx"
