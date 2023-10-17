@@ -1,0 +1,1 @@
+from portageur.plugins.auth.azure import AzureChatOpenAI
