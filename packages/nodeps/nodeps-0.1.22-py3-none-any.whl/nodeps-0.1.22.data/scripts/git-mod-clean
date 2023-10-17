@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+: git submodule
+
+set -eu
+
+help="$(cat <<EOF
+NAME
+  ${0##*/} - clean and updates submodules recursively
+
+DESCRIPTION
+  Submodule is added if name not on the index (does not return error if exists).
+  Accepts additional git-submodule(1) options at the end.
+
+SYNOPSYS
+  git [-C <path>] ${0##*git-}
+
+ARGUMENTS
+  -h          show help and exit
+  --desc      show desc and exit
+  --version   show version and exit
+EOF
+)"
+  
+. git-top "$@"
+
+git submodule foreach --recursive 'git clean --quiet -xfd && git reset --quiet --hard' >/dev/null
+git submodule update  --recursive --force --quiet --remote >/dev/null
