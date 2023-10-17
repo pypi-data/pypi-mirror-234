@@ -1,0 +1,212 @@
+[tool.poetry]
+name = "gravitorch"
+version = "0.0.21"
+description = "A library to train ML models with PyTorch"
+readme = "README.md"
+authors = ["Thibaut Durand <durand.tibo+gh@gmail.com>"]
+homepage = "https://github.com/durandtibo/gravitorch"
+repository = "https://github.com/durandtibo/gravitorch"
+keywords = ["gravitorch"]
+
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+packages = [
+    { include = "gravitorch", from = "src" },
+]
+
+[tool.poetry.dependencies]
+# Core dependencies
+coola = ">=0.0.20,<0.0.25"
+hya = ">=0.0.12,<0.0.15"
+hydra-core = ">=1.3,<1.4"
+minevent = ">=0.0.4,<0.0.6"
+numpy = ">=1.22,<1.27"
+objectory = ">=0.0.7,<0.0.9"
+python = ">=3.9,<3.12"
+pytorch-ignite = [{version = ">=0.4.12,<0.5", python = "^3.11"}, {version = ">=0.4.11,<0.5"}]
+tabulate = ">=0.9,<0.10"
+torch = ">=2.0,<2.2"
+
+# Optional dependencies
+colorlog = { version = ">=6.7,<6.8", optional = true }
+matplotlib = { version = ">=3.6,<3.9", optional = true }
+pillow = { version = ">=9.0,<11.0", optional = true }
+psutil = { version = ">=5.9,<5.10", optional = true }
+startorch = { version = ">=0.0.5,<0.0.7", optional = true }
+tensorboard = { version = ">=2.10,<2.15", optional = true }
+torchdata = { version = ">=0.6,<0.8", optional = true }
+tqdm = { version = ">=4.64,<4.67", optional = true }
+
+[tool.poetry.extras]
+all = [
+    "colorlog",
+    "lightning",
+    "matplotlib",
+    "pillow",
+    "psutil",
+    "startorch",
+    "tensorboard",
+    "torch-tb-profiler",
+    "torchdata",
+    "tqdm",
+]
+tb = ["tensorboard", "torch-tb-profiler"]
+
+[tool.poetry.group.exp]
+optional = true
+
+[tool.poetry.group.exp.dependencies]
+jupyterlab = "^4.0"
+torch-tb-profiler = "^0.4"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.9"
+coverage = { extras = ["toml"], version = "^7.3" }
+docformatter = "^1.7"
+pre-commit = "^3.4"
+pytest = "^7.4"
+pytest-cov = "^4.1"
+pytest-timeout = "^2.2"
+ruff = ">=0.0.292,<1.0"
+xdoctest = "^1.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+branch = true
+source = ["gravitorch"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:"
+]
+
+[tool.pytest.ini_options]
+testpaths = "tests/"
+log_format = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+log_level = "DEBUG"
+addopts = "--color yes --durations 10 -rf"
+# Configuration of the short test summary info https://docs.pytest.org/en/stable/usage.html#detailed-summary-report
+filterwarnings = [
+    'ignore::DeprecationWarning:tensorboard.*',
+    'ignore::DeprecationWarning:torch.utils.tensorboard.*',
+]
+timeout_func_only = false
+
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+include = '\.pyi?$'
+
+[tool.pylint.FORMAT]
+max-line-length = 100
+
+[tool.isort]
+profile = "black"
+
+[tool.docformatter]
+black = true
+recursive = true
+wrap-summaries = 72
+wrap-descriptions = 72
+syntax = "google"
+
+
+[tool.ruff]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+select = [
+    "A",   # builtins
+    "ANN", # annotations
+    "B",   # bugbear
+    "BLE", # blind-except
+    "E",   # pycodestyle (Error)
+    "F",   # pyflakes
+    "N",   # naming
+    "PTH", # pathlib
+    "UP",  # pyupgrade
+    "W",   # pycodestyle (Warning)
+#    "NPY", # NumPy-specific rules
+]
+ignore = [
+    "A003",    # Class attribute `{name}` is shadowing a python builtin
+    "ANN002",  # Missing type annotation for `*args`
+    "ANN003",  # Missing type annotation for `**kwargs`
+    "ANN101",  # Missing type annotation for `self` in method
+    "ANN102",  # Missing type annotation for `cls` in classmethod
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed.
+    "B905",    # `zip()` without an explicit strict= parameter set. The `strict=` argument was added in Python 3.10
+    "E501",    # Line lengths are recommended to be no greater than 79 characters.
+    "W505",    # Doc line too long
+]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "ANN", "B", "E", "F", "PTH", "W"]
+unfixable = []
+
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+line-length = 100
+target-version = "py39"
+src = ["src"]
+
+#[tool.ruff.per-file-ignores]
+#"__init__.py" = ["E402"]
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.pycodestyle]
+max-doc-length = 72
+
+[tool.ruff.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+known-first-party = ["src"]
+
+[tool.ruff.flake8-import-conventions]
+[tool.ruff.flake8-import-conventions.aliases]
+"matplotlib.pyplot" = "plt"
+numpy = "np"
+pandas = "pd"
+seaborn = "sns"
+scipy = "sp"
