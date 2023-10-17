@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "description": "Definition of transform",
+  "title": "Transform definition",
+  "definitions": {
+    "column": {
+      "description": "Column",
+      "title": "Column",
+      "type": "string"
+    },
+    "table": {
+      "description": "Table",
+      "properties": {
+        "columns": {
+          "additionalProperties": {
+            "$ref": "#/definitions/column"
+          },
+          "description": "Columns. Omitted columns are left untouched.",
+          "title": "Columns",
+          "type": "object"
+        }
+      },
+      "title": "Table",
+      "type": "object"
+    },
+    "transform": {
+      "description": "Transform",
+      "properties": {
+        "class": {
+          "description": "Class name.",
+          "title": "Class",
+          "type": "string"
+        },
+        "config": {
+          "default": null,
+          "description": "Configuration given to transform",
+          "title": "Configuration"
+        },
+        "module": {
+          "default": "slice_db.transforms",
+          "description": "Module name.",
+          "title": "Module",
+          "type": "string"
+        }
+      },
+      "required": ["class"],
+      "title": "Transform"
+    }
+  },
+  "properties": {
+    "tables": {
+      "additionalProperties": {
+        "$ref": "#/definitions/table"
+      },
+      "description": "Tables. Omitted tables are left untouched.",
+      "title": "Tables",
+      "type": "object"
+    },
+    "transforms": {
+      "additionalProperties": {
+        "$ref": "#/definitions/transform"
+      },
+      "description": "Transforms.",
+      "title": "Transforms",
+      "type": "object"
+    }
+  },
+  "required": ["tables", "transforms"],
+  "type": "object"
+}
