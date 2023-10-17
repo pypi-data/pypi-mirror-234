@@ -1,0 +1,91 @@
+[build-system]
+requires      = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["./src"]  # list of folders that contain the packages (["."] by default)
+include = ["*"]  # package names should match these glob patterns (["*"] by default)
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
+
+[project]
+name = "sidewinder-db"
+version = "0.0.42"
+description = "A Python-based Distributed Database"
+readme = "README.md"
+authors = [{ name = "Philip Moore", email = "prmoore77@hotmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["sidwinder", "sidewinder-db", "database", "distributed", "shard"]
+dependencies = [
+    "boto3==1.28.*",
+    "botocore==1.31.*",
+    "click==8.1.*",
+    "codetiming==1.4.*",
+    "duckdb==0.9.1",
+    "duckdb-engine==0.9.*",
+    "jmespath==1.0.*",
+    "mgzip==0.2.*",
+    "munch==4.0.*",
+    "numpy==1.26.*",
+    "pandas==2.1.*",
+    "pglast==3.*",
+    "psutil==5.9.*",
+    "pyarrow==13.0.0",
+    "python-dateutil==2.8.*",
+    "pytz==2023.*",
+    "PyYAML==6.0.*",
+    "s3transfer==0.7.*",
+    "six==1.16.*",
+    "SQLAlchemy==2.0.*",
+    "sqlparse==0.4.*",
+    "urllib3==1.26.*",
+    "websockets==11.0.*",
+    "zstandard==0.21.*",
+    "python-dotenv==1.0.*",
+    "cryptography==41.0.*"
+]
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = ["bumpver", "pip-tools", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/prmoore77/sidewinder"
+
+[project.scripts]
+sidewinder-server = "sidewinder.server:main"
+sidewinder-worker = "sidewinder.worker:main"
+sidewinder-client = "sidewinder.client:main"
+sidewinder-bootstrap = "sidewinder.setup.bootstrap:sidewinder_bootstrap"
+sidewinder-create-tls-keypair = "sidewinder.setup.tls_utilities:main"
+sidewinder-create-mtls-ca-keypair = "sidewinder.setup.mtls_utilities:create_ca_keypair"
+sidewinder-create-mtls-client-keypair = "sidewinder.setup.mtls_utilities:create_client_keypair"
+sidewinder-create-user = "sidewinder.security:click_create_user"
+sidewinder-authenticate-user = "sidewinder.security:click_authenticate_user"
+sidewinder-create-duckdb-database-from-parquet = "sidewinder.setup.create_duckdb_database_from_parquet:main"
+sidewinder-build-shards = "sidewinder.setup.build_shards:main"
+
+[tool.bumpver]
+current_version = "0.0.42"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    '^version = "{version}"$',
+    '^current_version = "{version}"$',
+]
+"src/sidewinder/__init__.py" = [
+    '^__version__ = "{version}"$',
+]
