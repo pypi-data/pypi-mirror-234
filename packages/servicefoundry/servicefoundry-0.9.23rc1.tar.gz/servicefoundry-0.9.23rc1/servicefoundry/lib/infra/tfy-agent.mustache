@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/dockerconfigjson
+metadata:
+  name: tfy-agent-image-pull-secret
+  namespace: tfy-agent
+data:
+  .dockerconfigjson: {{ image_pull_secret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tfy-agent-env-secret
+  namespace: tfy-agent
+stringData:
+  CLUSTER_TOKEN: {{ cluster_token }}
