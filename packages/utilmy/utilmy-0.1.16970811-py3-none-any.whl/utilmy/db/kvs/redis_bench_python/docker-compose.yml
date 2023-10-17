@@ -1,0 +1,19 @@
+version: '3.9'
+services:
+  redis:
+    container_name: redis
+    image: 'redis:latest'
+    restart: always
+    ports:
+      - '6379:6379'
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+        - ./config/redis.conf://usr/local/etc/redis/redis.conf
+
+  keydb:
+    image: eqalpha/keydb:latest
+    container_name: keydb
+    command: keydb-server /etc/keydb/keydb.conf --server-threads 6
+    ports:
+      - 6380:6379
+    restart: always
