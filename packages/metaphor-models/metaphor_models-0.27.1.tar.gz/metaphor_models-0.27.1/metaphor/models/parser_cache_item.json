@@ -1,0 +1,4570 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "ActivityDependency": {
+            "properties": {
+                "dependencyConditions": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/DependencyCondition"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "AspectType": {
+            "enum": [
+                "ASSET_CONTACTS",
+                "ASSET_FOLLOWERS",
+                "ASSET_GOVERNED_TAGS",
+                "ASSET_LIKES",
+                "ASSET_STRUCTURE",
+                "AZURE_DATA_FACTORY_PIPELINE",
+                "COMMON_COLUMN_DESCRIPTION_EXCLUSION",
+                "CUSTOM_METADATA",
+                "DASHBOARD_INFO",
+                "DASHBOARD_UPSTREAM",
+                "DATASET_DATA_QUALITY",
+                "DATASET_DOCUMENTATION",
+                "DATASET_FIELD_ASSOCIATIONS",
+                "DATASET_FIELD_STATISTICS",
+                "DATASET_INFO",
+                "DATASET_SCHEMA",
+                "DATASET_SODA_DATA_QUALITY",
+                "DATASET_STATISTICS",
+                "DATASET_UPSTREAM",
+                "DATASET_USAGE",
+                "DBT_METRIC",
+                "DBT_MODEL",
+                "ENTITY_UPSTREAM",
+                "FIVETRAN_PIPELINE",
+                "HIERARCHY_INFO",
+                "KNOWLEDGE_CARD_INFO",
+                "LOOKER_EXPLORE",
+                "LOOKER_VIEW",
+                "METRIC_INFO",
+                "NAMESPACE_ASSETS",
+                "NAMESPACE_INFO",
+                "PERSONALIZATION_OPTIONS",
+                "PERSON_ACTIVITY",
+                "PERSON_ORGANIZATION",
+                "PERSON_PINS",
+                "PERSON_PROPERTIES",
+                "PERSON_SLACK_PROFILE",
+                "PERSON_TEAMS_CONVERSION_REFERENCE",
+                "PIPELINE_INFO",
+                "POWER_BI_DATAFLOW",
+                "POWER_BI_DATASET",
+                "SOURCE_INFO",
+                "SPARK_JOB",
+                "TABLEAU_DATASOURCE",
+                "THOUGHT_SPOT",
+                "USER_DEFINED_RESOURCE_INFO"
+            ],
+            "type": "string"
+        },
+        "Asset": {
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/Dashboard"
+                },
+                {
+                    "$ref": "#/definitions/Dataset"
+                },
+                {
+                    "$ref": "#/definitions/MetricBase"
+                },
+                {
+                    "$ref": "#/definitions/Pipeline"
+                },
+                {
+                    "$ref": "#/definitions/VirtualView"
+                },
+                {
+                    "$ref": "#/definitions/DummyAsset"
+                }
+            ]
+        },
+        "AssetContacts": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "contacts": {
+                    "default": [],
+                    "description": "Resolved on AssetContactResolver",
+                    "items": {
+                        "$ref": "#/definitions/DesignatedContact"
+                    },
+                    "type": "array"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                }
+            },
+            "type": "object"
+        },
+        "AssetDescription": {
+            "properties": {
+                "author": {
+                    "default": "",
+                    "type": "string"
+                },
+                "description": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "AssetFollowers": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "followedBy": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                }
+            },
+            "type": "object"
+        },
+        "AssetGovernedTags": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "governedTagIds": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                }
+            },
+            "type": "object"
+        },
+        "AssetLikes": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                },
+                "likeCount": {
+                    "description": "This is stored as an additional separate field on the document, as opposed to resolved, to enable sorting at the database layer\nMongo does not support sorting on properties of an array such as length\nNote: Although this is a getter, the wrapper withEnumerableGettersTrait will allow the field to be enumerable when the instance is iterated\nfor example, when assigning / copying",
+                    "type": "number"
+                },
+                "likedBy": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "AssetStructure": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "directories": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "AuditStamp": {
+            "properties": {
+                "actor": {
+                    "type": "string"
+                },
+                "time": {
+                    "format": "date-time",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "AzureDataFactoryActivity": {
+            "properties": {
+                "dependsOn": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/ActivityDependency"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "AzureDataFactoryPipeline": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "activities": {
+                    "items": {
+                        "$ref": "#/definitions/AzureDataFactoryActivity"
+                    },
+                    "type": "array"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "factory": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastDurationInMs": {
+                    "type": "number"
+                },
+                "lastInvokeType": {
+                    "type": "string"
+                },
+                "lastPublishTime": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastRunEnd": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastRunMessage": {
+                    "type": "string"
+                },
+                "lastRunStart": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastRunStatus": {
+                    "type": "string"
+                },
+                "pipelineName": {
+                    "type": "string"
+                },
+                "pipelineUrl": {
+                    "type": "string"
+                },
+                "sinks": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sources": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "Chart": {
+            "properties": {
+                "chartType": {
+                    "enum": [
+                        "AREA",
+                        "BAR",
+                        "BOX_PLOT",
+                        "COLUMN",
+                        "DONUT",
+                        "FUNNEL",
+                        "LINE",
+                        "MAP",
+                        "OTHER",
+                        "PIE",
+                        "SCATTER",
+                        "TABLE",
+                        "TEXT",
+                        "TIMELINE",
+                        "UNKNOWN",
+                        "WATERFALL"
+                    ],
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "preview": {
+                    "type": "string"
+                },
+                "title": {
+                    "default": "",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "ColumnTagAssignment": {
+            "properties": {
+                "columnName": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "tagNames": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "ContactValueType": {
+            "enum": [
+                "EMAIL",
+                "PERSON",
+                "SLACK",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "CustomMetadata": {
+            "description": "Captures custom metadata for an asset",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                },
+                "metadata": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/CustomMetadataItem"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "CustomMetadataItem": {
+            "description": "A single key-value pair entry for the custom metadata",
+            "properties": {
+                "key": {
+                    "default": "",
+                    "type": "string"
+                },
+                "value": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Dashboard": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dashboardInfo": {
+                    "$ref": "#/definitions/DashboardInfo"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "entityUpstream": {
+                    "$ref": "#/definitions/EntityUpstream",
+                    "description": "EntityUpstream captures upstream lineages from data sources to this entity"
+                },
+                "forceShown": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "isProduction": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/DashboardLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "sourceInfo": {
+                    "$ref": "#/definitions/SourceInfo"
+                },
+                "structure": {
+                    "$ref": "#/definitions/AssetStructure"
+                },
+                "upstream": {
+                    "$ref": "#/definitions/DashboardUpstream",
+                    "description": "DashboardUpstream captures upstream lineages from data sources to this dashboard"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DashboardInfo": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "charts": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/Chart"
+                    },
+                    "type": "array"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dashboardType": {
+                    "enum": [
+                        "POWER_BI_DASHBOARD",
+                        "POWER_BI_REPORT",
+                        "THOUGHT_SPOT_ANSWER",
+                        "THOUGHT_SPOT_LIVEBOARD",
+                        "UNKNOWN"
+                    ],
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "powerBi": {
+                    "$ref": "#/definitions/PowerBiInfo"
+                },
+                "thoughtSpot": {
+                    "$ref": "#/definitions/ThoughtSpotInfo"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "viewCount": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "DashboardLogicalId": {
+            "properties": {
+                "dashboardId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/DashboardPlatform"
+                }
+            },
+            "type": "object"
+        },
+        "DashboardPlatform": {
+            "enum": [
+                "CUSTOM_DASHBOARD",
+                "DASH",
+                "LOOKER",
+                "METABASE",
+                "POWER_BI",
+                "TABLEAU",
+                "THOUGHT_SPOT",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "DashboardUpstream": {
+            "description": "DashboardUpstream captures upstream lineages from data sources to this dashboard",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sourceDatasets": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sourceVirtualViews": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "DataMonitor": {
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "lastRun": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "severity": {
+                    "$ref": "#/definitions/DataMonitorSeverity"
+                },
+                "status": {
+                    "$ref": "#/definitions/DataMonitorStatus"
+                },
+                "targets": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/DataMonitorTarget"
+                    },
+                    "type": "array"
+                },
+                "title": {
+                    "default": "",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "DataMonitorSeverity": {
+            "enum": [
+                "HIGH",
+                "LOW",
+                "MEDIUM",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "DataMonitorStatus": {
+            "enum": [
+                "ERROR",
+                "PASSED",
+                "UNKNOWN",
+                "WARNING"
+            ],
+            "type": "string"
+        },
+        "DataMonitorTarget": {
+            "properties": {
+                "column": {
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "dataset": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DataPlatform": {
+            "enum": [
+                "AZURE_BLOB_STORAGE",
+                "BIGQUERY",
+                "DOCUMENTDB",
+                "DYNAMODB",
+                "ELASTICSEARCH",
+                "EXTERNAL",
+                "GCS",
+                "GLUE",
+                "HIVE",
+                "MSSQL",
+                "MYSQL",
+                "POSTGRESQL",
+                "RDS",
+                "REDIS",
+                "REDSHIFT",
+                "S3",
+                "SNOWFLAKE",
+                "SYNAPSE",
+                "UNITY_CATALOG",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "DataQualityProvider": {
+            "enum": [
+                "BIGEYE",
+                "LIGHTUP",
+                "MONTE_CARLO",
+                "SODA",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "Dataset": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "customMetadata": {
+                    "$ref": "#/definitions/CustomMetadata",
+                    "description": "Captures custom metadata for an asset"
+                },
+                "dataQuality": {
+                    "$ref": "#/definitions/DatasetDataQuality"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "descriptionAssignment": {
+                    "$ref": "#/definitions/DescriptionAssignment"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "documentation": {
+                    "$ref": "#/definitions/DatasetDocumentation",
+                    "description": "Captures dataset documentations from other tools outside the data source, e.g. dbt documentation on source datasets"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "entityUpstream": {
+                    "$ref": "#/definitions/EntityUpstream",
+                    "description": "EntityUpstream captures upstream lineages from data sources to this entity"
+                },
+                "fieldAssociations": {
+                    "$ref": "#/definitions/DatasetFieldAssociations"
+                },
+                "fieldStatistics": {
+                    "$ref": "#/definitions/DatasetFieldStatistics",
+                    "description": "DatasetStatistics captures operational information about the dataset, e.g. the number of records or the last refresh time."
+                },
+                "forceShown": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "isProduction": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/DatasetLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "ownershipAssignment": {
+                    "$ref": "#/definitions/OwnershipAssignment"
+                },
+                "pipelineInfo": {
+                    "$ref": "#/definitions/PipelineInfo",
+                    "description": "PipelineInfo captures related pipeline from data sources to this entity"
+                },
+                "schema": {
+                    "$ref": "#/definitions/DatasetSchema"
+                },
+                "sodaDataQuality": {
+                    "$ref": "#/definitions/DatasetSodaDataQuality"
+                },
+                "sourceInfo": {
+                    "$ref": "#/definitions/SourceInfo"
+                },
+                "statistics": {
+                    "$ref": "#/definitions/DatasetStatistics",
+                    "description": "DatasetStatistics captures operational information about the dataset, e.g. the number of records or the last refresh time."
+                },
+                "structure": {
+                    "$ref": "#/definitions/DatasetStructure"
+                },
+                "tagAssignment": {
+                    "$ref": "#/definitions/TagAssignment"
+                },
+                "upstream": {
+                    "$ref": "#/definitions/DatasetUpstream",
+                    "description": "DatasetUpstream captures upstream lineages from data sources to this dataset"
+                },
+                "usage": {
+                    "$ref": "#/definitions/DatasetUsage",
+                    "description": "Captures dataset usage statistic, e.g. the query counts."
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetDataQuality": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "monitors": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/DataMonitor"
+                    },
+                    "type": "array"
+                },
+                "provider": {
+                    "$ref": "#/definitions/DataQualityProvider"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetDocumentation": {
+            "description": "Captures dataset documentations from other tools outside the data source, e.g. dbt documentation on source datasets",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "datasetDocumentations": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fieldDocumentations": {
+                    "items": {
+                        "$ref": "#/definitions/FieldDocumentation"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetFieldAssociations": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "governedTagFields": {
+                    "items": {
+                        "$ref": "#/definitions/FieldTagAssociations"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetFieldStatistics": {
+            "description": "DatasetStatistics captures operational information about the dataset, e.g. the number of records or the last refresh time.",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fieldStatistics": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/FieldStatistics"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetLogicalId": {
+            "properties": {
+                "account": {
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "platform": {
+                    "$ref": "#/definitions/DataPlatform"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetSchema": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fields": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/SchemaField"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "schemaType": {
+                    "$ref": "#/definitions/SchemaType"
+                },
+                "sqlSchema": {
+                    "$ref": "#/definitions/SqlSchema"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetSodaDataQuality": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "monitors": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/SodaDataMonitor"
+                    },
+                    "type": "array"
+                },
+                "profiles": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/SodaDataProfile"
+                    },
+                    "type": "array"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetStatistics": {
+            "description": "DatasetStatistics captures operational information about the dataset, e.g. the number of records or the last refresh time.",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dataSizeBytes": {
+                    "type": "number"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fieldStatistics": {
+                    "items": {
+                        "$ref": "#/definitions/FieldStatistics"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastUpdated": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "recordCount": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetStructure": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "database": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "schema": {
+                    "type": "string"
+                },
+                "table": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetUpstream": {
+            "description": "DatasetUpstream captures upstream lineages from data sources to this dataset",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "executorUrl": {
+                    "type": "string"
+                },
+                "fieldMappings": {
+                    "items": {
+                        "$ref": "#/definitions/FieldMapping"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pipelineEntityId": {
+                    "type": "string"
+                },
+                "sourceCodeUrl": {
+                    "type": "string"
+                },
+                "sourceDatasets": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "transformation": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DatasetUsage": {
+            "description": "Captures dataset usage statistic, e.g. the query counts.",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fieldQueryCounts": {
+                    "$ref": "#/definitions/FieldQueryCounts"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "queryCounts": {
+                    "$ref": "#/definitions/QueryCounts"
+                },
+                "tableJoins": {
+                    "$ref": "#/definitions/TableJoins"
+                },
+                "userQueryCounts": {
+                    "$ref": "#/definitions/UserQueryCounts"
+                }
+            },
+            "type": "object"
+        },
+        "DbtMacro": {
+            "properties": {
+                "arguments": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/DbtMacroArgument"
+                    },
+                    "type": "array"
+                },
+                "dependsOnMacros": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "packageName": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sql": {
+                    "type": "string"
+                },
+                "uniqueId": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DbtMacroArgument": {
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DbtMaterialization": {
+            "properties": {
+                "targetDataset": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/DbtMaterializationType"
+                }
+            },
+            "type": "object"
+        },
+        "DbtMaterializationType": {
+            "enum": [
+                "EPHEMERAL",
+                "INCREMENTAL",
+                "OTHER",
+                "TABLE",
+                "VIEW"
+            ],
+            "type": "string"
+        },
+        "DbtMetric": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "default": "",
+                    "type": "string"
+                },
+                "dimensions": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "filters": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/MetricFilter"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "default": "",
+                    "type": "string"
+                },
+                "packageName": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sourceDatasets": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sourceModels": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sql": {
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "timeGrains": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "type": {
+                    "default": "",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DbtModel": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "compiledSql": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "docsUrl": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fields": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/SchemaField"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "macros": {
+                    "items": {
+                        "$ref": "#/definitions/DbtMacro"
+                    },
+                    "type": "array"
+                },
+                "materialization": {
+                    "$ref": "#/definitions/DbtMaterialization"
+                },
+                "owners": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "packageName": {
+                    "default": "",
+                    "type": "string"
+                },
+                "rawSql": {
+                    "type": "string"
+                },
+                "sourceDatasets": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sourceModels": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "tests": {
+                    "items": {
+                        "$ref": "#/definitions/DbtTest"
+                    },
+                    "type": "array"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DbtTest": {
+            "properties": {
+                "columns": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "dependsOnMacros": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sql": {
+                    "type": "string"
+                },
+                "uniqueId": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DependencyCondition": {
+            "enum": [
+                "Completed",
+                "Failed",
+                "Skipped",
+                "Succeeded"
+            ],
+            "type": "string"
+        },
+        "DescriptionAssignment": {
+            "properties": {
+                "assetDescriptions": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/AssetDescription"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "DesignatedContact": {
+            "properties": {
+                "designation": {
+                    "default": "",
+                    "type": "string"
+                },
+                "value": {
+                    "default": "",
+                    "type": "string"
+                },
+                "valueType": {
+                    "$ref": "#/definitions/ContactValueType"
+                }
+            },
+            "type": "object"
+        },
+        "DummyAsset": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "forceShown": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "isProduction": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/DummyLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DummyEntity": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/DummyLogicalId_1",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DummyLogicalId": {
+            "properties": {
+                "name": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "DummyLogicalId_1": {
+            "properties": {
+                "name": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Entity": {
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/GovernedEntity"
+                },
+                {
+                    "$ref": "#/definitions/PersonDetails"
+                },
+                {
+                    "$ref": "#/definitions/UserDefinedResourceBase"
+                },
+                {
+                    "$ref": "#/definitions/DummyEntity"
+                }
+            ]
+        },
+        "EntityType": {
+            "enum": [
+                "DASHBOARD",
+                "DATASET",
+                "HIERARCHY",
+                "KNOWLEDGE_CARD",
+                "METRIC",
+                "NAMESPACE",
+                "PERSON",
+                "PIPELINE",
+                "USER_DEFINED_RESOURCE",
+                "VIRTUAL_VIEW"
+            ],
+            "type": "string"
+        },
+        "EntityUpstream": {
+            "description": "EntityUpstream captures upstream lineages from data sources to this entity",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "executorUrl": {
+                    "type": "string"
+                },
+                "fieldMappings": {
+                    "items": {
+                        "$ref": "#/definitions/FieldMapping"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pipelineEntityId": {
+                    "type": "string"
+                },
+                "sourceCodeUrl": {
+                    "type": "string"
+                },
+                "sourceEntities": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "transformation": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "FieldDocumentation": {
+            "properties": {
+                "documentation": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fieldPath": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "tests": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "FieldMapping": {
+            "properties": {
+                "destination": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "sources": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/SourceField"
+                    },
+                    "type": "array"
+                },
+                "transformation": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "FieldQueryCount": {
+            "description": "Query count number and statistics of a dataset field",
+            "properties": {
+                "count": {
+                    "default": 0,
+                    "type": "number"
+                },
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "percentile": {
+                    "default": 0,
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "FieldQueryCounts": {
+            "description": "Captures field/column query counts in last day/week/month/year.",
+            "properties": {
+                "last24Hours": {
+                    "items": {
+                        "$ref": "#/definitions/FieldQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last30Days": {
+                    "items": {
+                        "$ref": "#/definitions/FieldQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last365Days": {
+                    "items": {
+                        "$ref": "#/definitions/FieldQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last7Days": {
+                    "items": {
+                        "$ref": "#/definitions/FieldQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last90Days": {
+                    "items": {
+                        "$ref": "#/definitions/FieldQueryCount"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "FieldStatistics": {
+            "description": "The statistics of a field/column, e.g. values count, min/max/avg, etc',",
+            "properties": {
+                "average": {
+                    "type": "number"
+                },
+                "distinctValueCount": {
+                    "type": "number"
+                },
+                "fieldPath": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "maxValue": {
+                    "type": "number"
+                },
+                "minValue": {
+                    "type": "number"
+                },
+                "nonnullValueCount": {
+                    "type": "number"
+                },
+                "nullValueCount": {
+                    "type": "number"
+                },
+                "stdDev": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "FieldTagAssociations": {
+            "properties": {
+                "fieldPath": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "governedTagIds": {
+                    "description": "Stores Entity IDs for the Governed Tags that are associated with this schema field",
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "FiveTranConnectorStatus": {
+            "properties": {
+                "setupState": {
+                    "type": "string"
+                },
+                "syncState": {
+                    "type": "string"
+                },
+                "updateState": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "FivetranPipeline": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "config": {
+                    "type": "string"
+                },
+                "connectorLogsUrl": {
+                    "type": "string"
+                },
+                "connectorName": {
+                    "type": "string"
+                },
+                "connectorTypeId": {
+                    "type": "string"
+                },
+                "connectorTypeName": {
+                    "type": "string"
+                },
+                "connectorUrl": {
+                    "type": "string"
+                },
+                "created": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "creatorEmail": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "iconUrl": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastSucceeded": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "paused": {
+                    "type": "boolean"
+                },
+                "schemaMetadata": {
+                    "type": "string"
+                },
+                "sources": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "status": {
+                    "$ref": "#/definitions/FiveTranConnectorStatus"
+                },
+                "syncIntervalInMinute": {
+                    "type": "number"
+                },
+                "targets": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "ForeignKey": {
+            "properties": {
+                "fieldPath": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "parent": {
+                    "$ref": "#/definitions/DatasetLogicalId"
+                },
+                "parentField": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "GovernedEntity": {
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/Asset"
+                },
+                {
+                    "$ref": "#/definitions/Hierarchy"
+                },
+                {
+                    "$ref": "#/definitions/KnowledgeCardBase"
+                },
+                {
+                    "$ref": "#/definitions/NamespaceBase"
+                }
+            ]
+        },
+        "GroupId": {
+            "properties": {
+                "groupName": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Hierarchy": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "hierarchyInfo": {
+                    "$ref": "#/definitions/HierarchyInfo"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/HierarchyLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "HierarchyInfo": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "powerBiWorkspace": {
+                    "$ref": "#/definitions/PowerBiWorkspace"
+                },
+                "type": {
+                    "$ref": "#/definitions/HierarchyType"
+                }
+            },
+            "type": "object"
+        },
+        "HierarchyLogicalId": {
+            "properties": {
+                "path": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "HierarchyType": {
+            "enum": [
+                "POWER_BI_WORKSPACE",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "KnowledgeCardBase": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "assetLikes": {
+                    "$ref": "#/definitions/AssetLikes"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "description": "Implement a dummy accessor here, the children class will implement the correct one.",
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/KnowledgeCardLogicalId",
+                    "description": "Implemented in {@link KnowledgeCard} output type\nDefinite assignment assertion is safe since it is defined in output subtype.\nThis is due to unresolved TypeScript bug preventing this class from being defined as an abstract class, and\nthen being used in a mixin {@see https://github.com/microsoft/TypeScript/issues/37142}"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "KnowledgeCardLogicalId": {
+            "properties": {
+                "id": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerExplore": {
+            "description": "Captures information of a Looker Explore, https://docs.looker.com/reference/explore-reference",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "baseView": {
+                    "default": "",
+                    "description": "The Looker View which the Explore is based on",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "extends": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "fields": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "filters": {
+                    "items": {
+                        "$ref": "#/definitions/LookerExploreFilter"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "joins": {
+                    "items": {
+                        "$ref": "#/definitions/LookerExploreJoin"
+                    },
+                    "type": "array"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "modelName": {
+                    "default": "",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerExploreFilter": {
+            "properties": {
+                "allowedValues": {
+                    "default": "",
+                    "type": "string"
+                },
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerExploreJoin": {
+            "properties": {
+                "fields": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "onClause": {
+                    "default": "",
+                    "type": "string"
+                },
+                "relationship": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "default": "",
+                    "type": "string"
+                },
+                "view": {
+                    "default": "",
+                    "description": "The Looker View that is joined in the Explore",
+                    "type": "string"
+                },
+                "whereClause": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerView": {
+            "description": "Captures information of a Looker View, https://docs.looker.com/reference/view-reference",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dimensions": {
+                    "items": {
+                        "$ref": "#/definitions/LookerViewDimension"
+                    },
+                    "type": "array"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "extends": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "filters": {
+                    "items": {
+                        "$ref": "#/definitions/LookerViewFilter"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "measures": {
+                    "items": {
+                        "$ref": "#/definitions/LookerViewMeasure"
+                    },
+                    "type": "array"
+                },
+                "sourceDatasets": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerViewDimension": {
+            "properties": {
+                "dataType": {
+                    "default": "",
+                    "type": "string"
+                },
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerViewFilter": {
+            "properties": {
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "type": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "LookerViewMeasure": {
+            "properties": {
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "type": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Map<string,string>": {
+            "properties": {
+                "__@toStringTag@4383": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "MaterializationType": {
+            "enum": [
+                "EXTERNAL",
+                "MATERIALIZED_VIEW",
+                "TABLE",
+                "VIEW"
+            ],
+            "type": "string"
+        },
+        "MetricBase": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dbtMetric": {
+                    "$ref": "#/definitions/DbtMetric"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "forceShown": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "isProduction": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/MetricLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "MetricFilter": {
+            "properties": {
+                "field": {
+                    "default": "",
+                    "type": "string"
+                },
+                "operator": {
+                    "default": "",
+                    "type": "string"
+                },
+                "value": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "MetricLogicalId": {
+            "properties": {
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/MetricType"
+                }
+            },
+            "type": "object"
+        },
+        "MetricType": {
+            "enum": [
+                "DBT_METRIC",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "NamespaceBase": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/NamespaceLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "NamespaceLogicalId": {
+            "properties": {
+                "id": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "ObjectID": {
+            "description": "A class representation of the BSON ObjectId type.",
+            "properties": {
+                "_bsontype": {
+                    "const": "ObjectID",
+                    "type": "string"
+                },
+                "generationTime": {
+                    "description": "The generation time of this ObjectId instance",
+                    "type": "number"
+                },
+                "id": {
+                    "additionalProperties": false,
+                    "description": "The ObjectId bytes",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "number"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "Ownership": {
+            "properties": {
+                "contactDesignationName": {
+                    "default": "",
+                    "type": "string"
+                },
+                "person": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "OwnershipAssignment": {
+            "properties": {
+                "ownerships": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/Ownership"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PersonDetails": {
+            "description": "Defines the attributes shared across input and output types for a Person entity",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/PersonLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "organization": {
+                    "$ref": "#/definitions/PersonOrganization"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PersonLogicalId": {
+            "properties": {
+                "email": {
+                    "default": "unknown@example.com",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PersonOrganization": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "created": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing creator and creation time attributes for the Aspect instance"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "department": {
+                    "type": "string"
+                },
+                "division": {
+                    "type": "string"
+                },
+                "employeeNumber": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "groups": {
+                    "items": {
+                        "$ref": "#/definitions/GroupId"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastModified": {
+                    "$ref": "#/definitions/AuditStamp",
+                    "description": "An AuditStamp containing modification and modifier attributes for the Aspect instance"
+                },
+                "manager": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "Pipeline": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "azureDataFactoryPipeline": {
+                    "$ref": "#/definitions/AzureDataFactoryPipeline"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "fivetran": {
+                    "$ref": "#/definitions/FivetranPipeline"
+                },
+                "forceShown": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "isProduction": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/PipelineLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "powerBiDataflow": {
+                    "$ref": "#/definitions/PowerBIDataflow"
+                },
+                "spark": {
+                    "$ref": "#/definitions/SparkJob"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PipelineInfo": {
+            "description": "PipelineInfo captures related pipeline from data sources to this entity",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pipelineMapping": {
+                    "items": {
+                        "$ref": "#/definitions/PipelineMapping"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PipelineLogicalId": {
+            "properties": {
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/PipelineType"
+                }
+            },
+            "type": "object"
+        },
+        "PipelineMapping": {
+            "properties": {
+                "isVirtual": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "pipelineEntityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sourceEntityId": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PipelineType": {
+            "enum": [
+                "AIRFLOW",
+                "AZURE_DATA_FACTORY_PIPELINE",
+                "FIVETRAN",
+                "POWER_BI_DATAFLOW",
+                "SPARK",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "PowerBIColumn": {
+            "description": "Captures column name of a dataset table, https://docs.microsoft.com/en-us/rest/api/power-bi/admin/workspace-info-get-scan-result#column",
+            "properties": {
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "type": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBIDataflow": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "configuredBy": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dataflowUrl": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "modifiedBy": {
+                    "type": "string"
+                },
+                "modifiedDateTime": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "refreshSchedule": {
+                    "$ref": "#/definitions/PowerBIRefreshSchedule"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBIDataset": {
+            "description": "Captures information of a Power BI Dataset using admin API, https://docs.microsoft.com/en-us/rest/api/power-bi/admin/workspace-info-get-scan-result#workspaceinfodataset",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "endorsement": {
+                    "$ref": "#/definitions/PowerBiEndorsement"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastRefreshed": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sensitivityLabel": {
+                    "$ref": "#/definitions/PowerBiSensitivityLabel"
+                },
+                "sourceDatasets": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "tables": {
+                    "items": {
+                        "$ref": "#/definitions/PowerBIDatasetTable"
+                    },
+                    "type": "array"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "workspaceId": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBIDatasetTable": {
+            "description": "Captures dataset table information of a Power BI Dataset, https://docs.microsoft.com/en-us/rest/api/power-bi/admin/workspace-info-get-scan-result#table",
+            "properties": {
+                "columns": {
+                    "items": {
+                        "$ref": "#/definitions/PowerBIColumn"
+                    },
+                    "type": "array"
+                },
+                "expression": {
+                    "type": "string"
+                },
+                "measures": {
+                    "items": {
+                        "$ref": "#/definitions/PowerBIMeasure"
+                    },
+                    "type": "array"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sources": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBIMeasure": {
+            "description": "Captures Power BI measure of a dataset table, https://docs.microsoft.com/en-us/rest/api/power-bi/admin/workspace-info-get-scan-result#measure",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "expression": {
+                    "default": "",
+                    "type": "string"
+                },
+                "field": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBIRefreshSchedule": {
+            "properties": {
+                "days": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "enabled": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "localTimeZoneId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "notifyOption": {
+                    "default": "",
+                    "type": "string"
+                },
+                "times": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiApp": {
+            "properties": {
+                "id": {
+                    "default": "",
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiDashboardType": {
+            "enum": [
+                "DASHBOARD",
+                "REPORT"
+            ],
+            "type": "string"
+        },
+        "PowerBiDatasetParserContext": {
+            "properties": {
+                "parsedFieldMappings": {
+                    "description": "CLL field mappings that have already been parsed and will be merged with parsed table queries",
+                    "items": {
+                        "$ref": "#/definitions/FieldMapping"
+                    },
+                    "type": "array"
+                },
+                "tables": {
+                    "default": [],
+                    "description": "The PowerBI table name within the PowerBI dataset",
+                    "items": {
+                        "$ref": "#/definitions/PowerBiDatasetTableParserContext"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiDatasetTableParserContext": {
+            "properties": {
+                "fieldTransformation": {
+                    "$ref": "#/definitions/Map<string,string>",
+                    "description": "Field transformation/mapping to apply after SQL query"
+                },
+                "name": {
+                    "default": "",
+                    "description": "The PowerBI table name within the PowerBI dataset",
+                    "type": "string"
+                },
+                "query": {
+                    "default": "",
+                    "description": "The SQL query to parse",
+                    "type": "string"
+                },
+                "sourceAccount": {
+                    "description": "The account of the upstream dataset",
+                    "type": "string"
+                },
+                "sourceDatabase": {
+                    "description": "The database name of the upstream dataset",
+                    "type": "string"
+                },
+                "sourcePlatform": {
+                    "$ref": "#/definitions/DataPlatform",
+                    "description": "The data platform of the upstream dataset"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiEndorsement": {
+            "properties": {
+                "certifiedBy": {
+                    "type": "string"
+                },
+                "endorsement": {
+                    "$ref": "#/definitions/PowerBiEndorsementType"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiEndorsementType": {
+            "enum": [
+                "Certified",
+                "None",
+                "Promoted"
+            ],
+            "type": "string"
+        },
+        "PowerBiInfo": {
+            "properties": {
+                "app": {
+                    "$ref": "#/definitions/PowerBiApp"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "createdDateTime": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "endorsement": {
+                    "$ref": "#/definitions/PowerBiEndorsement"
+                },
+                "modifiedBy": {
+                    "type": "string"
+                },
+                "modifiedDateTime": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "powerBiDashboardType": {
+                    "$ref": "#/definitions/PowerBiDashboardType"
+                },
+                "sensitivityLabel": {
+                    "$ref": "#/definitions/PowerBiSensitivityLabel"
+                },
+                "subscriptions": {
+                    "items": {
+                        "$ref": "#/definitions/PowerBiSubscription"
+                    },
+                    "type": "array"
+                },
+                "workspaceId": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiSensitivityLabel": {
+            "properties": {
+                "description": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "default": "",
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiSubscription": {
+            "properties": {
+                "artifactDisplayName": {
+                    "type": "string"
+                },
+                "endDate": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "frequency": {
+                    "type": "string"
+                },
+                "id": {
+                    "default": "",
+                    "type": "string"
+                },
+                "startDate": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "subArtifactDisplayName": {
+                    "type": "string"
+                },
+                "title": {
+                    "default": "",
+                    "type": "string"
+                },
+                "users": {
+                    "items": {
+                        "$ref": "#/definitions/PowerBiSubscriptionUser"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiSubscriptionUser": {
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "emailAddress": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiWorkspace": {
+            "properties": {
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "url": {
+                    "default": "",
+                    "type": "string"
+                },
+                "users": {
+                    "items": {
+                        "$ref": "#/definitions/PowerBiWorkspaceUser"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "PowerBiWorkspaceUser": {
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "emailAddress": {
+                    "default": "",
+                    "type": "string"
+                },
+                "groupUserAccessRight": {
+                    "enum": [
+                        "Admin",
+                        "Member",
+                        "Viewer"
+                    ],
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "QueryCount": {
+            "description": "Query count number and statistics",
+            "properties": {
+                "count": {
+                    "default": 0,
+                    "type": "number"
+                },
+                "percentile": {
+                    "default": 0,
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "QueryCounts": {
+            "description": "Captures query counts in last day/week/month/year.",
+            "properties": {
+                "last24Hours": {
+                    "$ref": "#/definitions/QueryCount",
+                    "description": "Query count number and statistics"
+                },
+                "last30Days": {
+                    "$ref": "#/definitions/QueryCount",
+                    "description": "Query count number and statistics"
+                },
+                "last365Days": {
+                    "$ref": "#/definitions/QueryCount",
+                    "description": "Query count number and statistics"
+                },
+                "last7Days": {
+                    "$ref": "#/definitions/QueryCount",
+                    "description": "Query count number and statistics"
+                },
+                "last90Days": {
+                    "$ref": "#/definitions/QueryCount",
+                    "description": "Query count number and statistics"
+                }
+            },
+            "type": "object"
+        },
+        "SchemaField": {
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "fieldName": {
+                    "type": "string"
+                },
+                "fieldPath": {
+                    "default": "",
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "isUnique": {
+                    "type": "boolean"
+                },
+                "maxLength": {
+                    "type": "number"
+                },
+                "nativeType": {
+                    "default": "",
+                    "type": "string"
+                },
+                "nullable": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "precision": {
+                    "type": "number"
+                },
+                "subfields": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/SchemaField"
+                        },
+                        {
+                            "items": {
+                                "$ref": "#/definitions/SchemaField"
+                            },
+                            "type": "array"
+                        }
+                    ]
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "SchemaType": {
+            "enum": [
+                "AVRO",
+                "DYNAMODB",
+                "JSON",
+                "ORC",
+                "PARQUET",
+                "PROTOBUF",
+                "SCHEMALESS",
+                "SQL"
+            ],
+            "type": "string"
+        },
+        "SodaDataMonitor": {
+            "properties": {
+                "lastRun": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "owner": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/SodaDataMonitorStatus"
+                },
+                "targets": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/SodaDataMonitorTarget"
+                    },
+                    "type": "array"
+                },
+                "title": {
+                    "default": "",
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "SodaDataMonitorStatus": {
+            "enum": [
+                "ERROR",
+                "PASSED",
+                "UNKNOWN",
+                "WARNING"
+            ],
+            "type": "string"
+        },
+        "SodaDataMonitorTarget": {
+            "properties": {
+                "column": {
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "dataset": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "SodaDataProfile": {
+            "properties": {
+                "column": {
+                    "default": "",
+                    "type": "string"
+                },
+                "lastRun": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "metrics": {
+                    "$ref": "#/definitions/SodaDataProfileMetrics"
+                }
+            },
+            "type": "object"
+        },
+        "SodaDataProfileMetrics": {
+            "properties": {
+                "distinct": {
+                    "default": 0,
+                    "type": "number"
+                },
+                "invalid": {
+                    "default": 0,
+                    "type": "number"
+                },
+                "maximum": {
+                    "type": "number"
+                },
+                "mean": {
+                    "type": "number"
+                },
+                "minimum": {
+                    "type": "number"
+                },
+                "missing": {
+                    "default": 0,
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "SourceField": {
+            "properties": {
+                "dataset": {
+                    "$ref": "#/definitions/DatasetLogicalId"
+                },
+                "field": {
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "sourceEntityId": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "SourceInfo": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mainUrl": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "SparkJob": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sourceCodeUrl": {
+                    "type": "string"
+                },
+                "sql": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "SqlSchema": {
+            "properties": {
+                "foreignKey": {
+                    "items": {
+                        "$ref": "#/definitions/ForeignKey"
+                    },
+                    "type": "array"
+                },
+                "materialization": {
+                    "$ref": "#/definitions/MaterializationType"
+                },
+                "primaryKey": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "tableSchema": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "TableColumnsUsage": {
+            "description": "The columns used in the table join, either in join criteria or filter criteria.",
+            "properties": {
+                "columns": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "count": {
+                    "default": 0,
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "TableJoin": {
+            "description": "Table join usage statistics",
+            "properties": {
+                "scenarios": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/TableJoinScenario"
+                    },
+                    "type": "array"
+                },
+                "totalJoinCount": {
+                    "default": 0,
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "TableJoinScenario": {
+            "description": "Table join scenario, including the tables involved, joining columns, filtering columns, etc.",
+            "properties": {
+                "count": {
+                    "default": 0,
+                    "type": "number"
+                },
+                "datasets": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "filteringColumns": {
+                    "items": {
+                        "$ref": "#/definitions/TableColumnsUsage"
+                    },
+                    "type": "array"
+                },
+                "joiningColumns": {
+                    "items": {
+                        "$ref": "#/definitions/TableColumnsUsage"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "TableJoins": {
+            "description": "Captures table join usage info in last day/week/month/year.",
+            "properties": {
+                "last24Hours": {
+                    "$ref": "#/definitions/TableJoin",
+                    "description": "Table join usage statistics"
+                },
+                "last30Days": {
+                    "$ref": "#/definitions/TableJoin",
+                    "description": "Table join usage statistics"
+                },
+                "last365Days": {
+                    "$ref": "#/definitions/TableJoin",
+                    "description": "Table join usage statistics"
+                },
+                "last7Days": {
+                    "$ref": "#/definitions/TableJoin",
+                    "description": "Table join usage statistics"
+                },
+                "last90Days": {
+                    "$ref": "#/definitions/TableJoin",
+                    "description": "Table join usage statistics"
+                }
+            },
+            "type": "object"
+        },
+        "TableauDatasource": {
+            "description": "Modeling Tableau Datasource as a virtual view. https://help.tableau.com/current/server/en-us/datasource.htm",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "embedded": {
+                    "default": false,
+                    "type": "boolean"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "fields": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/TableauField"
+                    },
+                    "type": "array"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sourceDatasets": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sourceVirtualViews": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "TableauField": {
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "field": {
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "TagAssignment": {
+            "properties": {
+                "columnTagAssignments": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/ColumnTagAssignment"
+                    },
+                    "type": "array"
+                },
+                "tagNames": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "ThoughtSpotColumn": {
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "field": {
+                    "description": "Alias for the path of a field on an Entity",
+                    "type": "string"
+                },
+                "formula": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "optionalType": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "ThoughtSpotDashboardType": {
+            "enum": [
+                "ANSWER",
+                "LIVEBOARD",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        },
+        "ThoughtSpotDataObject": {
+            "description": "Modeling ThoughtSpot DataSource or DataObject in the API into a virtual view.\nDataSource: https://docs.thoughtspot.com/software/latest/data-sources",
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for the aspect creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "aspectType": {
+                    "$ref": "#/definitions/AspectType"
+                },
+                "columns": {
+                    "default": [],
+                    "items": {
+                        "$ref": "#/definitions/ThoughtSpotColumn"
+                    },
+                    "type": "array"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "default": "",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "sourceDatasets": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "sourceVirtualViews": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "tags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "type": {
+                    "$ref": "#/definitions/ThoughtSpotDataObjectType"
+                },
+                "url": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "ThoughtSpotDataObjectType": {
+            "enum": [
+                "TABLE",
+                "UNKNOWN",
+                "VIEW",
+                "WORKSHEET"
+            ],
+            "type": "string"
+        },
+        "ThoughtSpotInfo": {
+            "properties": {
+                "embedUrl": {
+                    "type": "string"
+                },
+                "tags": {
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "type": {
+                    "$ref": "#/definitions/ThoughtSpotDashboardType"
+                }
+            },
+            "type": "object"
+        },
+        "UserDefinedResourceBase": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/UserDefinedResourceLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "UserDefinedResourceLogicalId": {
+            "properties": {
+                "id": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "UserQueryCount": {
+            "description": "Query count number and statistics from a user/account",
+            "properties": {
+                "count": {
+                    "default": 0,
+                    "type": "number"
+                },
+                "user": {
+                    "default": "",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "UserQueryCounts": {
+            "description": "Captures user query counts in last day/week/month/year.",
+            "properties": {
+                "last24Hours": {
+                    "items": {
+                        "$ref": "#/definitions/UserQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last24HoursQueriedByCount": {
+                    "type": "number"
+                },
+                "last30Days": {
+                    "items": {
+                        "$ref": "#/definitions/UserQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last30DaysQueriedByCount": {
+                    "type": "number"
+                },
+                "last365Days": {
+                    "items": {
+                        "$ref": "#/definitions/UserQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last365DaysQueriedByCount": {
+                    "type": "number"
+                },
+                "last7Days": {
+                    "items": {
+                        "$ref": "#/definitions/UserQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last7DaysQueriedByCount": {
+                    "type": "number"
+                },
+                "last90Days": {
+                    "items": {
+                        "$ref": "#/definitions/UserQueryCount"
+                    },
+                    "type": "array"
+                },
+                "last90DaysQueriedByCount": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "VirtualView": {
+            "properties": {
+                "_createdAt": {
+                    "description": "Backing store for an optionally provided creation date",
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "_id": {
+                    "$ref": "#/definitions/ObjectID",
+                    "description": "Native Mongo db BSON id instance"
+                },
+                "_versionedId": {
+                    "description": "Optional protected internal field to store a versionId of the entity, if the instance is versioned",
+                    "type": "string"
+                },
+                "assetContacts": {
+                    "$ref": "#/definitions/AssetContacts"
+                },
+                "assetFollowers": {
+                    "$ref": "#/definitions/AssetFollowers"
+                },
+                "assetGovernedTags": {
+                    "$ref": "#/definitions/AssetGovernedTags"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "dbtModel": {
+                    "$ref": "#/definitions/DbtModel"
+                },
+                "deletedAt": {
+                    "anyOf": [
+                        {
+                            "format": "date-time",
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "entityType": {
+                    "$ref": "#/definitions/EntityType"
+                },
+                "entityUpstream": {
+                    "$ref": "#/definitions/EntityUpstream",
+                    "description": "EntityUpstream captures upstream lineages from data sources to this entity"
+                },
+                "forceShown": {
+                    "$ref": "#/definitions/AuditStamp"
+                },
+                "fullName": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "A getter for the id property that's directly generated from the\nentity type & logical ID.",
+                    "type": "string"
+                },
+                "isComplete": {
+                    "type": "boolean"
+                },
+                "isDeleted": {
+                    "type": "boolean"
+                },
+                "isProduction": {
+                    "default": true,
+                    "type": "boolean"
+                },
+                "lastIngestedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "lastModifiedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "logicalId": {
+                    "$ref": "#/definitions/VirtualViewLogicalId",
+                    "description": "Identify an entity \"logically\".\nEach entity must have a logicalId to be ingested.\nA compelling use-case is that this allows a producer to create an\ninstance of the Entity without requiring an entity ID to be\nobtained prior to instantiation, potentially resulting in two round-trips"
+                },
+                "lookerExplore": {
+                    "$ref": "#/definitions/LookerExplore",
+                    "description": "Captures information of a Looker Explore, https://docs.looker.com/reference/explore-reference"
+                },
+                "lookerView": {
+                    "$ref": "#/definitions/LookerView",
+                    "description": "Captures information of a Looker View, https://docs.looker.com/reference/view-reference"
+                },
+                "ownershipAssignment": {
+                    "$ref": "#/definitions/OwnershipAssignment"
+                },
+                "pipelineInfo": {
+                    "$ref": "#/definitions/PipelineInfo",
+                    "description": "PipelineInfo captures related pipeline from data sources to this entity"
+                },
+                "powerBIDataset": {
+                    "$ref": "#/definitions/PowerBIDataset",
+                    "description": "Captures information of a Power BI Dataset using admin API, https://docs.microsoft.com/en-us/rest/api/power-bi/admin/workspace-info-get-scan-result#workspaceinfodataset"
+                },
+                "structure": {
+                    "$ref": "#/definitions/AssetStructure"
+                },
+                "tableauDatasource": {
+                    "$ref": "#/definitions/TableauDatasource",
+                    "description": "Modeling Tableau Datasource as a virtual view. https://help.tableau.com/current/server/en-us/datasource.htm"
+                },
+                "tagAssignment": {
+                    "$ref": "#/definitions/TagAssignment"
+                },
+                "thoughtSpot": {
+                    "$ref": "#/definitions/ThoughtSpotDataObject",
+                    "description": "Modeling ThoughtSpot DataSource or DataObject in the API into a virtual view.\nDataSource: https://docs.thoughtspot.com/software/latest/data-sources"
+                },
+                "versionedId": {
+                    "description": "Write-only api to set a versionId of the entity, if the instance is versioned\nThis allows the versionedId to be maintained on the entity e.g. when an instance is created by the factory",
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "VirtualViewLogicalId": {
+            "properties": {
+                "name": {
+                    "default": "",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/VirtualViewType"
+                }
+            },
+            "type": "object"
+        },
+        "VirtualViewType": {
+            "enum": [
+                "DBT_MODEL",
+                "LOOKER_EXPLORE",
+                "LOOKER_VIEW",
+                "POWER_BI_DATASET",
+                "TABLEAU_DATASOURCE",
+                "THOUGHT_SPOT_DATA_OBJECT",
+                "UNKNOWN"
+            ],
+            "type": "string"
+        }
+    },
+    "properties": {
+        "entity": {
+            "$ref": "#/definitions/Entity",
+            "description": "The original entity for the parser to process"
+        },
+        "powerBiDataset": {
+            "$ref": "#/definitions/PowerBiDatasetParserContext",
+            "description": "The PowerBI dataset native queries to parse"
+        }
+    },
+    "type": "object"
+}
+
