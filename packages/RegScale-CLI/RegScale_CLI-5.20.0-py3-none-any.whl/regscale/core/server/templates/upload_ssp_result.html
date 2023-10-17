@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .level-info {
+        color: blue
+    }
+
+    .level-warning {
+        color: yellow
+    }
+
+    .level-error {
+        color: red
+    }
+</style>
+<div class="row">
+    <div class="col-md-12">
+        <div style="padding: '10px'; display: 'grid'; justify-items: 'center'; align-items: 'center'; width: '100%';">
+            <div style="display: grid; justify-items: center; align-items: center;">
+                <h2>SSP Processing Results for {{ filename }}</h2>
+                <br>
+                <h1>System Security Plan Created!</h1>
+                <h3 style="padding: 5px;"><i>"{{result_output.ssp_title}}" (# {{ result_output.ssp_id }}) in
+                        RegScale</i></h3>
+                <br>
+                <a href="{{ site_info.domain }}/securityplans/form/{{ result_output.ssp_id }}"
+                    style="text-align: center;"">
+                <button type=" button" class="btn btn-primary">View New SSP In RegScale</button>
+                </a>
+            </div>
+            <hr>
+            <div class="col-md-12 border bg-light" style="padding: 20px; border-radius: 10px;">
+                <h2>SSP Mapping Overview</h2>
+                <div style="padding: 10px; border-radius: 10px;">
+                    <h2>⚙️ <b>{{ results.Info + results.Error }}</b> Records Processed</h2>
+                    <h3>📄 <b>{{ implementation_results }}</b> Controls Imported</h3>
+                    <h3>✅ <b>{{ results.Info }}</b> Mapped Records</h3>
+                    <h3>❌ <b>{{ results.Error }}</b> Mapping Errors</h3>
+                    <hr>
+                    <h3><i>Mapping Success Rate:</i> {{ (results.Info / (results.Info + results.Error) *
+                        100)|round(1)}}%</h3>
+
+                </div>
+            </div>
+            <hr>
+            <div class="col-md-12 border bg-light" style="padding: 20px; border-radius: 10px;">
+                <h3>Category Counts</h3>
+                <ul>
+                    {% for item in category_counts.items() %}
+                    <li>{{ item[0] }}: {{ item[1] }}</li>
+                    {% endfor %}
+                </ul>
+                <br>
+            </div>
+        </div>
+        <hr>
+        <div class="col-md-12">
+            <div class="p-12 border bg-light" style="padding: 10px; border-radius: 10px;">
+
+                {% for level, rows in csv_data_grouped.items()%}
+                <h2 class="level-{{ level|lower }}">{{ level }} Results</h2>
+                <caption><i>The {{ level|lower }} statements found in the document.</i></caption>
+                <table style="overflow-x: hidden;">
+                    <tr>
+                        <th>TimeStamp</th>
+                        <th>NIST Model Layer</th>
+                        <th>Record Type</th>
+                        <th>Event</th>
+                    </tr>
+                    {% for row in rows %}
+                    <tr>
+                        <td>{{ row['timestamp'] }}</td>
+                        <td>{{ row['model_layer'] }}</td>
+                        <td>{{ row['record_type'] }}</td>
+                        <td style="text-overflow: ellipsis;">{{ row['event'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    {% endblock %}

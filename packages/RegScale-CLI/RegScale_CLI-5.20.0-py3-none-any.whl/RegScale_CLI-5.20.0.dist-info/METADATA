@@ -1,0 +1,510 @@
+Metadata-Version: 2.1
+Name: RegScale-CLI
+Version: 5.20.0
+Summary: Command Line Interface (CLI) for bulk processing/loading data into RegScale
+Home-page: https://github.com/RegScale/regscale-cli
+Author: Travis Howerton
+Author-email: thowerton@regscale.com
+License: MIT
+Platform: UNKNOWN
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: PyMuPDF (==1.21.0)
+Requires-Dist: PyYAML (==6.0.1)
+Requires-Dist: beautifulsoup4
+Requires-Dist: boto3 (==1.26.119)
+Requires-Dist: bs4
+Requires-Dist: click (==8.1.3)
+Requires-Dist: colorama (==0.4.5)
+Requires-Dist: crowdstrike-falconpy (==1.2.15)
+Requires-Dist: cryptography (>=39.0.1)
+Requires-Dist: docx (==0.2.4)
+Requires-Dist: fitz (==0.0.1.dev2)
+Requires-Dist: frontend
+Requires-Dist: inflect
+Requires-Dist: jira (==3.5.0)
+Requires-Dist: jwcrypto (==1.4.2)
+Requires-Dist: lxml (==4.9.*)
+Requires-Dist: markdown
+Requires-Dist: matplotlib
+Requires-Dist: msal (==1.18.0)
+Requires-Dist: numpy (==1.23.3)
+Requires-Dist: openpyxl
+Requires-Dist: pandas
+Requires-Dist: pdfplumber (==0.7.6)
+Requires-Dist: pre-commit
+Requires-Dist: pyTenable
+Requires-Dist: pydantic (==1.10.*)
+Requires-Dist: pytest
+Requires-Dist: python-docx
+Requires-Dist: python-jwt (==4.0.0)
+Requires-Dist: pyxnat (==1.5.*)
+Requires-Dist: regscale-python-ssp
+Requires-Dist: requests (>=2.31.0)
+Requires-Dist: rich (==13.3.4)
+Requires-Dist: setuptools
+Requires-Dist: simple-salesforce
+Requires-Dist: static
+Requires-Dist: tools
+Requires-Dist: wheel
+Requires-Dist: xmltodict
+Provides-Extra: airflow
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'airflow'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'airflow'
+Requires-Dist: apache-airflow-providers-common-sql ; extra == 'airflow'
+Requires-Dist: apache-airflow-providers-postgres ; extra == 'airflow'
+Requires-Dist: apache-airflow (==2.7.1) ; extra == 'airflow'
+Requires-Dist: beautifulsoup4 ; extra == 'airflow'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'airflow'
+Requires-Dist: bs4 ; extra == 'airflow'
+Requires-Dist: click (==8.1.3) ; extra == 'airflow'
+Requires-Dist: colorama (==0.4.5) ; extra == 'airflow'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'airflow'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'airflow'
+Requires-Dist: docx (==0.2.4) ; extra == 'airflow'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'airflow'
+Requires-Dist: flask (<2.3) ; extra == 'airflow'
+Requires-Dist: frontend ; extra == 'airflow'
+Requires-Dist: inflect ; extra == 'airflow'
+Requires-Dist: jinja2 ; extra == 'airflow'
+Requires-Dist: jira (==3.5.0) ; extra == 'airflow'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'airflow'
+Requires-Dist: lxml (==4.9.*) ; extra == 'airflow'
+Requires-Dist: markdown ; extra == 'airflow'
+Requires-Dist: matplotlib ; extra == 'airflow'
+Requires-Dist: msal (==1.18.0) ; extra == 'airflow'
+Requires-Dist: numpy (==1.23.3) ; extra == 'airflow'
+Requires-Dist: openpyxl ; extra == 'airflow'
+Requires-Dist: pandas ; extra == 'airflow'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'airflow'
+Requires-Dist: pre-commit ; extra == 'airflow'
+Requires-Dist: psycopg2-binary ; extra == 'airflow'
+Requires-Dist: pyTenable ; extra == 'airflow'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'airflow'
+Requires-Dist: pytest ; extra == 'airflow'
+Requires-Dist: python-docx ; extra == 'airflow'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'airflow'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'airflow'
+Requires-Dist: regscale-python-ssp ; extra == 'airflow'
+Requires-Dist: requests (>=2.31.0) ; extra == 'airflow'
+Requires-Dist: rich (==13.3.4) ; extra == 'airflow'
+Requires-Dist: setuptools ; extra == 'airflow'
+Requires-Dist: simple-salesforce ; extra == 'airflow'
+Requires-Dist: static ; extra == 'airflow'
+Requires-Dist: tools ; extra == 'airflow'
+Requires-Dist: wheel ; extra == 'airflow'
+Requires-Dist: xmltodict ; extra == 'airflow'
+Provides-Extra: airflow-azure
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'airflow-azure'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'airflow-azure'
+Requires-Dist: apache-airflow-providers-common-sql ; extra == 'airflow-azure'
+Requires-Dist: apache-airflow-providers-microsoft-azure ; extra == 'airflow-azure'
+Requires-Dist: apache-airflow-providers-postgres ; extra == 'airflow-azure'
+Requires-Dist: apache-airflow (==2.7.1) ; extra == 'airflow-azure'
+Requires-Dist: azure-storage-blob ; extra == 'airflow-azure'
+Requires-Dist: beautifulsoup4 ; extra == 'airflow-azure'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'airflow-azure'
+Requires-Dist: bs4 ; extra == 'airflow-azure'
+Requires-Dist: click (==8.1.3) ; extra == 'airflow-azure'
+Requires-Dist: colorama (==0.4.5) ; extra == 'airflow-azure'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'airflow-azure'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'airflow-azure'
+Requires-Dist: docx (==0.2.4) ; extra == 'airflow-azure'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'airflow-azure'
+Requires-Dist: flask (<2.3) ; extra == 'airflow-azure'
+Requires-Dist: frontend ; extra == 'airflow-azure'
+Requires-Dist: inflect ; extra == 'airflow-azure'
+Requires-Dist: jinja2 ; extra == 'airflow-azure'
+Requires-Dist: jira (==3.5.0) ; extra == 'airflow-azure'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'airflow-azure'
+Requires-Dist: lxml (==4.9.*) ; extra == 'airflow-azure'
+Requires-Dist: markdown ; extra == 'airflow-azure'
+Requires-Dist: matplotlib ; extra == 'airflow-azure'
+Requires-Dist: msal (==1.18.0) ; extra == 'airflow-azure'
+Requires-Dist: numpy (==1.23.3) ; extra == 'airflow-azure'
+Requires-Dist: openpyxl ; extra == 'airflow-azure'
+Requires-Dist: pandas ; extra == 'airflow-azure'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'airflow-azure'
+Requires-Dist: pre-commit ; extra == 'airflow-azure'
+Requires-Dist: psycopg2-binary ; extra == 'airflow-azure'
+Requires-Dist: pyTenable ; extra == 'airflow-azure'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'airflow-azure'
+Requires-Dist: pytest ; extra == 'airflow-azure'
+Requires-Dist: python-docx ; extra == 'airflow-azure'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'airflow-azure'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'airflow-azure'
+Requires-Dist: regscale-python-ssp ; extra == 'airflow-azure'
+Requires-Dist: requests (>=2.31.0) ; extra == 'airflow-azure'
+Requires-Dist: rich (==13.3.4) ; extra == 'airflow-azure'
+Requires-Dist: setuptools ; extra == 'airflow-azure'
+Requires-Dist: simple-salesforce ; extra == 'airflow-azure'
+Requires-Dist: static ; extra == 'airflow-azure'
+Requires-Dist: tools ; extra == 'airflow-azure'
+Requires-Dist: wheel ; extra == 'airflow-azure'
+Requires-Dist: xmltodict ; extra == 'airflow-azure'
+Provides-Extra: airflow-sqlserver
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'airflow-sqlserver'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'airflow-sqlserver'
+Requires-Dist: apache-airflow-providers-common-sql ; extra == 'airflow-sqlserver'
+Requires-Dist: apache-airflow-providers-microsoft-mssql ; extra == 'airflow-sqlserver'
+Requires-Dist: apache-airflow-providers-postgres ; extra == 'airflow-sqlserver'
+Requires-Dist: apache-airflow (==2.7.1) ; extra == 'airflow-sqlserver'
+Requires-Dist: beautifulsoup4 ; extra == 'airflow-sqlserver'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'airflow-sqlserver'
+Requires-Dist: bs4 ; extra == 'airflow-sqlserver'
+Requires-Dist: click (==8.1.3) ; extra == 'airflow-sqlserver'
+Requires-Dist: colorama (==0.4.5) ; extra == 'airflow-sqlserver'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'airflow-sqlserver'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'airflow-sqlserver'
+Requires-Dist: docx (==0.2.4) ; extra == 'airflow-sqlserver'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'airflow-sqlserver'
+Requires-Dist: flask (<2.3) ; extra == 'airflow-sqlserver'
+Requires-Dist: frontend ; extra == 'airflow-sqlserver'
+Requires-Dist: inflect ; extra == 'airflow-sqlserver'
+Requires-Dist: jinja2 ; extra == 'airflow-sqlserver'
+Requires-Dist: jira (==3.5.0) ; extra == 'airflow-sqlserver'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'airflow-sqlserver'
+Requires-Dist: lxml (==4.9.*) ; extra == 'airflow-sqlserver'
+Requires-Dist: markdown ; extra == 'airflow-sqlserver'
+Requires-Dist: matplotlib ; extra == 'airflow-sqlserver'
+Requires-Dist: msal (==1.18.0) ; extra == 'airflow-sqlserver'
+Requires-Dist: numpy (==1.23.3) ; extra == 'airflow-sqlserver'
+Requires-Dist: openpyxl ; extra == 'airflow-sqlserver'
+Requires-Dist: pandas ; extra == 'airflow-sqlserver'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'airflow-sqlserver'
+Requires-Dist: pre-commit ; extra == 'airflow-sqlserver'
+Requires-Dist: psycopg2-binary ; extra == 'airflow-sqlserver'
+Requires-Dist: pyTenable ; extra == 'airflow-sqlserver'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'airflow-sqlserver'
+Requires-Dist: pymssql ; extra == 'airflow-sqlserver'
+Requires-Dist: pyodbc ; extra == 'airflow-sqlserver'
+Requires-Dist: pytest ; extra == 'airflow-sqlserver'
+Requires-Dist: python-docx ; extra == 'airflow-sqlserver'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'airflow-sqlserver'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'airflow-sqlserver'
+Requires-Dist: regscale-python-ssp ; extra == 'airflow-sqlserver'
+Requires-Dist: requests (>=2.31.0) ; extra == 'airflow-sqlserver'
+Requires-Dist: rich (==13.3.4) ; extra == 'airflow-sqlserver'
+Requires-Dist: setuptools ; extra == 'airflow-sqlserver'
+Requires-Dist: simple-salesforce ; extra == 'airflow-sqlserver'
+Requires-Dist: static ; extra == 'airflow-sqlserver'
+Requires-Dist: tools ; extra == 'airflow-sqlserver'
+Requires-Dist: wheel ; extra == 'airflow-sqlserver'
+Requires-Dist: xmltodict ; extra == 'airflow-sqlserver'
+Provides-Extra: all
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'all'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'all'
+Requires-Dist: ansible ; extra == 'all'
+Requires-Dist: apache-airflow-providers-common-sql ; extra == 'all'
+Requires-Dist: apache-airflow-providers-postgres ; extra == 'all'
+Requires-Dist: apache-airflow (==2.7.1) ; extra == 'all'
+Requires-Dist: beautifulsoup4 ; extra == 'all'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'all'
+Requires-Dist: bs4 ; extra == 'all'
+Requires-Dist: click (==8.1.3) ; extra == 'all'
+Requires-Dist: colorama (==0.4.5) ; extra == 'all'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'all'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'all'
+Requires-Dist: docx (==0.2.4) ; extra == 'all'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'all'
+Requires-Dist: flask-apispec ; extra == 'all'
+Requires-Dist: flask-rebar ; extra == 'all'
+Requires-Dist: flask-restx ; extra == 'all'
+Requires-Dist: flask (<2.3) ; extra == 'all'
+Requires-Dist: frontend ; extra == 'all'
+Requires-Dist: inflect ; extra == 'all'
+Requires-Dist: jinja2 ; extra == 'all'
+Requires-Dist: jira (==3.5.0) ; extra == 'all'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'all'
+Requires-Dist: lxml (==4.9.*) ; extra == 'all'
+Requires-Dist: markdown ; extra == 'all'
+Requires-Dist: matplotlib ; extra == 'all'
+Requires-Dist: msal (==1.18.0) ; extra == 'all'
+Requires-Dist: numpy (==1.23.3) ; extra == 'all'
+Requires-Dist: openpyxl ; extra == 'all'
+Requires-Dist: pandas ; extra == 'all'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'all'
+Requires-Dist: pre-commit ; extra == 'all'
+Requires-Dist: psycopg2-binary ; extra == 'all'
+Requires-Dist: pyTenable ; extra == 'all'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'all'
+Requires-Dist: pytest ; extra == 'all'
+Requires-Dist: python-docx ; extra == 'all'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'all'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'all'
+Requires-Dist: regscale-python-ssp ; extra == 'all'
+Requires-Dist: requests (>=2.31.0) ; extra == 'all'
+Requires-Dist: rich (==13.3.4) ; extra == 'all'
+Requires-Dist: setuptools ; extra == 'all'
+Requires-Dist: simple-salesforce ; extra == 'all'
+Requires-Dist: static ; extra == 'all'
+Requires-Dist: tools ; extra == 'all'
+Requires-Dist: wheel ; extra == 'all'
+Requires-Dist: xmltodict ; extra == 'all'
+Provides-Extra: ansible
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'ansible'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'ansible'
+Requires-Dist: ansible ; extra == 'ansible'
+Requires-Dist: beautifulsoup4 ; extra == 'ansible'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'ansible'
+Requires-Dist: bs4 ; extra == 'ansible'
+Requires-Dist: click (==8.1.3) ; extra == 'ansible'
+Requires-Dist: colorama (==0.4.5) ; extra == 'ansible'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'ansible'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'ansible'
+Requires-Dist: docx (==0.2.4) ; extra == 'ansible'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'ansible'
+Requires-Dist: frontend ; extra == 'ansible'
+Requires-Dist: inflect ; extra == 'ansible'
+Requires-Dist: jinja2 ; extra == 'ansible'
+Requires-Dist: jira (==3.5.0) ; extra == 'ansible'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'ansible'
+Requires-Dist: lxml (==4.9.*) ; extra == 'ansible'
+Requires-Dist: markdown ; extra == 'ansible'
+Requires-Dist: matplotlib ; extra == 'ansible'
+Requires-Dist: msal (==1.18.0) ; extra == 'ansible'
+Requires-Dist: numpy (==1.23.3) ; extra == 'ansible'
+Requires-Dist: openpyxl ; extra == 'ansible'
+Requires-Dist: pandas ; extra == 'ansible'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'ansible'
+Requires-Dist: pre-commit ; extra == 'ansible'
+Requires-Dist: pyTenable ; extra == 'ansible'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'ansible'
+Requires-Dist: pytest ; extra == 'ansible'
+Requires-Dist: python-docx ; extra == 'ansible'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'ansible'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'ansible'
+Requires-Dist: regscale-python-ssp ; extra == 'ansible'
+Requires-Dist: requests (>=2.31.0) ; extra == 'ansible'
+Requires-Dist: rich (==13.3.4) ; extra == 'ansible'
+Requires-Dist: setuptools ; extra == 'ansible'
+Requires-Dist: simple-salesforce ; extra == 'ansible'
+Requires-Dist: static ; extra == 'ansible'
+Requires-Dist: tools ; extra == 'ansible'
+Requires-Dist: wheel ; extra == 'ansible'
+Requires-Dist: xmltodict ; extra == 'ansible'
+Provides-Extra: dev
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'dev'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'dev'
+Requires-Dist: beautifulsoup4 ; extra == 'dev'
+Requires-Dist: black ; extra == 'dev'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'dev'
+Requires-Dist: bs4 ; extra == 'dev'
+Requires-Dist: click (==8.1.3) ; extra == 'dev'
+Requires-Dist: colorama (==0.4.5) ; extra == 'dev'
+Requires-Dist: coveralls ; extra == 'dev'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'dev'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'dev'
+Requires-Dist: docx (==0.2.4) ; extra == 'dev'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'dev'
+Requires-Dist: flake8 ; extra == 'dev'
+Requires-Dist: flask ; extra == 'dev'
+Requires-Dist: flask (<2.3) ; extra == 'dev'
+Requires-Dist: frontend ; extra == 'dev'
+Requires-Dist: inflect ; extra == 'dev'
+Requires-Dist: isort ; extra == 'dev'
+Requires-Dist: jira (==3.5.0) ; extra == 'dev'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'dev'
+Requires-Dist: lxml-stubs ; extra == 'dev'
+Requires-Dist: lxml (==4.9.*) ; extra == 'dev'
+Requires-Dist: markdown ; extra == 'dev'
+Requires-Dist: matplotlib ; extra == 'dev'
+Requires-Dist: moto ; extra == 'dev'
+Requires-Dist: msal (==1.18.0) ; extra == 'dev'
+Requires-Dist: numpy (==1.23.3) ; extra == 'dev'
+Requires-Dist: openpyxl ; extra == 'dev'
+Requires-Dist: pandas ; extra == 'dev'
+Requires-Dist: pandas-stubs ; extra == 'dev'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'dev'
+Requires-Dist: pre-commit ; extra == 'dev'
+Requires-Dist: pyTenable ; extra == 'dev'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'dev'
+Requires-Dist: pylint ; extra == 'dev'
+Requires-Dist: pytest ; extra == 'dev'
+Requires-Dist: pytest-cov ; extra == 'dev'
+Requires-Dist: pytest-mock ; extra == 'dev'
+Requires-Dist: pytest (>=5) ; extra == 'dev'
+Requires-Dist: python-docx ; extra == 'dev'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'dev'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'dev'
+Requires-Dist: regscale-python-ssp ; extra == 'dev'
+Requires-Dist: requests (>=2.31.0) ; extra == 'dev'
+Requires-Dist: rich (==13.3.4) ; extra == 'dev'
+Requires-Dist: setuptools ; extra == 'dev'
+Requires-Dist: simple-salesforce ; extra == 'dev'
+Requires-Dist: static ; extra == 'dev'
+Requires-Dist: tools ; extra == 'dev'
+Requires-Dist: types-python-dateutil ; extra == 'dev'
+Requires-Dist: types-pyyaml ; extra == 'dev'
+Requires-Dist: types-requests ; extra == 'dev'
+Requires-Dist: watchdog ; extra == 'dev'
+Requires-Dist: wheel ; extra == 'dev'
+Requires-Dist: xmltodict ; extra == 'dev'
+Provides-Extra: server
+Requires-Dist: PyMuPDF (==1.21.0) ; extra == 'server'
+Requires-Dist: PyYAML (==6.0.1) ; extra == 'server'
+Requires-Dist: beautifulsoup4 ; extra == 'server'
+Requires-Dist: boto3 (==1.26.119) ; extra == 'server'
+Requires-Dist: bs4 ; extra == 'server'
+Requires-Dist: click (==8.1.3) ; extra == 'server'
+Requires-Dist: colorama (==0.4.5) ; extra == 'server'
+Requires-Dist: crowdstrike-falconpy (==1.2.15) ; extra == 'server'
+Requires-Dist: cryptography (>=39.0.1) ; extra == 'server'
+Requires-Dist: docx (==0.2.4) ; extra == 'server'
+Requires-Dist: fitz (==0.0.1.dev2) ; extra == 'server'
+Requires-Dist: flask-apispec ; extra == 'server'
+Requires-Dist: flask-rebar ; extra == 'server'
+Requires-Dist: flask-restx ; extra == 'server'
+Requires-Dist: flask (<2.3) ; extra == 'server'
+Requires-Dist: frontend ; extra == 'server'
+Requires-Dist: inflect ; extra == 'server'
+Requires-Dist: jira (==3.5.0) ; extra == 'server'
+Requires-Dist: jwcrypto (==1.4.2) ; extra == 'server'
+Requires-Dist: lxml (==4.9.*) ; extra == 'server'
+Requires-Dist: markdown ; extra == 'server'
+Requires-Dist: matplotlib ; extra == 'server'
+Requires-Dist: msal (==1.18.0) ; extra == 'server'
+Requires-Dist: numpy (==1.23.3) ; extra == 'server'
+Requires-Dist: openpyxl ; extra == 'server'
+Requires-Dist: pandas ; extra == 'server'
+Requires-Dist: pdfplumber (==0.7.6) ; extra == 'server'
+Requires-Dist: pre-commit ; extra == 'server'
+Requires-Dist: pyTenable ; extra == 'server'
+Requires-Dist: pydantic (==1.10.*) ; extra == 'server'
+Requires-Dist: pytest ; extra == 'server'
+Requires-Dist: python-docx ; extra == 'server'
+Requires-Dist: python-jwt (==4.0.0) ; extra == 'server'
+Requires-Dist: pyxnat (==1.5.*) ; extra == 'server'
+Requires-Dist: regscale-python-ssp ; extra == 'server'
+Requires-Dist: requests (>=2.31.0) ; extra == 'server'
+Requires-Dist: rich (==13.3.4) ; extra == 'server'
+Requires-Dist: setuptools ; extra == 'server'
+Requires-Dist: simple-salesforce ; extra == 'server'
+Requires-Dist: static ; extra == 'server'
+Requires-Dist: tools ; extra == 'server'
+Requires-Dist: wheel ; extra == 'server'
+Requires-Dist: xmltodict ; extra == 'server'
+
+# RegScale Command Line Interface (CLI)
+
+This CLI application is for supporting advanced automation and bulk data processing related to the [RegScale Compliance Automation Platform](https://www.regscale.com).  This application is intended to run as a "side car" that be scheduled via CRON job or serverless function to perform sophisticated data processing.  The CLI includes multiple libraries for processing data, connecting to RegScale Application Programming Interfaces (APIs), and commercial integrations.  This software may be packaged and included in other commercial software to lower the level of effort associated with building RegScale integrations to other commercial tools.
+
+See [full documentation on regscale.readme.io](https://regscale.readme.io/docs/overview).
+
+See [RegScale CLI Standards](https://regscale.atlassian.net/l/cp/AVWc8dK8) for developer standards.
+
+See [RegScale GraphQL](https://regscale.atlassian.net/l/cp/h8M3YzbS) for documenation on working with RegScale GraphQL API and [GraphQL CLI](https://regscale.atlassian.net/wiki/spaces/RW/pages/52428951/RegScale+CLI+Standards#GraphQL-Queries) on incorporating it into the CLI.
+
+[![Code Check](https://github.com/RegScale/regscale-cli/actions/workflows/code_check.yml/badge.svg)](https://github.com/RegScale/regscale-cli/actions/workflows/code_check.yml)
+[![Run Tests](https://github.com/RegScale/regscale-cli/actions/workflows/test.yaml/badge.svg)](https://github.com/RegScale/regscale-cli/actions/workflows/test.yaml)
+
+## Installation
+
+Create a virtual environment and install required Python libraries.
+
+```shell
+# create and activate python virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# upgrade pip
+pip install --upgrade pip
+
+# install application
+pip install .
+
+# optional: install application with "dev" packages
+pip install ".[dev]"
+
+# initialize environment
+
+```
+
+## Initialization
+
+Initialize your CLI environment with the `init` command:
+
+```shell
+# initialize environment
+regscale init
+```
+
+The CLI will generate a default init.yaml file and prompt you for RegScale domain and to log in:
+
+```shell
+Initializing your RegScale CLI environment...
+Would you like to change your RegScale domain from https://regscale.yourcompany.com/? (Y/n): y
+
+Please enter your RegScale domain.
+Example: https://mydomain.regscale.com/
+Domain: https://regscale.mycomapny.com
+[2023/01/20 04:32;41] INFO     [2023/01/20 04:32;41] [INFO ]  Valid URL provided, regscale.py:349
+                               init.yaml has been updated.                                       
+Would you like to log in to your RegScale instance? (Y/n): y
+Please enter your username: rross
+Please enter your password:
+```
+
+## Use Cases
+
+- Sidecar for bulk processing compliance data such as vulnerability scans or continuous monitoring logs
+- Processing and ingest of data such as National Institute of Standards and Technology (NIST) Open Security Control Assessment Language (OSCAL)
+- Running CRON jobs to bulk-process data
+- Managing users and identities from external sources
+- Threat intelligence feeds
+
+## Specific Integrations
+
+- See the [RegScale Documentation](https://regscale.readme.io/docs/overview) for details.
+
+## Running Locally
+
+- Example for running locally on Windows
+
+`py regscale.py about`
+
+## Testing
+
+Run `pytest -v ./tests/{test_filename}.py` and replace `{test_filename}` with name of test file.
+
+## Release Process
+
+### Preparation
+1. Merge all desired branches into main.
+2. Synchronize `app._version.__version__` with RegScale application version.
+3. Test all Python packages have been added to `requirements.txt` and `setup.py`.
+4. Update `CHANGELOG.md`
+
+### Build Python Package
+1. Run `release.sh` to create
+2. Test built package from [https://test.pypi.org/project/RegScale-CLI/](https://test.pypi.org/project/RegScale-CLI/)
+
+```shell
+mkdir rsc
+cd rsc
+python3 -m venv venv
+source venv/bin/activate
+pip install --extra-index-url https://test.pypi.org/simple/ RegScale-CLI
+
+# alternative install
+pip install -i https://test.pypi.org/simple/RegScale-CLI
+
+```
+
+The `release.sh` script calls `build.sh` and `build_wheel.sh`. The built wheel file for the package is available in the created `dist` directory.
+
+### Build Docker Container
+1. Run the `docker_run.sh` script.
+
+### Release
+1. Prepare release on GitHub. The Release will upload the Python packge to pypi.org.
+
+### Update Documentation
+1. Update documentation on [CLI documentation on regscale.readme.io](https://regscale.readme.io/docs/overview).
+
+

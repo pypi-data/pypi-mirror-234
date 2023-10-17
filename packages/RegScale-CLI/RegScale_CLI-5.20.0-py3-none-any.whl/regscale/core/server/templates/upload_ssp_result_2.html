@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+
+        <div class="row">
+            <div class="col-md-12">
+                <h1>SSP Processing Results</h1>
+            </div>
+
+            <!-- First div taking 6 columns -->
+            <div class="col-md-6">
+                <div class="p-3 border bg-light">
+
+                    {% for level, rows in csv_data_grouped.items() if level=="Info" %}
+                        <h2>{{ level }} Results</h2>
+                        <table>
+                            <caption>"Table of Info Results."</caption>
+                            <tr>
+                                <th>TimeStamp</th>
+                                <th>NIST Model Layer</th>
+                                <th>Record Type</th>
+                                <th>Event</th>
+                            </tr>
+                            {% for row in rows %}
+                                <tr>
+                                    <td>{{ row['TimeStamp'] }}</td>
+                                    <td>{{ row['NIST Model Layer'] }}</td>
+                                    <td>{{ row['Record Type'] }}</td>
+                                    <td>{{ row['Event'] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Second div taking 6 columns -->
+            <div class="col-md-6">
+                <div class="p-3 border bg-light">
+
+                    {% for level, rows in csv_data_grouped.items() if level=="Error" %}
+                        <h2>{{ level }} Results</h2>
+                        <table>
+                            <caption>Table of Error results.</caption>
+                            <tr>
+                                <th>TimeStamp</th>
+                                <th>NIST Model Layer</th>
+                                <th>Record Type</th>
+                                <th>Event</th>
+                            </tr>
+                            {% for row in rows %}
+                                <tr>
+                                    <td>{{ row['TimeStamp'] }}</td>
+                                    <td>{{ row['NIST Model Layer'] }}</td>
+                                    <td>{{ row['Record Type'] }}</td>
+                                    <td>{{ row['Event'] }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <h2>Result Output:</h2>
+            </div>
+
+            <div class="col-md-12">
+                {% macro render_tree(tree) %}
+                <ul>
+                    {% for key, value in tree.items() %}
+                        <li>{{ key }}: {% if value is mapping %}{{ render_tree(value) }}{% else %}{{ value }}{% endif %}</li>
+                    {% endfor %}
+                </ul>
+            {% endmacro %}
+            {{ render_tree(result_output) }}
+        </div>
+    </div>
+
+{% endblock %}

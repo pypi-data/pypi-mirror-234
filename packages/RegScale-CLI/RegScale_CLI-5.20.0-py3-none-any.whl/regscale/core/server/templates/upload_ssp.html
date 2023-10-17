@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <h1>Upload FedRAMP SSP File to <a href="{{ site_info.domain }}">{{ site_info.domain }}</a></h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <form action="{{ url_for('process_file') }}" method="post" enctype="multipart/form-data">
+            <div class="file-upload">
+                <label for="fedramp_version">Select FedRAMP Version:</label>
+                <select id="fedramp_version" name="fedramp_version" onchange="toggleFormFields()">
+                    <option value="Rev4">FedRAMP Rev 4</option>
+                    <option value="Rev5">FedRAMP Rev 5</option>
+                </select>
+                <br /><br />
+
+                <div id="rev4Fields">
+                    <input type="file" name="file" id="fileInputRev4" accept=".docx" required>
+                    <input type="hidden" name="version" value="4"/>
+                    <br /><br />
+                    <label for="regscale_profile_id">Select a profile:</label>
+                    <select id="regscale_profile_id" name="regscale_profile_id">
+                        {% for id, profile_name in regscale_profiles %}
+                            <option value="{{ id }}">{{ profile_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <br /><br />
+                    <label for="load_missing_controls">Load missing controls from Profile:</label>
+                    <select id="load_missing_controls" name="load_missing_controls">
+                        <option value="True" selected>Yes</option>
+                        <option value="False">No</option>
+                    </select>
+                </div>
+
+                <div id="rev5Fields" style="display: none;">
+                    <input type="file" name="file" id="fileInputRev5" accept=".xml" required>
+                    <input type="hidden" name="version" value="5"/>
+                    <br /><br />
+                    <label for="regscale_catalogue_id">Select a catalogue:</label>
+                    <select id="regscale_catalogue_id" name="regscale_catalogue_id">
+                        {% for id, catalogue_name in regscale_catalogues %}
+                            <option value="{{ id }}">{{ catalogue_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <br /><br />
+                <button type="submit">Upload</button>
+            </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleFormFields() {
+            const version = document.getElementById("fedramp_version").value;
+            const rev4Fields = document.getElementById("rev4Fields");
+            const rev5Fields = document.getElementById("rev5Fields");
+            const fileInputRev4 = document.getElementById("fileInputRev4");
+            const fileInputRev5 = document.getElementById("fileInputRev5");
+
+            if (version === "Rev4") {
+                rev4Fields.style.display = "block";
+                rev5Fields.style.display = "none";
+                fileInputRev4.required = true;
+                fileInputRev5.required = false;
+            } else {
+                rev4Fields.style.display = "none";
+                rev5Fields.style.display = "block";
+                fileInputRev4.required = false;
+                fileInputRev5.required = true;
+            }
+        }
+    </script>
+
+{% endblock %}
