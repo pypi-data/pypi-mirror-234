@@ -1,0 +1,46 @@
+[tool.bandit]
+exclude_dirs = ["tests", "features"]
+
+[tool.black]
+max-line-length = 120
+target-version = ['py310', 'py311', "py312"]
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+
+[tool.mypy]
+ignore_missing_imports = true
+# https://stackoverflow.com/questions/62265366/does-mypy-only-type-check-a-function-if-it-declares-a-return-type
+check_untyped_defs = true
+
+[tool.poetry]
+name = "airboss"
+version = "0.0.1"
+description = "Easily integrate, deploy and release your projects"
+authors = ["Luís Miranda <luistm@gmail.com>"]
+license = "The Unlicence"
+readme = "README.md"
+packages = [{ include = "airboss", from = "src" }]
+exclude = ["**/*_test.py"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+turbofan = "^0.0.2"
+
+[tool.poetry.group.dev.dependencies]
+bandit = { extras = ["toml"], version = "^1.7.5" }
+behave = "^1.2.6"
+black = "^23.9.1"
+coverage = "^7.3.2"
+flake8 = "^6.1.0"
+isort = "^5.12.0"
+mypy = "^1.5.1"
+nox = "^2023.4.22"
+pre-commit = "^3.4.0"
+pytest = "^7.4.2"
+pytest-bdd = "^6.1.1"
+pytest-xdist = "^3.3.1"
+
+[tool.pytest.ini_options]
+markers = ["integration: tags a test as integration tests"]
