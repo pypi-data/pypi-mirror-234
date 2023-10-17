@@ -1,0 +1,52 @@
+#!python
+import os
+import argparse
+# from dotenv import load_dotenv
+from wglib.wg import Wireguard  # whole Class for the wireguard
+# This environmental varibale is optional
+# load_dotenv(dotenv_path="wg0.env", verbose=True)
+
+# Actions for the WireGuard VPN
+ACTIONS = {
+    "connect": "wgconnect",
+    "disconnect": "wgdisconnect",
+    "getprivatekey": "getprivatekey",
+    "getpublickey": "getpublickey",
+    "configure": "configure",
+    "logingit":"logingit",
+    "logoutgit":"logoutgit",
+    "adddevice":"adddevice",
+    "addip":"addip",
+    "showinfo":"showinfo",
+    "myprivatekey":"myprivatekey",
+    "mypublickey":"mypublickey"
+}
+
+parser = argparse.ArgumentParser(
+    prog="SNA-CLI-NIJA-VPN",
+    description="A CLI tool to configure and manage a VPN for accessing labs and other connected resources Action to perform [openwg0, connect, down, getstatus,wgcheck,getprivatekey]",
+    epilog="Education VPN",
+)
+
+# Define command-line arguments
+parser.add_argument(
+    "--action",
+    choices=ACTIONS.keys(),
+    help="Action to perform [openwg0, connect, down, getstatus,wgcheck,getprivatekey,getpublickey]",
+)
+# parser.add_argument(
+#     "--wgpath", default="/etc/wireguard/", help="default path of the wireguard"
+# )
+
+args = parser.parse_args()
+
+if args.action:
+    action_function_name = ACTIONS[args.action]
+    wireguard = Wireguard()
+
+
+    if hasattr(wireguard, action_function_name):
+        action_function = getattr(wireguard, action_function_name)
+        action_function()
+    else:
+        print(f"Error: Action '{args.action}' not supported.")
