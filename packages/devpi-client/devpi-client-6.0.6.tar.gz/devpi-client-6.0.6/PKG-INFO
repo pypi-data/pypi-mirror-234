@@ -1,0 +1,132 @@
+Metadata-Version: 2.1
+Name: devpi-client
+Version: 6.0.6
+Summary: devpi upload/install/... workflow commands for Python developers
+Home-page: https://devpi.net
+Maintainer: Florian Schulze
+Maintainer-email: mail@pyfidelity.com
+License: MIT
+Project-URL: Bug Tracker, https://github.com/devpi/devpi/issues
+Project-URL: Changelog, https://github.com/devpi/devpi/blob/main/client/CHANGELOG
+Project-URL: Documentation, https://doc.devpi.net
+Project-URL: Source Code, https://github.com/devpi/devpi
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*
+License-File: LICENSE
+License-File: AUTHORS
+Requires-Dist: build
+Requires-Dist: check-manifest>=0.28
+Requires-Dist: devpi_common<4,>=3.6.0
+Requires-Dist: iniconfig
+Requires-Dist: pep517
+Requires-Dist: pkginfo>=1.4.2
+Requires-Dist: platformdirs
+Requires-Dist: pluggy<2.0,>=0.6.0
+Requires-Dist: py>=1.4.31
+
+===============================================================
+devpi-client: manage devpi-server, Python packaging and testing
+===============================================================
+
+The ``devpi`` command line tool is typically used in conjunction
+with `devpi-server <https://pypi.org/project/devpi-server/>`_.
+It allows to upload, test and install packages from devpi indexes.
+
+See https://doc.devpi.net for quickstart and more documentation.
+
+Support
+=======
+
+If you find a bug, use the `issue tracker at Github`_.
+
+For general questions use `GitHub Discussions`_ or the `devpi-dev@python.org mailing list`_.
+
+For support contracts and paid help contact ``mail at pyfidelity.com``.
+
+.. _issue tracker at Github: https://github.com/devpi/devpi/issues/
+.. _devpi-dev@python.org mailing list: https://mail.python.org/mailman3/lists/devpi-dev.python.org/
+.. _GitHub Discussions: https://github.com/devpi/devpi/discussions
+
+
+=========
+Changelog
+=========
+
+
+
+.. towncrier release notes start
+
+6.0.6 (2023-10-11)
+==================
+
+Bug Fixes
+---------
+
+- Fix #997: Directly use ``BDist``, ``SDist`` and ``Wheel`` from ``pkginfo`` based on file extension instead of ``get_metadata``, as the latter does auto-detection on content which fails in some cases.
+
+- Fix #1002: cleanup ``build`` directory before running Sphinx to prevent build artifacts from being added to documentation zip.
+
+
+6.0.5 (2023-07-02)
+==================
+
+Bug Fixes
+---------
+
+- Remember URL when ``devpi use`` causes a 403, so one can use ``devpi login`` afterwards.
+
+- Fix #978: Quote username and password when adding to URL.
+
+- Fix #980: Remove long deprecated backward compatibility for old pluggy versions to fix error with pluggy 1.1.0.
+
+
+6.0.4 (2023-04-13)
+==================
+
+Bug Fixes
+---------
+
+- Fix precedence of URL from command line over DEVPI_INDEX environment variable for ``devpi use``.
+
+- Fix relative DEVPI_INDEX environment variable with user and index causing an invalid URL in some cases.
+
+- Fix persistence of username when DEVPI_INDEX environment variable is used with ``devpi login``.
+
+- Fix precedence of ``--sdist`` and ``--wheel`` over ``formats`` setting from setup.cfg ``[devpi:upload]`` section.
+
+
+6.0.3 (2023-02-20)
+==================
+
+Bug Fixes
+---------
+
+- Fix #919: Retry 3 times and wait a moment on PermissionError during file removal to fix race condition after running tox.
+
+- Restore ability to build docs if project uses separate build and source directories for documentation.
+
+- Fix for changes in pypitoken 6.x.
+
+
+6.0.2 (2022-09-28)
+==================
+
+Bug Fixes
+---------
+
+- Better error message when trying to use ``devpi index`` which requires authentication (devpi-lockdown).
+
