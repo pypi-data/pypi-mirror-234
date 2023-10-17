@@ -1,0 +1,114 @@
+Metadata-Version: 2.1
+Name: few-shot-priming
+Version: 0.3.55
+Summary: Analyzing priming effects in a few shot setting environment
+Home-page: https://gitlab.uni-hannover.de/y.ajjour/few-shot-priming
+Author: Yamen Ajjour
+Author-email: yajjour@hotmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown
+Requires-Dist: transformers (>=4.26.1)
+Requires-Dist: pandas
+Requires-Dist: openprompt
+Requires-Dist: scikit-learn
+Requires-Dist: torch
+Requires-Dist: pyyaml
+Requires-Dist: wandb
+Requires-Dist: debater-python-api
+Requires-Dist: gensim
+Requires-Dist: accelerate
+Requires-Dist: peft
+Requires-Dist: dask[dataframe]
+
+# Analyzing Priming Effect in Prompt-based learning
+
+How does priming affect prompt-based learing?
+This project aims at analyzing this effect in stance classification.
+We train a stance classifier on the ibm stance classification dataset by
+fine-tuning a GPT-2 model with a prompt and analzing how does the selection
+of the few shots used in the prompt affect the performance of the model.
+Our main assumption is that the examples chosen should be chosen in a diverse manner with regard topic.
+1) To evaluate the prompt-fine-tuning, run the following command
+* Hyperparamter optimization
+```
+python scripts/run_prompt_fine_tuning.py --validate --optimize 
+```
+
+* Best Hyperparameters
+```
+python scripts/run_prompt_fine_tuning.py --validate --optimize 
+``` 
+2) To evaluate the in-context (prompt) setup run
+```
+python scripts/run_prompting.py --validate --optimize 
+```
+3) To evaluate DeBERTa (a normal classifier) with all hyperparameters, run the following
+```
+python scripts/optimize_baseline.py 
+```
+
+4) To evaluate Alpaca in a instructional tuning model run the following:
+```
+/run_prompt_fine_tuning.py --validate --optimize --alpaca
+```
+
+The results of the experiments will be logged to your home directory.
+The parameters can be saved in [config.yaml](../blob/maser/config.yaml)
+## Priming Sampling strategies
+To run an experiment with a similar sampling strategy use the parameter ```--similar-examples```. This will retrieve
+examples that are similar to each test instance. The similarity measure can be either Contextualized Topic Models
+```--ctm```, Sentence-Transformers ```--sentence-transformer```, or Constiteuncy Parse Tree Kernels using FastKassim 
+```--parse-tree-kernel```.
+Example,
+
+```python scripts/run_prompting.py --validate --topic-similar --sentence-transformer```
+
+
+## Topic Similarity
+Examples on similar or diverse topics are sampled using a topic similarity, which relies on a neural
+topic modeling (Contextual Topic Model). The Contextual Topic Models is fine-tuned on the validation set
+and the cosine similarities between all test and training instances are calculated and saved. While training
+the similarities can be used to apply the right sampling strategy.
+
+1) To create a topic model on the validation set, run
+```
+python scripts/run_develop_similarity_measure.py --create-model --validate
+```
+For training on the test set, drop --validate
+2) To create a baseline (lda and sentence-transformers) on the validation set, run
+```
+python scripts/run_develop_similarity_measure.py --create-baseline --validate
+```
+For training on the test set, drop --validate
+3) To evaluate the topic-based similarity measures, run 
+```
+python scripts/run_develop_similarity_measure.py --evaluate-model --validate
+```
+This will sample ```k``` examples from the validation set and score all training instances according to 
+their similarity to the test instance using Contextualized Topic Modes and Sentence-Transformer and save 
+the results in your home directory.
+
+To evaluate the syntax similarity measure add the argument ```--parse-tree-kernel```
+4) To compute the similarities between all the validation and training arguments run the following
+```
+python scripts/run_develop_similarity_measure.py --compute-similarity --validate 
+```
+You have to specify the model used to compute the similarity to be either ```--parse-tree-kernel```
+```--sentence-transformer``` or ```--ctm``` 
+To load similarities from the code you can use the
+
+```similarities = load_similarities("ibmsc", "validation", similarity)```
+
+which returns a dictionary of dictionary where the indices of the first dictionary are the test indices and the indeices
+of the nested dictionary for each test index are the indices of the training set with the values being the similarity scores.
+
+To find similar or diverse arguments for an argument in the validation or test set, you can use
+
+```examples = sample_diverse(test_istance_index, similarities, df_training, few_shot_size)```
+
+similar can be used for sample_similar
+
+```examples = sample_similar(test_istance_index, similarities, df_training, few_shot_size)```
+Notice that you have to load the test and training instances in the same order as the one used for training the topic model.
