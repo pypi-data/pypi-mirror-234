@@ -1,0 +1,87 @@
+[build-system]
+requires = [
+    "pdm-backend",
+]
+build-backend = "pdm.backend"
+
+[project]
+name = "unearth"
+description = "A utility to fetch and download python packages"
+authors = [
+    { name = "Frost Ming", email = "me@frostming.com" },
+]
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "packaging>=20",
+    "requests>=2.25",
+    "cached-property>=1.5.2; python_version < \"3.8\"",
+]
+dynamic = []
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3 :: Only",
+]
+version = "0.11.1"
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/frostming/unearth"
+Documentation = "https://unearth.readthedocs.io"
+Changelog = "https://github.com/frostming/unearth/releases"
+
+[project.optional-dependencies]
+keyring = [
+    "keyring",
+]
+
+[project.scripts]
+unearth = "unearth.__main__:cli"
+
+[tool.pdm.version]
+source = "scm"
+
+[tool.pdm.build]
+package-dir = "src"
+
+[tool.pdm.dev-dependencies]
+test = [
+    "pytest>=6.1",
+    "pytest-httpserver>=1.0.4",
+    "flask>=2.1.2",
+    "requests-wsgi-adapter>=0.4.1",
+    "trustme>=0.9.0",
+]
+
+[tool.pdm.scripts]
+test = "pytest tests/"
+lint = "pre-commit run --all-files"
+
+[tool.black]
+line-length = 88
+exclude = "/(\n    \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | _build\n  | buck-out\n  | build\n  | dist\n  | tests/fixtures\n)/\n"
+
+[tool.isort]
+profile = "black"
+atomic = true
+skip_glob = [
+    "*/setup.py",
+]
+filter_files = true
+known_first_party = [
+    "unearth",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
