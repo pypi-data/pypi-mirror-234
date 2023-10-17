@@ -1,0 +1,27 @@
+{% extends 'allianceauth/base-bs5.html' %}
+{% load i18n %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}{% translate "AA Top" %}{% endblock page_title %}
+{% block header_nav_brand %}{% translate "AA Top" %}{% endblock header_nav_brand %}
+
+{% block content %}
+<div class="card border-secondary">
+    <div class="card-body">
+    <pre id="aatop_textblock"></pre>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_javascript %}
+<script type="text/javascript">
+    updateTextBlock();
+    function updateTextBlock() {
+        setTimeout(updateTextBlock, 5000);
+        if (typeof $ != 'undefined') $.get("{% static 'top/aatop.txt'%}", function( data ) {
+            $("#aatop_textblock").text(data);
+        });
+    }
+</script>
+{% endblock extra_javascript %}
