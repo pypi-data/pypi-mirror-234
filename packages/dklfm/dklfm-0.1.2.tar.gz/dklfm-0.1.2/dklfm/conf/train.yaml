@@ -1,0 +1,71 @@
+embedder:
+  type: 'neural_operator' # neural_operator | lstm | transformer
+  width: 10
+  out_channels: 64
+
+model:
+  include_embedding: 'f'
+  fixed_noise: False
+  ckpt_path: null
+  kernel: rbf
+  lengthscale: .2
+  period: .2
+  latent_dims: 9
+
+training:
+  load_version: null
+  alternate_likelihood: False
+  likelihood_over_y: False  # if the likelihood term is over y or f
+  scale_data: False
+  scale_x_max: True
+  dataset: 'reactiondiffusion' # lotkavolterra | reactiondiffusion | transcriptomics | rnavelo
+  optimizer_type: 'adam' # lbfgs | adam | adamw
+  batch_size: 256
+  lr: 1e-4
+  patience: 200
+  gradient_clip_val: 1e-2
+  num_epochs: 8000
+  device: 'cuda'
+  prior_weight: 1
+  weight_decay: 0.1
+  warmup: 50
+  warmup_max_iters: 500
+  add_schedulers: False
+
+dataset_transcriptomics:
+  n_training_tasks: 400
+  n_test_tasks: 64
+  modes: 5
+  initial_noise: 0.4
+  num_hidden_layers: 5
+  block_dim: 1
+  embedder_in_channels: 1
+
+dataset_rnavelo:
+  n_train: 30
+  n_training_tasks: 256
+  modes: 10
+  initial_noise: 0.2
+  num_hidden_layers: 4
+  block_dim: 1
+  embedder_in_channels: 1
+
+dataset_reactiondiffusion:
+  modes: 8
+  initial_noise: 0.6
+  num_hidden_layers: 7
+  n_training_tasks: 16
+  n_test_tasks: 16
+  block_dim: 2
+  embedder_in_channels: 3
+  t_width: 21
+  x_width: 21
+
+dataset_lotkavolterra:
+  n_training_tasks: 400
+  n_test_tasks: 64
+  modes: 8
+  initial_noise: .5
+  num_hidden_layers: 7
+  block_dim: 1
+  embedder_in_channels: 1
