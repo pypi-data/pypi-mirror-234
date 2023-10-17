@@ -1,0 +1,281 @@
+# Copyright © 2012-2023 Forschungszentrum Jülich GmbH
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
+from dataclasses import dataclass
+
+import jupedsim.native as py_jps
+
+
+@dataclass(kw_only=True)
+class CollisionFreeSpeedModel:
+    """Parameters for Collision Free Speed Model
+
+    All attributes are initialized with reasonably good defaults.
+
+    Attributes:
+        strength_neighbor_repulsion (float): Strength of the repulsion from neighbors
+        range_neighbor_repulsion (float): Range of the repulsion from neighbors
+        strength_geometry_repulsion (float): Strength of the repulsion from geometry boundaries
+        range_geometry_repulsion (float): Range of the repulsion from geometry boundaries
+    """
+
+    strength_neighbor_repulsion: float = 8.0
+    range_neighbor_repulsion: float = 0.1
+    strength_geometry_repulsion: float = 5.0
+    range_geometry_repulsion: float = 0.02
+
+
+@dataclass(kw_only=True)
+class GeneralizedCentrifugalForceModel:
+    """Parameters for Generalized Centrifugal Force Model
+
+    All attributes are initialized with reasonably good defaults.
+
+    Attributes:
+        strength_neighbor_repulsion (float): strengh_neighbor_repulsion
+        strength_geometry_repulsion (float): strength_geometry_repulsion
+        max_neighbor_interaction_distance (float): cut-off-radius for ped-ped repulsion (r_c in FIG. 7)
+        max_geometry_interaction_distance (float): cut-off-radius for ped-wall repulsion (r_c in FIG. 7)
+        max_neighbor_interpolation_distance (float): distance of interpolation of repulsive force for ped-ped interaction (r_eps in FIG. 7)
+        max_geometry_interpolayion_distance (float): distance of interpolation of repulsive force for ped-wall interaction (r_eps in FIG. 7)
+        max_neighbor_repulsion_force (float): maximum of the repulsion force for ped-ped interaction by contact of ellipses (f_m in FIG. 7)
+        max_geometry_repulsion_force (float): maximum of the repulsion force for ped-wall interaction by contact of ellipses (f_m in FIG. 7)
+    """
+
+    strength_neighbor_repulsion: float = 0.3
+    strength_geometry_repulsion: float = 0.2
+    max_neighbor_interaction_distance: float = 2
+    max_geometry_interaction_distance: float = 2
+    max_neighbor_interpolation_distance: float = 0.1
+    max_geometry_interpolation_distance: float = 0.1
+    max_neighbor_repulsion_force: float = 3
+    max_geometry_repulsion_force: float = 3
+
+
+@dataclass(kw_only=True)
+class GeneralizedCentrifugalForceModelAgentParameters:
+    """
+    Parameters required to create an Agent in the Generalized Centrifugal Force
+    Model.
+
+    See the scientific publication for more details about this model
+    https://arxiv.org/abs/1008.4297
+
+    .. note::
+        Insances of this type are copied when creating the agent, you can savely
+        create one instance of this type and modify it between calls to `add_agent`
+
+        E.g.:
+
+        .. code:: python
+
+            positions = [...] # List of initial agent positions
+            params = GeneralizedCentrifugalForceModelAgentParameters(speed=0.9) # all agents are slower
+            for p in positions:
+                params.position = p
+                sim.add_agent(params)
+
+    Attributes:
+        speed (float):
+        e0 (tuple[float, float]):
+        position (tuple[float, float]):
+        orientation (tuple[float, float]):
+        journey_id (int):
+        stage_id (int):
+        mass (float):
+        tau (float):
+        v0 (float):
+        a_v (float):
+        a_min (float):
+        b_min (float):
+        b_max (float):
+    """
+
+    speed: float = 0.0
+    e0: tuple[float, float] = (0.0, 0.0)
+    position: tuple[float, float] = (0.0, 0.0)
+    orientation: tuple[float, float] = (0.0, 0.0)
+    journey_id: int = -1
+    stage_id: int = -1
+    mass: float = 1
+    tau: float = 0.5
+    v0: float = 1.2
+    a_v: float = 1
+    a_min: float = 0.2
+    b_min: float = 0.2
+    b_max: float = 0.4
+
+    def as_native(
+        self,
+    ) -> py_jps.GeneralizedCentrifugalForceModelModelAgentParameters:
+        return py_jps.GeneralizedCentrifugalForceModelModelAgentParameters(
+            speed=self.speed,
+            e0=self.e0,
+            position=self.position,
+            orientation=self.orientation,
+            journey_id=self.journey_id,
+            stage_id=self.stage_id,
+            mass=self.mass,
+            tau=self.tau,
+            v0=self.v0,
+            a_v=self.a_v,
+            a_min=self.a_min,
+            b_min=self.b_min,
+            b_max=self.b_max,
+        )
+
+
+@dataclass(kw_only=True)
+class CollisionFreeSpeedModelAgentParameters:
+    """
+    Agent parameters for Collision Free Speed Model.
+
+    See the scientific publication for more details about this model
+    https://arxiv.org/abs/1512.05597
+
+    .. note::
+        Insances of this type are copied when creating the agent, you can savely
+        create one instance of this type and modify it between calls to `add_agent`
+
+        E.g.:
+
+            .. code:: python
+
+            positions = [...] # List of initial agent positions
+            params = CollisionFreeSpeedModelAgentParameters(speed=0.9) # all agents are slower
+            for p in positions:
+                params.position = p
+                sim.add_agent(params)
+
+    Attributes:
+        position (tuple[float, float]):
+        time_gap (float):
+        v0 (float):
+        radius (float):
+        journey_id (int):
+        stage_id (int):
+    """
+
+    position: tuple[float, float] = (0.0, 0.0)
+    time_gap: float = 1.0
+    v0: float = 1.2
+    radius: float = 0.2
+    journey_id: int = 0
+    stage_id: int = 0
+
+    def as_native(self) -> py_jps.CollisionFreeSpeedModelAgentParameters:
+        return py_jps.CollisionFreeSpeedModelAgentParameters(
+            position=self.position,
+            time_gap=self.time_gap,
+            v0=self.v0,
+            radius=self.radius,
+            journey_id=self.journey_id,
+            stage_id=self.stage_id,
+        )
+
+
+class GeneralizedCentrifugalForceModelState:
+    def __init__(self, backing):
+        self._obj = backing
+
+    @property
+    def speed(self) -> float:
+        """Speed of this agent."""
+        return self._obj.speed
+
+    @speed.setter
+    def speed(self, speed):
+        self._obj.speed = speed
+
+    @property
+    def e0(self) -> tuple[float, float]:
+        """Desired direction of this agent."""
+        return self._obj.e0
+
+    @e0.setter
+    def e0(self, e0):
+        self._obj.e0 = e0
+
+    @property
+    def tau(self) -> float:
+        return self._obj.tau
+
+    @tau.setter
+    def tau(self, tau):
+        self._obj.tau = tau
+
+    @property
+    def v0(self) -> float:
+        """Maximum speed of this agent."""
+        return self._obj.v0
+
+    @v0.setter
+    def v0(self, v0):
+        self._obj.v0 = v0
+
+    @property
+    def a_v(self) -> float:
+        """Stretch of the elipsis semi-axis along the movement vector."""
+        return self._obj.a_v
+
+    @a_v.setter
+    def a_v(self, a_v):
+        self._obj.a_v = a_v
+
+    @property
+    def a_min(self) -> float:
+        """Minimum length of the ellipsis semi-axis along the movement vector."""
+        return self._obj.a_min
+
+    @a_min.setter
+    def a_min(self, a_min):
+        self._obj.a_min = a_min
+
+    @property
+    def b_min(self) -> float:
+        """Minimum length of the ellipsis semi-axis orthogonal to the movement vector."""
+        return self._obj.b_min
+
+    @b_min.setter
+    def b_min(self, b_min):
+        self._obj.b_min = b_min
+
+    @property
+    def b_max(self) -> float:
+        """Maximum length of the ellipsis semi-axis orthogonal to the movement vector."""
+        return self._obj.b_max
+
+    @b_max.setter
+    def b_max(self, b_max):
+        self._obj.b_max = b_max
+
+
+class CollisionFreeSpeedModelState:
+    def __init__(self, backing):
+        self._obj = backing
+
+    @property
+    def time_gap(self) -> float:
+        return self._obj.time_gap
+
+    @time_gap.setter
+    def time_gap(self, time_gap):
+        self._obj.time_gap = time_gap
+
+    @property
+    def v0(self) -> float:
+        """Maximum speed of this agent."""
+        return self._obj.v0
+
+    @v0.setter
+    def v0(self, v0):
+        self._obj.v0 = v0
+
+    @property
+    def radius(self) -> float:
+        """Radius of this agent."""
+        return self._obj.radius
+
+    @radius.setter
+    def radius(self, radius):
+        self._obj.radius = radius
