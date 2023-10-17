@@ -1,0 +1,135 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[project]
+name = "venvs"
+description = "A simpler tool for creating venvs in a central location"
+readme = "README.rst"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["venv", "virtualenv", "virtualenvwrapper", "mkvirtualenv", "pipx"]
+authors = [
+  {email = "Julian+venvs@GrayVines.com"},
+  {name = "Julian Berman"},
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+dependencies = [
+  "appdirs",
+  "attrs>=19.2.0",
+  "click",
+  "filesystems>=0.23.0",
+  "packaging",
+  "pyrsistent",
+  "toml>=0.10.0",
+  "tomlkit",
+  "tqdm",
+  "virtualenv>=20",
+]
+
+[project.scripts]
+venvs = "venvs._cli:main"
+
+[project.urls]
+Documentation = "https://venvs.readthedocs.io/"
+Homepage = "https://github.com/Julian/venvs"
+Issues = "https://github.com/Julian/venvs/issues/"
+Funding = "https://github.com/sponsors/Julian"
+Source = "https://github.com/python-jsonschema/referencing"
+
+[tool.coverage.html]
+show_contexts = true
+skip_covered = false
+
+[tool.coverage.run]
+branch = true
+source = ["venvs"]
+dynamic_context = "test_function"
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "\\s*\\.\\.\\.\\s*",
+]
+show_missing = true
+skip_covered = true
+
+[tool.doc8]
+ignore = [
+    "D001",  # one sentence per line, so max length doesn't make sense
+]
+
+[tool.isort]
+combine_as_imports = true
+ensure_newline_before_comments = true
+from_first = true
+include_trailing_comma = true
+multi_line_output = 3
+use_parentheses = true
+
+[tool.pyright]
+reportUnnecessaryTypeIgnoreComment = true
+exclude = [
+    "**/tests/__init__.py",
+    "**/tests/test_*.py",
+]
+
+[tool.ruff]
+line-length = 79
+target-version = "py310"
+select = ["B", "D", "D204", "E", "F", "Q", "RUF", "SIM", "UP", "W"]
+ignore = [
+  # Wat, type annotations for self and cls, why is this a thing?
+  "ANN101",
+  "ANN102",
+  # Private annotations are fine to leave out.
+  "ANN202",
+  # It's totally OK to call functions for default arguments.
+  "B008",
+  # raise SomeException(...) is fine.
+  "B904",
+  # There's no need for explicit strict, this is simply zip's default behavior.
+  "B905",
+  # It's fine to not have docstrings for magic methods.
+  "D105",
+  # __init__ especially doesn't need a docstring
+  "D107",
+  # This rule makes diffs uglier when expanding docstrings (and it's uglier)
+  "D200",
+  # No blank lines before docstrings.
+  "D203",
+  # Start docstrings on the second line.
+  "D212",
+  # This rule misses sassy docstrings ending with ! or ?.
+  "D400",
+  # Section headers should end with a colon not a newline
+  "D406",
+  # Underlines aren't needed
+  "D407",
+  # Plz spaces after section headers
+  "D412",
+]
+extend-exclude = ["suite"]
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.per-file-ignores]
+"noxfile.py" = ["ANN", "D100"]
+"docs/*" = ["ANN", "D"]
+"venvs/tests/*" = ["ANN", "D", "RUF012"]
