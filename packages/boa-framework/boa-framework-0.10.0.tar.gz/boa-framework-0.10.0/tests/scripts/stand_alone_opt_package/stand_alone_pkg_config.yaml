@@ -1,0 +1,26 @@
+# Single objective optimization config
+objective:
+    metrics:
+        - metric: mean
+          name: Mean
+        - metric: RMSE
+          info_only: True
+generation_strategy:
+    steps:
+        - model: SOBOL
+          num_trials: 5
+        - model: GPEI
+          num_trials: -1
+scheduler:
+    n_trials: 10
+
+parameters:
+    x0:
+        type: range
+        bounds: [-5.0, 10.0]
+    # test that a parameter that is just set likes this gets turned into a fixed parameter
+    x1: 10
+
+script_options:
+#    wrapper_path: ./wrapper.py  # This is the default
+    wrapper_name: WrapperStandAlone  # This defaults to "Wrapper", but we change it here to whatever we called our Wrapper class

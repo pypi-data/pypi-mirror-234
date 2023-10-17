@@ -1,0 +1,48 @@
+objective: # can also use the key moo
+    metrics:
+        - metric: mean
+generation_strategy:
+    steps:
+        - model: SOBOL
+          num_trials: 5
+        - model: GPEI
+          num_trials: -1
+scheduler:
+    total_trials: 15
+
+# This fails because the parameters should be floats from 0 to 1, instead of  choice parameters
+parameters:
+    x0:
+        values: ["foo", "bar"]
+        type: 'choice'
+        is_ordered: False
+    x1:
+        values: ["foo", "bar"]
+        type: 'choice'
+        is_ordered: False
+    x2:
+        values: ["foo", "bar"]
+        type: 'choice'
+        is_ordered: False
+    x3:
+        values: ["foo", "bar"]
+        type: 'choice'
+        is_ordered: False
+    x4:
+        values: ["foo", "bar"]
+        type: 'choice'
+        is_ordered: False
+    x5:
+        values: ["foo", "bar"]
+        type: 'choice'
+        is_ordered: False
+
+script_options:
+    run_model: Rscript run_model.R
+
+# options only needed by the model and not BOA
+# You can put anything here that your model might need
+# We don't need anything extra so we leave it commented out
+model_options:
+    input_size: 15
+    model_dir: .
