@@ -1,0 +1,2 @@
+class GenAIStackException(Exception):
+    pass
