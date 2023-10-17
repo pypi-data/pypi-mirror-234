@@ -1,0 +1,260 @@
+[tool.poetry]
+authors = ["Lilac AI Inc. <info@lilacml.com>"]
+description = "Organize unstructured data"
+license = "Apache-2.0"
+name = "lilac"
+repository = "https://github.com/lilacai/lilac"
+packages = [{ include = "lilac" }]
+include = ["lilac/web/**/*"]                    # Include the web app assets.
+readme = "README.md"
+version = "0.1.7"
+
+[tool.poetry.dependencies]
+
+### Required dependencies. ###
+authlib = "^1.2.1"
+click = "^8.1.3"
+dask = "^2023.3.2"
+datasets = "^2.12.0"
+distributed = "^2023.3.2.1"
+duckdb = "^0.9.0"
+fastapi = "^0.103.1"
+fsspec = "^2023.9.2"
+gcsfs = "^2023.4.0"
+google-cloud-storage = "^2.5.0"
+gunicorn = "^21.2.0"
+hnswlib = "^0.7.0"                                       # Fast KNN vector store.
+httpx = "^0.24.1"
+instructor = "^0.2.7"
+itsdangerous = "^2.1.2"
+joblib = "^1.3.1"
+orjson = "^3.8.10"                                       # Fast JSON serialization: https://fastapi.tiangolo.com/advanced/custom-response/#use-orjsonresponse
+pandas = "^2.0"
+pillow = "^9.3.0"                                        # Image processing.
+psutil = "^5.9.5"
+pyarrow = "^13.0.0"
+pydantic = "^2.0"
+python = ">=3.9,<4.0"
+python-dotenv = "^1.0.0"
+pyyaml = "^6.0.1"
+requests = "^2"
+scikit-learn = "^1.3.0"
+tenacity = "^8.2.2"
+tqdm = "^4.65.0"
+types-psutil = "^5.9.5.12"
+typing-extensions = "^4.7.1"
+uvicorn = { extras = ["standard"], version = "^0.23.2" }
+
+### Optional dependencies. ###
+
+# LLM providers.
+cohere = { version = "^3.7.0", optional = true }
+google-generativeai = { version = "^0.1.0", optional = true }   # PaLM / MakerSuite.
+openai = { version = "^0.27.8", optional = true }
+sentence-transformers = { version = "^2.2.2", optional = true } # SBERT on-device embeddings.
+
+# Gmail source.
+email-reply-parser = { version = "^0.5.12", optional = true }
+google-api-python-client = { version = "^2.88.0", optional = true }
+google-auth-httplib2 = { version = "^0.1.0", optional = true }
+google-auth-oauthlib = { version = "^1.0.0", optional = true }
+
+# Text statistics.
+textacy = { version = "^0.13.0", optional = true }
+
+# Named entity recognition.
+spacy = { version = "^3.5.1", optional = true }
+
+# For PII and secrets.
+detect-secrets = { version = "^1.4.0", optional = true }
+regex = "^2023.6.3"
+
+# For language detection.
+langdetect = { version = "^1.0.9", optional = true }
+
+# Langsmith source ingestion.
+langsmith = { version = "^0.0.41", optional = true }
+
+# LlamaIndex for GitHub source ingestion.
+llama-index = { version = "^0.8.38", optional = true }
+
+# For HDBScan to reduce dimensionality before running clustering.
+umap-learn = { version = "^0.5.4" }
+
+[tool.poetry.extras]
+all = [
+  "cohere",
+  "google-generativeai",
+  "openai",
+  "sentence-transformers",
+  "email-reply-parser",
+  "google-api-python-client",
+  "google-auth-httplib2",
+  "google-auth-oauthlib",
+  "textacy",
+  "detect-secrets",
+  "langdetect",
+  "spacy",
+  "langsmith",
+  "llama-index",
+  "hdbscan",
+]
+
+embeddings = [
+  "cohere",
+  "google-generativeai",
+  "openai",
+  "sentence-transformers",
+]
+llms = ["openai"]
+
+# Sources.
+sources = ["gmail", "langsmith"]
+
+## Individual sources.
+gmail = [
+  "email-reply-parser",
+  "google-api-python-client",
+  "google-auth-httplib2",
+  "google-auth-oauthlib",
+]
+langsmith = ["langsmith"]
+github = ["llama-index"]
+
+# Signals.
+signals = ["textacy", "detect-secrets", "langdetect", "spacy", "hdbscan"]
+
+## Individual signals.
+lang_detection = ["langdetect"]   # Language detection.
+ner = ["spacy"]                   # Named entity recognition.
+pii = ["detect-secrets", "regex"] # PII.
+text_stats = ["textacy", "spacy"] # Text statistics.
+
+# Individual embeddings.
+gte = ["sentence-transformers"]
+sbert = ["sentence-transformers"]
+cohere = ["cohere"]
+palm = ["google-generativeai"]
+openai = ["openai"]
+
+[tool.poetry.group.dev] # Deps for development.
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+bokeh = ">=2.4.2,<3"                                      # Required for Dask monitoring.
+google-api-python-client-stubs = "^1.13.0"
+httpx = "^0.24.0"
+huggingface-hub = "^0.17.1"
+isort = "^5.12.0"
+matplotlib = "^3.7.1"
+mypy = "^1.5.1"
+notebook = "^6.5.4"
+pytest = "^7.2.0"
+pytest-asyncio = "^0.20.2"
+pytest-cov = "^4.0.0"
+pytest-mock = "^3.10.0"
+ruff = "^0.0.219"
+setuptools = "^65.5.0"
+toml = "^0.10.2"
+types-Pillow = "^9.3.0.4"
+types-cachetools = "^5.3.0.5"
+types-regex = "^2023.6.3.0"
+types-requests = "^2.28.11.5"
+types-tqdm = "^4.65.0.0"
+watchdog = { extras = ["watchmedo"], version = "^3.0.0" }
+wheel = "^0.37.1"
+yapf = "^0.32.0"
+freezegun = "^1.2.2"
+
+[tool.poetry.scripts]
+lilac = "lilac.cli:cli"
+
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.pyright]
+include = ["lilac"]
+
+[tool.ruff]
+line-length = 100
+src = ["lilac"]
+
+# Enable Pyflakes `F`, pycodestyle "W" and `E`, "Q" quotes, "I" imports.
+fix = true
+ignore = [
+  "D105", # Missing docstring in magic method.
+  "D106", # Missing docstring in a public nested class.
+  "D107", # Missing docstring in __init__.
+  "D203", # 1 blank line required before class docstring.
+  "D204", # 1 blank line required after class docstring.
+  "D213", # Multi-line docstring summary should start at the second line.
+  "D407", # Missing dashed underline after section.
+  "F841", # Unused variable rules.
+  "I001", # Delegate sorting to isort.
+]
+select = ["E", "W", "F", "Q", "I", "D"]
+unfixable = ["I"] # Delegate import organization to isort.
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  "__pycache__",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.9.
+target-version = "py39"
+
+[tool.ruff.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
+
+[tool.isort]
+indent = "  "
+line_length = 100
+profile = "black"
+
+[tool.ruff.per-file-ignores]
+"*_test.py" = ["D101", "D102", "D103", "D104"]
+"__init__.py" = ["D104"]
+
+[tool.ruff.pep8-naming]
+# Allow Pydantic's `@validator` decorator to trigger class method treatment.
+classmethod-decorators = ["classmethod", "pydantic.validator"]
+
+[tool.yapf]
+allow_split_before_dict_value = false
+based_on_style = "google"
+coalesce_brackets = true
+column_limit = 100
+continuation_indent_width = 2
+indent_width = 2
+split_before_expression_after_opening_paren = true
+
+
+# Consider enabling these options for more compact code.
+# split_before_named_assigns = false
