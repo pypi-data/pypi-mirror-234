@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta content="width=device-width, initial-scale=1" charset="utf-8" name="viewport" />
+
+    <link rel="stylesheet" href="/static/css/semantic.min.css" />
+
+    <script src="/static/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/js/semantic.min.js"></script>
+    <script src="/static/js/jquery.serialize-object.min.js"></script>
+    <script src="/static/js/purl.min.js"></script>
+
+    <link rel="icon" href="/static/images/favicon.png" type="image/x-icon"/>
+    <title>FlipBook: {{ relative_directory }}</title>
+    <style>
+        .img-default-view {
+            cursor: zoom-in;
+            max-width: {{ (zoom or 1) * 100 | int }}% !important;
+        }
+        .img-zoomed-in-view {
+            cursor: zoom-out;
+        }
+        .ui.grid>.row>.column>img, .ui.grid>.row>img {
+            max-width: unset;
+        }
+        .keyboard-shortcut {
+            border-color: rgba(0, 0, 0, 0.55);
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 5px;
+            padding: 1px 4px 2px;
+            margin-left: 0.5em;
+            color: rgba(0, 0, 0, 0.55);
+            font-size: 0.8em;
+        }
+        .disabled-link {
+            color: #AAA;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body style="overflow-x: scroll">
+    {% set tabindex = namespace(value=1000) %}
+    <a id="top" name="top"></a>
+    <div class="ui stackable grid" style="margin-top: 1px">
+        <div class="row">
+            <div class="one wide column"></div>
+            <div class="fourteen wide column">
+                {% if header_html %}
+                    {{ header_html }}
+                {% endif %}
+
+                <div class="ui stackable grid">
+                    <div class="row">
+                        <div class="three wide column" style="white-space: nowrap; min-width: 220px">
+                            <a id="prevlink"
+                               href="{{ get_data_page_url(i - 1, last) if i > 1  else '#' }}"
+                               class="{{ '' if i > 1  else 'disabled-link' }}"
+                               style="white-space: nowrap">
+                                <span style="margin-right: 10px" class="keyboard-shortcut">&lt; or [</span>
+                                <i class="arrow left icon"></i> &nbsp; prev
+                            </a>
+                            &nbsp; &nbsp;
+                            <a id="nextlink"
+                               href="{{ get_data_page_url(i + 1, last) if i < last else '#' }}"
+                               class="{{ '' if i < last else 'disabled-link' }}"
+                               style="white-space: nowrap">
+                                next &nbsp; <i class="arrow right icon"></i>
+                                <span style="margin-left: 10px" class="keyboard-shortcut">] or &gt;</span>
+                            </a>
+                        </div>
+                        <div class="three wide column">
+                            <span style="margin-left: 30px">
+                                <a id="homelink" href="{{ './index.html' if is_static_website else '/'}}" style="white-space: nowrap">
+                                    <i class="home icon"></i> &nbsp; table
+                                    <!-- span style="margin-left: 10px" class="keyboard-shortcut">h or t</span -->
+                                </a>
+                            </span>
+                        </div>
+                        <div class="four wide column" style="text-align:center">
+                            <b>page #{{ i }} of {{ last }}: &nbsp; {{ relative_directory }}</b>
+                        </div>
+                        <div class="six wide column">
+                            {% set all_sections = image_file_paths|list + content_html_strings|list %}
+                            {% if all_sections|length > 1 %}
+                            <div style="float: right">
+                                {% for _ in all_sections %}
+                                    <a href="#section{{ loop.index }}">
+                                        section{{ loop.index }}
+                                    </a>{% if not loop.last %}, &nbsp; {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if metadata_json_dict|length > 0 %}
+                    <div class="ui divider"></div>
+                    {% for key, value in metadata_json_dict.items() %}
+                        <div style="margin-left: 10px; display: inline-block"><b>{{ key }}</b>: {{ value }}</div>
+                        {% if show_one_key_per_line %} <br /> {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if form_schema %}
+                    <div class="ui divider"></div>
+                    <form class="ui form" onsubmit="return false">
+                        <input type="hidden" name="relative_directory" value="{{ relative_directory }}" />
+                        <div class="inline fields ui grid" style="white-space: nowrap">
+                            {% set is_first_iter = namespace(value=True) %}
+                            {% for form_schema_row in form_schema %}
+                                {% if form_schema_row["type"] == "radio" %}
+                                    <label for="{{ form_schema_row['name'] }}" style="margin: 5px 0px 5px {{ 10 if is_first_iter.value else 35 }}px">
+                                        {{ form_schema_row['inputLabel'] }}
+                                    </label>
+                                    {% for choice in form_schema_row['choices'] %}
+                                        <div class="field">
+                                            <div class="ui radio checkbox">
+                                                <input type="radio"
+                                                       name="{{ form_schema_row['name'] }}"
+                                                       value="{{ choice['value'] }}"
+                                                       class="hidden"
+                                                       tabindex="{{ tabindex.value }}"
+                                                       autofocus
+                                                       {{ "checked" if form_responses.get(form_schema_row['columnName']) == choice['value'] else "" }}
+                                                >
+                                                <label>{{ choice['label'] }}</label>
+                                            </div>
+                                        </div>
+                                        {% set tabindex.value = tabindex.value + 1 %}
+                                    {% endfor %}
+                                {% elif form_schema_row["type"] == "text" %}
+                                    <div class="field" style="margin: 5px 0px 5px {{ 10 if is_first_iter.value else 35 }}px">
+                                        <input type="text"
+                                               name="{{ form_schema_row['name'] }}"
+                                               size="{{ form_schema_row.get('size', 100) }}"
+                                               placeholder="{{ form_schema_row['columnName'] }}"
+                                               value="{{ form_responses.get(form_schema_row['columnName']) or '' }}"
+                                               tabindex="{{ tabindex.value }}"
+                                               autofocus
+                                        >
+                                    </div>
+                                    {% set tabindex.value = tabindex.value + 1 %}
+                                {% endif %}
+                                {% set is_first_iter.value = False %}
+                            {% endfor %}
+
+                            <div id="save-button" class="ui secondary basic button" style="margin: 5px 0px 5px 15px">Save</div>
+                            <div id="save-status" style="display: none; margin: 5px 0px">
+                                <i class="icon"></i>
+                            </div>
+
+                            <!-- div style="margin: 15px 0px 15px 35px" class="ui submit button">Save</div -->
+                        </div>
+                    </form>
+                {% endif %}
+                {% set tabindex = namespace(value=1) %}
+                {% set section_counter = namespace(value=1) %}
+                {% for image_file_path in image_file_paths %}
+                    <div class="ui divider"></div>
+                    <a name="section{{ section_counter.value }}"></a>
+                    <div style="margin: 10px">
+                        <b>{{ image_file_path }}</b>
+                        {% if section_counter.value > 1 %}
+                            <span style="float: right">[<a href="#top">go to top</a>]</span>
+                        {% endif %}
+                    </div>
+
+                    <img class="img-default-view"
+                         src="{{ image_file_path }}?cache={{ image_file_path | ctime}}"
+                         tabindex="{{ tabindex.value }}"
+                    />
+                    {% set tabindex.value = tabindex.value + 1 %}
+                    {% set section_counter.value = section_counter.value + 1 %}
+                {% endfor %}
+                {% for name, content_html_string in content_html_strings %}
+                    <div class="ui divider"></div>
+                    <a name="section{{ section_counter.value }}"></a>
+                    <div style="margin: 10px">
+                        <b>{{ name }}</b>
+                        {% if section_counter.value > 1 %}
+                            <span style="float: right">[<a href="#top">go to top</a>]</span>
+                        {% endif %}
+                    </div>
+                    <div style="margin: 10px">
+                        {{ content_html_string }}
+                    </div>
+                    {% set section_counter.value = section_counter.value + 1 %}
+                {% endfor %}
+            </div>
+            <div class="one wide column"></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+      //add path to url to so that saved links or bookmarks can be robust to different sort orders
+      {% if not is_static_website %}
+          let urlParams = $.url(window.location.href).param()
+          urlParams["path"] = "{{ relative_directory }}"
+          urlParams["i"] = "{{ i }}"
+          urlParams["last"] = "{{ last }}"
+          let urlPath = window.location.pathname.split("?")[0]
+          let urlUpdatedParams = $.param(urlParams)
+          window.history.replaceState(null, null, `${urlPath}?${urlUpdatedParams}`);
+      {% endif %}
+
+      //misc. init
+      $('.ui.radio.checkbox').checkbox();
+
+      $('.img-default-view').on('keypress click', (event) => {
+        if (event.type === 'click' || event.which === 13 || event.which === 32 || event.which === 43 || event.which === 35) {
+            $(event.target).toggleClass('img-default-view img-zoomed-in-view')
+        }
+      })
+
+      //form submission
+      const apiSpec = {
+        url: '/save',
+        interruptRequests: true,
+        method : 'POST',
+        on: 'click',
+        serializeForm: true,
+        throttleFirstRequest: false,
+        throttle: 250,
+        beforeSend: function(settings) {
+          console.log('Saving', settings.data)
+          return settings
+        },
+        onRequest: function(request) {
+          $('#save-status i').attr('class', 'spinner loading icon')
+          $('#save-status i').attr('style', 'color:#666666')
+          $('#save-status span').text('Saving...')
+          $('#save-status').show()
+        },
+        onComplete: function(response) {
+          // always called after XHR complete
+          $('#save-status').delay(500).fadeOut('slow');
+        },
+        onSuccess: function(response) {
+          // valid response and response.success = true
+          //console.log("onSuccess", response)
+          $('#save-status i').attr('class', 'check circle icon')
+          $('#save-status i').attr('style', 'color:#00AA00')
+          $('#save-status span').text('Saved')
+          $('#save-status').show()
+        },
+        onFailure: function(response) {
+          // request failed, or valid response but response.success = false
+          //console.log("onFailure", response)
+          $('#save-status i').attr('class', 'exclamation circle icon')
+          $('#save-status i').attr('style', 'color:#FF0000')
+          $('#save-status span').text(`Couldn't save ${response.error}`)
+          $('#save-status').show()
+        },
+      }
+      //$('form input[type=text]').api(apiSpec)
+      $('.form .ui.radio').api(apiSpec)
+      $('.form #save-button').api(apiSpec)
+
+      //keyboard shortcuts
+      const navigationKeyToSelectorMap = {
+        "[": "#prevlink",
+        "<": "#prevlink",
+        //"p": "#prevlink",
+        //"P": "#prevlink",
+        "%": "#prevlink",  // left arrow ("%" == String.fromCharCode(37))
+        "]": "#nextlink",
+        ">": "#nextlink",
+        //"n": "#nextlink",
+        //"N": "#nextlink",
+        "'": "#nextlink",  // right arrow ("'" == String.fromCharCode(39))
+        //"h": "#homelink",
+        //"t": "#homelink",
+      }
+
+      const formKeyToSelectorMap = {}
+      {% for key, value in form_radio_button_keyboard_shortcuts.items() %}
+      formKeyToSelectorMap["{{key}}"] = "input[value='{{ value }}']"
+      {% endfor %}
+
+      const keyToSelectorMap = Object.assign({}, formKeyToSelectorMap, navigationKeyToSelectorMap)
+
+      //handle arrow keys
+      $(document).keydown((event) => {
+        const key = event.key
+        //console.log(event.target.tagName, event.target.type, ": key", key, 'keyCode: ', String.fromCharCode(event.keyCode), " (", event.keyCode, ") down")
+        if (key == "Meta" || key == "Control" || key == "Alt" || event.keyCode == 8) {
+            // trigger form save and return immediately for meta and delete keys. This enables expected behavior for Commmand-C, Command-V and similar shortcuts
+            // $('form input[type=text]').api(Object.assign({}, apiSpec, {on: 'now'}))
+            return
+        }
+        //else {
+        //    $('form input[type=text]').api(apiSpec)
+        //}
+
+        if (event.keyCode == 13) {
+          // 13 == Enter key
+          $('form input[type=text]').api(Object.assign({}, apiSpec, {on: 'now'}))
+          return
+        }
+
+        if ((event.target.tagName || '').toLowerCase() == 'input' && event.target.type == 'text') {
+          return
+        }
+
+        if (key) {
+            const selector = keyToSelectorMap[key]
+            //console.log('selector', selector)
+            if (selector) {
+                const obj = $(selector)
+                if (obj.length > 0) {
+                    //for some objects you need [0], while for others it only works with obj.click()
+                    obj[0].click()
+                    obj.click()
+                    return
+                } else {
+                    console.warn(`Selector not found: ${selector}`)
+                }
+            }
+        }
+
+        if (/^[a-zA-Z0-9-_ ]$/.test(key) && !(key.toLowerCase() in keyToSelectorMap) && !(key.toUpperCase() in keyToSelectorMap)) {
+            //console.log(`Focus triggered by ${key}`)
+            $("input[type=text]").focus()
+        }
+
+        switch (event.keyCode) {
+          case 37:
+            $('#prevlink')[0].click()
+            break
+          case 39:
+            $('#nextlink')[0].click()
+            break
+        }
+
+        // prevent arrow keys from selecting radio buttons
+        if (event.keyCode >= 37 && event.keyCode <= 40 && (event.target.tagName || '').toLowerCase() == 'input' && event.target.type == 'radio') {
+          return false
+        }
+      })
+    </script>
+</body>
+</html>
