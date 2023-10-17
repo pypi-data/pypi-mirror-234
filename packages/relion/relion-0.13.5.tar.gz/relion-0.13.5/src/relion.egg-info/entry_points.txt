@@ -1,0 +1,60 @@
+[ccpem_pipeliner.jobs]
+combine_star_files_job = relion._parser.combine_star_job:ProcessStarFiles
+
+[console_scripts]
+combine_star_files.py = relion._parser.combine_star_files:main
+external_job_cryolo = relion.cryolo_relion_it.cryolo_external_job:main
+external_job_cryolo_fine_tune = relion.cryolo_relion_it.cryolo_fine_tune_job:main
+external_job_fsc_fitting = relion.cryolo_relion_it.fsc_fitting_external_job:main
+external_job_mask_soft_edge = relion.cryolo_relion_it.mask_soft_edge_external_job:main
+external_job_reconstruct_halves = relion.cryolo_relion_it.reconstruct_halves_external_job:main
+external_job_select_and_split = relion.cryolo_relion_it.select_and_split_external_job:main
+relipy.job = relion.cli.current_job:run
+relipy.link = relion.cli.project_linker:run
+relipy.print_options = relion.cli.print_default_options:run
+relipy.run_pipeline = relion.cli.run_pipeline:run
+relipy.run_refine_pipeline = relion.cli.refine_pipeline:run
+relipy.show = relion.cli.pipeline_viewer:run
+
+[libtbx.precommit]
+relion = relion
+
+[workflows.services]
+CTFFind = relion.zocalo.ctffind:CTFFind
+ClusterSubmission = relion.zocalo.cluster_submission:ClusterSubmission
+CrYOLO = relion.zocalo.cryolo:CrYOLO
+Denoise = relion.zocalo.denoise:Denoise
+Extract = relion.zocalo.extract:Extract
+ISPyB = relion.zocalo.ispyb_service:EMISPyB
+IceBreaker = relion.zocalo.icebreaker:IceBreaker
+Images = relion.zocalo.images:Images
+MotionCor = relion.zocalo.motioncorr:MotionCorr
+MotionCorWilson = relion.zocalo.motioncorr_wilson:MotionCorrWilson
+NodeCreator = relion.zocalo.node_creator:NodeCreator
+RelionStopService = relion.zocalo.service:RelionStopService
+SelectClasses = relion.zocalo.select_classes:SelectClasses
+SelectParticles = relion.zocalo.select_particles:SelectParticles
+TomoAlign = relion.zocalo.tomo_align:TomoAlign
+TomoAlignIris = relion.zocalo.tomo_align_iris:TomoAlignIris
+
+[zocalo.services.cluster.schedulers]
+grid_engine = relion.zocalo.cluster_submission:submit_to_grid_engine
+htcondor = relion.zocalo.cluster_submission:submit_to_htcondor
+slurm = relion.zocalo.cluster_submission:submit_to_slurm
+
+[zocalo.services.dispatcher.filters]
+ispyb = relion.zocalo.ispyb_recipe_tools:ispyb_filter
+
+[zocalo.services.dispatcher.ready_for_processing]
+ispyb = relion.zocalo.ispyb_recipe_tools:ready_for_processing
+
+[zocalo.services.images.plugins]
+mrc_central_slice = relion.zocalo.images_service_plugin:mrc_central_slice
+mrc_to_apng = relion.zocalo.images_service_plugin:mrc_to_apng
+mrc_to_jpeg = relion.zocalo.images_service_plugin:mrc_to_jpeg
+picked_particles = relion.zocalo.images_service_plugin:picked_particles
+
+[zocalo.wrappers]
+Class2D = relion.zocalo.class2d_wrapper:Class2DWrapper
+Class3D = relion.zocalo.class3d_wrapper:Class3DWrapper
+relion = relion.zocalo.wrapper:RelionWrapper
