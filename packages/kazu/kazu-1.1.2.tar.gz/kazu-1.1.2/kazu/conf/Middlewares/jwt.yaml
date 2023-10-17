@@ -1,0 +1,30 @@
+_convert_: 'all'
+middlewares:
+  # this needs to go after the JWT auth middleware,
+  # as the middleware actually run in the reverse order here,
+  # and it's the below auth middleware that adds the req_id to the request
+  # in order for the below one to pick it up
+  - _target_: starlette.middleware.Middleware
+    cls:
+      _target_: hydra.utils.get_class
+      path: kazu.web.req_id_header.AddRequestIdMiddleware
+  - _target_: starlette.middleware.Middleware
+    cls:
+      _target_: hydra.utils.get_class
+      path: starlette.middleware.authentication.AuthenticationMiddleware
+    backend:
+      _target_: kazu.web.jwtauth.JWTAuthenticationBackend
+      secret_key: ${oc.env:KAZU_JWT_KEY}
+    on_error:
+      _target_: hydra.utils.get_method
+      path: kazu.web.jwtauth.on_auth_error
+  - _target_: starlette.middleware.Middleware
+    cls:
+      _target_: hydra.utils.get_class
+      path: starlette.middleware.cors.CORSMiddleware
+    allow_origin_regex: ${oc.env:CORS_ORIGIN_REGEX,"http://localhost.*"}
+    allow_methods:
+      - "*"
+    allow_headers:
+      - "*"
+auth_required: True

@@ -1,0 +1,270 @@
+[project]
+name = "kazu"
+dynamic = ["version"]
+description = "Biomedical Named Entity Recognition and Entity Linking for Enterprise use cases"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  {name = "AstraZeneca AI and Korea University"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: Apache Software License",
+    "Typing :: Typed",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Healthcare Industry",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = [
+  "spacy>=3.2.2",
+  # note to kazu devs: if the torch version changes in future,
+  # we need to change for CI jobs where we specify this install
+  # elsewhere because of the CPU wheel needing a different pypi index.
+  # search the project for --index-url https://download.pytorch.org/whl/cpu
+  # and/or torch>=2.0.0
+  "torch>=2.0.0",
+  "transformers>=4.0.0",
+  "rdflib>=6.0.0",
+  "requests>=2.20.0",
+  "hydra-core>=1.3.0",
+  "pytorch-lightning>=1.7.4,<2.0.0",
+  "pandas>=1.0.0",
+  "pyahocorasick",
+  "pyarrow>=8.0.0",
+  "pymongo>=4.3.3",
+  "rapidfuzz>=1.0.0",
+  "scikit-learn>=0.24.0",
+  "regex>=2020.1.7",
+  "psutil>=5.3.0",
+  "cachetools>=5.2.0",
+  "diskcache>=5.4.0"
+]
+
+[project.urls]
+documentation = "https://astrazeneca.github.io/KAZU/index.html"
+repository = "https://github.com/AstraZeneca/KAZU"
+changelog = "https://astrazeneca.github.io/KAZU/changelog.html"
+
+[project.optional-dependencies]
+webserver = [
+  "fastapi<0.99.0",  # newer than this breaks our 'examples' in the Swagger page
+  "pydantic<2.0",
+  "ray[serve]>=1.10.0,<2.5",
+  "PyJWT>=2.0.0",
+  ]
+typed = [
+  # version 2.31.0.3 introduced
+  # overly strict typing of requests.HttpError
+  # which was fixed in 2.31.0.6
+  "types-requests!=2.31.0.3,!=2.31.0.4,!=2.31.0.5",
+  "types-cachetools",
+  "types-regex",
+  "types-psutil",
+  "types-docutils",
+  "pandas-stubs>=2.0.0",
+]
+model-training = [
+  "pytorch-metric-learning>=0.9.99",
+  "seqeval>=1.0.0",
+]
+all-steps = [
+  "py4j>=0.10.9",
+  "rdkit>=2023.3.1",
+  "stanza>=1.0.0,<1.6.0", # We're seeing IT test failures on linux with stanza 1.6.0
+]
+dev = [
+  "kazu[webserver,typed,model-training,all-steps]",
+  "black~=22.0",
+  "blacken-docs",
+  "flake8",
+  "mypy",
+  "vulture",
+  "bump2version",
+  "pre-commit",
+  "pytest",
+  "pytest-mock",
+  "pytest-cov",
+  "pytest-timeout",
+  "sphinx",
+  "myst_parser",
+  "furo>=2023.08.17",
+  # to allow profiling
+  # of the steps.
+  "tensorboard",
+  "towncrier",
+  # needed as towncrier is broken with higher versions of importlib-resources -
+  # we can remove this when https://github.com/twisted/towncrier/pull/529
+  # is in a towncrier release
+  "importlib-resources<6",
+  "ray>=1.10.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+include = ["/kazu"]
+exclude = ["/kazu/tests"]
+
+[tool.hatch.version]
+path = "kazu/__init__.py"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | .idea
+    | .pytest_cache
+  )/
+)
+'''
+
+[tool.docformatter]
+black = true
+recursive = true
+in-place = true
+
+[tool.pytest.ini_options]
+testpaths = "kazu/tests"
+filterwarnings = [
+  "ignore::DeprecationWarning",
+  "ignore::SyntaxWarning",
+]
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+# this is painful to have on because if there is an existing function that is 'untyped', any new
+# call site of it would raise a new error. We only really care about our own functions that are 'untyped',
+# which would raise an error anyway for having no/incomplete typing if one was introduced in a new file.
+disallow_untyped_calls = false
+# turning this on is a pain, as it means __init__.py files like kazu/steps/__init__.py
+# need additional work to 'reexport' symbols - probably the simplest is a redundant 'from x import y as y' (adding the as y)
+# but this seems more work than is justified by the benefit.
+no_implicit_reexport = false
+
+[[tool.mypy.overrides]]
+module = [
+    "seqeval.*",
+    "transformers.*",
+    "tokenizers.*",
+    "stanza.*",
+    "sklearn.*",
+    "pytorch_metric_learning.*",
+    "srsly.*",
+    "py4j.*",
+    "diskcache.*",
+    "rdkit.*",
+    "ahocorasick.*"
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "kazu.tests.*"
+]
+# in particular, return types for pytest test
+# functions are always None, we don't want to have to annotate that
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+# the number in the comment after each line is the number of errors of this type for that file
+# it's possible this becomes out of date if we fix a few issues in one file, or introduce a new
+# issue(!) but this seems reasonably unlikely.
+# the numbers can be re-calculated with:
+# mypy kazu docs conftest.py | cut -f 1,2 -d ':' | sed '$d' | sort | uniq | cut -f 1 -d ':' | uniq -c | sort --reverse | awk '{print $2"  # "$1""}'
+module = [
+  "kazu.data.data",  # 18
+  "kazu.distillation.models",  # 10
+  "kazu.utils.string_normalizer",  # 8
+  "conftest",  # 8
+  "kazu.utils.build_and_test_model_packs",  # 7
+  "kazu.ontology_matching.ontology_matcher",  # 6
+  "kazu.linking.sapbert.train",  # 5
+  "kazu.annotation.acceptance_test",  # 4
+  "kazu.utils.utils",  # 3
+  "kazu.utils.spacy_pipeline",  # 3
+  "kazu.ontology_preprocessing.parsers",  # 3
+  "kazu.web.server",  # 2
+  "kazu.ontology_preprocessing.synonym_generation",  # 2
+  "kazu.distillation.tiny_transformers",  # 2
+  "kazu.database.in_memory_db",  # 2
+  "kazu.annotation.label_studio",  # 2
+  "kazu.web.req_id_header",  # 1
+  "kazu.utils.abbreviation_detector",  # 1
+  "kazu.steps.other.cleanup",  # 1
+  "kazu.steps.ner.tokenized_word_processor",  # 1
+  "kazu.steps.linking.post_processing.strategy_runner",  # 1
+  "kazu.steps.linking.post_processing.disambiguation.context_scoring",  # 1
+  "kazu.ontology_preprocessing.base",  # 1
+  "kazu.distillation.metrics",  # 1
+  # this is docs/conf.py
+  "conf"  # 1
+]
+# we had a bunch of these in the codebase before we moved to a 'strict' mypy config, and it was too many
+# to fix at that time for the payoff. Having overrides for the modules that would error rather than
+# everywhere means that new files get the full 'strict' treatment (and also existing files that are already ok),
+# and the lines above (combined with the counts) should make it easier to 'chip away' at
+# these existing untyped functions file-by-file incrementally.
+disallow_untyped_defs = false
+
+
+[[tool.mypy.overrides]]
+# as above - number is errors for that file
+module = [
+  "kazu.distillation.models",  # 8
+  "kazu.data.data",  # 8
+  "kazu.annotation.label_studio",  # 8
+  "kazu.linking.sapbert.train",  # 6
+  "kazu.steps.linking.post_processing.xref_manager",  # 3
+  "kazu.steps.linking.post_processing.mapping_strategies.strategies",  # 3
+  "kazu.web.server",  # 2
+  "kazu.web.jwtauth",  # 2
+  "kazu.utils.link_index",  # 2
+  "kazu.utils.build_and_test_model_packs",  # 2
+  "kazu.steps.ner.hf_token_classification",  # 2
+  "kazu.steps.linking.post_processing.disambiguation.strategies",  # 2
+  "kazu.ontology_preprocessing.parsers",  # 2
+  "kazu.annotation.acceptance_test",  # 2
+  "kazu.utils.string_normalizer",  # 1
+  "kazu.steps.linking.post_processing.disambiguation.context_scoring",  # 1
+  "kazu.steps.linking.entity_class_disambiguation",  # 1
+  "kazu.pipeline.pipeline",  # 1
+  "kazu.ontology_preprocessing.base",  # 1
+  "kazu.ontology_matching.ontology_matcher"  # 1
+]
+# as above, we want this to be true for files it can be, especially new files.
+disallow_any_generics = false
+
+[tool.towncrier]
+package = "kazu"
+directory = "docs/_changelog.d"
+package-dir = "kazu"
+filename = "CHANGELOG.md"
+title_format = "## {version} - {project_date}"
+underlines = ["", "", ""]
+start_string= "<!-- towncrier release notes start -->\n"
+
+[tool.vulture]
+exclude = ["kazu/tests/*"]
+make_whitelist = false
+# we may need to change this to 80 or 100 if we find it too noisy
+min_confidence = 60
+paths = ["kazu", ".vulture_whitelist.py"]
