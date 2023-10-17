@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "haystack-ai"
+description = ''
+readme = "README.md"
+requires-python = ">=3.8"
+license = "Apache-2.0"
+keywords = []
+authors = [
+  { name = "deepset.ai", email = "malte.pietsch@deepset.ai" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "canals==0.8.1",
+  "requests",  # needed by canals
+  "pandas",
+  "rank_bm25",
+  "tqdm",
+  "tenacity",
+  "lazy-imports",
+  "openai",
+  "Jinja2",
+]
+dynamic = ["version"]
+
+[project.urls]
+Documentation = "https://github.com/deepset-ai/haystack/tree/main/haystack/preview"
+Issues = "https://github.com/deepset-ai/haystack/issues"
+Source = "https://github.com/deepset-ai/haystack"
+
+[tool.hatch.version]
+path = "haystack/__init__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "pytest-cov",
+]
+[tool.hatch.envs.default.scripts]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=haystack_ai --cov=tests {args}"
+no-cov = "cov --no-cov {args}"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["38", "39", "310", "311"]
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "./haystack"
+]
+packages = ["haystack"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
