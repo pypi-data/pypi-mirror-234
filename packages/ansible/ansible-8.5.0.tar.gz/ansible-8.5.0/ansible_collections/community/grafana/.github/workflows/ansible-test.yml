@@ -1,0 +1,60 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    name: Sanity (Ⓐ$${{ matrix.ansible_version }})
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        python_version: ["3.9"]
+        ansible_version: ["stable-2.13", "stable-2.14", "devel"]
+    steps:
+      - name: Perform testing
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible_version }}
+          origin-python-version: ${{ matrix.python_version }}
+          target-python-version: ${{ matrix.python_version }}
+          testing-type: sanity
+
+  units:
+    runs-on: ubuntu-latest
+    name: Units (Ⓐ$${{ matrix.ansible_version }})
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        python_version: ["3.9"]
+        ansible_version: ["stable-2.13", "stable-2.14", "devel"]
+    steps:
+      - name: Perform testing
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible_version }}
+          origin-python-version: ${{ matrix.python_version }}
+          target-python-version: ${{ matrix.python_version }}
+          testing-type: units
+
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        grafana_version: ["9.2.6", "8.5.15", "7.5.16"]
+        ansible_version: ["stable-2.13", "stable-2.14", "devel"]
+        python_version: ["3.9"]
+    services:
+      grafana:
+        image: grafana/grafana:${{ matrix.grafana_version }}
+    steps:
+      - name: Perform testing
+        uses: ansible-community/ansible-test-gh-action@release/v1
+        with:
+          ansible-core-version: ${{ matrix.ansible_version }}
+          target-python-version: ${{ matrix.python_version }}
+          testing-type: integration
