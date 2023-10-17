@@ -1,0 +1,607 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2022 Trevor Taylor
+# coding: utf-8
+# 
+# Permission to use, copy, modify, and/or distribute this software for
+# any purpose with or without fee is hereby granted, provided that all
+# copyright notices and this permission notice appear in all copies.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+from sys import path
+from os.path import dirname
+if path[0]==dirname(__file__): path.pop(0)
+from xju import cmc
+
+from xju.assert_ import Assert
+import dataclasses
+from typing import Optional,Generic,TypeVar
+from types import GenericAlias
+import contextlib
+
+# python behaviour checks
+class A():
+    a: int
+    pass
+
+class B(A):
+    b: str
+    def set_b_b(self, s: str) -> None:
+        self.b = s
+        pass
+    pass
+
+Assert(A.__annotations__) == {'a': int}
+Assert(B.__annotations__) == {'b': str}
+Assert(B.__bases__) == (A, )
+
+class C(B, A):
+    b: str
+    def set_c_b(self, s: str) -> None:
+        self.b = s
+        pass
+    pass
+
+Assert(B.__annotations__) == {'b': str}
+Assert(C.__annotations__) == {'b': str} #[2]
+
+c = C()
+
+c.set_c_b('_c_')
+c.set_b_b('_b_')
+Assert(c.b) == '_b_' #[1]
+
+Assert(c.__dict__) == { 'b': '_b_'} #[3]
+c.a = 5 # [4]
+Assert(c.__dict__) == { 'b': '_b_', 'a': 5}
+Assert(C.__mro__) == (C,B,A,object)
+
+# [1] + [2] is interesting: even though there is only one actual b attribute there are
+# two annotations; would be better if mypy disallowed, because with multi-level
+# inheritance can easily stomp on lower-level attribute, especially as in practice noone
+# much uses private attributes; for our cmclass decorator we reject such overriding altogether
+# this will naturally disallow multiple inheritance of class that has a resource attribute, which
+# is good; but only for attrs that implement context management
+
+# [3] no mention of a because it has not been initialised, disallow at compile time too
+# [4] that's dangerous from a resource perspective, might enter one resource and exit some
+#     other resource; block __setattr__ and __delattr__ after ___enter__ succeeds
+
+step = 1
+class Resource:
+    name: str
+    entered_at: Optional[int] = None
+    exited_at: Optional[int] = None
+    ee: Optional[Exception]
+    xe: Optional[Exception]
+
+    def __init__(self, name:str, ee:Optional[Exception], xe:Optional[Exception]):
+        self.name = name
+        self.ee = ee
+        self.xe = xe
+        pass
+
+    def __enter__(self):
+        global step
+        print(f'+ enter {self.name} @ {step}')
+        Assert(self.entered_at)==None
+        self.entered_at = step
+        step = step + 1
+        if self.ee:
+            print(f'E enter {self.name} @{step-1}')
+            raise self.ee
+        print(f'- enter {self.name} @{step-1}')
+        return self
+    
+    def __exit__(self, t, e, b):
+        global step
+        print(f'+ exit {self.name} @ {step}')
+        Assert(self.entered_at).isNot(None)
+        Assert(self.exited_at).is_(None)
+        self.exited_at = step
+        step = step + 1
+        if self.xe:
+            print(f'E exit {self.name} @{step-1}')
+            raise self.xe
+        print(f'- exit {self.name} @{step-1}')
+        pass
+
+assert issubclass(Resource, contextlib.AbstractContextManager)
+
+
+# @cmclass tests
+@cmc.cmclass
+@dataclasses.dataclass
+class B1(cmc.CM):
+    a: Resource
+    b: int
+    pass
+
+@cmc.cmclass
+@dataclasses.dataclass
+class B2(cmc.CM):
+    c: str
+    d: Resource
+    e: Resource
+    b2_orig_entered_at=None
+    b2_orig_exited_at=None
+    def __enter__(self):
+        global step
+        print(f'B2 post entered @{step}')
+        self.b2_orig_entered_at=step
+        step = step + 1
+        pass
+    def __exit__(self,t,e,b):
+        global step
+        print(f'B2 post exited @{step}')
+        self.b2_orig_exited_at=step
+        step = step + 1
+        pass
+    pass
+
+@cmc.cmclass
+@dataclasses.dataclass
+class DD(B2, B1):
+    f: Resource
+    pass
+
+step=1
+
+with DD(Resource('a',ee=None, xe=None), #a
+       1, #b
+       'c', #c
+       Resource('d',ee=None, xe=None), #d
+       Resource('e',ee=None, xe=None), #e
+       Resource('f',ee=None, xe=None), #f
+       ) as z:
+    Assert(z.a.entered_at) == 4
+    Assert(z.a.exited_at) == None
+    Assert(z.d.entered_at) == 1
+    Assert(z.d.exited_at) == None
+    Assert(z.e.entered_at) == 2
+    Assert(z.b2_orig_entered_at) == 3
+    Assert(z.e.exited_at) == None
+    Assert(z.f.entered_at) == 5
+    Assert(z.f.exited_at) == None
+    Assert(z.b2_orig_exited_at) == None
+    pass
+
+Assert(z.a.entered_at) == 4
+Assert(z.a.exited_at) == 7
+Assert(z.d.entered_at) == 1
+Assert(z.d.exited_at) == 10
+Assert(z.e.entered_at) == 2
+Assert(z.e.exited_at) == 9
+Assert(z.f.entered_at) == 5
+Assert(z.f.exited_at) == 6
+Assert(z.b2_orig_entered_at) == 3
+Assert(z.b2_orig_exited_at) == 8
+
+print('test partial entry')
+step=1
+
+try:
+    zz=DD(Resource('a',ee=Exception('a fail'), xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=None), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=None, xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'a fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == None
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 7
+Assert(zz.e.entered_at) == 2
+Assert(zz.b2_orig_entered_at) == 3
+Assert(zz.e.exited_at) == 6
+Assert(zz.f.entered_at) == None
+Assert(zz.f.exited_at) == None
+Assert(zz.b2_orig_exited_at) == 5
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=Exception('d fail'), xe=None), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=None, xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'd fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == None
+Assert(zz.a.exited_at) == None
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == None
+Assert(zz.e.entered_at) == None
+Assert(zz.e.exited_at) == None
+Assert(zz.f.entered_at) == None
+Assert(zz.f.exited_at) == None
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=None), #d
+           Resource('e',ee=Exception('e fail'), xe=None), #e
+           Resource('f',ee=None, xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'e fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == None
+Assert(zz.a.exited_at) == None
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 3
+Assert(zz.e.entered_at) == 2
+Assert(zz.e.exited_at) == None
+Assert(zz.f.entered_at) == None
+Assert(zz.f.exited_at) == None
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=None), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=Exception('f fail'), xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'f fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == 6
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 9
+Assert(zz.e.entered_at) == 2
+Assert(z.b2_orig_entered_at) == 3
+Assert(zz.e.exited_at) == 8
+Assert(zz.f.entered_at) == 5
+Assert(zz.f.exited_at) == None
+Assert(z.b2_orig_exited_at) == 8
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=Exception('a-exit fail')), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=None), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=None, xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'a-exit fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == 7
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 10
+Assert(zz.e.entered_at) == 2
+Assert(zz.e.exited_at) == 9
+Assert(zz.b2_orig_entered_at) == 3
+Assert(zz.f.entered_at) == 5
+Assert(zz.f.exited_at) == 6
+Assert(zz.b2_orig_exited_at) == 8
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=Exception('d-exit fail')), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=None, xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'd-exit fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == 7
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 10
+Assert(zz.e.entered_at) == 2
+Assert(zz.b2_orig_entered_at) == 3
+Assert(zz.e.exited_at) == 9
+Assert(zz.f.entered_at) == 5
+Assert(zz.f.exited_at) == 6
+Assert(zz.b2_orig_exited_at) == 8
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=None), #d
+           Resource('e',ee=None, xe=Exception('e-exit fail')), #e
+           Resource('f',ee=None, xe=None), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'e-exit fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == 7
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 10
+Assert(zz.e.entered_at) == 2
+Assert(zz.b2_orig_entered_at) == 3
+Assert(zz.e.exited_at) == 9
+Assert(zz.f.entered_at) == 5
+Assert(zz.f.exited_at) == 6
+Assert(zz.b2_orig_exited_at) == 8
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=None), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=None, xe=Exception('f-exit fail')), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'f-exit fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == 7
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 10
+Assert(zz.e.entered_at) == 2
+Assert(zz.b2_orig_entered_at) == 3
+Assert(zz.e.exited_at) == 9
+Assert(zz.f.entered_at) == 5
+Assert(zz.f.exited_at) == 6
+Assert(zz.b2_orig_exited_at) == 8
+
+
+step=1
+
+try:
+    zz=DD(Resource('a',ee=None, xe=None), #a
+           1, #b
+           'c', #c
+           Resource('d',ee=None, xe=Exception('d-exit fail')), #d
+           Resource('e',ee=None, xe=None), #e
+           Resource('f',ee=None, xe=Exception('f-exit fail')), #f
+           )
+    with zz:
+        pass
+except Exception as e:
+    Assert(str(e)) == 'd-exit fail'
+else:
+    assert 'should not be here'
+    pass
+
+Assert(zz.a.entered_at) == 4
+Assert(zz.a.exited_at) == 7
+Assert(zz.d.entered_at) == 1
+Assert(zz.d.exited_at) == 10
+Assert(zz.e.entered_at) == 2
+Assert(zz.b2_orig_entered_at) == 3
+Assert(zz.e.exited_at) == 9
+Assert(zz.f.entered_at) == 5
+Assert(zz.f.exited_at) == 6
+Assert(zz.b2_orig_exited_at) == 8
+
+
+'test for [1]+[2] - see test-cmc.x1.py'
+
+step=1
+
+d1=Resource('d1',ee=None, xe=None)
+z=DD(Resource('a',ee=None, xe=None), #a
+     1, #b
+     'c', #c
+     d1, #d
+     Resource('e',ee=None, xe=None), #e
+     Resource('f',ee=None, xe=None), #f
+)
+z.d=Resource('d2',ee=None,xe=None)
+with z:
+    Assert(z.a.entered_at) == 4
+    Assert(z.a.exited_at) == None
+    Assert(z.d.entered_at) == 1
+    Assert(z.d.exited_at) == None
+    Assert(z.e.entered_at) == 2
+    Assert(z.b2_orig_entered_at) == 3
+    Assert(z.e.exited_at) == None
+    Assert(z.f.entered_at) == 5
+    Assert(z.f.exited_at) == None
+    try:
+        z.d=d1
+    except Exception as e:
+        Assert(str(e)).matches(
+            r'xju.cmc DD[(].*[)] has been entered so cannot replace '
+            r'context-managed attribute __main__.B2.d')
+    else:
+        assert False, 'should not be able to modify entered cm attribute'
+    pass
+
+Assert(z.a.entered_at) == 4
+Assert(z.a.exited_at) == 7
+Assert(z.d.entered_at) == 1
+Assert(z.d.exited_at) == 10
+Assert(z.e.entered_at) == 2
+Assert(z.b2_orig_entered_at) == 3
+Assert(z.e.exited_at) == 9
+Assert(z.f.entered_at) == 5
+Assert(z.f.exited_at) == 6
+Assert(z.b2_orig_exited_at) == 8
+
+z.d=Resource('d2',ee=None,xe=None)
+
+@dataclasses.dataclass
+class Q(cmc.CM):
+    b: int
+    pass
+
+try:
+    with Q(8):
+        pass
+    pass
+except Exception as e:
+    Assert("xju.cmc.CM.__enter__ not overridden, have you forgotten @cmclass on __main__.Q?").isIn(
+        str(e))
+    pass
+
+
+@dataclasses.dataclass
+class QQ(cmc.CM):
+    b: int
+    def __enter__(self):
+        return self
+    pass
+
+try:
+    with QQ(8):
+        pass
+    pass
+except Exception as e:
+    Assert("xju.cmc.CM.__exit__ not overridden, have you forgotten @cmclass on __main__.QQ?").isIn(
+        str(e))
+    pass
+
+
+T = TypeVar('T')
+
+class GenericResource(Generic[T]):
+    x: T
+    entered_at: Optional[int] = None
+    exited_at: Optional[int] = None
+    def __init__(self, x:T):
+        self.x = x
+        pass
+    def __enter__(self) -> T:
+        global step
+        self.entered_at = step
+        step += 1
+        return self.x
+    def __exit__(self,t,e,b) -> None:
+        global step
+        self.exited_at = step
+        step += 1
+        pass
+    pass
+
+@cmc.cmclass
+@dataclasses.dataclass
+class Z(cmc.CM):
+    y: GenericResource[int]
+
+step=1
+
+q:Z
+
+with Z(GenericResource[int](7)) as q:
+    Assert(q.y.entered_at) == 1
+    Assert(q.y.exited_at) == None
+    pass
+
+Assert(q.y.entered_at) == 1
+Assert(q.y.exited_at) == 2
+
+class GenericResourceB(Generic[T],contextlib.AbstractContextManager[T]):
+    x: T
+    entered_at: Optional[int] = None
+    exited_at: Optional[int] = None
+    def __init__(self, x:T):
+        self.x = x
+        pass
+    def __enter__(self) -> T:
+        global step
+        self.entered_at = step
+        step += 1
+        return self.x
+    def __exit__(self,t,e,b) -> None:
+        global step
+        self.exited_at = step
+        step += 1
+        pass
+    pass
+
+@cmc.cmclass
+@dataclasses.dataclass
+class ZB(cmc.CM):
+    y: GenericResourceB[int]
+    aa: list[bool]
+
+step=1
+
+r:ZB
+
+with ZB(GenericResourceB[int](7),[]) as r:
+    Assert(r.y.entered_at) == 1
+    Assert(r.y.exited_at) == None
+    pass
+
+Assert(r.y.entered_at) == 1
+Assert(r.y.exited_at) == 2
+
+Assert(cmc._is_subclass('a',7,int))==False
