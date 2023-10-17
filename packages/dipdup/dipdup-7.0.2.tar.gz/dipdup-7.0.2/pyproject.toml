@@ -1,0 +1,212 @@
+[project]
+name = "dipdup"
+description = "Modular framework for creating selective indexers and featureful backends for dapps"
+version = "7.0.2"
+authors = [
+    { name = "Lev Gorodetskii", email = "dipdup@drsr.io" },
+    { name = "Vladimir Bobrikov", email = "vladimir_bobrikov@pm.me" },
+    { name = "Michael Zaikin", email = "mz@baking-bad.org" },
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+keywords = [
+    "api",
+    "backend",
+    "blockchain",
+    "crypto",
+    "cryptocurrencies",
+    "dapp",
+    "declarative",
+    "ethereum",
+    "evm",
+    "framework",
+    "indexer",
+    "indexers",
+    "michelson",
+    "scheduler",
+    "sdk",
+    "smart-contracts",
+    "tezos",
+    "tzkt",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Typing :: Typed",
+]
+dependencies = [
+    "asyncpg~=0.28.0",
+    "datamodel-code-generator~=0.22.0",
+    "pydantic~=1.10.11",
+    "tortoise-orm==0.19.3",
+    "aiohttp~=3.8",
+    "aiolimiter~=1.0",
+    "anyio~=3.3",
+    "APScheduler~=3.8",
+    "async-lru~=2.0",
+    "asyncclick~=8.0",
+    "eth-abi~=4.0",
+    "lru-dict~=1.2",
+    "orjson~=3.9",
+    "prometheus-client~=0.17",
+    "pyarrow~=12.0",
+    "pycryptodome~=3.17",
+    "pyhumps~=3.0",
+    "pysignalr~=0.2",
+    "python-dotenv~=1.0",
+    "ruamel.yaml~=0.17",
+    "sentry-sdk~=1.29",
+    "setuptools>=68.1.2",
+    "sqlparse~=0.4",
+    "survey~=4.4",
+    "tabulate~=0.9",
+    "web3~=6.2",
+]
+
+[project.license]
+text = "MIT"
+
+[project.urls]
+Homepage = "https://dipdup.io/"
+Documentation = "https://dipdup.io/docs"
+Repository = "https://github.com/dipdup-io/dipdup"
+
+[project.scripts]
+dipdup = "dipdup.cli:cli"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "black",
+    "docker",
+    "mypy",
+    "pprofile",
+    "pytest",
+    "pytest-aiohttp",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-xdist",
+    "ruff",
+    "Sphinx",
+    "sphinx-click",
+    "sphinx-markdown-builder",
+    "types-pytz",
+    "types-tabulate",
+    "watchdog",
+]
+
+[tool.pdm.scripts]
+_black = "black src tests scripts"
+_ruff = "ruff check --fix src tests scripts"
+_mypy = "mypy src tests scripts"
+test = "pytest --cov-report=term-missing --cov=dipdup --cov-report=xml -n auto -s -v tests"
+image = "docker buildx build . --load --progress plain -t dipdup:latest"
+clean = "git clean -xdf --exclude=.venv"
+docs_build = "python scripts/docs.py --source docs --destination {args:../interface}/content/docs"
+docs_serve = "python scripts/docs.py --source docs --destination {args:../interface}/content/docs --watch --serve"
+docs_watch = "python scripts/docs.py --source docs --destination {args:../interface}/content/docs --watch"
+docs_references = "python scripts/dump_references.py"
+fixme = "grep -r -e 'FIXME: ' -e 'TODO: ' -e 'type: ignore' -n src/dipdup --color"
+
+[tool.pdm.scripts.all]
+composite = [
+    "fmt",
+    "lint",
+    "test",
+]
+
+[tool.pdm.scripts.fmt]
+composite = [
+    "_black",
+]
+
+[tool.pdm.scripts.lint]
+composite = [
+    "_ruff",
+    "_mypy",
+]
+
+[tool.pdm.scripts.update]
+shell = "    pdm update\n    pdm export --without-hashes -f requirements --prod -o requirements.txt\n    pdm export --without-hashes -f requirements --dev -o requirements.dev.txt\n"
+
+[tool.pdm.scripts.demos]
+shell = "	python scripts/update_demos.py\n	python scripts/init_demos.py\n    pdm run fmt\n    # FIXME: Run isort once to fix import sorting (bug in ruff)\n    isort . --force-single-line -l 120\n    pdm run lint\n"
+
+[tool.pdm.build.targets.wheel]
+packages = [
+    "src/dipdup",
+]
+
+[tool.black]
+line-length = 120
+target-version = [
+    "py311",
+]
+skip-string-normalization = true
+
+[tool.ruff]
+line-length = 120
+ignore = [
+    "E402",
+    "E501",
+    "TCH001",
+]
+target-version = "py311"
+extend-select = [
+    "B",
+    "C4",
+    "FA",
+    "G",
+    "I",
+    "PTH",
+    "Q",
+    "RET",
+    "RUF",
+    "TCH",
+    "UP",
+]
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "double"
+
+[tool.ruff.isort]
+force-single-line = true
+known-first-party = [
+    "dipdup",
+]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+    "pydantic.mypy",
+]
+strict = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+log_cli_level = "WARNING"
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "if TYPE_CHECKING:",
+]
+
+[build-system]
+requires = [
+    "pdm-backend",
+]
+build-backend = "pdm.backend"
