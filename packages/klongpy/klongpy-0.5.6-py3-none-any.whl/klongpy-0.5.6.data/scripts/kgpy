@@ -1,0 +1,372 @@
+#!python
+
+import argparse
+import asyncio
+import importlib.metadata
+import os
+import sys
+import threading
+import time
+import timeit
+from typing import Optional
+
+import colorama
+
+from klongpy import KlongInterpreter
+from klongpy.core import kg_write
+from klongpy.utils import CallbackEvent
+
+"""
+
+    KlongPy REPL: See https://t3x.org/klong/klong-ref.txt.html for additional details.
+
+"""
+
+def sys_cmd_shell(klong, cmd):
+    """
+
+        ]! command                                               [Shell]
+
+        Pass the given command to the Unix shell.
+
+    """
+    os.system(cmd[2:].strip())
+    return None
+
+
+def sys_cmd_apropos(klong, cmd):
+    """
+
+        ]a topic                                               [Apropos]
+
+        ]htopic is short for help("topic"). In addition, ]hall will
+        list all available help texts. The "topic" must be an operator
+        symbol or operator name (e.g. :: or Define).
+
+    """
+    # TODO
+    return None
+
+
+def sys_cmd_help(klong, cmd):
+    """
+
+        ]h topic                                                  [Help]
+
+        ]htopic is short for help("topic"). In addition, ]hall will
+        list all available help texts. The "topic" must be an operator
+        symbol or operator name (e.g. :: or Define).
+
+    """
+    # TODO
+    return None
+
+
+def sys_cmd_dir(klong, cmd):
+    """
+
+        ]i dir                                               [Inventory]
+
+        List all *.kg files (Klong source programs) in the given
+        directory. When no directory is given, it defaults to the first
+        element of the KLONGPATH variable. The ]i command depends on a
+        Unix shell and the "ls" utility (it does "cd dir; ls *.kg").
+
+    """
+    cmd = cmd[2:].strip()
+    dir = cmd if cmd else (os.environ.get("KLONGPATH") or "./").split(":")[0]
+    os.system(f"cd {dir}; ls *.kg")
+    return None
+
+
+def sys_cmd_load(klong, cmd):
+    """
+
+        ]l file                                                   [Load]
+
+        ]lfile is short for .l("file").
+
+    """
+    klong(f'.l("{cmd[2:]}")')
+    return None
+
+
+def sys_cmd_exit(klong, cmd):
+    """
+
+        ]q                                                        [Exit]
+
+        ]q is short for .x(0). However, end-of-file (control-D on Unix)
+        typically also works.
+
+    """
+    print("bye!")
+    sys.exit(0)
+
+
+def sys_cmd_transcript(klong, cmd):
+    """
+        ]t file                                             [Transcript]
+
+        Start appending user input and computed values to the given file.
+        When no file is given, stop transcript. Input will be prefixed
+        with a TAB (HT) character in the transcript file.
+
+    """
+    # TODO
+    return None
+
+
+def sys_cmd_timeit(klong, cmd):
+    """
+        ]T <prog>
+        ]T:N <prog>
+
+        Time an klong expression for 1 or N iterations using the timeit facility.
+
+        As Klong manual shows, you can perform timing functions in Klong using the .pc() operator.
+
+        timeit::{[t0];t0::.pc();x@[];.pc()-t0}
+
+        and then use it for a nilad:
+
+        timeit({1+1})
+
+        For one iteration, it's possible this Klong timeit is more accurate than the native Python timeit due to overhead.
+
+        Note: Added in KlongPy.
+
+    """
+    n = int(cmd[3:cmd.index(" ")]) if cmd[2] == ":" else 1
+    r = timeit.timeit(lambda k=klong,p=cmd[cmd.index(" "):]: k(p), number=n)
+    return f"total: {r} per: {r/n}"
+
+
+def create_sys_cmd_functions():
+    def _get_name(s):
+        s = s.strip()
+        x = s.index(']')+1
+        return s[x:x+1]
+
+    registry = {}
+
+    m = sys.modules[__name__]
+    for x in filter(lambda n: n.startswith("sys_cmd_"), dir(m)):
+        fn = getattr(m,x)
+        name = _get_name(fn.__doc__)
+        registry[name] = fn
+
+    return registry
+
+
+success = lambda input: f"{colorama.Fore.GREEN}{input}"
+failure = lambda input: f"{colorama.Fore.RED}{input}"
+
+
+async def repl_eval(klong, p, verbose=True):
+    try:
+        r = klong(p)
+        r = r if r is None else success(kg_write(r, display=True))
+    except Exception as e:
+        r = failure(f"Error: {e.args}")
+        if verbose:
+            import traceback
+            traceback.print_exception(type(e), e, e.__traceback__)
+
+    return r
+
+
+def show_repl_header(ipc_addr=None):
+    print()
+    print(f"{colorama.Fore.GREEN}Welcome to KlongPy REPL v{importlib.metadata.distribution('klongpy').version}")
+    print(f"{colorama.Fore.GREEN}author: Brian Guarraci")
+    print(f"{colorama.Fore.GREEN}repo  : https://github.com/briangu/klongpy")
+    print(f"{colorama.Fore.YELLOW}crtl-d or ]q to quit")
+    print()
+    if ipc_addr:
+        print(f"{colorama.Fore.RED}Running IPC server at {ipc_addr}")
+        print()
+
+
+def get_input():
+    return input("?> ")
+
+
+def run_in_klong_loop(klong_loop, coro, event: Optional[threading.Event] = None):
+    event = event or threading.Event()
+    event.clear()
+    def wrapper():
+        asyncio.run(coro)
+        event.set()
+
+    klong_loop.run_in_executor(None, wrapper)
+    event.wait()
+
+
+class ConsoleInputHandler:
+    @staticmethod
+    async def input_producer(console_loop, klong_loop, klong, verbose=False):
+        sys_cmds = create_sys_cmd_functions()
+        completion_event = threading.Event()
+        try:
+            while True:
+                try:
+                    s = await console_loop.run_in_executor(None, get_input)
+                    if len(s) == 0:
+                        continue
+                    if s.startswith("]"):
+                        if s[1] in sys_cmds:
+                            r = sys_cmds[s[1]](klong, s)
+                        else:
+                            print(f"unkown system command: ]{s[1]}")
+                            continue
+                    else:
+                        r = run_in_klong_loop(klong_loop, repl_eval(klong, s, verbose=verbose), event=completion_event)
+                    if r is not None:
+                        print(r)
+                except EOFError:
+                    print("\rbye!")
+                    break
+                except KeyboardInterrupt:
+                    print(failure("\nkg: error: interrupted"))
+                except Exception as e:
+                    print(failure(f"Error: {e.args}"))
+                    import traceback
+                    traceback.print_exception(type(e), e, e.__traceback__)
+        finally:
+            console_loop.stop()
+
+
+async def run_in_klong(klong, s):
+    return klong(s)
+
+
+def run_file(klong_loop, klong, fname, verbose=False):
+    with open(fname, "r") as f:
+        run_in_klong_loop(klong_loop, run_in_klong(klong, f.read()))
+
+
+def start_loop(loop, stop_event):
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(stop_event.wait())
+
+
+def setup_async_loop(start_loop_func, debug=False, slow_callback_duration=2) -> asyncio.AbstractEventLoop:
+    loop = asyncio.new_event_loop()
+    loop.slow_callback_duration = slow_callback_duration
+    if debug:
+        loop.set_debug(True)
+    thread = threading.Thread(target=start_loop_func, args=(loop,), daemon=True)
+    thread.start()
+    return loop, thread
+
+
+def cleanup_async_loop(loop: asyncio.AbstractEventLoop, loop_thread, stop_event, debug=True) -> None:
+
+    if loop.is_closed():
+        return
+
+    loop.call_soon_threadsafe(stop_event.set)
+    loop_thread.join()
+
+    pending_tasks = asyncio.all_tasks(loop=loop)
+    if len(pending_tasks) > 0:
+        print(f"cancelling {len(pending_tasks)} pending tasks...")
+        for task in pending_tasks:
+            loop.call_soon_threadsafe(task.cancel)
+        # wait for all tasks to be cancelled but we can't use run_until_complete because the loop is already running
+        while len(asyncio.all_tasks(loop=loop)) > 0:
+            time.sleep(0)
+
+    loop.stop()
+
+    if not loop.is_closed():
+        loop.close()
+
+
+if __name__ == "__main__":
+    if '--' in sys.argv:
+        index = sys.argv.index('--')
+        main_args = sys.argv[:index]
+        extras = sys.argv[index+1:]
+    else:
+        main_args = sys.argv
+        extras = []
+
+    parser = argparse.ArgumentParser(
+        prog='KlongPy',
+        description='KlongPy REPL',
+        epilog='For help, go to https://github.com/briangu/klongpy')
+    parser.add_argument('-e', '--expr', help='evaluate expression, no interactive mode')
+    parser.add_argument('-l', '--load', help='load program from file')
+    parser.add_argument('-s', '--server', help='start the IPC server', type=str)
+    parser.add_argument('-t', '--test', help='test program from file')
+    parser.add_argument('-v', '--verbose', help='enable verbose output', action="store_true")
+    parser.add_argument('-d', '--debug', help='enable debug mode', action="store_false")
+    parser.add_argument('filename', nargs='?', help='filename to be run if no flags are specified')
+
+    args = parser.parse_args(main_args[1:])
+
+    if args.expr:
+        print(KlongInterpreter()(args.expr))
+        exit()
+
+    klong = KlongInterpreter()
+
+    klong_stop_event = asyncio.Event()
+    io_stop_event = asyncio.Event()
+
+    io_loop, io_loop_thread = setup_async_loop(lambda loop: start_loop(loop, io_stop_event), debug=True, slow_callback_duration=2)
+    klong_loop, klong_loop_thread = setup_async_loop(lambda loop: start_loop(loop, klong_stop_event), debug=True, slow_callback_duration=2)
+
+    shutdown_event = CallbackEvent()
+
+    klong['.system'] = {'ioloop': io_loop, 'klongloop': klong_loop, 'closeEvent': shutdown_event}
+    klong['.os.env'] = dict(os.environ)
+    klong['.os.argv'] = extras if extras else []
+
+    run_repl = False
+
+    if args.server:
+        r = klong(f".srv({args.server})")
+        if r == 0:
+            print(f"Failed to start server")
+    elif args.test:
+        print(f"Test: {args.test}")
+        with open(args.test, "r") as f:
+            for x in f.readlines():
+                x = x.strip()
+                if len(x) == 0 or x.startswith(":"):
+                    continue
+                print(x)
+                klong(x)
+
+    if args.filename:
+        print(f"Running: {args.filename}")
+        if args.verbose:
+            print(f"Running: {args.filename}")
+        run_file(klong_loop, klong, args.filename, verbose=args.verbose)
+        # block while there are running io tasks (e.g. IPC server)
+        # is there a better way to do this?
+        while len(asyncio.all_tasks(loop=io_loop)) > 1:
+            time.sleep(0.1)
+    else:
+        run_repl = True
+
+    if run_repl:
+        console_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(console_loop)
+        if args.load:
+            if args.verbose:
+                print(f"Loading: {args.load}")
+            run_file(klong_loop, klong, args.load, verbose=args.verbose)
+        colorama.init(autoreset=True)
+        show_repl_header(args.server)
+        console_loop.create_task(ConsoleInputHandler.input_producer(console_loop,   klong_loop, klong, args.verbose))
+        console_loop.run_forever()
+        console_loop.close()
+
+    shutdown_event.trigger()
+
+    cleanup_async_loop(io_loop, io_loop_thread, stop_event=io_stop_event, debug=args.debug)
+    cleanup_async_loop(klong_loop, klong_loop_thread, stop_event=klong_stop_event, debug=args.debug)
