@@ -1,0 +1,604 @@
+#!/usr/bin/env python3
+
+# Copyright (C) 2017, Weizhi Song.
+# songwz03@gmail.com
+
+# TreeSAK is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# TreeSAK is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import warnings
+import argparse
+from TreeSAK.TreeSAK_config import config_dict
+
+
+def version(config_dict):
+    version_file = open('%s/VERSION' % config_dict['config_file_path'])
+    return version_file.readline().strip()
+
+
+def print_main_help():
+
+    help_message = ''' 
+                 ...::: TreeSAK v%s :::...
+                 
+    Marker-related
+       ExtractMarkerSeq       ->  Extract marker by blastn  
+       parse_deltall_stdout   ->  Parse stdout of deltaLL.rb
+       get_arCOG_seq          ->  Retrieve arCOG sequences
+       AssessMarkerPA         ->  Assess Markers by P/A among groups
+       SplitScore             ->  Assess markers by split score
+       AssessMarkerDeltaLL    ->  Assess Markers by DeltaLL
+       OMA                    ->  Prepare input files for running OMA 
+       OMA2                   ->  Filter OMA predicted OGs
+
+    Multiple Sequence Alignment
+       ConvertMSA             ->  Convert MSA format
+       fa2phy                 ->  Convert MSA format (fasta to phylip)
+       SingleLinePhy          ->  Put sequences in single line in phylip format
+       OneLineAln             ->  One-line fasta format alignments
+       SliceMSA               ->  Slice MSA by column 
+       AlignmentPruner        ->  Remove heterogenous sites from MSA
+       BMGE                   ->  Run BMGE
+       ConcateMSA             ->  Concatenate MSA
+    
+    Tree-related
+       MarkerSeq2Tree         ->  Marker sequence to tree
+       MarkerRef2Tree         ->  Marker (reference sequence) to Tree
+       GTDB_tree              ->  get GTDB tree
+       PMSF                   ->  run iqtree with PMSF
+       subset_tree            ->  Subset tree
+       compare_trees          ->  Compare trees with Mantel test
+       rename_leaves          ->  Rename tree leaves
+       print_leaves           ->  print out tree leaves
+       FLN                    ->  Format leaf names (e.g. remove spaces in names)
+       ModifyTopo             ->  Modify tree topology
+       GeneRax                ->  Run GeneRax (to be added)    
+       ALE                    ->  Modules for running ALE
+       RootTree               ->  Root tree with outgroup leaves
+       
+    Dating-related
+       Dating                 ->  Perform molecular dating
+       AssessCVG              ->  Assess dating convergence
+       CompareMCMC            ->  Compare MCMCTree outputs
+       PlotMcmcNode           ->  distribution of node's age estimation 
+       VisHPD95               ->  HPD95 of estimated node age
+       pRTC                   ->  Perform probabilistic RTC dating
+       
+    # Upgrade with "pip3 install --upgrade TreeSAK"
+    ''' % version(config_dict)
+
+    print(help_message)
+
+
+if __name__ == '__main__':
+
+    ########################################################################################### initialize subparsers ############################################################################################
+
+    # initialize the options parser
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(help="--", dest='subparser_name')
+
+    # disable warning message
+    warnings.filterwarnings('ignore')
+
+    # parse options
+    if (len(sys.argv) == 1) or (sys.argv[1] in ['-h', '-H', '-help', '-Help', '--help', '--Help']):
+        print_main_help()
+        sys.exit(0)
+
+    elif sys.argv[1] == 'subset_tree':
+        from TreeSAK import subset_tree
+        subset_tree_parser = subparsers.add_parser('subset_tree', description='Subset tree', usage=subset_tree.subset_tree_usage)
+        subset_tree_parser.add_argument('-i',               required=True,                                  help='input tree file')
+        subset_tree_parser.add_argument('-k',               required=True,                                  help='leaves to keep, one id per line')
+        subset_tree_parser.add_argument('-o',               required=True,                                  help='output tree file')
+        args = vars(parser.parse_args())
+        subset_tree.subset_tree(args)
+
+    elif sys.argv[1] == 'label_tree':
+        from TreeSAK import label_tree
+        label_tree_parser = subparsers.add_parser('label_tree', description='Add labels to tree leaves', usage=label_tree.label_tree_usage)
+        label_tree_parser.add_argument('-tree',             required=True,                                  help='tree file in newick format')
+        label_tree_parser.add_argument('-label',            required=False,  default=None,                  help='label file (label,leaf)')
+        label_tree_parser.add_argument('-taxon',            required=False,  default=None,                  help='taxonomic classification')
+        label_tree_parser.add_argument('-rank',             required=False,  default=None,                  help='taxonomic rank to label')
+        args = vars(parser.parse_args())
+        label_tree.label_tree(args, config_dict)
+
+    elif sys.argv[1] == 'OneLineAln':
+        from TreeSAK import OneLineAln
+        OneLineAln_parser = subparsers.add_parser('OneLineAln', description='One-line fasta format alignments', usage=OneLineAln.OneLineAln_usage)
+        OneLineAln_parser.add_argument('-in',               required=True,                       help='input MSA in fasta format')
+        OneLineAln_parser.add_argument('-out',              required=False, default=None,        help='output file')
+        OneLineAln_parser.add_argument('-upper',            required=False, action='store_true', help='turn to uppercase')
+        args = vars(parser.parse_args())
+        OneLineAln.OneLineAln(args)
+
+    elif sys.argv[1] == 'SliceMSA':
+        from TreeSAK import SliceMSA
+        SliceMSA_parser = subparsers.add_parser('SliceMSA', description='Slice MSA by column', usage=SliceMSA.SliceMSA_usage)
+        SliceMSA_parser.add_argument('-i',                  required=True,                         help='input MSA in fasta format')
+        SliceMSA_parser.add_argument('-fi',                 required=False, default='fasta',       help='format (NOT file extension) of input MSA, default: fasta')
+        SliceMSA_parser.add_argument('-s',                  required=True,                         help='columns to export, e.g. 200-300, -100, 50-')
+        SliceMSA_parser.add_argument('-o',                  required=True,                         help='output file or folder')
+        SliceMSA_parser.add_argument('-fo',                 required=False, default='fasta',       help='format of output MSA, select from fasta and phylip-relaxed, default: fasta')
+        SliceMSA_parser.add_argument('-force',              required=False, action="store_true",   help='force overwrite existing output folder')
+        args = vars(parser.parse_args())
+        SliceMSA.SliceMSA(args)
+
+    elif sys.argv[1] == 'compare_trees':
+        from TreeSAK import compare_trees
+        compare_trees_parser = subparsers.add_parser('compare_trees', usage=compare_trees.compare_trees_usage)
+        compare_trees_parser.add_argument('-t1',            required=True,                       help='tree (folder) 1')
+        compare_trees_parser.add_argument('-t2',            required=True,                       help='tree (folder) 2')
+        compare_trees_parser.add_argument('-tx',            required=False, default='newick',    help='extention of tree files, default: newick')
+        compare_trees_parser.add_argument('-dm',            required=False, action="store_true", help='export distance-alike matrix, obtained by subtract the similarity value from 1')
+        compare_trees_parser.add_argument('-t',             required=False, type=int, default=1, help='number of threads')
+        compare_trees_parser.add_argument('-tmp',           required=False, action="store_true", help='keep tmp files')
+        args = vars(parser.parse_args())
+        compare_trees.compare_trees(args)
+
+    elif sys.argv[1] == 'rename_leaves':
+        from TreeSAK import rename_leaves
+        rename_leaves_parser = subparsers.add_parser('rename_leaves', usage=rename_leaves.rename_leaves_usage)
+        rename_leaves_parser.add_argument('-i',    required=True,             help='input tree')
+        rename_leaves_parser.add_argument('-r',    required=True,             help='rename file')
+        rename_leaves_parser.add_argument('-f',    required=False, default=1, help='tree format, default: 1')
+        rename_leaves_parser.add_argument('-o',    required=True,             help='output tree')
+        args = vars(parser.parse_args())
+        rename_leaves.rename_leaves(args)
+
+    elif sys.argv[1] == 'FLN':
+        from TreeSAK import format_leaf_name
+        format_leaf_name_parser = subparsers.add_parser('FLN', usage=format_leaf_name.format_leaf_name_usage)
+        format_leaf_name_parser.add_argument('-i',                  required=True,                          help='input tree')
+        format_leaf_name_parser.add_argument('-fmt',                required=False, default=1,              help='tree format, default: 1')
+        format_leaf_name_parser.add_argument('-o',                  required=True,                          help='output tree')
+        format_leaf_name_parser.add_argument('-s2u',                required=False, action="store_true",    help='change space in tree leaves to underscore')
+        format_leaf_name_parser.add_argument('-ns',                 required=False, action="store_true",    help='remove space from leaf names')
+        format_leaf_name_parser.add_argument('-nsqm',               required=False, action="store_true",    help='remove single quotation marks from leaf names')
+        format_leaf_name_parser.add_argument('-ndqm',               required=False, action="store_true",    help='remove double quotation marks from leaf names')
+        args = vars(parser.parse_args())
+        format_leaf_name.format_leaf_name(args)
+
+    elif sys.argv[1] == 'AssessCVG':
+        from TreeSAK import AssessCVG
+        AssessCVG_parser = subparsers.add_parser('AssessCVG', usage=AssessCVG.AssessCVG_usage)
+        AssessCVG_parser.add_argument('-m1', required=True, help='mcmc.txt from run 1')
+        AssessCVG_parser.add_argument('-m2', required=True, help='mcmc.txt from run 2')
+        AssessCVG_parser.add_argument('-o',  required=True, help='output convergence plot')
+        args = vars(parser.parse_args())
+        AssessCVG.AssessCVG(args)
+
+    elif sys.argv[1] == 'parse_deltall_stdout':
+        from TreeSAK import parse_deltall_stdout
+        parse_deltall_stdout_parser = subparsers.add_parser('parse_deltall_stdout', usage=parse_deltall_stdout.parse_deltall_stdout_usage)
+        parse_deltall_stdout_parser.add_argument('-i', required=True, help='input file (e.g., nohup.out)')
+        parse_deltall_stdout_parser.add_argument('-o', required=True, help='output summary')
+        args = vars(parser.parse_args())
+        parse_deltall_stdout.parse_deltall_stdout(args)
+
+    elif sys.argv[1] == 'get_arCOG_seq':
+        from TreeSAK import get_arCOG_seq
+        get_arCOG_seq_parser = subparsers.add_parser('get_arCOG_seq', usage=get_arCOG_seq.get_arCOG_seq_usage)
+        get_arCOG_seq_parser.add_argument('-i',      required=True,                         help='arCOD id file, one id per line')
+        get_arCOG_seq_parser.add_argument('-db_dir', required=True,                         help='database folder')
+        get_arCOG_seq_parser.add_argument('-o',      required=True,                         help='output folder')
+        get_arCOG_seq_parser.add_argument('-f',      required=False, action="store_true",   help='force overwrite existing output folder')
+        args = vars(parser.parse_args())
+        get_arCOG_seq.get_arCOG_seq(args)
+
+    elif sys.argv[1] == 'ConvertMSA':
+        from TreeSAK import ConvertMSA
+        ConvertMSA_parser = subparsers.add_parser('ConvertMSA', usage=ConvertMSA.ConvertMSA_usage)
+        ConvertMSA_parser.add_argument('-i',       required=True,                       help='input alignment')
+        ConvertMSA_parser.add_argument('-xi',      required=False, default='aln',       help='input alignment extension')
+        ConvertMSA_parser.add_argument('-fi',      required=True,                       help='input alignment format, e.g., fasta, phylip')
+        ConvertMSA_parser.add_argument('-o',       required=True,                       help='output alignment')
+        ConvertMSA_parser.add_argument('-xo',      required=False, default='aln',       help='output alignment extension')
+        ConvertMSA_parser.add_argument('-fo',      required=True,                       help='output alignment format, e.g., fasta, phylip')
+        ConvertMSA_parser.add_argument('-oneline', required=False, action="store_true", help='put sequence in single line, available if -fo is fasta')
+        ConvertMSA_parser.add_argument('-nogap',   required=False, action="store_true", help='remove gaps from alignment, available if -fo is fasta')
+        ConvertMSA_parser.add_argument('-f',       required=False, action="store_true", help='force overwrite existing output folder')
+        args = vars(parser.parse_args())
+        ConvertMSA.ConvertMSA(args)
+
+    elif sys.argv[1] == 'MarkerRef2Tree':
+        from TreeSAK import MarkerRef2Tree
+        MarkerRef2Tree_parser = subparsers.add_parser('MarkerRef2Tree', usage=MarkerRef2Tree.MarkerRef2Tree_usage)
+        MarkerRef2Tree_parser.add_argument('-i',               required=True,                          help='faa dir')
+        MarkerRef2Tree_parser.add_argument('-x',               required=False, default='faa',          help='faa file extension, default: faa')
+        MarkerRef2Tree_parser.add_argument('-m',               required=True,                          help='marker seq dir, file extension need to be faa')
+        MarkerRef2Tree_parser.add_argument('-mx',              required=False, default='faa',          help='marker seq file extension, default: faa')
+        MarkerRef2Tree_parser.add_argument('-g',               required=False, default=None,           help='genome group')
+        MarkerRef2Tree_parser.add_argument('-c',               required=False, default='85',           help='presence absence cutoffs, default: 85')
+        MarkerRef2Tree_parser.add_argument('-o',               required=True,                          help='output dir')
+        MarkerRef2Tree_parser.add_argument('-e',               required=False, default='1e-30',        help='e-value cutoff, default: 1e-30')
+        MarkerRef2Tree_parser.add_argument('-t',               required=True,  type=int,               help='num of threads')
+        MarkerRef2Tree_parser.add_argument('-mmn',             required=False, default=1, type=int,    help='minimal marker number, default: 1')
+        MarkerRef2Tree_parser.add_argument('-f',               required=False, action="store_true",    help='force overwrite')
+        args = vars(parser.parse_args())
+        MarkerRef2Tree.MarkerRef2Tree(args)
+
+    elif sys.argv[1] == 'AssessMarkerPA':
+        from TreeSAK import AssessMarkerPA
+        AssessMarkerPA_parser = subparsers.add_parser('AssessMarkerPA', usage=AssessMarkerPA.AssessMarkerPA_usage)
+        AssessMarkerPA_parser.add_argument('-ta',         required=True,                               help='trimmed alignments')
+        AssessMarkerPA_parser.add_argument('-tax',        required=True,                               help='extension of trimmed alignments')
+        AssessMarkerPA_parser.add_argument('-aa',         required=True,                               help='faa file dir')
+        AssessMarkerPA_parser.add_argument('-aax',        required=True,                               help='faa file ext')
+        AssessMarkerPA_parser.add_argument('-g',          required=True,                               help='genome group')
+        AssessMarkerPA_parser.add_argument('-c',          required=False, default='25-50-75-85-100',   help='cutoffs, default: 25-50-75-85-100')
+        AssessMarkerPA_parser.add_argument('-o',          required=True,                               help='output dir')
+        AssessMarkerPA_parser.add_argument('-f',          required=False, action="store_true",         help='force overwrite existing output folder')
+        args = vars(parser.parse_args())
+        AssessMarkerPA.AssessMarkerPA(args)
+
+    elif sys.argv[1] == 'AssessMarkerDeltaLL':
+        from TreeSAK import AssessMarkerDeltaLL
+        AssessMarkerDeltaLL_parser = subparsers.add_parser('AssessMarkerDeltaLL', usage=AssessMarkerDeltaLL.AssessMarkerDeltaLL_usage)
+        AssessMarkerDeltaLL_parser.add_argument('-deltall',     required=True,                          help='DeltaLL stdout')
+        AssessMarkerDeltaLL_parser.add_argument('-o',           required=True,                          help='output dir')
+        AssessMarkerDeltaLL_parser.add_argument('-c',           required=False, default='25-50-75-100', help='cutoffs, default: 25-50-75-100')
+        AssessMarkerDeltaLL_parser.add_argument('-mmn',         required=False, default=20, type=int,   help='minimal marker number, default: 20')
+        AssessMarkerDeltaLL_parser.add_argument('-aln',         required=True,                          help='faa file dir')
+        AssessMarkerDeltaLL_parser.add_argument('-jst',         required=False, default='6',            help='threads to request in job script, for running iqtree')
+        AssessMarkerDeltaLL_parser.add_argument('-qsub',        required=False, action="store_true",    help='submit job scripts')
+        AssessMarkerDeltaLL_parser.add_argument('-f',           required=False, action="store_true",    help='force overwrite')
+        args = vars(parser.parse_args())
+        AssessMarkerDeltaLL.AssessMarkerDeltaLL(args)
+
+    elif sys.argv[1] == 'Dating':
+        from TreeSAK import Dating
+        Dating_parser = subparsers.add_parser('Dating', usage=Dating.Dating_usage)
+        Dating_parser.add_argument('-deltall', required=True,                          help='DeltaLL stdout')
+        Dating_parser.add_argument('-aod',     required=True,                          help='AssessMarkerDeltaLL output dir')
+        Dating_parser.add_argument('-og',      required=True,                          help='outgroup leaves, one leaf id per line')
+        Dating_parser.add_argument('-eu',      required=True,                          help='EU tree with time constraints')
+        Dating_parser.add_argument('-o',       required=True,                          help='dating wd')
+        Dating_parser.add_argument('-c',       required=False, default='25-50-75-100', help='cutoffs, default: 25-50-75-100')
+        Dating_parser.add_argument('-mmn',     required=False, default=20, type=int,   help='minimal marker number, default: 20')
+        Dating_parser.add_argument('-ra',      required=False, default=45, type=int,   help='root age, default: 45')
+        Dating_parser.add_argument('-qsub',    required=False, action="store_true",    help='submit job scripts for getting in.BV')
+        Dating_parser.add_argument('-f',       required=False, action="store_true",    help='force overwrite')
+        Dating_parser.add_argument('-to_test', required=True,                          help='Settings to test')
+        args = vars(parser.parse_args())
+        Dating.Dating(args)
+
+    elif sys.argv[1] == 'fa2phy':
+        from TreeSAK import fa2phy
+        fa2phy_parser = subparsers.add_parser('fa2phy', usage=fa2phy.fa2phy_usage)
+        fa2phy_parser.add_argument('-i', required=True, help='input MSA in fasta format')
+        fa2phy_parser.add_argument('-o', required=True, help='output MSA in phylip format')
+        args = vars(parser.parse_args())
+        fa2phy.fa2phy(args)
+
+    elif sys.argv[1] == 'print_leaves':
+        from TreeSAK import print_leaves
+        print_leaves_parser = subparsers.add_parser('print_leaves', usage=print_leaves.print_leaves_usage)
+        print_leaves_parser.add_argument('-i', required=True, help='input tree file')
+        args = vars(parser.parse_args())
+        print_leaves.print_leaves(args)
+
+    elif sys.argv[1] == 'CompareMCMC':
+        from TreeSAK import CompareMCMC
+        CompareMCMC_parser = subparsers.add_parser('CompareMCMC', usage=CompareMCMC.CompareMCMC_usage)
+        CompareMCMC_parser.add_argument('-mx',      required=True,                          help='mcmc.txt for x axis')
+        CompareMCMC_parser.add_argument('-my',      required=True,                          help='mcmc.txt for y axis')
+        CompareMCMC_parser.add_argument('-lx',      required=False, default=None,           help='label for x axis')
+        CompareMCMC_parser.add_argument('-ly',      required=False, default=None,           help='label for y axis')
+        CompareMCMC_parser.add_argument('-max',     required=False, default=None, type=int, help='maximum axis value')
+        CompareMCMC_parser.add_argument('-fs',      required=False, default=16, type=int,   help='label font size, default: 16')
+        CompareMCMC_parser.add_argument('-o',       required=True,                          help='output plot')
+        args = vars(parser.parse_args())
+        CompareMCMC.CompareMCMC(args)
+
+    elif sys.argv[1] == 'PlotMcmcNode':
+        from TreeSAK import PlotMcmcNode
+        PlotMcmcNode_parser = subparsers.add_parser('PlotMcmcNode', usage=PlotMcmcNode.PlotMcmcNode_usage)
+        PlotMcmcNode_parser.add_argument('-i',      required=True,                  help='folder holds the *mcmc.txt and *out.txt files')
+        PlotMcmcNode_parser.add_argument('-n',      required=True,                  help='Nodes to plot')
+        PlotMcmcNode_parser.add_argument('-l',      required=False, default=None,   help='labels on y axis')
+        PlotMcmcNode_parser.add_argument('-o',      required=True,                  help='Output plot')
+        args = vars(parser.parse_args())
+        PlotMcmcNode.PlotMcmcNode(args)
+
+    elif sys.argv[1] == 'VisHPD95':
+        from TreeSAK import VisHPD95
+        VisHPD95_parser = subparsers.add_parser('VisHPD95', usage=VisHPD95.VisHPD95_usage)
+        VisHPD95_parser.add_argument('-i',      required=True,                      help='mcmc.txt file or folder')
+        VisHPD95_parser.add_argument('-n',      required=True,                      help='Nodes to plot')
+        VisHPD95_parser.add_argument('-label',  required=False, default=None,       help='labels on y axis')
+        VisHPD95_parser.add_argument('-x',      required=False, default=8,type=int, help='plot width, default: 8')
+        VisHPD95_parser.add_argument('-y',      required=False, default=5,type=int, help='plot height, default: 5')
+        VisHPD95_parser.add_argument('-o',      required=True,                      help='Output plot')
+        args = vars(parser.parse_args())
+        args['plot_grouped_HPD95_R'] = config_dict['plot_grouped_HPD95_R']
+        VisHPD95.VisHPD95(args)
+
+    elif sys.argv[1] == 'PMSF':
+        from TreeSAK import PMSF
+        PMSF_parser = subparsers.add_parser('PMSF', usage=PMSF.PMSF_usage)
+        PMSF_parser.add_argument('-i',   required=True,                          help='input MSA file')
+        PMSF_parser.add_argument('-gm',  required=False, default='LG+F+G',       help='iqtree model for guide tree, default: LG+F+G')
+        PMSF_parser.add_argument('-m',   required=False, default='LG+C60+F+G',   help='iqtree model, default: LG+C60+F+G')
+        PMSF_parser.add_argument('-o',   required=True,                          help='output plot')
+        PMSF_parser.add_argument('-p',   required=False, default='PMSF',         help='tree prefix, default: PMSF')
+        PMSF_parser.add_argument('-t',   required=False, type=int, default=1,    help='num of threads')
+        PMSF_parser.add_argument('-f',   required=False, action="store_true",    help='force overwrite')
+        args = vars(parser.parse_args())
+        PMSF.PMSF(args)
+
+    elif sys.argv[1] == 'SingleLinePhy':
+        from TreeSAK import SingleLinePhy
+        SingleLinePhy_parser = subparsers.add_parser('SingleLinePhy', usage=SingleLinePhy.SingleLinePhy_usage)
+        SingleLinePhy_parser.add_argument('-i', required=True, help='input file')
+        SingleLinePhy_parser.add_argument('-o', required=True, help='output file')
+        args = vars(parser.parse_args())
+        SingleLinePhy.SingleLinePhy(args)
+
+    elif sys.argv[1] == 'SplitScore':
+        from TreeSAK import SplitScore
+        print(SplitScore.SplitScore_usage)
+        exit()
+
+    elif sys.argv[1] == 'SplitScore1OMA':
+        from TreeSAK import SplitScore1OMA
+        SplitScore1OMA_parser = subparsers.add_parser('SplitScore1OMA', usage=SplitScore1OMA.SplitScore1OMA_usage)
+        SplitScore1OMA_parser.add_argument('-i',   required=True,                        help='OrthologousGroups.txt, produced by OMA')
+        SplitScore1OMA_parser.add_argument('-s',   required=True,                        help='OrthologousGroupsFasta, produced by OMA')
+        SplitScore1OMA_parser.add_argument('-u',   required=False, default= None,        help='ID of interested genomes, no file extension')
+        SplitScore1OMA_parser.add_argument('-o',   required=True,                        help='output directory')
+        SplitScore1OMA_parser.add_argument('-m',   required=False, default='LG+G+I',     help='iqtree_model, default: LG+G+I')
+        SplitScore1OMA_parser.add_argument('-c',   required=False, type=int, default=80, help='coverage cutoff, default: 80')
+        SplitScore1OMA_parser.add_argument('-f',   required=False, action="store_true",  help='force overwrite')
+        SplitScore1OMA_parser.add_argument('-jst', required=False, type=int, default=3,  help='num of threads for inferring gene tree, default: 3')
+        args = vars(parser.parse_args())
+        SplitScore1OMA.SplitScore1OMA(args)
+
+    elif sys.argv[1] == 'SplitScore1':
+        from TreeSAK import SplitScore1
+        SplitScore1_parser = subparsers.add_parser('SplitScore1', usage=SplitScore1.SplitScore1_usage)
+        SplitScore1_parser.add_argument('-i',   required=True,                          help='orthologous gene sequence')
+        SplitScore1_parser.add_argument('-x',   required=True,                          help='fasta file extension')
+        SplitScore1_parser.add_argument('-o',   required=True,                          help='output directory')
+        SplitScore1_parser.add_argument('-u',   required=False, default=None,           help='interested genomes, no file extension')
+        SplitScore1_parser.add_argument('-m',   required=False, default='LG+G+I',       help='iqtree_model, default: LG+G+I')
+        SplitScore1_parser.add_argument('-c',   required=False, type=int, default=85,   help='coverage cutoff, default: 85')
+        SplitScore1_parser.add_argument('-f',   required=False, action="store_true",    help='force overwrite')
+        SplitScore1_parser.add_argument('-jst', required=False, type=int, default=1,    help='num of threads for iqtree2, default: 1')
+        SplitScore1_parser.add_argument('-r',   required=False, action="store_true",    help='run commands')
+        args = vars(parser.parse_args())
+        SplitScore1.SplitScore1(args)
+
+    elif sys.argv[1] == 'SplitScore2':
+        from TreeSAK import SplitScore2
+        SplitScore2_parser = subparsers.add_parser('SplitScore2', usage=SplitScore2.SplitScore2_usage)
+        SplitScore2_parser.add_argument('-p', required=True,                        help='output prefix')
+        SplitScore2_parser.add_argument('-i', required=True,                        help='outputs of iqtree from step 1, only needs the contree and ufboot files')
+        SplitScore2_parser.add_argument('-g', required=True,                        help='genome group')
+        SplitScore2_parser.add_argument('-k', required=True,                        help='genome taxon, GTDB format')
+        SplitScore2_parser.add_argument('-f', required=False, action="store_true",  help='force overwrite')
+        SplitScore2_parser.add_argument('-t', required=False, type=int, default=1,  help='num of threads, default: 1')
+        SplitScore2_parser.add_argument('-o', required=True,                        help='output directory')
+        args = vars(parser.parse_args())
+        SplitScore2.SplitScore2(args)
+
+    elif sys.argv[1] == 'MarkerSeq2Tree':
+        from TreeSAK import MarkerSeq2Tree
+        MarkerSeq2Tree_parser = subparsers.add_parser('MarkerSeq2Tree', usage=MarkerSeq2Tree.MarkerSeq2Tree_usage)
+        MarkerSeq2Tree_parser.add_argument('-i',   required=True,                          help='marker seq dir')
+        MarkerSeq2Tree_parser.add_argument('-x',   required=True,                          help='marker seq ext')
+        MarkerSeq2Tree_parser.add_argument('-o',   required=True,                          help='output dir')
+        MarkerSeq2Tree_parser.add_argument('-t',   required=False, type=int, default=1,    help='num of threads')
+        MarkerSeq2Tree_parser.add_argument('-f',   required=False, action="store_true",    help='force overwrite')
+        args = vars(parser.parse_args())
+        MarkerSeq2Tree.MarkerSeq2Tree(args)
+
+    elif sys.argv[1] == 'GTDB_tree':
+        from TreeSAK import GTDB_tree
+        GTDB_tree_parser = subparsers.add_parser('GTDB_tree', usage=GTDB_tree.GTDB_tree_usage)
+        GTDB_tree_parser.add_argument('-p', required=True,                         help='output prefix')
+        GTDB_tree_parser.add_argument('-i', required=True,                         help='genome folder')
+        GTDB_tree_parser.add_argument('-x', required=True,                         help='genome file extension')
+        GTDB_tree_parser.add_argument('-t', required=False, type=int, default=1,   help='number of threads')
+        args = vars(parser.parse_args())
+        GTDB_tree.GTDB_tree(args)
+
+    elif sys.argv[1] == 'ExtractMarkerSeq':
+        from TreeSAK import ExtractMarkerSeq
+        ExtractMarkerSeq_parser = subparsers.add_parser('ExtractMarkerSeq', usage=ExtractMarkerSeq.ExtractMarkerSeq_usage)
+        ExtractMarkerSeq_parser.add_argument('-m',               required=True,                          help='marker seq dir')
+        ExtractMarkerSeq_parser.add_argument('-mx',              required=True,                          help='marker seq ext')
+        ExtractMarkerSeq_parser.add_argument('-aa',              required=True,                          help='faa file dir')
+        ExtractMarkerSeq_parser.add_argument('-aax',             required=True,                          help='faa file ext')
+        ExtractMarkerSeq_parser.add_argument('-o',               required=True,                          help='output dir')
+        ExtractMarkerSeq_parser.add_argument('-e',               required=True,  default=1e-30,          help='e-value cutoff, default: 1e-30')
+        ExtractMarkerSeq_parser.add_argument('-t',               required=True,  type=int,               help='num of threads')
+        ExtractMarkerSeq_parser.add_argument('-f',               required=False, action="store_true",    help='force overwrite')
+        args = vars(parser.parse_args())
+        ExtractMarkerSeq.ExtractMarkerSeq(args)
+
+    elif sys.argv[1] == 'OMA':
+        from TreeSAK import OMA
+        OMA_parser = subparsers.add_parser('OMA', usage=OMA.OMA_usage)
+        OMA_parser.add_argument('-i',   required=True,                       help='genome folder')
+        OMA_parser.add_argument('-x',   required=True,                       help='genome file extension')
+        OMA_parser.add_argument('-st',  required=False, default='AA',        help='sequence type, AA or DNA, default: AA')
+        OMA_parser.add_argument('-og',  required=True,                       help='id of outgroup genomes, without file extension')
+        OMA_parser.add_argument('-o',   required=True,  default=None,        help='output dir, i.e., OMA working directory')
+        OMA_parser.add_argument('-f',   required=False, action="store_true", help='force overwrite')
+        OMA_parser.add_argument('-t',   required=False, type=int, default=6, help='number of threads for running OMA, default: 6')
+        args = vars(parser.parse_args())
+        OMA.OMA(args)
+
+    elif sys.argv[1] == 'OMA2':
+        from TreeSAK import OMA2
+        OMA2_parser = subparsers.add_parser('OMA2', usage=OMA2.OMA2_usage)
+        OMA2_parser.add_argument('-i',   required=True,                          help='OrthologousGroups.txt')
+        OMA2_parser.add_argument('-s',   required=True,                          help='sequence dir, OrthologousGroupsFasta')
+        OMA2_parser.add_argument('-g',   required=True,                          help='id of interested genomes')
+        OMA2_parser.add_argument('-o',   required=True,  default=None,           help='output directory')
+        OMA2_parser.add_argument('-n',   required=False, type=int, default=3,    help='minimal number of gene in a OG, deafult: 3')
+        OMA2_parser.add_argument('-f',   required=False, action="store_true",    help='force overwrite')
+        args = vars(parser.parse_args())
+        OMA2.OMA2(args)
+
+    elif sys.argv[1] == 'ALE':
+        from TreeSAK import ALE
+        print(ALE.ALE_usage)
+        exit()
+
+    elif sys.argv[1] == 'ALE1':
+        from TreeSAK import ALE1
+        ALE1_parser = subparsers.add_parser('ALE1', usage=ALE1.ALE1_usage)
+        ALE1_parser.add_argument('-i',   required=True,                         help='orthologous groups, either from orthofinder or oma')
+        ALE1_parser.add_argument('-s',   required=True,                         help='sequence file, e.g., combined.faa')
+        ALE1_parser.add_argument('-p',   required=True,                         help='orthologous identification program, orthofinder or oma')
+        ALE1_parser.add_argument('-m',   required=False, type=int, default=50,  help='min_og_genome_num, default: 50')
+        ALE1_parser.add_argument('-o',   required=True,                         help='output dir, i.e., OMA working directory')
+        ALE1_parser.add_argument('-jst', required=False, type=int, default=3,   help='number of threads for job script, default: 3')
+        ALE1_parser.add_argument('-f',   required=False, action="store_true",   help='force overwrite')
+        args = vars(parser.parse_args())
+        ALE1.ALE1(args)
+
+    elif sys.argv[1] == 'ALE2':
+        from TreeSAK import ALE2
+        ALE2_parser = subparsers.add_parser('ALE2', usage=ALE2.ALE2_usage)
+        ALE2_parser.add_argument('-i',      required=True,                         help='ALE1 output directory')
+        ALE2_parser.add_argument('-s',      required=True,                         help='rooted species tree')
+        ALE2_parser.add_argument('-o',      required=True,                         help='output dir, i.e., OMA working directory')
+        ALE2_parser.add_argument('-runALE', required=False, action="store_true",   help='run ALE')
+        ALE2_parser.add_argument('-docker', required=False, default=None,          help='Docker image, if ALE was installed with Docker, e.g., gregmich/alesuite_new')
+        ALE2_parser.add_argument('-f',      required=False, action="store_true",   help='force overwrite')
+        ALE2_parser.add_argument('-t',      required=False, type=int, default=6,   help='number of threads, default: 6')
+        args = vars(parser.parse_args())
+        ALE2.ALE2(args)
+
+    elif sys.argv[1] == 'ALE3':
+        from TreeSAK import ALE3
+        ALE3_parser = subparsers.add_parser('ALE3', usage=ALE3.ALE3_usage)
+        ALE3_parser.add_argument('-i',   required=True,                             help='Folder with uml_rec files')
+        ALE3_parser.add_argument('-c',   required=False, type=float, default=0.8,   help='gene family presence cutoff, default: 0.8')
+        ALE3_parser.add_argument('-a',   required=False, default=None,              help='OG functional description')
+        ALE3_parser.add_argument('-o',   required=True,                             help='output dir')
+        ALE3_parser.add_argument('-f',   required=False, action="store_true",       help='force overwrite')
+        args = vars(parser.parse_args())
+        ALE3.ALE3(args)
+
+    elif sys.argv[1] == 'ALE4':
+        from TreeSAK import ALE4
+        ALE4_parser = subparsers.add_parser('ALE4', usage=ALE4.ALE4_usage)
+        ALE4_parser.add_argument('-i1',     required=True,                              help='ALE1 output directory')
+        ALE4_parser.add_argument('-i2',     required=True,                              help='ALE2 output directory')
+        ALE4_parser.add_argument('-c',      required=True,                              help='genome_taxon, GTDB format')
+        ALE4_parser.add_argument('-color',  required=True,                              help='phylum color code')
+        ALE4_parser.add_argument('-o',      required=True,                              help='output dir, i.e., ALE4_op_dir')
+        ALE4_parser.add_argument('-f',      required=False, action="store_true",        help='force overwrite')
+        ALE4_parser.add_argument('-api',    required=True,                              help='iTOL API key')
+        ALE4_parser.add_argument('-fc',     required=False, type=float, default=0.5,    help='hgt_freq_cutoff, default: 0.5')
+        ALE4_parser.add_argument('-mld',    required=False, type=int, default=5,        help='donor_node_min_leaf_num, default: 5')
+        ALE4_parser.add_argument('-mlr',    required=False, type=int, default=5,        help='recipient_node_min_leaf_num, default: 5')
+        ALE4_parser.add_argument('-itol',   required=False, default='batch_access_tmp', help='iTOL project_name, default: batch_access_tmp')
+        args = vars(parser.parse_args())
+        ALE4.ALE4(args)
+
+    elif sys.argv[1] == 'RootTree':
+        from TreeSAK import RootTree
+        RootTree_parser = subparsers.add_parser('RootTree', usage=RootTree.RootTree_usage)
+        RootTree_parser.add_argument('-i',      required=True,                          help='input tree')
+        RootTree_parser.add_argument('-og',     required=True,                          help='out group leaves')
+        RootTree_parser.add_argument('-o',      required=True,                          help='output tree')
+        RootTree_parser.add_argument('-fmt',    required=False, default=1, type=int,    help='tree format, default: 1')
+        args = vars(parser.parse_args())
+        RootTree.RootTree(args)
+
+    elif sys.argv[1] == 'AlignmentPruner':
+        from TreeSAK import AlignmentPruner
+        AlignmentPruner_parser = subparsers.add_parser('AlignmentPruner', usage=AlignmentPruner.AlignmentPruner_usage)
+        AlignmentPruner_parser.add_argument('-i', required=True, help='input MSA')
+        AlignmentPruner_parser.add_argument('-c', required=True, help='heterogeneity cutoff')
+        AlignmentPruner_parser.add_argument('-o', required=True, help='output MSA')
+        args = vars(parser.parse_args())
+        AlignmentPruner.AlignmentPruner(args)
+
+    elif sys.argv[1] == 'BMGE':
+        from TreeSAK import BMGE
+        BMGE_parser = subparsers.add_parser('BMGE', usage=BMGE.BMGE_usage)
+        BMGE_parser.add_argument('-p',   required=True,                         help='output prefix')
+        BMGE_parser.add_argument('-i',   required=True,                         help='input MSA')
+        BMGE_parser.add_argument('-m',   required=False, default='BLOSUM30',    help='trim model, default: BLOSUM30')
+        BMGE_parser.add_argument('-esc', required=False, default='0.55',        help='entropy score cutoff, default: 0.55')
+        args = vars(parser.parse_args())
+        BMGE.BMGE(args)
+
+    elif sys.argv[1] == 'pRTC':
+        from TreeSAK import pRTC
+        pRTC_parser = subparsers.add_parser('pRTC', usage=pRTC.pRTC_usage)
+        pRTC_parser.add_argument('-i',     required=True,                   help='the file "out" generated by MCMCTree')
+        pRTC_parser.add_argument('-m',     required=True,                   help='the file "mcmc.txt" generated by MCMCTree')
+        pRTC_parser.add_argument('-r',     required=True,                   help='the folder that contains RTCs')
+        pRTC_parser.add_argument('-o',     required=True,                   help='output txt file')
+        pRTC_parser.add_argument('-ruby',  required=False, default='ruby',  help='path to ruby executable file, default: ruby')
+        args = vars(parser.parse_args())
+        pRTC.pRTC(args)
+
+    elif sys.argv[1] == 'ConcateMSA':
+        from TreeSAK import ConcateMSA
+        ConcateMSA_parser = subparsers.add_parser('ConcateMSA', usage=ConcateMSA.ConcateMSA_usage)
+        ConcateMSA_parser.add_argument('-i',        required=True,                          help='input MSA folder')
+        ConcateMSA_parser.add_argument('-x',        required=True,                          help='input file extension')
+        ConcateMSA_parser.add_argument('-p',        required=True,                          help='output prefix')
+        ConcateMSA_parser.add_argument('-gene2gnm', required=False, action="store_true",    help='gene id to gnm id, split sequence id before the last _')
+        args = vars(parser.parse_args())
+        ConcateMSA.ConcateMSA(args)
+
+    elif sys.argv[1] == 'SingleAleHGT':
+        from TreeSAK import SingleAleHGT
+        SingleAleHGT_parser = subparsers.add_parser('SingleAleHGT', usage=SingleAleHGT.SingleAleHGT_usage)
+        SingleAleHGT_parser.add_argument('-faa',    required=False, default=None,               help='input aa file, e.g., OMA0001.faa')
+        SingleAleHGT_parser.add_argument('-msa',    required=False, default=None,               help='input MSA file, e.g., OMA0001.aln')
+        SingleAleHGT_parser.add_argument('-o',      required=True,                              help='output dir, e.g., SingleAleHGT_wd')
+        SingleAleHGT_parser.add_argument('-s',      required=True,                              help='rooted species tree')
+        SingleAleHGT_parser.add_argument('-c',      required=True,                              help='genome_taxon, GTDB format')
+        SingleAleHGT_parser.add_argument('-color',  required=True,                              help='phylum color code')
+        SingleAleHGT_parser.add_argument('-fc',     required=False, type=float, default=0.5,    help='hgt_freq_cutoff, default: 0.5')
+        SingleAleHGT_parser.add_argument('-mld',    required=False, type=int, default=5,        help='donor_node_min_leaf_num, default: 5')
+        SingleAleHGT_parser.add_argument('-mlr',    required=False, type=int, default=5,        help='recipient_node_min_leaf_num, default: 5')
+        SingleAleHGT_parser.add_argument('-trim',   required=False, action="store_true",        help='trim MSA')
+        SingleAleHGT_parser.add_argument('-docker', required=False, default=None,               help='Docker image, if ALE was installed with Docker, e.g., gregmich/alesuite_new')
+        SingleAleHGT_parser.add_argument('-itol',   required=False, default='batch_access_tmp', help='iTOL project_name, default: batch_access_tmp')
+        SingleAleHGT_parser.add_argument('-api',    required=True,                              help='iTOL API key')
+        SingleAleHGT_parser.add_argument('-t',      required=False, type=int, default=6,        help='number of threads, default: 6')
+        SingleAleHGT_parser.add_argument('-f',      required=False, action="store_true",        help='force overwrite')
+        args = vars(parser.parse_args())
+        SingleAleHGT.SingleAleHGT(args)
+
+    else:
+        print('Unrecognized command: %s, program exited' % sys.argv[1])
+        exit()
+
+
+upload_to_pypi_cmd = '''
+
+cd /Users/songweizhi/PycharmProjects/TreeSAK
+rm -r build dist TreeSAK.egg-info
+python setup.py sdist bdist_wheel
+twine upload dist/*
+
+songweizhi  shan88
+pip3 install --upgrade TreeSAK
+TreeSAK -h
+
+'''
