@@ -1,0 +1,53 @@
+{
+    "commands": {
+        "norflash": {
+            "erase": "dtm {} flash_block_erase -s {} -e {}",
+            "load": "load {} -m yMODEM -b {}",
+            "write": "dtm flash_write -a {} -d {} {}"
+        },
+        "spiflash": {
+            "erase": "dtm erase_flash -s {}",
+            "load": "load serialflash -m yMODEM -b {}"
+        },
+        "ee": {
+            "write": "dtm write_ee -a {} -d {}"
+        }
+    },
+    "FC360": {
+        "aoc": [
+            "dtm flash_block_erase -s 9 -e 53",
+            "load -m yMODEM -b 0xFFE80000",
+            "dtm flash_block_erase -s 9 -e 9",
+            "dtm flash_write -a 0xFFFE7F80 -d 0123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670123456701234567012345670000E8FF00000000"
+        ],
+        "lang": [
+            "dtm erase_flash -s 0",
+            "dtm erase_flash -s 1",
+            "dtm erase_flash -s 2",
+            "dtm erase_flash -s 3",
+            "dtm erase_flash -s 4",
+            "dtm erase_flash -s 5",
+            "dtm erase_flash -s 6",
+            "dtm erase_flash -s 7",
+            "dtm erase_flash -s 8",
+            "load serialflash -m yMODEM -b 0x00"
+        ],
+        "moc": [
+            "dtm timeout -t 20000",
+            "dtm moc flash_block_erase -s 4 -e 7",
+            "dtm timeout -t 2000",
+            "load moc -m yMODEM -b 0x08010000"
+        ],
+        "pud": [
+            "dtm timeout -t 5000",
+            "dtm moc flash_block_erase -s 2 -e 2",
+            "dtm timeout -t 1000",
+            "load moc -m yMODEM -b 0x08008000"
+        ],
+        "lcp23":[
+            "dtm timeout -t 2000",
+            "dtm lcp flash_block_erase -s 18 -e 63",
+            "load lcpflash -m yMODEM -b 0x08009000"
+        ]
+    }
+}
