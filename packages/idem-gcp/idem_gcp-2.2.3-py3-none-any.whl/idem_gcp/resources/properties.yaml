@@ -1,0 +1,1242 @@
+# TODO: check for nested create-only properties
+
+# TODO: Make sure to check if these properties correspond correctly to the JSON schema
+
+# TODO: Don't add projection
+
+compute.zone_operation:
+  get:
+    - project
+    - zone
+    - operation
+
+compute.region_operation:
+  get:
+    - project
+    - region
+    - operation
+
+compute.global_operation:
+  get:
+    - project
+    - operation
+
+compute.instance:
+  manual_mapping:
+    body.network_interfaces.network_ip: networkIP
+    body.network_ip: networkIP
+    body.network_interfaces.access_configs.nat_ip: natIP
+    body.nat_ip: natIP
+  get:
+    - project
+    - zone
+    - instance
+    - status
+  insert:
+#    path parameters
+    - project
+    - zone
+#    query parameters
+    - requestId
+    - sourceInstanceTemplate
+    - sourceMachineImage
+#    body
+    - name
+    - description
+    - tags
+    - machineType
+    - canIpForward
+    - networkInterfaces
+    - disks
+    - metadata
+    - serviceAccounts
+    - scheduling
+    - labels
+    - params
+    - labelFingerprint
+    - minCpuPlatform
+    - guestAccelerators
+    - deletionProtection
+    - resourcePolicies
+    - sourceMachineImage
+    - reservationAffinity
+    - hostname
+    - displayDevice
+    - shieldedInstanceConfig
+    - shieldedInstanceIntegrityPolicy
+    - sourceMachineImageEncryptionKey
+    - confidentialInstanceConfig
+    - fingerprint
+    - privateIpv6GoogleAccess
+    - advancedMachineFeatures
+    - networkPerformanceConfig
+    - keyRevocationActionType
+  update:
+#   path parameters
+    - project
+    - zone
+    - instance
+#   query parameters
+    - requestId
+    - mostDisruptiveAllowedAction
+    - minimalAction
+#   body
+    - name
+    - description
+    - tags
+    - machineType
+    - canIpForward
+    - networkInterfaces
+    - disks
+    - metadata
+    - serviceAccounts
+    - scheduling
+    - labels
+    - params
+    - labelFingerprint
+    - minCpuPlatform
+    - guestAccelerators
+    - deletionProtection
+    - resourcePolicies
+    - sourceMachineImage
+    - reservationAffinity
+    - hostname
+    - displayDevice
+    - shieldedInstanceConfig
+    - shieldedInstanceIntegrityPolicy
+    - sourceMachineImageEncryptionKey
+    - confidentialInstanceConfig
+    - fingerprint
+    - privateIpv6GoogleAccess
+    - advancedMachineFeatures
+    - networkPerformanceConfig
+    - keyRevocationActionType
+    - status
+  delete:
+#   path parameters
+    - project
+    - zone
+    - resourceId
+#   query parameters
+    - requestId
+#  resource_id:
+#    - name
+#    - resourceId
+  exclude_paths:
+    - project
+    - sourceInstanceTemplate
+    - requestId
+    - mostDisruptiveAllowedAction
+    - minimalAction
+    - fingerprint
+    - labelFingerprint
+    - networkInterfaces[].fingerprint
+    - tags.fingerprint
+    - metadata.fingerprint
+  readonly_return_props:
+    - id
+  exclude_properties_from_transformation:
+    - disks.initializeParams.labels
+    - labels
+    - tags
+  nested_non_updatable_properties:
+    - disks[].initializeParams
+  relevant_dict_items_removed:
+    # dictKeysPlaceholder is used to specify that the label keys are relevant if removed, not the labels property itself
+    - labels.dictKeysPlaceholder
+
+compute.accelerator_type:
+  get:
+    - project
+    - zone
+    - acceleratorType
+  fields_enum_type:
+    - kind
+    - id
+    - creationTimestamp
+    - name
+    - deprecated
+    - description
+    - zone
+    - selfLink
+    - maximumCardsPerInstance
+
+compute.machine_type:
+  get:
+    - project
+    - zone
+    - machineType
+  fields_enum_type:
+    - kind
+    - id
+    - creationTimestamp
+    - name
+    - deprecated
+    - description
+    - guestCpus
+    - memoryMb
+    - imageSpaceGb
+    - maximumPersistentDisks
+    - maximumPersistentDisksSizeGb
+    - zone
+    - selfLink
+    - isSharedCpu
+    - accelerators
+
+compute.zone:
+  get:
+    - project
+    - zone
+  fields_enum_type:
+    - kind
+    - id
+    - creationTimestamp
+    - name
+    - deprecated
+    - description
+    - status
+    - region
+    - selfLink
+    - availableCpuPlatforms
+    - supportsPzs
+
+compute.disk_type:
+  get:
+    - project
+    - zone
+    - region
+    - diskType
+  fields_enum_type:
+    - creationTimestamp
+    - defaultDiskSizeGb
+    - deprecated
+    - description
+    - id
+    - kind
+    - name
+    - region
+    - selfLink
+    - validDiskSize
+    - zone
+
+compute.disk:
+  get:
+    - project
+    - zone
+    - region
+    - disk
+  insert:
+#    path parameters
+    - project
+    - zone
+    - region
+#    query parameters
+    - requestId
+    - sourceImage
+#    body
+    - name
+    - description
+    - sizeGb
+    - sourceSnapshot
+    - sourceStorageObject
+    - options
+    - sourceImage
+    - type
+    - licenses
+    - guestOsFeatures
+    - diskEncryptionKey
+    - sourceImageEncryptionKey
+    - sourceSnapshotEncryptionKey
+    - labels
+    - labelFingerprint
+    - replicaZones
+    - licenseCodes
+    - physicalBlockSizeBytes
+    - resourcePolicies
+    - sourceDisk
+    - provisionedIops
+    - locationHint
+    - architecture
+    - params
+  update:
+    - labels
+    - resourcePolicies
+    - sizeGb
+  delete:
+#   path parameters
+    - project
+    - zone
+    - disk
+#   query parameters
+    - requestId
+  exclude_paths:
+    - label_fingerprint
+  readonly_return_props:
+    - id
+  exclude_properties_from_transformation:
+    - labels
+    - tags
+    - resourceManagerTags
+  missing_property_assumed_value:
+    labels: {}
+    resourcePolicies: []
+
+compute.machine_image:
+  get:
+    - project
+    - machineImage
+  insert:
+#    path parameters
+    - project
+#    query parameters
+    - requestId
+    - sourceInstance
+#    body
+    - storageLocations
+    - guestFlush
+    - sourceInstance
+    - description
+    - name
+    - savedDisks
+    - machineImageEncryptionKey
+    - sourceDiskEncryptionKeys
+  delete:
+#   path parameters
+    - project
+    - machineImage
+#   query parameters
+    - requestId
+
+compute.network:
+  get:
+    - project
+    - network
+  insert:
+#    path parameters
+    - project
+#    query parameters
+    - requestId
+#    body
+    - name
+    - autoCreateSubnetworks
+    - description
+    - enableUlaInternalIpv6
+    - internalIpv6Range
+    - mtu
+    - networkFirewallPolicyEnforcementOrder
+    - routingConfig
+    - peerings
+  update:
+    - enableUlaInternalIpv6
+    - internalIpv6Range
+    - mtu
+    - networkFirewallPolicyEnforcementOrder
+    - routingConfig
+    - peerings
+  readonly_return_props:
+    - id
+  delete:
+#   path parameters
+    - project
+    - network
+#   query parameters
+    - requestId
+  exclude_paths:
+    - peerings
+
+compute.node_template:
+  get:
+    - project
+    - region
+    - nodeTemplate
+  insert:
+#    path parameters
+    - project
+    - region
+#    query parameters
+    - requestId
+#    body
+    - name
+    - description
+    - disks
+    - cpuOvercommitType
+    - serverBinding
+    - nodeAffinityLabels
+    - nodeTypeFlexibility
+    - accelerators
+    - nodeType
+  delete:
+#   path parameters
+    - project
+    - region
+    - nodeTemplate
+#   query parameters
+    - requestId
+
+compute.reservation:
+  get:
+#   path parameters
+    - project
+    - zone
+    - reservation
+  insert:
+#   path parameters
+    - project
+    - zone
+#    query parameters
+    - requestId
+#    body
+    - name
+    - description
+    - shareSettings
+    - specificReservation
+    - specificReservationRequired
+  update:
+#   path parameters
+    - project
+    - zone
+    - reservation
+#    query parameters
+    - requestId
+    - updateMask
+    - paths
+#    body
+    - name
+    - description
+    - shareSettings
+    - specificReservation
+    - specificReservationRequired
+  delete:
+#   path parameters
+    - project
+    - zone
+    - reservation
+#   query parameters
+    - requestId
+
+storage.bucket:
+  get:
+    - bucket
+    - projection
+  insert:
+#     query parameters
+    - predefinedAcl
+    - predefinedDefaultObjectAcl
+    - project
+    - projection
+    - userProject
+#     body
+    - name
+    - autoclass
+    - billing
+    - cors
+    - customPlacementConfig
+    - defaultEventBasedHold
+    - encryption
+    - iamConfiguration
+    - labels
+    - lifecycle
+    - location
+    - logging
+    - retentionPolicy
+    - rpo
+    - storageClass
+    - versioning
+    - website
+# TODO [DA]: Remove nested properties if separate Access Control resources are defined
+    - acl
+    - defaultObjectAcl
+  update:
+    - bucket # TODO: this is equal to name from insert so perhaps we should annotate equivalent properties with different names from the different methods
+#    - ifMetagenerationMatch
+#    - ifMetagenerationNotMatch
+#    - predefinedAcl
+    - billing
+    - cors
+    - defaultEventBasedHold
+    - encryption
+    - iamConfiguration
+    - labels
+    - lifecycle
+    - logging
+    - retentionPolicy
+    - rpo
+    - storageClass
+    - versioning
+    - website
+# TODO [DA]: Remove nested properties if separate Access Control resources are defined
+    - acl
+    - defaultObjectAcl
+  delete:
+#   path parameters
+    - bucket
+#   query parameters
+    - userProject
+#  equivalent_properties:
+#    - [metageneration, ifMetagenerationMatch, ifMetagenerationNotMatch]
+#    - [bucket, name]
+#  resource_id:
+#      - name
+#      - bucket
+#    metageneration:
+#      - ifMetagenerationMatch
+#      - ifMetagenerationNotMatch
+  readonly_return_props:
+    - metageneration
+  exclude_paths:
+    - iamConfiguration.bucketPolicyOnly
+#   read-only nested props - don't consider them in diff, but we still return them
+    - iamConfiguration.uniformBucketLevelAccess.lockedTime
+    - retentionPolicy.effectiveTime
+  exclude_properties_from_transformation:
+    - labels
+  nested_non_updatable_properties:
+    - acl[].bucket
+    - acl[].domain
+    - acl[].email
+    - acl[].entityId
+    - acl[].etag
+    - acl[].id
+    - acl[].kind
+    - acl[].projectTeam.projectNumber
+    - acl[].projectTeam.team
+    - acl[].selfLink
+    - defaultObjectAcl[].domain
+    - defaultObjectAcl[].email
+    - defaultObjectAcl[].entityId
+    - defaultObjectAcl[].etag
+    - defaultObjectAcl[].kind
+    - defaultObjectAcl[].projectTeam.team
+    - defaultObjectAcl[].projectTeam.projectNumber
+  missing_property_assumed_value:
+    autoclass:
+      enabled: False
+    billing:
+      requesterPays: False
+    cors: []
+    customPlacementConfig: null
+    defaultEventBasedHold: False
+    encryption: null
+    iamConfiguration:
+      publicAccessPrevention: inherited
+      uniformBucketLevelAccess:
+        enabled: False
+    lifecycle:
+      rule: []
+    location: US
+    logging: null
+    retentionPolicy: null
+    storageClass: STANDARD
+    versioning:
+      enabled: False
+    labels: {}
+    website:
+      mainPageSuffix: null
+      notFoundPage: null
+
+
+compute.resource_policy:
+  get:
+    - project
+    - region
+    - resourcePolicy
+  insert:
+#    path parameters
+    - project
+    - region
+#    query parameters
+    - requestId
+#    body
+    - name
+    - description
+    - snapshotSchedulePolicy
+    - groupPlacementPolicy
+    - instanceSchedulePolicy
+  delete:
+#   path parameters
+    - project
+    - region
+    - resourcePolicy
+#   query parameters
+    - requestId
+  exclude_properties_from_transformation:
+    - labels
+
+cloudkms.projects.locations.key_rings:
+  resource_id:
+    - name
+
+cloudkms.projects.locations:
+  fields_enum_type:
+    - locationId
+    - displayName
+    - labels
+    - metadata
+  resource_id:
+    - name
+
+cloudkms.projects.locations.key_rings.crypto_keys:
+  fields_enum_type:
+    - primary
+  create:
+    - purpose
+    - nextRotationTime
+    - versionTemplate
+    - labels
+    - importOnly
+    - destroyScheduledDuration
+    - cryptoKeyBackend
+    - rotationPeriod
+  update:
+    - nextRotationTime
+    - versionTemplate
+    - labels
+    - rotationPeriod
+  resource_id:
+    - name
+  exclude_properties_from_transformation:
+    - labels
+
+cloudkms.projects.locations.key_rings.import_jobs:
+  fields_enum_type:
+    - createTime
+    - generateTime
+    - expireTime
+    - expireEventTime
+    - state
+    - publicKey
+    - attestation
+  create:
+    - importMethod
+    - protectionLevel
+  resource_id:
+    - name
+
+cloudkms.projects.locations.key_rings.crypto_keys.crypto_key_versions:
+  fields_enum_type:
+    - protectionLevel
+    - algorithm
+    - attestation
+    - createTime
+    - generateTime
+    - destroyTime
+    - destroyEventTime
+    - importJob
+    - importTime
+    - importFailureReason
+    - reimportEligible
+  create:
+    - state
+    - externalProtectionLevelOptions
+  update:
+    - state
+    - externalProtectionLevelOptions
+  resource_id:
+    - name
+
+compute.image:
+  get:
+    - project
+    - image
+  insert:
+#    path parameters
+    - project
+#    query parameters
+    - requestId
+#    body
+    - name
+    - description
+    - sourceType
+    - rawDisk
+    - deprecated
+    - archiveSizeBytes
+    - diskSizeGb
+    - sourceDisk
+    - licenses
+    - imageEncryptionKey
+    - sourceDiskEncryptionKey
+    - labels
+    - labelFingerprint
+    - guestOsFeatures
+    - licenseCodes
+    - sourceImage
+    - sourceImageEncryptionKey
+    - sourceSnapshot
+    - sourceSnapshotEncryptionKey
+    - storageLocations
+    - shieldedInstanceInitialState
+    - architecture
+  delete:
+#   path parameters
+    - project
+    - image
+#   query parameters
+    - requestId
+  exclude_properties_from_transformation:
+    - labels
+
+compute.subnetwork:
+  get:
+    - project
+    - region
+    - subnetwork
+  insert:
+#    path parameters
+    - project
+    - region
+#    query parameters
+    - requestId
+#    body
+    - name
+    - description
+    - network
+    - ipCidrRange
+    - region
+    - privateIpGoogleAccess
+    - secondaryIpRanges
+    - fingerprint
+    - enableFlowLogs
+    - privateIpv6GoogleAccess
+    - purpose
+    - role
+    - logConfig
+    - stackType
+    - ipv6AccessType
+  update:
+#    path parameters
+    - project
+    - region
+    - subnetwork
+#    query parameters
+    - requestId
+#    body
+    - name
+    - ipCidrRange
+    - privateIpGoogleAccess
+    - secondaryIpRanges
+    - fingerprint
+    - enableFlowLogs
+    - privateIpv6GoogleAccess
+    - purpose
+    - role
+    - logConfig
+    - stackType
+    - ipv6AccessType
+  readonly_return_props:
+    - id
+
+compute.firewall:
+  manual_mapping:
+    body.allowed.ip_protocol: IPProtocol
+    body.denied.ip_protocol: IPProtocol
+  get:
+    - project
+  fields_enum_type:
+    - kind
+    - id
+    - creationTimestamp
+  insert:
+    - name
+    - description
+    - network
+    - priority
+    - sourceRanges
+    - destinationRanges
+    - sourceTags
+    - targetTags
+    - sourceServiceAccounts
+    - targetServiceAccounts
+    - allowed
+    - denied
+    - direction
+    - logConfig
+    - disabled
+  update:
+    - name
+    - description
+    - network
+    - priority
+    - sourceRanges
+    - destinationRanges
+    - sourceTags
+    - targetTags
+    - sourceServiceAccounts
+    - targetServiceAccounts
+    - allowed
+    - denied
+    - direction
+    - logConfig
+    - disabled
+
+compute.snapshot:
+  get:
+    - project
+    - snapshot
+  insert:
+#    path parameters
+    - project
+    - snapshot
+#    query parameters
+    - requestId
+#    body
+    - labels
+    - labelFingerprint
+    - snapshotEncryptionKey
+    - snapshotType
+    - locationHint
+    - description
+    - sourceDisk
+    - chainName
+    - storageLocations
+    - sourceDiskEncryptionKey
+    - name
+  update:
+    - labels
+    - labelFingerprint
+  delete:
+#   path parameters
+    - project
+    - snapshot
+#   query parameters
+    - requestId
+  exclude_paths:
+    - labelFingerprint
+  exclude_properties_from_transformation:
+    - labels
+
+compute.health_check:
+  get:
+#     path parameters
+    - project
+    - resourceId
+#     query parameters
+    - requestId
+  insert:
+#     path parameters
+    - project
+#     query parameters
+    - requestId
+#     body
+    - name
+    - description
+    - checkIntervalSec
+    - timeoutSec
+    - unhealthyThreshold
+    - healthyThreshold
+    - type
+    - tcpHealthCheck
+    - sslHealthCheck
+    - httpHealthCheck
+    - httpsHealthCheck
+    - http2HealthCheck
+    - grpcHealthCheck
+    - logConfig
+  update:
+#     path parameters
+    - project
+#     query parameters
+    - requestId
+#     body
+    - description
+    - checkIntervalSec
+    - timeoutSec
+    - unhealthyThreshold
+    - healthyThreshold
+    - type
+    - tcpHealthCheck
+    - sslHealthCheck
+    - httpHealthCheck
+    - httpsHealthCheck
+    - http2HealthCheck
+    - grpcHealthCheck
+    - logConfig
+  delete:
+#     path parameters
+    - project
+    - resourceId
+#     query parameters
+    - requestId
+  readonly_return_props:
+    - name
+
+compute.instance_group:
+  get:
+    - project
+    - zone
+    - name
+  insert:
+#    path parameters
+    - project
+    - zone
+#    query parameters
+    - requestId
+#    body
+    - name
+    - description
+    - namedPorts
+    - network
+    - subnetwork
+  update:
+#    path parameters
+    - project
+    - zone
+    - name
+#    query parameters
+    - requestId
+#    body
+    - namedPorts
+  delete:
+#    path parameters
+    - project
+    - zone
+    - name
+#    query parameters
+    - requestId
+  readonly_return_props:
+    - name
+    - description
+    - fingerprint
+    - network
+    - subnetwork
+
+compute.forwarding_rule:
+  manual_mapping:
+    body.ip_address: IPAddress
+    body.ip_protocol: IPProtocol
+  get:
+#     path parameters
+    - project
+    - region
+    - resourceId
+#     query parameters
+    - requestId
+  insert:
+#     path parameters
+    - project
+    - region
+#     query parameters
+    - requestId
+#     body
+    - name
+    - description
+    - region
+    - labels
+    - labelFingerprint
+    - allowGlobalAccess
+    - portRange
+    - serviceName
+    - backendService
+    - pscConnectionId
+    - serviceDirectoryRegistrations
+    - IPProtocol
+    - target
+    - ipVersion
+    - isMirroringCollector
+    - networkTier
+    - noAutomateDnsZone
+    - IPAddress
+    - network
+    - pscConnectionStatus
+    - subnetwork
+    - allPorts
+    - serviceLabel
+    - loadBalancingScheme
+    - ports
+    - metadataFilters
+  update:
+    #     path parameters
+    - project
+    - region
+    #     query parameters
+    - requestId
+    #     body
+    - labels
+    - labelFingerprint
+    - target
+    - networkTier
+  delete:
+#     path parameters
+    - project
+    - region
+    - resourceId
+#     query parameters
+    - requestId
+  fields_enum_type:
+    - kind
+    - id
+    - creationTimestamp
+    - IPProtocol
+    - ipVersion
+    - networkTier
+    - pscConnectionStatus
+    - loadBalancingScheme
+  exclude_paths:
+    - labelFingerprint
+
+compute.backend_service:
+  get:
+    - project
+    - region
+    - backendService
+  insert:
+    #     path parameters
+    - project
+    - region
+    #     query parameters
+    - requestId
+    #     body
+    - name
+    - description
+    - backends
+    - healthChecks
+    - timeoutSec
+    - port
+    - fingerprint
+    - portName
+    - enableCDN
+    - affinityCookieTtlSec
+    - failoverPolicy
+    - connectionDraining
+    - iap
+    - cdnPolicy
+    - customRequestHeaders
+    - customResponseHeaders
+    - logConfig
+    - securitySettings
+    - consistentHash
+    - circuitBreakers
+    - outlierDetection
+    - network
+    - subsetting
+    - connectionTrackingPolicy
+    - maxStreamDuration
+    - serviceBindings
+    - localityLbPolicies
+  update:
+    - description
+    - backends
+    - healthChecks
+    - timeoutSec
+    - port
+    - fingerprint
+    - portName
+    - enableCDN
+    - affinityCookieTtlSec
+    - region
+    - failoverPolicy
+    - connectionDraining
+    - iap
+    - cdnPolicy
+    - customRequestHeaders
+    - customResponseHeaders
+    - logConfig
+    - securitySettings
+    - consistentHash
+    - circuitBreakers
+    - outlierDetection
+    - network
+    - subsetting
+    - connectionTrackingPolicy
+    - maxStreamDuration
+    - serviceBindings
+    - localityLbPolicies
+  exclude_paths:
+    - project
+    - id
+    - fingerprint
+  delete:
+    #     path parameters
+    - project
+    - resourceId
+    - region
+    - backendService
+    #     query parameters
+    - requestId
+  fields_enum_type:
+    - id
+    - protocol
+    - sessionAffinity
+    - loadBalancingScheme
+    - localityLbPolicy
+    - compressionMode
+
+compute.region_backend_service:
+  get:
+    - project
+    - region
+    - backendService
+  insert:
+    #     path parameters
+    - project
+    - region
+    #     query parameters
+    - requestId
+    #     body
+    - name
+    - description
+    - backends
+    - healthChecks
+    - timeoutSec
+    - port
+    - fingerprint
+    - portName
+    - enableCDN
+    - affinityCookieTtlSec
+    - failoverPolicy
+    - connectionDraining
+    - iap
+    - cdnPolicy
+    - customRequestHeaders
+    - customResponseHeaders
+    - logConfig
+    - securitySettings
+    - consistentHash
+    - circuitBreakers
+    - outlierDetection
+    - network
+    - subsetting
+    - connectionTrackingPolicy
+    - maxStreamDuration
+    - serviceBindings
+    - localityLbPolicies
+  update:
+    - description
+    - backends
+    - healthChecks
+    - timeoutSec
+    - port
+    - fingerprint
+    - portName
+    - enableCDN
+    - affinityCookieTtlSec
+    - region
+    - failoverPolicy
+    - connectionDraining
+    - iap
+    - cdnPolicy
+    - customRequestHeaders
+    - customResponseHeaders
+    - logConfig
+    - securitySettings
+    - consistentHash
+    - circuitBreakers
+    - outlierDetection
+    - network
+    - subsetting
+    - connectionTrackingPolicy
+    - maxStreamDuration
+    - serviceBindings
+    - localityLbPolicies
+  exclude_paths:
+    - project
+    - id
+    - fingerprint
+  delete:
+    #     path parameters
+    - project
+    - resourceId
+    - region
+    - backendService
+    #     query parameters
+    - requestId
+  fields_enum_type:
+    - id
+    - protocol
+    - sessionAffinity
+    - loadBalancingScheme
+    - localityLbPolicy
+    - compressionMode
+
+iam.service_account:
+  request_parameters:
+    list:
+      - name
+    get:
+      - name
+    create:
+      - name
+    delete:
+      - name
+    undelete:
+      - name
+    enable:
+      - name
+    disable:
+      - name
+    patch:
+      - name
+  response_fields:
+    list: accounts
+  get:
+#     path parameters
+    - project
+    - resourceId
+#     query parameters
+    - requestId
+  insert:
+    - displayName
+    - description
+  update:
+    - displayName
+    - description
+  resource_id:
+    - name
+  readonly_return_props:
+    - projectId
+    - uniqueId
+    - email
+    - name
+    - etag
+    - oauth2ClientId
+    - disabled
+
+compute.target_pool:
+  get:
+    - project
+    - region
+    - targetPool
+  insert:
+    - name
+    - description
+    - failoverRatio
+    - backupPool
+  readonly_return_props:
+    - kind
+    - id
+    - selfLink
+    - region
+  fields_enum_type:
+    - id
+    - sessionAffinity
+  resource_id:
+    - name
+
+iam.service_account_key:
+  request_parameters:
+    list:
+      - name
+    get:
+      - name
+    create:
+      -name
+    delete:
+      -name
+    upload:
+      -name
+    disable:
+      -name
+    enable:
+      -name
+  resource_id:
+    - name
+  create:
+    - name
+    - privateKeyType
+    - keyAlgorithm
+    - privateKeyData
+    - publicKeyData
+    - validAfterTime
+    - validBeforeTime
+    - keyOrigin
+    - keyType
+    - disabled
