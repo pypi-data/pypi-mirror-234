@@ -1,0 +1,98 @@
+Metadata-Version: 2.1
+Name: tilearn-llm
+Version: 0.6.2
+Summary: TILEARN for LLM
+Author-email: Bo Yang <boyyang@tencent.com>, Boyuan Deng <bryandeng@tencent.com>, Chenyang Guo <chenyangguo@tencent.com>, Run Li <danerli@tencent.com>, Yahui Chen <huecheng@tencent.com>, Jing Gong <jennygong@tencent.com>, Minhao Qin <lemonqin@tencent.com>
+License: Copyright (c) 2023 - 2023 TENCENT CORPORATION. All rights reserved.
+Project-URL: Homepage, https://cloud.tencent.com/document/product/1511/64787
+Keywords: pytorch,LLM
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: cryptography
+Requires-Dist: transformers
+Provides-Extra: test
+Requires-Dist: pytest >=6 ; extra == 'test'
+
+## Tilearn.llm使用说明
+
+### 1. CUDA Kernel（以LLAMA为例）
+
+支持显卡：Ampere, Ada, or Hopper GPUs (e.g., A100, A800, H100, H800)
+
+#### 新版本
+
+新版本Dependencies: pytorch >= 2.0.0
+
+该版本完全兼容huggingface接口，不需要额外的转模型操作
+
+LLAMA1/LLAMA2 A800 16GPU seq=1024相比deepspeed zero2训练加速约20%
+
+cuda kernel使用方法-启动脚本修改如下
+
+cuda kernel使用方法-代码修改如下
+
+```python3
+### TILEARN.LLM
+from tilearn.llm.transformers import LlamaForCausalLM
+
+### 模型接口与标准huggingface一致
+model = LlamaForCausalLM.from_pretrained(...)
+```
+
+或者使用AutoModelForCausalLM接口
+
+```python3
+### TILEARN.LLM
+from tilearn.llm.transformers import AutoModelForCausalLM
+
+### 模型接口与标准huggingface一致
+model = AutoModelForCausalLM.from_pretrained(...)
+```
+
+特殊说明：
+
+1、由于baichuan1 13B和baichuan2 13B会产生冲突，目前默认开启了baichuan1 13B，如果需要使用baichuan2 13B，需要设置环境变量：export TILEARN_LLM_BAICHUAN_13B=2
+```shell
+### TILEARN_LLM_BAICHUAN_13B open baichuan2 model
+export TILEARN_LLM_BAICHUAN_13B=2
+```
+
+2、目前加速已经支持的模型列表：
+
+```python3
+from tilearn.llm.transformers.models.llama.modeling_llama import LlamaForCausalLM
+
+from tilearn.llm.transformers.models.bloom.modeling_bloom import BloomForCausalLM
+
+from tilearn.llm.transformers.models.baichuan.baichuan1_13B.modeling_baichuan import BaichuanForCausalLM
+from tilearn.llm.transformers.models.baichuan.baichuan1_7B.modeling_baichuan import BaiChuanForCausalLM
+from tilearn.llm.transformers.models.baichuan.baichuan2_7B.modeling_baichuan import BaichuanForCausalLM
+from tilearn.llm.transformers.models.baichuan.baichuan2_13B.modeling_baichuan import BaichuanForCausalLM
+```
+
+### 2. Static Zero
+
+适用场景：在deepspeed zero1、zero2、zero3、offload、int8等不同优化状态间切换
+
+启动脚本修改如下
+
+```shell
+### TILEARN STATIC ZERO
+### Open: TIACC_TRAINING_CUDA_KERNEL='O2' 
+### support 'O2' / 'O2.5' / 'O3' / 'O3.5' / 'O3_Q8'(doing)
+### Close: TIACC_TRAINING_CUDA_KERNEL='None'
+export TIACC_TRAINING_STATIC_ZERO='None' #'O2'
+```
+代码修改如下
+```python3
+from transformers import HfArgumentParser
+from tilearn.llm.transformers import TrainingArguments
+	
+### 接口与标准huggingface一致
+parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+```
