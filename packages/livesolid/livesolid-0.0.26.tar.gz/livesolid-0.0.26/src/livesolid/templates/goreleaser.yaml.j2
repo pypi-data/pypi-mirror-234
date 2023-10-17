@@ -1,0 +1,38 @@
+before:
+  hooks:
+  - go mod tidy
+  - go generate ./...
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - windows
+  - darwin
+  main: main.go
+  goarch:
+  - amd64
+  binary: {{ data.new_app_name }}
+  id: {{ data.new_app_name }}
+archives:
+- format: tar.gz
+  name_template: |-
+    {{ data.new_app_name }}_ {%raw%}{{{%endraw%}- title .Os {%raw%}}}{%endraw%}_ {%raw%}{{{%endraw%}- if eq .Arch "amd64" {%raw%}}}{%endraw%}x86_64
+                               {%raw%}{{{%endraw%}- else if eq .Arch "386" {%raw%}}}{%endraw%}i386
+                               {%raw%}{{{%endraw%}- else {%raw%}}}{%endraw%}
+                               {%raw%}{{{%endraw%} .Arch {%raw%}}}{%endraw%}
+                               {%raw%}{{{%endraw%} end {%raw%}}}{%endraw%}
+                               {%raw%}{{{%endraw%}- if .Arm {%raw%}}}{%endraw%}v{%raw%}{{{%endraw%} .Arm {%raw%}}}{%endraw%}{%raw%}{{{%endraw%} end {%raw%}}}{%endraw%}
+  format_overrides:
+  - goos: windows
+    format: zip
+checksum:
+  name_template: checksums.txt
+snapshot:
+  name_template: '{%raw%}{{{%endraw%} incpatch .Version {%raw%}}}{%endraw%}-next'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
