@@ -1,0 +1,58 @@
+from pareto import Pareto, Solution
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+data = pd.read_csv('Z:/phd/paper_multi_new/1/log.csv')
+p = Pareto('bic', 'MAE')
+bic = data['incumbent_bic']
+MAE = data['incumbent_MAE']
+sol_stuff = list()
+for i, j in enumerate(bic):
+    sol_stuff.append(Solution(bic = j, MAE = MAE[i]))
+# #test code
+spacing = 1000
+sol_number = np.arange(spacing, len(sol_stuff), spacing)
+prev_num = 0
+
+gbl = []
+j = 0
+sol_stuff  = [x for x in sol_stuff if (x['bic']< 650 and x['MAE'] < 0.1)]
+
+
+
+
+# #main driver
+# print(len(sol_stuff)) 
+
+print('the first instance of the solutions')
+sol_stuff = p.non_dominant_sorting(sol_stuff)
+print(len(sol_stuff))
+Fronts = p.get_fronts(sol_stuff)
+print(Fronts)
+Pareto_FRONT = p.pareto(Fronts, sol_stuff)
+print(Pareto_FRONT)
+plt.scatter([x['bic'] for x in Pareto_FRONT], [x['MAE'] for x in Pareto_FRONT])
+plt.title("Measure of Performance versus Prediction Accuracy")
+plt.xlabel("Bayesian Information Criterion (Meausre of Performance)")
+plt.ylabel("Mean Absolute Error (Prediction Accuracy)")
+
+plt.show()
+print(2)
+raise Exception
+for i in sol_number:
+    dummy, si = list(matplotlib.colors.cnames.items())[j]
+    j +=1
+    if j >5:
+        break
+    sub_sol_stuff = [x for x in sol_stuff if (x['sol_num']< i and x['sol_num'] > prev_num)]
+    gbl = gbl + sub_sol_stuff
+    sol_stuff1 = p.non_dominant_sorting(gbl)
+
+    Fronts = p.get_fronts(sol_stuff1)
+
+    Pareto_FRONT = p.pareto(Fronts, sol_stuff1)
+    plt.scatter([x['bic'] for x in Pareto_FRONT], [x['MAE'] for x in Pareto_FRONT], c=si)
+    prev_num = i
+plt.show()
+print(1)

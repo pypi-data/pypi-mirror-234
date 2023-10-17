@@ -1,0 +1,543 @@
+Metadata-Version: 2.1
+Name: metacountregressor
+Version: 0.1.46
+Summary: A python package for count regression of rare events assisted by metaheuristics
+Author: zahern
+Author-email: zeke.ahern@hdr.qut.edu.au
+Requires-Python: >=3.10,<3.11
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Requires-Dist: latextable (>=1.0.0,<2.0.0)
+Requires-Dist: matplotlib (>=3.7.1,<4.0.0)
+Requires-Dist: numpy (>=1.24.3,<2.0.0)
+Requires-Dist: pandas (>=2.0.2,<3.0.0)
+Requires-Dist: psutil (>=5.9.5,<6.0.0)
+Requires-Dist: scikit-learn (>=1.2.2,<2.0.0)
+Requires-Dist: scipy (>=1.10.1,<2.0.0)
+Requires-Dist: statsmodels (>=0.14.0,<0.15.0)
+Requires-Dist: tabulate (>=0.9.0,<0.10.0)
+Description-Content-Type: text/markdown
+
+##### The Below code demonstrates how to set up automatic optimization assisted by the harmony search algorithm. References to the Differential Evolution and Simulated Annealing has been mentioned (change accordingly)
+
+## Quick install: Requires Python 3.10
+
+Install `metacountregressor` using pip as follows:
+
+```bash
+pip install metacountregressor
+
+
+```python
+import pandas as pd
+import numpy as np
+from metacountregressor.solution import ObjectiveFunction
+from metacountregressor.metaheuristics import (harmony_search,
+                                            differential_evolution,
+                                            simulated_annealing)
+```
+
+#### Basic setup. Read in data, and select optimization algorithm
+
+
+```python
+# Read data from CSV file
+df = pd.read_csv(
+"https://raw.githubusercontent.com/zahern/data/main/Ex-16-3.csv")
+X = df
+y = df['FREQ']  # Frequency of crashes
+X['Offset'] = np.log(df['AADT']) # Explicitley define how to offset the data, no offset otherwise
+# Drop Y, selected offset term and  ID as there are no panels
+X = df.drop(columns=['FREQ', 'ID', 'AADT'])  
+#some example argument, these are defualt so the following line is just for claritity
+arguments = {'algorithm': 'hs', 'test_percentage': 0.2, 'test_complexity': 6, 'instance_number':1}
+# Fit the model with metacountregressor
+obj_fun = ObjectiveFunction(X, y, **arguments)
+#replace with other metaheuristics if desired
+results = harmony_search(obj_fun)
+```
+
+    Estimating as Panel Data...
+    repair constraint violated, skipping over..
+    repair constraint violated, skipping over..
+    dominate soltuion
+    --------------------------------------------------
+    WARNING: Convergence was not reached during estimation. The given estimates may not be reliable
+    -------------------------------------------------------------------------------------
+    Log-Likelihood:  -787.6392029228095
+    -------------------------------------------------------------------------------------
+    +----------------------------+-----+--------+----------+----------+------------+
+    |           Effect           | tau | Coeff  | Std. Err | z-values | Prob |z|>Z |
+    +============================+=====+========+==========+==========+============+
+    | const                      | no  | -19.65 |   3.37   |  -5.82   | 0.00***    |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | FC                         | no  | -0.08  |   0.09   |  -0.90   | 0.37       |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | PEAKHR                     | no  |  3.60  |   1.46   |   2.48   | 0.01*      |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | TANGENT                    | no  |  9.20  |   3.49   |   2.64   | 0.01*      |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | CURVES                     | no  |  5.13  |   0.41   |  12.54   | 0.00***    |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | MEDWIDTH                   | no  |  0.31  |   0.10   |   3.18   | 0.00***    |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | FRICTION                   | log |  0.35  |   0.16   |   2.22   | 0.03*      |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | SLOPE                      | no  | -0.11  |   0.17   |  -0.64   | 0.52       |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | MIMEDSH                    | no  | -0.72  |   0.25   |  -2.85   | 0.00***    |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | INCLANES                   | no  | -0.42  |   0.24   |  -1.74   | 0.08.      |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | MIMEDSH (Std. Dev.)        |     |  0.10  |   0.22   |   0.45   | 0.65       |
+    | tn_normal                  |     |        |          |          |            |
+    +----------------------------+-----+--------+----------+----------+------------+
+    |  (Chol.) INCLANEStn_normal |     |  0.10  |   0.24   |   0.41   | 0.68       |
+    | .INCLANEStn_normal         |     |        |          |          |            |
+    +----------------------------+-----+--------+----------+----------+------------+
+    | nb                         |     |  1.37  |   0.00   |  50.00   | 0.00***    |
+    +----------------------------+-----+--------+----------+----------+------------+
+    
+
+
+    ---------------------------------------------------------------------------
+
+    KeyboardInterrupt                         Traceback (most recent call last)
+
+    c:\Users\n9471103\MetaCountRegressor\README.ipynb Cell 5 in <cell line: 14>()
+         <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W3sZmlsZQ%3D%3D?line=11'>12</a> obj_fun = ObjectiveFunction(X, y, **arguments)
+         <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W3sZmlsZQ%3D%3D?line=12'>13</a> #replace with other metaheuristics if desired
+    ---> <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W3sZmlsZQ%3D%3D?line=13'>14</a> results = harmony_search(obj_fun)
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\metaheuristics.py:408, in harmony_search(objective_function, initial_harmonies, hyperparameters, **kwargs)
+        406 start = datetime.now()
+        407 hs  = HarmonySearch(objective_function)
+    --> 408 results = hs.run(initial_harmonies, mod_init = man)
+        409 end = datetime.now()
+        410 elapsed_time = end - start
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\metaheuristics.py:1546, in HarmonySearch.run(self, initial_harmonies, mod_init)
+       1544     self._obj_fun.set_random_seed()
+       1545 # fill harmony_memory using random parameter values by default, but with initial_harmonies if provided
+    -> 1546 self._initialize(initial_harmonies, mod_init)
+       1547 if self.pf.get_objective_is_multi():
+       1548     self._pareto_harmony_memory = self.pf.non_dominant_sorting(self._harmony_memory)
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\metaheuristics.py:1825, in HarmonySearch._initialize(self, initial_harmonies, model_nature)
+       1821     initial_harmonies[0] = vector 
+       1823 for i in range(0, self._obj_fun.get_hms()):
+       1824     #print(initial_harmonies[i])
+    -> 1825     fitness = self._obj_fun.get_fitness(initial_harmonies[i], self.pf.get_objective_is_multi(), max_routine = 2)
+       1826     #print(initial_harmonies[i])
+       1827     if self.pf.get_objective_is_multi():
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:2319, in ObjectiveFunction.get_fitness(self, vector, multi, verbose, max_routine)
+       2314 model_nature = self.get_distinct_model_parts(
+       2315     vector)  # todo return insignificant p values
+       2318 a = {}
+    -> 2319 obj_1, model_mod  = self.makeRegression(model_nature, layout=layout, **a)
+       2324 sub_slns.append([obj_1.copy()])
+       2326 obj_best = obj_1.copy()
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:6417, in ObjectiveFunction.makeRegression(self, model_nature, layout, *args, **kwargs)
+       6414 try:
+       6415     if model_nature.get('dispersion') is not None:
+    -> 6417         obj_1, log_lik, betas, stderr, pvalues, zvalues, is_halton, is_delete = self.fitRegression(model_nature)
+       6418         if obj_1 is None:
+       6419             obj_1 = Solution()
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:5969, in ObjectiveFunction.fitRegression(self, mod, dispersion, maxiter, batch_size, num_hess)
+       5967 if self.numerical_hessian_calc:
+       5968     try:
+    -> 5969         bb_hess = self._numerical_hessian(betas_est.x, grad_args, False)
+       5970     except Exception as e:
+       5971         bb_hess = None
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:3474, in ObjectiveFunction._numerical_hessian(self, betas, args, jac)
+       3471 def loglike(p): return self._loglik_gradient(
+       3472     p, *args)
+       3473 robust = False
+    -> 3474 hess = approx_hess(betas, loglike)
+       3475 hess /= self.N
+       3476 hess_inv1 = np.linalg.pinv(hess)
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\statsmodels\tools\numdiff.py:454, in approx_hess3(x, f, epsilon, args, kwargs)
+        450 for i in range(n):
+        451     for j in range(i, n):
+        452         hess[i, j] = np.squeeze(
+        453             (f(*((x + ee[i, :] + ee[j, :],) + args), **kwargs)
+    --> 454              - f(*((x + ee[i, :] - ee[j, :],) + args), **kwargs)
+        455              - (f(*((x - ee[i, :] + ee[j, :],) + args), **kwargs)
+        456                 - f(*((x - ee[i, :] - ee[j, :],) + args), **kwargs))
+        457              )/(4.*hess[i, j])
+        458         )
+        459         hess[j, i] = hess[i, j]
+        460 return hess
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:3471, in ObjectiveFunction._numerical_hessian.<locals>.loglike(p)
+    -> 3471 def loglike(p): return self._loglik_gradient(
+       3472     p, *args)
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:4941, in ObjectiveFunction._loglik_gradient(self, betas, Xd, y, draws, Xf, Xr, batch_size, return_gradient, return_gradient_n, dispersion, test_set, return_EV, verbose, corr_list, zi_list, exog_infl, draws_grouped, Xgroup, model_nature, kwarg, **kwargs)
+       4937     chol_mat = self._chol_mat(
+       4938         len(self.rdm_cor_fit), br, brstd, self.rdm_cor_fit)
+       4939     self.chol_mat = chol_mat.copy()
+       4940     Br = br[None, :, None] + \
+    -> 4941         np.matmul(chol_mat[:len(br), :len(br)], draws_)
+       4942     self.Br = Br.copy()
+       4945 if model_nature is not None:
+    
+
+    KeyboardInterrupt: 
+
+
+### Change the arguments.
+#### Reduce down the list sizes where necsessary
+
+
+```python
+#Solution Arguments
+arguments = {
+        'algorithm': 'hs',
+        'test_percentage': 0.2,
+        'test_complexity': 6, #or list based [0, 1, 2, 6]
+        'instance_number': 'name',
+        'is_multi': 1,
+        'distribution': ['Normal', 'LnNormal', 'Triangular', 'Unifrom'],
+        'Model': [0,1],  # or equivalently ['POS', 'NB']
+        'transformations': ['no', 'sqrt', 'archsinh'],
+        '_max_time': 10
+    }
+obj_fun = ObjectiveFunction(X, y, **arguments)
+results = harmony_search(obj_fun)
+```
+
+    Estimating as Panel Data...
+    
+
+
+    ---------------------------------------------------------------------------
+
+    KeyboardInterrupt                         Traceback (most recent call last)
+
+    c:\Users\n9471103\MetaCountRegressor\README.ipynb Cell 7 in <cell line: 14>()
+          <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=1'>2</a> arguments = {
+          <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=2'>3</a>         'algorithm': 'hs',
+          <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=3'>4</a>         'test_percentage': 0.2,
+       (...)
+         <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=10'>11</a>         '_max_time': 10
+         <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=11'>12</a>     }
+         <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=12'>13</a> obj_fun = ObjectiveFunction(X, y, **arguments)
+    ---> <a href='vscode-notebook-cell:/c%3A/Users/n9471103/MetaCountRegressor/README.ipynb#W5sZmlsZQ%3D%3D?line=13'>14</a> results = harmony_search(obj_fun)
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\metaheuristics.py:408, in harmony_search(objective_function, initial_harmonies, hyperparameters, **kwargs)
+        406 start = datetime.now()
+        407 hs  = HarmonySearch(objective_function)
+    --> 408 results = hs.run(initial_harmonies, mod_init = man)
+        409 end = datetime.now()
+        410 elapsed_time = end - start
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\metaheuristics.py:1546, in HarmonySearch.run(self, initial_harmonies, mod_init)
+       1544     self._obj_fun.set_random_seed()
+       1545 # fill harmony_memory using random parameter values by default, but with initial_harmonies if provided
+    -> 1546 self._initialize(initial_harmonies, mod_init)
+       1547 if self.pf.get_objective_is_multi():
+       1548     self._pareto_harmony_memory = self.pf.non_dominant_sorting(self._harmony_memory)
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\metaheuristics.py:1825, in HarmonySearch._initialize(self, initial_harmonies, model_nature)
+       1821     initial_harmonies[0] = vector 
+       1823 for i in range(0, self._obj_fun.get_hms()):
+       1824     #print(initial_harmonies[i])
+    -> 1825     fitness = self._obj_fun.get_fitness(initial_harmonies[i], self.pf.get_objective_is_multi(), max_routine = 2)
+       1826     #print(initial_harmonies[i])
+       1827     if self.pf.get_objective_is_multi():
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:2319, in ObjectiveFunction.get_fitness(self, vector, multi, verbose, max_routine)
+       2314 model_nature = self.get_distinct_model_parts(
+       2315     vector)  # todo return insignificant p values
+       2318 a = {}
+    -> 2319 obj_1, model_mod  = self.makeRegression(model_nature, layout=layout, **a)
+       2324 sub_slns.append([obj_1.copy()])
+       2326 obj_best = obj_1.copy()
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:6417, in ObjectiveFunction.makeRegression(self, model_nature, layout, *args, **kwargs)
+       6414 try:
+       6415     if model_nature.get('dispersion') is not None:
+    -> 6417         obj_1, log_lik, betas, stderr, pvalues, zvalues, is_halton, is_delete = self.fitRegression(model_nature)
+       6418         if obj_1 is None:
+       6419             obj_1 = Solution()
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:5963, in ObjectiveFunction.fitRegression(self, mod, dispersion, maxiter, batch_size, num_hess)
+       5961     mod['dispersion_penalty'] = abs(b[-1])
+       5962 grad_args = (X, y, draws, X, Xr, self.batch_size,False, False, dispersion, 0, False, 0, self.rdm_cor_fit, self.zi_fit, exog_infl, draws_grouped, XG, mod)
+    -> 5963 betas_est = self._minimize(self._loglik_gradient, b,  args=(X, y, draws, X, Xr, self.batch_size,False, False, dispersion, 0, False, 0, self.rdm_cor_fit, self.zi_fit, exog_infl, draws_grouped, XG, mod),
+       5964                            method=method2, tol=tol['ftol'],
+       5965                            options={'gtol': tol['gtol']}, bounds = bounds)
+       5967 if self.numerical_hessian_calc:
+       5968     try:
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:5260, in ObjectiveFunction._minimize(self, loglik_fn, x, args, method, tol, options, bounds)
+       5258     return minimize(loglik_fn, x, args=args, jac=args[6], hess=args[7], method='BFGS', tol=tol, options=options)
+       5259 elif method == "L-BFGS-B":
+    -> 5260     return minimize(loglik_fn, x, args=args, jac=args[6], method='L-BFGS-B', bounds =bounds, tol=tol, options=options)
+       5261 else:
+       5262     raise ValueError(f"Unknown optimization method: {method}")
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_minimize.py:710, in minimize(fun, x0, args, method, jac, hess, hessp, bounds, constraints, tol, callback, options)
+        707     res = _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+        708                              **options)
+        709 elif meth == 'l-bfgs-b':
+    --> 710     res = _minimize_lbfgsb(fun, x0, args, jac, bounds,
+        711                            callback=callback, **options)
+        712 elif meth == 'tnc':
+        713     res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
+        714                         **options)
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_lbfgsb_py.py:361, in _minimize_lbfgsb(fun, x0, args, jac, bounds, disp, maxcor, ftol, gtol, eps, maxfun, maxiter, iprint, callback, maxls, finite_diff_rel_step, **unknown_options)
+        355 task_str = task.tobytes()
+        356 if task_str.startswith(b'FG'):
+        357     # The minimization routine wants f and g at the current x.
+        358     # Note that interruptions due to maxfun are postponed
+        359     # until the completion of the current minimization iteration.
+        360     # Overwrite f and g:
+    --> 361     f, g = func_and_grad(x)
+        362 elif task_str.startswith(b'NEW_X'):
+        363     # new iteration
+        364     n_iterations += 1
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_differentiable_functions.py:286, in ScalarFunction.fun_and_grad(self, x)
+        284     self._update_x_impl(x)
+        285 self._update_fun()
+    --> 286 self._update_grad()
+        287 return self.f, self.g
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_differentiable_functions.py:256, in ScalarFunction._update_grad(self)
+        254 def _update_grad(self):
+        255     if not self.g_updated:
+    --> 256         self._update_grad_impl()
+        257         self.g_updated = True
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_differentiable_functions.py:173, in ScalarFunction.__init__.<locals>.update_grad()
+        171 self._update_fun()
+        172 self.ngev += 1
+    --> 173 self.g = approx_derivative(fun_wrapped, self.x, f0=self.f,
+        174                            **finite_diff_options)
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_numdiff.py:505, in approx_derivative(fun, x0, method, rel_step, abs_step, f0, bounds, sparsity, as_linear_operator, args, kwargs)
+        502     use_one_sided = False
+        504 if sparsity is None:
+    --> 505     return _dense_difference(fun_wrapped, x0, f0, h,
+        506                              use_one_sided, method)
+        507 else:
+        508     if not issparse(sparsity) and len(sparsity) == 2:
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_numdiff.py:576, in _dense_difference(fun, x0, f0, h, use_one_sided, method)
+        574     x = x0 + h_vecs[i]
+        575     dx = x[i] - x0[i]  # Recompute dx as exactly representable number.
+    --> 576     df = fun(x) - f0
+        577 elif method == '3-point' and use_one_sided[i]:
+        578     x1 = x0 + h_vecs[i]
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_numdiff.py:456, in approx_derivative.<locals>.fun_wrapped(x)
+        455 def fun_wrapped(x):
+    --> 456     f = np.atleast_1d(fun(x, *args, **kwargs))
+        457     if f.ndim > 1:
+        458         raise RuntimeError("`fun` return value has "
+        459                            "more than 1 dimension.")
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\optimize\_differentiable_functions.py:137, in ScalarFunction.__init__.<locals>.fun_wrapped(x)
+        133 self.nfev += 1
+        134 # Send a copy because the user may overwrite it.
+        135 # Overwriting results in undefined behaviour because
+        136 # fun(self.x) will change self.x, with the two no longer linked.
+    --> 137 fx = fun(np.copy(x), *args)
+        138 # Make sure the function returns a true scalar
+        139 if not np.isscalar(fx):
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:5030, in ObjectiveFunction._loglik_gradient(self, betas, Xd, y, draws, Xf, Xr, batch_size, return_gradient, return_gradient_n, dispersion, test_set, return_EV, verbose, corr_list, zi_list, exog_infl, draws_grouped, Xgroup, model_nature, kwarg, **kwargs)
+       5027      betas_last = betas[-1]
+       5029      # print(betas_last)
+    -> 5030      proba_, proba_n = self.prob_obs_draws_all_at_once(
+       5031          eVd, np.atleast_3d(y), betas_last, dispersion)
+       5032      # self._prob_product_against_panels()
+       5033 
+       5034      
+       (...)
+       5037 
+       5038 # print(top_stats)
+       5040      proba.append(dev.to_cpu(proba_))
+    
+
+    File c:\Users\n9471103\MetaCountRegressor\metacountregressor\solution.py:4619, in ObjectiveFunction.prob_obs_draws_all_at_once(self, eVi, y, disp, dispersion)
+       4617 def prob_obs_draws_all_at_once(self, eVi, y, disp, dispersion):
+       4618     if dispersion == 0:
+    -> 4619         proba_r = poisson.pmf(y, eVi)
+       4620     elif dispersion == 1:
+       4621         #print(np.shape(y), print(np.shape(eVi)))
+       4622         #proba_r =  self._nonlog_nbin(y, eVi, disp)
+       4623         #proba_r2 = nbinom.pmf(y, disp*eVi**0, disp/(eVi+disp))
+       4624         proba_r = self.nbinom_pmf_batched(y, eVi, disp)
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\stats\_distn_infrastructure.py:3378, in rv_discrete.pmf(self, k, *args, **kwds)
+       3376 if np.any(cond):
+       3377     goodargs = argsreduce(cond, *((k,)+args))
+    -> 3378     place(output, cond, np.clip(self._pmf(*goodargs), 0, 1))
+       3379 if output.ndim == 0:
+       3380     return output[()]
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\stats\_discrete_distns.py:865, in poisson_gen._pmf(self, k, mu)
+        863 def _pmf(self, k, mu):
+        864     # poisson.pmf(k) = exp(-mu) * mu**k / k!
+    --> 865     return exp(self._logpmf(k, mu))
+    
+
+    File ~\AppData\Roaming\Python\Python310\site-packages\scipy\stats\_discrete_distns.py:860, in poisson_gen._logpmf(self, k, mu)
+        859 def _logpmf(self, k, mu):
+    --> 860     Pk = special.xlogy(k, mu) - gamln(k + 1) - mu
+        861     return Pk
+    
+
+    KeyboardInterrupt: 
+
+
+## Initial Solution Configurement
+
+
+```python
+ #Model Decisions, Specify for Intial Optimization
+manual_fit_spec = {
+    'fixed_terms': ['SINGLE', 'LENGTH'],
+    'rdm_terms': ['AADT:normal'],
+    'rdm_cor_terms': ['GRADEBR:uniform', 'CURVES:triangular'],
+    'grouped_terms': [],
+    'hetro_in_means': ['ACCESS:normal', 'MINRAD:normal'],
+    'transformations': ['no', 'no', 'log', 'no', 'no', 'no', 'no'],
+    'dispersion': 1
+}
+
+#Search Arguments
+arguments = {
+    'algorithm': 'hs',
+    'test_percentage': 0.2,
+    'test_complexity': 6,
+    'instance_number': 'name',
+    'Manual_Fit': manual_fit_spec
+}
+obj_fun = ObjectiveFunction(X, y, **arguments)
+```
+
+    Estimating as Panel Data...
+    off for now turn back on
+    
+
+### simarly to return the results feed the objective function into a metaheuristic solution algorithm
+
+## Notes
+### Capabilities of the software include:
+* Handling of Panel Data
+* Support for Data Transformations
+* Implementation of Models with Correlated and Non-Correlated Random Parameters
+* A variety of mixing distributions for parameter estimations, including normal, lognormal, truncated normal, Lindley, Gamma, triangular, and uniform distributions
+Capability to handle heterogeneity in the means of the random parameters
+* Use of Halton draws for simulated maximum likelihood estimation
+* Support for grouped random parameters with unbalanced groups
+* Post-estimation tools for assessing goodness of fit, making predictions, and conducting out-of-sample validation
+* Multiple parameter optimization routines, such as the BFGS method
+* Comprehensive hypothesis testing using single objectives, such as in-sample BIC and log-likelihood
+* Extensive hypothesis testing using multiple objectives, such as in-sample BIC and out-of-sample MAE (Mean Absolute Error), or in-sample AIC and out-of-sample MSPE (mean-square prediction errorr) 
+* Features that allow analysts to pre-specify variables, interactions, and mixing distributions, among others
+* Meta-heuristic Guided Optimization, including techniques like Simulated Annealing, Harmony Search, and Differential Evolution
+* Customization of Hyper-parameters to solve problems tailored to your dataset
+* Out-of-the-box optimization capability using default metaheuristics
+
+### arguments: 
+#### In reference to the arguments that can be fed into the solution alrogithm, a dictionary system is utilised with relecant names these include
+## Arguments
+
+The following list describes the arguments available in this function. By default, all of the capabilities described are enabled unless specified otherwise as an argument. For list arguments, include all desired elements in the list to ensure the corresponding options are considered. Example code will be provided later in this guide.
+
+1. **`complexity_level`**: This argument accepts an integer between 0 to 5 or a list of such integers. Each integer represents a hierarchy level for estimable models associated with each explanatory variable. Here is a summary of the hierarchy:
+    - 0: Null model
+    - 1: Simple fixed effects model
+    - 2: Random parameters model
+    - 3: Random correlated parameters model
+    - 4: Grouped random parameters model
+    - 5: Heterogeneity in the means random parameter model
+
+2. **`distributions`**: This argument accepts a list of strings where each string corresponds to a distribution. Valid options include:
+    - "Normal"
+    - "Lindley"
+    - "Uniform"
+    - "LogNormal"
+    - "Triangular"
+    - "Gamma"
+    - "TruncatedNormal"
+    - Any of the above, concatenated with ":grouped" (e.g., "Normal:grouped"; requires a grouping term defined in the model)
+
+3. **`Model`**: This argument specifies the model form. It can be a list of integers representing different models to test:
+    - 0: Poisson
+    - 1: Negative-Binomial
+    - 2: Generalized-Poisson
+
+4. **`transformations`**: This argument accepts a list of strings representing available transformations within the framework. Valid options include:
+    - "no"
+    - "square-root"
+    - "logarithmic"
+    - "archsinh"
+    - "as factor"
+
+5. **`is_multi`**: This argument accepts an integer indicating whether single or multiple objectives are to be tested (0 for single, 1 for multiple).
+
+6. **`testing_split`**: This argument is used for multi-objective optimization. Define it as a decimal; for example, 0.2 represents 20% of the data for testing.
+
+7. **`_max_time`**: This argument is used to add a termination time in the algorithm. It takes values as seconds. Note the time is only dependenant on the time after intial population of solutions are generated.
+
+## Contact
+If you have any questions, ideas to improve MetaCountRegressor, or want to report a bug, just open a new issue in [metacountregressor GitHub repository](https://github.com/your-github-repo).
+
+## Citing MetaCountRegressor
+Please cite MetaCountRegressor as follows:
+
+Ahern, Z., Corry P., Paz A. (2022). MetaCountRegressor [Computer software]. [https://pypi.org/project/metacounregressor/](https://pypi.org/project/metacounregressor/)
+
+Or using BibTex as follows:
+
+```bibtex
+@misc{Ahern2023,
+   author = {Zeke Ahern and Paul Corry and Alexander Paz},
+   journal = {PyPi},
+   title = {metacountregressor · PyPI},
+   url = {https://pypi.org/project/metacountregressor/0.1.28/},
+   year = {2023},
+}
+
+
