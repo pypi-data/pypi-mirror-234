@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tests.test_transport_filetransport &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tests.test_transport_filetransport</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tests.test_transport_filetransport</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="sd">&quot;&quot;&quot;Test file archive</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+
+<span class="kn">from</span> <span class="nn">.context</span> <span class="kn">import</span> <span class="n">imagedata</span>
+<span class="kn">import</span> <span class="nn">imagedata.cmdline</span>
+<span class="kn">import</span> <span class="nn">imagedata.transports</span>
+<span class="kn">import</span> <span class="nn">imagedata.transports.filetransport</span>
+
+
+<div class="viewcode-block" id="TestFiletransport"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport">[docs]</a><span class="k">class</span> <span class="nc">TestFiletransport</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TestFiletransport.setUp"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">imagedata</span><span class="o">.</span><span class="n">cmdline</span><span class="o">.</span><span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">output_format</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">]</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_walk&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_walk"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_walk">[docs]</a>    <span class="k">def</span> <span class="nf">test_walk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+            <span class="n">root</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">walk_list</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="s1">&#39;tree&#39;</span><span class="p">)</span>
+        <span class="c1"># obj.assertEqual(len(walk_list), 1)</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">walk_list</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;test_walk: root </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;test_walk: dirs </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dirs</span><span class="p">))</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;test_walk: files </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">files</span><span class="p">))</span>
+            <span class="n">expect</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;file0&#39;</span><span class="p">,</span> <span class="s1">&#39;file1&#39;</span><span class="p">,</span> <span class="s1">&#39;file2&#39;</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;tree&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">dirs</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="n">expect</span><span class="p">)</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_isfile&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_isfile"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_isfile">[docs]</a>    <span class="k">def</span> <span class="nf">test_isfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+            <span class="n">root</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;dicom/lena_color.dcm&#39;</span><span class="p">),</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;dicom/time&#39;</span><span class="p">),</span> <span class="kc">False</span><span class="p">)</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_readfile&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_readfile"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_readfile">[docs]</a>    <span class="k">def</span> <span class="nf">test_readfile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+            <span class="n">root</span><span class="o">=</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;text.txt&#39;</span><span class="p">)</span>
+        <span class="n">contents</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">contents</span><span class="p">),</span>
+                         <span class="mi">408347</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="k">else</span> <span class="mi">13</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_open_file&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_open_file"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_open_file">[docs]</a>    <span class="k">def</span> <span class="nf">test_open_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+                <span class="n">root</span><span class="o">=</span><span class="s1">&#39;data/text.txt&#39;</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">RootIsNotDirectory</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_open_nonexist_dir&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_open_nonexist_dir"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_open_nonexist_dir">[docs]</a>    <span class="k">def</span> <span class="nf">test_open_nonexist_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+                <span class="n">root</span><span class="o">=</span><span class="s1">&#39;data/nonexist&#39;</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">RootIsNotDirectory</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_open_nonexist&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_open_nonexist"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_open_nonexist">[docs]</a>    <span class="k">def</span> <span class="nf">test_open_nonexist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+                <span class="n">root</span><span class="o">=</span><span class="s1">&#39;data/nonexist&#39;</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">RootDoesNotExist</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_open_new&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_open_new"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_open_new">[docs]</a>    <span class="k">def</span> <span class="nf">test_open_new</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+                <span class="n">root</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;test_write_then_read&quot;)</span>
+<div class="viewcode-block" id="TestFiletransport.test_write_then_read"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_filetransport.TestFiletransport.test_write_then_read">[docs]</a>    <span class="k">def</span> <span class="nf">test_write_then_read</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+            <span class="n">tree</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+                <span class="n">root</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;Hello world!&#39;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="n">_</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">filetransport</span><span class="o">.</span><span class="n">FileTransport</span><span class="p">(</span>
+                <span class="n">root</span><span class="o">=</span><span class="n">d</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;test.txt&#39;</span><span class="p">)</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;Hello world!&#39;</span><span class="p">)</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

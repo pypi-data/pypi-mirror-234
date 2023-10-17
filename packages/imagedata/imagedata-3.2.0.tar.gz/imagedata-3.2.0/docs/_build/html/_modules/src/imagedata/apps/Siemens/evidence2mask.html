@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.apps.Siemens.evidence2mask &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/jquery.js"></script>
+        <script src="../../../../../_static/underscore.js"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.imagedata.apps.Siemens.evidence2mask</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.apps.Siemens.evidence2mask</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read Siemens Syngo.VIA Basic Reading</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2017-2020 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span>
+<span class="kn">from</span> <span class="nn">imagedata.apps.Siemens.ROI</span> <span class="kn">import</span> <span class="n">PolygonROI</span><span class="p">,</span> <span class="n">EllipseROI</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="xyz_to_zyx"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.evidence2mask.xyz_to_zyx">[docs]</a><span class="k">def</span> <span class="nf">xyz_to_zyx</span><span class="p">(</span><span class="n">polygon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Swap (x,y,z) with (z,y,x) for each point</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        polygon: np.array shape (n,3)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        rearranged np.array shape (n,3)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">polygon</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;Array ndim should be 2, not </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">polygon</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+    <span class="n">new_polygon</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">polygon</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">new_polygon</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span>
+    <span class="k">return</span> <span class="n">new_polygon</span></div>
+
+
+<div class="viewcode-block" id="evidence2roi"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.evidence2mask.evidence2roi">[docs]</a><span class="k">def</span> <span class="nf">evidence2roi</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">uid_table</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># def get_rois(image, separate_laterality=False, uid_table=None, content={}):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    overrows = image[(0x6000, 0x0010)].value</span>
+<span class="sd">    overcols = image[(0x6000, 0x0011)].value</span>
+<span class="sd">    overkey=(0x6000, 0x3000)</span>
+<span class="sd">    overlay=image[overkey].value</span>
+
+<span class="sd">    a=bitarray.bitarray(overlay, endian=&#39;little&#39;)</span>
+
+<span class="sd">    while len(a) &lt; len(overlay)*8:</span>
+<span class="sd">            a.append(0)</span>
+
+<span class="sd">    c = np.array(a.tolist())</span>
+<span class="sd">    c = c.astype(np.uint8)</span>
+<span class="sd">    #c = c.reshape((overcols, overrows))</span>
+<span class="sd">    c = c.reshape((overrows, overcols))</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># print(&quot;get_rois: {}&quot;.format(image.InstanceNumber))</span>
+    <span class="c1"># content = {}</span>
+    <span class="k">if</span> <span class="n">content</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">rois</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># List of ROI tuples</span>
+
+    <span class="n">seqkey</span> <span class="o">=</span> <span class="p">(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1102</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">seqkey</span> <span class="ow">in</span> <span class="n">im</span><span class="p">:</span>
+        <span class="n">presentation_sq</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="n">seqkey</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">seqkey</span> <span class="o">=</span> <span class="p">(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1202</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seqkey</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">im</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;get_rois: no presentation sequence (0x0029, 0x1202)&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">rois</span><span class="p">,</span> <span class="n">content</span>
+        <span class="n">presentation_sq</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="n">seqkey</span><span class="p">]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">measurement</span> <span class="o">=</span> <span class="n">presentation_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x10a7</span><span class="p">)]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;get_rois: no measurement sequence (0x0029, 0x10a7)&quot;</span><span class="p">)</span>
+        <span class="c1"># return (rois, content)</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;No measurement sequence (0x0029, 0x10a7) in input data&#39;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">findings</span> <span class="o">=</span> <span class="n">measurement</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1031</span><span class="p">)]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;get_rois: no findings attribute (0x0029, 0x1031) in input data&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;No findings attribute (0x0029, 0x1031) in input data&#39;</span><span class="p">)</span>
+
+    <span class="n">content_sq</span> <span class="o">=</span> <span class="n">presentation_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x10a9</span><span class="p">)]</span>
+    <span class="n">content</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0070</span><span class="p">,</span> <span class="mh">0x0080</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">content</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0070</span><span class="p">,</span> <span class="mh">0x0081</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">content</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0070</span><span class="p">,</span> <span class="mh">0x0082</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">content</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0070</span><span class="p">,</span> <span class="mh">0x0083</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">content</span><span class="p">[</span><span class="s1">&#39;creator&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">presentation_sq</span><span class="p">[</span><span class="mi">0</span><span class="p">][(</span><span class="mh">0x0070</span><span class="p">,</span> <span class="mh">0x0084</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="n">findings</span><span class="p">:</span>
+        <span class="n">referenced_frame_seq</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x109a</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">referenced_frame_seq</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1038</span><span class="p">)]</span><span class="o">.</span><span class="n">VM</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">referenced_syngo_uid</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">referenced_frame_seq</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1038</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                <span class="n">referenced_syngo_uid</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+            <span class="n">referenced_syngo_uid</span> <span class="o">=</span> <span class="n">referenced_frame_seq</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1038</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">referenced_syngo_uid</span> <span class="o">=</span>\
+                <span class="n">referenced_frame_seq</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1038</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">uid_table</span><span class="p">:</span>
+            <span class="n">stu_ins_uid</span> <span class="o">=</span> <span class="n">uid_table</span><span class="p">[</span><span class="n">referenced_syngo_uid</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="n">ser_ins_uid</span> <span class="o">=</span> <span class="n">uid_table</span><span class="p">[</span><span class="n">referenced_syngo_uid</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="n">sop_ins_uid</span> <span class="o">=</span> <span class="n">uid_table</span><span class="p">[</span><span class="n">referenced_syngo_uid</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stu_ins_uid</span> <span class="o">=</span> <span class="n">referenced_syngo_uid</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ser_ins_uid</span> <span class="o">=</span> <span class="n">referenced_syngo_uid</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">sop_ins_uid</span> <span class="o">=</span> <span class="n">referenced_syngo_uid</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># sop_cla_uid = referenced_syngo_uid[3] # &#39;1.2.840.10008.5.1.4.1.1.4&#39;</span>
+        <span class="c1"># ROI number</span>
+        <span class="n">meas_appl_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1035</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">roi_type_value</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1032</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">roi_name</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1030</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="n">roi_name</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1030</span><span class="p">)]</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">roi_name</span> <span class="o">=</span> <span class="s1">&#39;NONAME&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finding: </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">content</span><span class="p">[</span><span class="s1">&#39;creator&#39;</span><span class="p">],</span> <span class="n">roi_name</span><span class="p">,</span> <span class="n">roi_type_value</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">roi_type_value</span> <span class="o">==</span> <span class="s1">&#39;PolygonApplication3D&#39;</span> <span class="ow">or</span> <span class="n">roi_type_value</span> <span class="o">==</span> <span class="s1">&#39;FreehandApplication3D&#39;</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1096</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">VR</span> <span class="o">==</span> <span class="s2">&quot;UN&quot;</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">polygon</span> <span class="o">=</span> <span class="n">meas_data_points</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">meas_data_points</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;XYZ: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">polygon</span> <span class="o">=</span> <span class="n">xyz_to_zyx</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ZYX: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+            <span class="n">rois</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PolygonROI</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">roi_name</span><span class="p">,</span> <span class="n">stu_ins_uid</span><span class="p">,</span> <span class="n">ser_ins_uid</span><span class="p">,</span> <span class="n">sop_ins_uid</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ROI </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1"> points&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">meas_appl_number</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span> <span class="o">//</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">roi_type_value</span> <span class="o">==</span> <span class="s1">&#39;EllipseApplication3D&#39;</span><span class="p">:</span>
+            <span class="c1"># Ellipsis centre</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1096</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">VR</span> <span class="o">==</span> <span class="s2">&quot;UN&quot;</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">centre</span> <span class="o">=</span> <span class="n">meas_data_points</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">meas_data_points</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="n">centre</span> <span class="o">=</span> <span class="n">xyz_to_zyx</span><span class="p">(</span><span class="n">centre</span><span class="p">)</span>
+            <span class="c1"># Ellipsis angles</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1097</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">VR</span> <span class="o">==</span> <span class="s2">&quot;UN&quot;</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">angles</span> <span class="o">=</span> <span class="n">meas_data_points</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">meas_data_points</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="c1"># Ellipsis thickness</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">finding</span><span class="p">[(</span><span class="mh">0x0029</span><span class="p">,</span> <span class="mh">0x1099</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">VR</span> <span class="o">==</span> <span class="s2">&quot;UN&quot;</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">meas_data_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">thickness</span> <span class="o">=</span> <span class="n">meas_data_points</span>
+
+            <span class="n">rois</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">EllipseROI</span><span class="p">(</span>
+                <span class="n">centre</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">thickness</span><span class="p">,</span> <span class="n">roi_name</span><span class="p">,</span> <span class="n">stu_ins_uid</span><span class="p">,</span> <span class="n">ser_ins_uid</span><span class="p">,</span> <span class="n">sop_ins_uid</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">roi_type_value</span> <span class="o">==</span> <span class="s1">&#39;StandaloneTextApplication3D&#39;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Standalone Text ROI not implemented.&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">roi_type_value</span> <span class="o">==</span> <span class="s1">&#39;DistanceLineApplication3D&#39;</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;DistanceLineApplication3D ROI not implemented.&quot;</span><span class="p">)</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ROI type </span><span class="si">%s</span><span class="s2"> not implemented.&quot;</span> <span class="o">%</span> <span class="n">roi_type_value</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rois</span><span class="p">,</span> <span class="n">content</span></div>
+
+
+<div class="viewcode-block" id="make_mask_in_slice"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.evidence2mask.make_mask_in_slice">[docs]</a><span class="k">def</span> <span class="nf">make_mask_in_slice</span><span class="p">(</span><span class="n">roi_type</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a 3D mask [nz,ny,nx]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">roi_type</span> <span class="o">==</span> <span class="s1">&#39;polygon&#39;</span><span class="p">:</span>
+        <span class="c1"># polygon = [(x1,y1),(x2,y2),...] or [x1,y1,x2,y2,...]</span>
+        <span class="c1"># width = ?</span>
+        <span class="c1"># height = ?</span>
+
+        <span class="c1"># for p in points:</span>
+        <span class="c1">#     save_x(p)</span>
+        <span class="n">polygon</span> <span class="o">=</span> <span class="n">transform_data_points_to_voxels</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">points</span><span class="p">)</span>
+        <span class="n">roi</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># TODO</span>
+        <span class="n">points_matrix</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">get_points_matrix</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>  <span class="c1"># TODO</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        print(&quot;polygon: points cm    {}&quot;.format(points))</span>
+<span class="sd">        print(&quot;polygon: points matrix&quot;, polygon)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">slice</span> <span class="o">=</span> <span class="n">polygon</span><span class="o">.</span><span class="n">verify_all_voxels_in_slice</span><span class="p">(</span><span class="n">points_matrix</span><span class="p">)</span>  <span class="c1"># TODO</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="n">polygon2D</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">points_matrix</span><span class="p">:</span>
+            <span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="n">polygon2D</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">polygon</span><span class="p">(</span><span class="n">polygon2D</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">roi_type</span> <span class="o">==</span> <span class="s1">&#39;ellipse&#39;</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">centre_cm</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">thickness</span><span class="p">)</span> <span class="o">=</span> <span class="n">points</span>
+        <span class="n">centre</span> <span class="o">=</span> <span class="n">transform_data_points_to_voxels</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">centre_cm</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">slice</span> <span class="o">=</span> <span class="n">centre</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="n">angle1</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">radius_cm</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">angle1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span>
+                              <span class="n">angle1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span>
+                              <span class="n">angle1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">angle1</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">adjacent_cm</span> <span class="o">=</span> <span class="n">centre_cm</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">radius_cm</span><span class="p">))</span>
+        <span class="c1"># save_x((centre_cm + np.array((0, 0, radius_cm)))[0])</span>
+        <span class="c1"># save_x((centre_cm - np.array((0, 0, radius_cm)))[0])</span>
+        <span class="c1"># save_x((centre_cm + np.array((radius_cm, 0, 0)))[0])</span>
+        <span class="c1"># save_x((centre_cm - np.array((radius_cm, 0, 0)))[0])</span>
+        <span class="n">adjacent</span> <span class="o">=</span> <span class="n">transform_data_points_to_voxels</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">adjacent_cm</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">radius</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">centre</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">adjacent</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">yc</span><span class="p">,</span> <span class="n">xc</span> <span class="o">=</span> <span class="n">centre</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">centre</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">ellipse2D</span> <span class="o">=</span> <span class="p">(</span><span class="n">xc</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="n">yc</span> <span class="o">-</span> <span class="n">radius</span><span class="p">,</span> <span class="n">xc</span> <span class="o">+</span> <span class="n">radius</span><span class="p">,</span> <span class="n">yc</span> <span class="o">+</span> <span class="n">radius</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">ImageDraw</span><span class="o">.</span><span class="n">Draw</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">ellipse</span><span class="p">(</span><span class="n">ellipse2D</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">mask</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+
+<div class="viewcode-block" id="transform_data_points_to_voxels"><a class="viewcode-back" href="../../../../../source/src.imagedata.apps.Siemens.html#src.imagedata.apps.Siemens.evidence2mask.transform_data_points_to_voxels">[docs]</a><span class="k">def</span> <span class="nf">transform_data_points_to_voxels</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">meas_data_points</span><span class="p">):</span>
+    <span class="n">polygon</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">meas_data_points</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">getVoxelForPosition</span><span class="p">(</span><span class="n">point</span><span class="p">)</span>
+        <span class="n">polygon</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">polygon</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

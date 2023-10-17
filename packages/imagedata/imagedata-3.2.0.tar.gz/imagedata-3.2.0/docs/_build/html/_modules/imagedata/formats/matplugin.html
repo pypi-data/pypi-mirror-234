@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>imagedata.formats.matplugin &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">imagedata.formats.matplugin</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for imagedata.formats.matplugin</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read/Write Matlab-compatible MAT files</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2013-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">scipy</span>
+<span class="kn">import</span> <span class="nn">scipy.io</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">NotImageError</span><span class="p">,</span> <span class="n">input_order_to_dirname_str</span><span class="p">,</span> <span class="n">WriteNotImplemented</span><span class="p">,</span>\
+    <span class="n">shape_to_str</span><span class="p">,</span> <span class="n">sort_on_to_str</span><span class="p">,</span> <span class="n">SORT_ON_SLICE</span>
+<span class="kn">from</span> <span class="nn">..axis</span> <span class="kn">import</span> <span class="n">UniformLengthAxis</span>
+<span class="kn">from</span> <span class="nn">.abstractplugin</span> <span class="kn">import</span> <span class="n">AbstractPlugin</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ImageTypeError"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.ImageTypeError">[docs]</a><span class="k">class</span> <span class="nc">ImageTypeError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thrown when trying to load or save an image of unknown type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DependencyError"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.DependencyError">[docs]</a><span class="k">class</span> <span class="nc">DependencyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Thrown when a required module could not be loaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="MultipleVariablesInMatlabFile"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.MultipleVariablesInMatlabFile">[docs]</a><span class="k">class</span> <span class="nc">MultipleVariablesInMatlabFile</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reading multiple variables from a MAT file is not implemented.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="MatrixDimensionNotImplemented"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.MatrixDimensionNotImplemented">[docs]</a><span class="k">class</span> <span class="nc">MatrixDimensionNotImplemented</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Matrix dimension is not implemented.</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="MatPlugin"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.MatPlugin">[docs]</a><span class="k">class</span> <span class="nc">MatPlugin</span><span class="p">(</span><span class="n">AbstractPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read/write MAT files.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;mat&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Read and write MAT files.&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MatPlugin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># noinspection PyTypeChecker,PyUnresolvedReferences</span>
+    <span class="k">def</span> <span class="nf">_read_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">opts</span><span class="p">,</span> <span class="n">hdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read image data from given file handle</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            f: file handle or filename (depending on self._need_local_file)</span>
+<span class="sd">            opts: Input options (dict)</span>
+<span class="sd">            hdr: Header</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple of</span>
+<span class="sd">                hdr: Header</span>
+<span class="sd">                    Return values:</span>
+<span class="sd">                        - info: Internal data for the plugin</span>
+<span class="sd">                            None if the given file should not be included (e.g. raw file)</span>
+<span class="sd">                si: numpy array (multi-dimensional)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">==</span> <span class="s1">&#39;auto&#39;</span><span class="p">:</span>
+            <span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+
+        <span class="n">hdr</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matplugin._read_image: scipy.io.loadmat(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+            <span class="n">mdictlist</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">whosmat</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mdictlist</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">mdictlist</span><span class="p">:</span>
+                    <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matplugin._read_image: scipy.io.loadmat len(mdict) </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">mdictlist</span><span class="p">)))</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matplugin._read_image: Multiple variables in MAT file </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">MultipleVariablesInMatlabFile</span><span class="p">(</span><span class="s1">&#39;Multiple variables in MAT file </span><span class="si">{}</span><span class="s1">: &#39;</span>
+                                                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">names</span><span class="p">))</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">mdictlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matplugin._read_image: name </span><span class="si">{}</span><span class="s1"> shape </span><span class="si">{}</span><span class="s1"> dtype </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="p">))</span>
+            <span class="n">mdict</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">loadmat</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">variable_names</span><span class="o">=</span><span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matplugin._read_image variable </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_to_dicom</span><span class="p">(</span><span class="n">mdict</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape _read_image MAT: </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotImageError</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> does not look like a MAT file&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">info</span><span class="p">,</span> <span class="n">si</span>
+
+    <span class="k">def</span> <span class="nf">_set_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_list</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">si</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set header tags.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: format plugin instance</span>
+<span class="sd">            image_list: list with (info,img) tuples</span>
+<span class="sd">            hdr: Header</span>
+<span class="sd">            si: numpy array (multi-dimensional)</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            hdr: Header</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Set spacing</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">axes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+            <span class="s1">&#39;row&#39;</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UniformLengthAxis</span><span class="p">(</span>
+            <span class="s1">&#39;column&#39;</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="c1"># Set tags</span>
+        <span class="n">nt</span> <span class="o">=</span> <span class="n">nz</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">nz</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">UniformLengthAxis</span><span class="p">(</span>
+                <span class="s1">&#39;slice&#39;</span><span class="p">,</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">nz</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">nt</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">UniformLengthAxis</span><span class="p">(</span>
+                <span class="n">input_order_to_dirname_str</span><span class="p">(</span><span class="n">hdr</span><span class="o">.</span><span class="n">input_order</span><span class="p">),</span>
+                <span class="mi">0</span><span class="p">,</span>
+                <span class="n">nt</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">axes</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;matplugin._set_tags nt </span><span class="si">{}</span><span class="s1">, nz </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">nt</span><span class="p">,</span> <span class="n">nz</span><span class="p">))</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nt</span> <span class="o">*</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="nb">slice</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="n">tags</span><span class="p">[</span><span class="nb">slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">tags</span>
+        <span class="c1"># logger.debug(&#39;matplugin._set_tags tags {}&#39;.format(tags))</span>
+
+        <span class="n">hdr</span><span class="o">.</span><span class="n">photometricInterpretation</span> <span class="o">=</span> <span class="s1">&#39;MONOCHROME2&#39;</span>
+        <span class="n">hdr</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="MatPlugin.write_3d_numpy"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.MatPlugin.write_3d_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">write_3d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 3D numpy image as MAT file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: MATPlugin instance</span>
+<span class="sd">            si: Series array (3D or 4D), including these attributes:</span>
+<span class="sd">                slices,</span>
+<span class="sd">                spacing,</span>
+<span class="sd">                tags</span>
+
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteNotImplemented</span><span class="p">(</span>
+                <span class="s2">&quot;Writing color MAT images not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;MatPlugin.write_3d_numpy: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">filename_template</span> <span class="o">=</span> <span class="s1">&#39;Image_</span><span class="si">%05d</span><span class="s1">.mat&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename_template</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">tags</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Data shape write: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape_to_str</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">and</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="c1"># if si.ndim == 2:</span>
+        <span class="c1">#    si.shape = (1,) + si.shape</span>
+        <span class="k">assert</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span>\
+            <span class="s2">&quot;write_3d_series: input dimension </span><span class="si">%d</span><span class="s2"> is not 2D/3D.&quot;</span> <span class="o">%</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="c1"># slices = si.shape[0]</span>
+        <span class="c1"># if slices != si.slices:</span>
+        <span class="c1">#    raise ValueError(&quot;write_3d_series: slices of dicom template ({}) differ &quot;</span>
+        <span class="c1">#        &quot;from input array ({}).&quot;.format(si.slices, slices))</span>
+
+        <span class="c1"># newshape = tuple(reversed(si.shape))</span>
+        <span class="c1"># logger.info(&quot;Data shape matlab write: {}&quot;.format(shape_to_str(newshape)))</span>
+        <span class="c1"># logger.debug(&#39;matplugin.write_3d_numpy newshape {}&#39;.format(newshape))</span>
+        <span class="c1"># img = si.reshape(newshape, order=&#39;C&#39;)</span>
+        <span class="c1"># img = si.reshape(newshape, order=&#39;F&#39;)</span>
+        <span class="c1"># img = np.asfortranarray(si)</span>
+        <span class="c1"># img = self._dicom_to_mat(si)</span>
+        <span class="c1"># img = self._reorder_from_dicom(si)</span>
+        <span class="c1"># logger.debug(&#39;matplugin.write_3d_numpy si  {} {}&#39;.format(si.shape, si.dtype))</span>
+        <span class="c1"># logger.debug(&#39;matplugin.write_3d_numpy img {} {}&#39;.format(img.shape, img.dtype))</span>
+
+        <span class="c1"># if not os.path.isdir(directory_name):</span>
+        <span class="c1">#    os.makedirs(directory_name)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span>
+        <span class="c1"># filename = os.path.join(directory_name, filename)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.mat&#39;</span>
+        <span class="k">with</span> <span class="n">archive</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># scipy.io.savemat(f, {&#39;A&#39;: img})</span>
+            <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">savemat</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_from_dicom</span><span class="p">(</span><span class="n">si</span><span class="p">)})</span></div>
+
+<div class="viewcode-block" id="MatPlugin.write_4d_numpy"><a class="viewcode-back" href="../../../APIReferenceFormats.html#imagedata.formats.matplugin.MatPlugin.write_4d_numpy">[docs]</a>    <span class="k">def</span> <span class="nf">write_4d_numpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write 4D numpy image as MAT files</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: MATPlugin instance</span>
+<span class="sd">            si[tag,slice,rows,columns]: Series array, including these attributes:</span>
+<span class="sd">                slices,</span>
+<span class="sd">                spacing,</span>
+<span class="sd">                tags</span>
+
+<span class="sd">            destination: dict of archive and filenames</span>
+<span class="sd">            opts: Output options (dict)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">color</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteNotImplemented</span><span class="p">(</span>
+                <span class="s2">&quot;Writing color MAT images not implemented.&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;MatPlugin.write_4d_numpy: destination </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">destination</span><span class="p">))</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">filename_template</span> <span class="o">=</span> <span class="s1">&#39;Image_</span><span class="si">%05d</span><span class="s1">.mat&#39;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename_template</span> <span class="o">=</span> <span class="n">destination</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spacing</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">tags</span>
+
+        <span class="c1"># Defaults</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="n">SORT_ON_SLICE</span>
+        <span class="k">if</span> <span class="s1">&#39;output_sort&#39;</span> <span class="ow">in</span> <span class="n">opts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span> <span class="o">=</span> <span class="n">opts</span><span class="p">[</span><span class="s1">&#39;output_sort&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Should we allow to write 3D volume?</span>
+        <span class="c1"># if si.ndim == 3:</span>
+        <span class="c1">#    si.shape = (1,) + si.shape</span>
+        <span class="k">if</span> <span class="n">si</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: input dimension </span><span class="si">{}</span><span class="s2"> is not 4D.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: si dtype </span><span class="si">{}</span><span class="s2">, shape </span><span class="si">{}</span><span class="s2">, sort </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">si</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">sort_on_to_str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_sort</span><span class="p">)))</span>
+
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">slices</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">steps</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;write_4d_series: tags of dicom template (</span><span class="si">{}</span><span class="s2">) differ &quot;</span>
+                <span class="s2">&quot;from input array (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">steps</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">slices</span> <span class="o">!=</span> <span class="n">si</span><span class="o">.</span><span class="n">slices</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;write_4d_series: slices of dicom template (</span><span class="si">{}</span><span class="s2">) differ &quot;</span>
+                <span class="s2">&quot;from input array (</span><span class="si">{}</span><span class="s2">).&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">slices</span><span class="p">,</span> <span class="n">slices</span><span class="p">))</span>
+
+        <span class="c1"># if not os.path.isdir(directory_name):</span>
+        <span class="c1">#    os.makedirs(directory_name)</span>
+
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">filename_template</span> <span class="o">%</span> <span class="mi">0</span>
+        <span class="c1"># filename = os.path.join(directory_name, filename)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.mat&#39;</span>
+        <span class="k">with</span> <span class="n">archive</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="c1"># scipy.io.savemat(f, {&#39;A&#39;: self._reorder_from_dicom(si)})</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reorder_from_dicom</span><span class="p">(</span><span class="n">si</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;write_4d_numpy: Calling savemat&quot;</span><span class="p">)</span>
+            <span class="n">scipy</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">savemat</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="n">img</span><span class="p">})</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

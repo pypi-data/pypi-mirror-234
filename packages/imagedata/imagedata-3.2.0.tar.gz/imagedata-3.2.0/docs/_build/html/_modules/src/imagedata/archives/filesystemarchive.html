@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.archives.filesystemarchive &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../archives.html">src.imagedata.archives</a></li>
+      <li class="breadcrumb-item active">src.imagedata.archives.filesystemarchive</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.archives.filesystemarchive</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Read/Write local files</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2018-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">fnmatch</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+
+<span class="kn">from</span> <span class="nn">.abstractarchive</span> <span class="kn">import</span> <span class="n">AbstractArchive</span><span class="p">,</span> <span class="n">Member</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">FileAlreadyExistsError</span>
+<span class="kn">from</span> <span class="nn">..transports</span> <span class="kn">import</span> <span class="n">Transport</span><span class="p">,</span> <span class="n">RootDoesNotExist</span><span class="p">,</span> <span class="n">RootIsNotDirectory</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ReadOnlyError"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.ReadOnlyError">[docs]</a><span class="k">class</span> <span class="nc">ReadOnlyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="WriteOnFile"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.WriteOnFile">[docs]</a><span class="k">class</span> <span class="nc">WriteOnFile</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NoSuchFile"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.NoSuchFile">[docs]</a><span class="k">class</span> <span class="nc">NoSuchFile</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FilesystemArchive"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive">[docs]</a><span class="k">class</span> <span class="nc">FilesystemArchive</span><span class="p">(</span><span class="n">AbstractArchive</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read/write local files.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        transport: a Transport instance</span>
+<span class="sd">        url (str): URL to filesystem</span>
+<span class="sd">        mode (str): filesystem access mode</span>
+<span class="sd">        read_directory_only (bool): Whether url should refer to a directory.</span>
+<span class="sd">        opts (dict): Options</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        FilesystemArchive instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;filesystem&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Read and write local files.&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.1.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+    <span class="n">mimetypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>  <span class="c1"># Disregards MIME types</span>
+
+    <span class="c1"># self.__dirname: root directory</span>
+    <span class="c1"># self.__filelist: list of absolute filename</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                 <span class="n">read_directory_only</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FilesystemArchive</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">authors</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mimetypes</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive.__init__ url: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> \
+                <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s1">&#39;[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+            <span class="c1"># Windows: Parse without x:, then reattach drive letter</span>
+            <span class="n">urldict</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">[</span><span class="mi">2</span><span class="p">:],</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__netloc</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">url</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">urldict</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">urldict</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s2">&quot;file&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;nt&#39;</span> <span class="ow">and</span> \
+                    <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatch</span><span class="p">(</span><span class="n">urldict</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span> <span class="s1">&#39;[A-Za-z]:</span><span class="se">\\</span><span class="s1">*&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__netloc</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">urldict</span><span class="o">.</span><span class="n">netloc</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__netloc</span> <span class="o">=</span> <span class="n">urldict</span><span class="o">.</span><span class="n">netloc</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__path</span> <span class="o">=</span> <span class="n">urldict</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">if</span> <span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="k">elif</span> <span class="n">url</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;url not given&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Determine transport from url</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;FilesystemArchive.__init__: scheme: </span><span class="si">%s</span><span class="s1">, path: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                         <span class="p">(</span><span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span> <span class="o">=</span> <span class="n">Transport</span><span class="p">(</span>
+                <span class="n">urldict</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                <span class="n">netloc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__netloc</span><span class="p">,</span>
+                <span class="n">root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                <span class="n">read_directory_only</span><span class="o">=</span><span class="n">read_directory_only</span><span class="p">,</span>
+                <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span> <span class="o">=</span> <span class="n">mode</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __init__: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">transport</span><span class="p">)))</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive path: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive open zipfile mode </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">)</span>
+
+        <span class="c1"># If the URL refers to a single file, let directory_name refer to the</span>
+        <span class="c1"># directory and basename to the file</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __init__ verify : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__dirname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __init__ directory_name : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dirname</span><span class="p">))</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __init__ basename: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__basename</span><span class="p">))</span>
+            <span class="k">return</span>
+
+        <span class="c1"># The URL refers to a directory. Let directory_name refer to the directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__dirname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__basename</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __init__ scan directory_name : </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dirname</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __init__ scan basename: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__basename</span><span class="p">))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_transport</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">read_directory_only</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get transport plugin from url.</span>
+
+<span class="sd">        If the url addresses a missing file in read mode,</span>
+<span class="sd">        access the parent directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;FilesystemArchive._get_transport: scheme: </span><span class="si">%s</span><span class="s1">, netloc: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span>
+                     <span class="p">(</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_transport</span> <span class="o">=</span> <span class="n">Transport</span><span class="p">(</span>
+                <span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                <span class="n">netloc</span><span class="o">=</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+                <span class="n">root</span><span class="o">=</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                <span class="n">read_directory_only</span><span class="o">=</span><span class="n">read_directory_only</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">RootDoesNotExist</span><span class="p">:</span>
+            <span class="c1"># Mode=&#39;r&#39;: location does not exist</span>
+            <span class="k">raise</span>
+        <span class="k">except</span> <span class="n">RootIsNotDirectory</span><span class="p">:</span>
+            <span class="c1"># Mode=&#39;r&#39;: Retry with parent directory</span>
+            <span class="n">parent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="n">_transport</span> <span class="o">=</span> <span class="n">Transport</span><span class="p">(</span>
+                <span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                <span class="n">netloc</span><span class="o">=</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+                <span class="n">root</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                <span class="n">read_directory_only</span><span class="o">=</span><span class="n">read_directory_only</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_transport</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">transport</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Underlying transport plugin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span>
+
+<div class="viewcode-block" id="FilesystemArchive.use_query"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.use_query">[docs]</a>    <span class="k">def</span> <span class="nf">use_query</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Does the plugin need the ?query part of the url?&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="k">def</span> <span class="nf">_scan_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+                    <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_search_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">root</span><span class="p">):</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">_file</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="n">_file</span>
+                <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">search</span><span class="p">)):</span>
+                    <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">search</span><span class="p">)</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">):</span>
+                    <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FilesystemArchive.getnames"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.getnames">[docs]</a>    <span class="k">def</span> <span class="nf">getnames</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get name list of the members.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files: List or single str of filename matches.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The members as a list of their names.</span>
+<span class="sd">                It has the same order as the members of the archive.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: when no matching file is found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">files</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="n">files</span>
+        <span class="k">if</span> <span class="n">wanted_files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>\
+                <span class="p">(</span><span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">wanted_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="n">found_match</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">))]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">_file</span><span class="p">):</span>
+                    <span class="n">add_filelist</span> <span class="o">=</span> <span class="p">[</span><span class="n">_file</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">add_filelist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">,</span> <span class="n">_file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">add_filelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">found_match</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="n">filelist</span> <span class="o">+=</span> <span class="n">add_filelist</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">))</span>
+            <span class="k">return</span> <span class="n">filelist</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.basename"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.basename">[docs]</a>    <span class="k">def</span> <span class="nf">basename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filehandle</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Basename of file.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            if archive.basename(filehandle) == &quot;DICOMDIR&quot;:</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filehandle: reference to member object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Basename of file: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filehandle</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.open"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: Handle to file</span>
+<span class="sd">            mode: Open mode</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">             An IO object for the member</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># logger.debug(&quot;getmember: fname {}&quot;.format(filehandle))</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">member</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.getmembers"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.getmembers">[docs]</a>    <span class="k">def</span> <span class="nf">getmembers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the members of the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            files: List of filename matches</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            The members of the archive as a list of member objects.</span>
+<span class="sd">                The list has the same order as the members in the archive.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: When no matching file is found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># logger.debug(&quot;getmembers: files {}&quot;.format(files))</span>
+        <span class="k">if</span> <span class="n">files</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">files</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wanted_files</span> <span class="o">=</span> <span class="n">files</span>
+        <span class="k">if</span> <span class="n">wanted_files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span>\
+                <span class="p">(</span><span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span>
+                        <span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">wanted_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">)):</span>
+            <span class="n">_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scan_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">)</span>
+            <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">_file</span> <span class="ow">in</span> <span class="n">_files</span><span class="p">:</span>
+                <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Member</span><span class="p">(</span><span class="n">_file</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">wanted_files</span> <span class="o">=</span> <span class="n">files</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wanted_files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="n">files</span><span class="p">,))</span>
+            <span class="n">filelist</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="n">found_match</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">))]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">wanted_files</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">_file</span><span class="p">):</span>
+                    <span class="n">add_filelist</span> <span class="o">=</span> <span class="p">[</span><span class="n">_file</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">add_filelist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_subdirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">,</span> <span class="n">_file</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">add_filelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">found_match</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">add_filelist</span><span class="p">:</span>
+                        <span class="n">filelist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Member</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+            <span class="c1"># Verify that all wanted files are found</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">found</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">found_match</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">wanted_files</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filelist</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s1">&#39;No such file: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">files</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">filelist</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.to_localfile"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.to_localfile">[docs]</a>    <span class="k">def</span> <span class="nf">to_localfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Access a member object through a local file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: handle to member file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            filename to file guaranteed to be local.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># logger.debug(&#39;FilesystemArchive to_localfile: filename %s&#39; %</span>
+        <span class="c1">#        filehandle)</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">,</span> <span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.add_localfile"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.add_localfile">[docs]</a>    <span class="k">def</span> <span class="nf">add_localfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_file</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a local file to the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            local_file: named local file</span>
+<span class="sd">            filename: filename in the archive</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            imagedata.archives.FileAlreadyExistsError: When file already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="c1"># Ensure the directory exists,</span>
+            <span class="c1"># create it silently if not.</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">fname</span><span class="p">),</span>
+                <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">local_file</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">FileAlreadyExistsError</span><span class="p">(</span>
+                <span class="s1">&#39;File </span><span class="si">%s</span><span class="s1"> already exists&#39;</span> <span class="o">%</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__path</span><span class="p">,</span>
+                    <span class="n">filename</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.writedata"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.writedata">[docs]</a>    <span class="k">def</span> <span class="nf">writedata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write data to a named file in the archive.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filename: named file in the archive</span>
+<span class="sd">            data: data to write</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ReadOnlyError: when the archive is read-only.</span>
+<span class="sd">            WriteOnFile: when attempting to write a file to a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ReadOnlyError</span><span class="p">(</span><span class="s2">&quot;Archive is read-only.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__basename</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WriteOnFile</span><span class="p">(</span><span class="s2">&quot;Do not know how to write a file to a file.&quot;</span><span class="p">)</span>
+        <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dirname</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;writedata: fname </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">))</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.close"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FilesystemArchive.is_file"><a class="viewcode-back" href="../../../../source/src.imagedata.archives.html#src.imagedata.archives.filesystemarchive.FilesystemArchive.is_file">[docs]</a>    <span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">member</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine whether the named file is a single file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            member: file member</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            whether named file is a single file (bool)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">member</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enter context manager.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;FilesystemArchive __enter__: </span><span class="si">{}</span><span class="s2"> mode </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__transport</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mode</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Leave context manager, cleaning up any open files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
