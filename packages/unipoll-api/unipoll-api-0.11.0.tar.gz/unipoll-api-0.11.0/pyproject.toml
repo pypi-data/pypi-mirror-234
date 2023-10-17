@@ -1,0 +1,98 @@
+[build-system]
+requires = ["setuptools", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unipoll-api"
+version = "0.11.0"
+description = "Unipoll API"
+authors = [{email = "help@unipoll.cc"}, {name = "University Polling"}]
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+classifiers = [
+    "Framework :: FastAPI",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    'beanie',
+    'colorama',
+    'fastapi',
+    'fastapi-users[beanie]',
+    'pydantic-settings',
+    'uvicorn[standard]',
+]
+
+[project.scripts]
+unipoll-api = "unipoll_api.app:cli_entry_point"
+
+[project.optional-dependencies]
+dev = [
+    'pytest',
+    'pytest-cov',
+    'faker',
+    'flake8',
+    'tox',
+    'mypy',
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.semantic_release]
+version_variables = ["src/unipoll_api/__version__.py:version"]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+major_on_zero = true
+upload_to_pypi = false
+upload_to_release = true
+commit_version_number = true
+tag_commit = true
+changelog_file = "CHANGELOG.md"
+build_command = "python -m pip install build && python -m build"
+allowed_tags = [
+    "build",
+    "chore",
+    "ci",
+    "docs",
+    "feat",
+    "fix",
+    "perf",
+    "style",
+    "refactor",
+    "test",
+    "revert"
+]
+minor_tags = ["feat", "build"]
+patch_tags = ["chore", "ci", "fix", "perf", "style", "refactor", "test", "revert"]
+
+[tool.flake8]
+max-line-length = 120
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov --cov-report lcov"
+asyncio_mode="auto"
+filterwarnings = [
+    'ignore:cgi is deprecated:DeprecationWarning',
+    "ignore:'crypt' is deprecated:DeprecationWarning",
+    'ignore:pkg_resources is deprecated:DeprecationWarning',
+    "ignore::pytest.PytestCollectionWarning"
+]
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+no_implicit_reexport = true
+plugins = [
+  "pydantic.mypy"
+]
