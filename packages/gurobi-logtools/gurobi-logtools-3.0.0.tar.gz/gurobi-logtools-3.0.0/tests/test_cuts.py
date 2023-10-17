@@ -1,0 +1,7 @@
+from .helpers import read_single
+
+
+def test_cuts():
+    row = read_single("912-glass4-0.log")
+    cuts = {key: row[key] for key in row.keys() if key.startswith("Cuts: ")}
+    assert len(cuts) == 8
