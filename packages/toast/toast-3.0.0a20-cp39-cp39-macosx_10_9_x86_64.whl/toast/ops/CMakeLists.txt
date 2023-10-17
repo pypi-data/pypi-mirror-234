@@ -1,0 +1,70 @@
+
+# Install the python files
+
+install(FILES
+    __init__.py
+    operator.py
+    pipeline.py
+    delete.py
+    copy.py
+    reset.py
+    arithmetic.py
+    memory_counter.py
+    sim_hwp.py
+    sim_tod_noise.py
+    sim_tod_dipole.py
+    sim_tod_atm.py
+    sim_tod_atm_generate.py
+    sim_tod_atm_observe.py
+    sim_satellite.py
+    sim_ground.py
+    sim_ground_utils.py
+    elevation_noise.py
+    flag_intervals.py
+    common_mode_noise.py
+    noise_model.py
+    gainscrambler.py
+    pointing.py
+    scan_healpix.py
+    scan_wcs.py
+    mapmaker_binning.py
+    mapmaker_solve.py
+    mapmaker_templates.py
+    mapmaker.py
+    madam.py
+    madam_utils.py
+    conviqt.py
+    sim_gaindrifts.py
+    sim_crosstalk.py
+    totalconvolve.py
+    groundfilter.py
+    hwpfilter.py
+    statistics.py
+    sim_cosmic_rays.py
+    time_constant.py
+    load_spt3g.py
+    save_spt3g.py
+    run_spt3g.py
+    cadence_map.py
+    flag_sso.py
+    crosslinking.py
+    sss.py
+    demodulation.py
+    pixels_wcs.py
+    filterbin.py
+    save_hdf5.py
+    load_hdf5.py
+    noise_estimation.py
+    noise_estimation_utils.py
+    yield_cut.py
+    azimuth_intervals.py
+    DESTINATION ${PYTHON_SITE}/toast/ops
+)
+
+add_subdirectory(pointing_detector)
+add_subdirectory(pixels_healpix)
+add_subdirectory(stokes_weights)
+add_subdirectory(mapmaker_utils)
+add_subdirectory(scan_map)
+add_subdirectory(noise_weight)
+add_subdirectory(polyfilter)
