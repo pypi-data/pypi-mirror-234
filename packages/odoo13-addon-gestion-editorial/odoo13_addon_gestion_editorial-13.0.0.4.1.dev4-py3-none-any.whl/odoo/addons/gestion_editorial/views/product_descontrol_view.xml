@@ -1,0 +1,52 @@
+<odoo>
+    <record id="product_descontrol_form_view" model="ir.ui.view">
+        <field name="name">product.descontrol.form.view</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+          <xpath expr="//field[@name='categ_id']" position="after">
+            <field  name="isbn_number" string="ISBN"/>
+            <field name="author_name" widget="many2many_tags"/>
+          </xpath>
+          <xpath expr="//field[@name='taxes_id']" position="after">
+            <field name="producto_referencia" widget="one2many_tags"
+              optional="show" string="Libro de referencia"
+              attrs="{'invisible': [('categ_id', '!=', 4)]}"
+            />
+          </xpath>
+          <!-- <xpath expr="//field[@name='taxes_id']" position="after">
+            <field name="prod_ref"
+              optional="show" string="prod ref"
+              attrs="{'invisible': [('categ_id', '!=', 4)]}"
+              readonly="1"
+            />
+          </xpath> -->
+          <xpath expr="//field[@name='taxes_id']" position="after">
+            <field name="receptora_derecho_autoria" widget="many2many_tags"
+              optional="show" string="Receptor derechos autoría"
+              attrs="{'invisible': [('categ_id', '!=', 4)]}"
+            />
+          </xpath>
+          <!-- TODO: este campo no funciona como lista -->
+          <xpath expr="//field[@name='taxes_id']" position="after">
+            <field name="derecho_autoria"
+              optional="show" string="Referencia a derecho de autoría"
+              attrs="{'invisible': [('categ_id', 'not in', [5, 11])]}"
+            />
+          </xpath>
+          <xpath expr="//field[@name='taxes_id']" position="after">
+            <field name="genera_ddaa"
+              optional="show" string="Genera derechos de autoría"
+              attrs="{'invisible': [('categ_id', 'not in', [5, 11])]}"
+            />
+          </xpath>
+        </field>
+    </record>
+    <menuitem
+      id="main_menu_product"
+      name="Productos"
+      sequence="1"
+      action="sale.product_template_action"
+      web_icon="product,static/description/logo-devcontrol.png"
+      groups="base.group_user"/>
+</odoo>
