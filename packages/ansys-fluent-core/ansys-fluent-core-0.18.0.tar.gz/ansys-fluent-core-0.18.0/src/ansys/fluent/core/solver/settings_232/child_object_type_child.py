@@ -1,0 +1,40 @@
+#
+# This is an auto-generated file.  DO NOT EDIT!
+#
+
+from ansys.fluent.core.solver.flobject import *
+
+from ansys.fluent.core.solver.flobject import _ChildNamedObjectAccessorMixin
+
+from ansys.fluent.core.solver.flobject import _CreatableNamedObjectMixin
+
+from ansys.fluent.core.solver.flobject import _NonCreatableNamedObjectMixin
+
+from ansys.fluent.core.solver.flobject import _HasAllowedValuesMixin
+
+from .option_10 import option as option_cls
+from .neutral_involved_interaction import neutral_involved_interaction as neutral_involved_interaction_cls
+from .charged_particle_interaction import charged_particle_interaction as charged_particle_interaction_cls
+class child_object_type_child(Group):
+    """
+    'child_object_type' of child_object_type.
+    """
+
+    fluent_name = "child-object-type"
+
+    child_names = \
+        ['option', 'neutral_involved_interaction',
+         'charged_particle_interaction']
+
+    option: option_cls = option_cls
+    """
+    option child of child_object_type_child.
+    """
+    neutral_involved_interaction: neutral_involved_interaction_cls = neutral_involved_interaction_cls
+    """
+    neutral_involved_interaction child of child_object_type_child.
+    """
+    charged_particle_interaction: charged_particle_interaction_cls = charged_particle_interaction_cls
+    """
+    charged_particle_interaction child of child_object_type_child.
+    """
