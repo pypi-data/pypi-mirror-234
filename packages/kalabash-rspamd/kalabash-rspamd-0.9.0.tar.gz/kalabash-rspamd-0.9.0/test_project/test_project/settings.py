@@ -1,0 +1,411 @@
+"""
+Django settings for instance project.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/2.2/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/2.2/ref/settings/
+"""
+
+from logging.handlers import SysLogHandler
+import os
+
+from kalabash.test_settings import *  # noqa
+
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.realpath(os.path.dirname(os.path.dirname(__file__)))
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'i=j))(*Zz[C,7Ym`D+-7|@h:|vwY415dNwk\bk-3M&amp;FQ6z&quot;H}-VjjDtIK0Ez'
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
+
+INTERNAL_IPS = ['127.0.0.1']
+
+SITE_ID = 1
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# A list of all the people who get code error notifications. When DEBUG=False
+# and a view raises an exception, Django will email these people with the full
+# exception information.
+# See https://docs.djangoproject.com/en/dev/ref/settings/#admins
+#ADMINS = [('Administrator', 'admin@example.net')]
+
+# The email address that error messages come from, such as those sent to ADMINS
+#SERVER_EMAIL = 'webmaster@example.net'
+
+# Security settings
+
+X_FRAME_OPTIONS = "SAMEORIGIN"
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+
+# Application definition
+
+INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.sites',
+    'django.contrib.staticfiles',
+    'reversion',
+    'ckeditor',
+    'ckeditor_uploader',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'drf_spectacular',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
+    'django_rename_app',
+    'django_rq',
+)
+
+# A dedicated place to register Kalabash applications
+# Do not delete it.
+# Do not change the order.
+KALABASH_APPS = (
+    'kalabash',
+    'kalabash.core',
+    'kalabash.lib',
+    'kalabash.admin',
+    'kalabash.transport',
+    'kalabash.relaydomains',
+    'kalabash.limits',
+    'kalabash.parameters',
+    'kalabash.dnstools',
+    'kalabash.policyd',
+    'kalabash.maillog',
+    'kalabash.pdfcredentials',
+    'kalabash.dmarc',
+    'kalabash.imap_migration',
+    # Kalabash extensions here.
+    'kalabash_rspamd'
+)
+
+INSTALLED_APPS += KALABASH_APPS
+
+AUTH_USER_MODEL = 'core.User'
+
+MIDDLEWARE = (
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'x_forwarded_for.middleware.XForwardedForMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
+    'kalabash.core.middleware.TwoFAMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'kalabash.core.middleware.LocalConfigMiddleware',
+    'kalabash.lib.middleware.AjaxLoginRedirect',
+    'kalabash.lib.middleware.CommonExceptionCatcher',
+    'kalabash.lib.middleware.RequestCatcherMiddleware',
+)
+
+AUTHENTICATION_BACKENDS = (
+    #'kalabash.lib.authbackends.LDAPBackend',
+    #'kalabash.lib.authbackends.SMTPBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    'kalabash.imap_migration.auth_backends.IMAPBackend',
+)
+
+# SMTP authentication
+#AUTH_SMTP_SERVER_ADDRESS = 'localhost'
+#AUTH_SMTP_SERVER_PORT = 25
+#AUTH_SMTP_SECURED_MODE = None  # 'ssl' or 'starttls' are accepted
+
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                'kalabash.core.context_processors.top_notifications',
+                'kalabash.core.context_processors.new_admin_url'
+            ],
+            'debug': True,
+        },
+    },
+]
+
+ROOT_URLCONF = 'test_project.urls'
+
+WSGI_APPLICATION = 'test_project.wsgi.application'
+
+
+# Database
+# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+
+DATABASES = {
+    
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': './kalabash.sql',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+        'ATOMIC_REQUESTS': True,
+        
+    },
+
+}
+
+# Internationalization
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
+
+LANGUAGE_CODE = 'en'
+
+TIME_ZONE = 'UTC'
+
+USE_I18N = True
+
+USE_L10N = True
+
+USE_TZ = True
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
+
+STATIC_URL = '/sitestatic/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'sitestatic')
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, '..', 'kalabash', 'bower_components'),
+)
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Rest framework settings
+
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '300/minute',
+        'ddos': '5/second',
+        'ddos_lesser': '200/minute',
+        'login': '10/minute',
+        'password_recovery_request': '12/hour',
+        'password_recovery_totp_check': '25/hour',
+        'password_recovery_apply': '25/hour'
+    },
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'kalabash.core.drf_authentication.JWTAuthenticationWith2FA',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+
+}
+
+# Uncomment if you need a custom sub url for new_admin interface
+# NEW_ADMIN_URL = 'new-admin'
+
+SPECTACULAR_SETTINGS = {
+    'SCHEMA_PATH_PREFIX': r'/api/v[0-9]',
+    'TITLE': 'Kalabash API',
+    'VERSION': None,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
+}
+
+# Kalabash settings
+
+#KALABASH_CUSTOM_LOGO = os.path.join(MEDIA_URL, "custom_logo.png")
+
+# Path to Dovecot binaries in case of a non-standard installation
+#DOVECOT_LOOKUP_PATH = ('/path/to/dovecot', )
+#DOVEADM_LOOKUP_PATH = ('/path/to/doveadm', )
+
+# List of supported schemes if doveadm is not available, given by: doveadm pw -l
+#DOVECOT_SUPPORTED_SCHEMES = 'SHA512-CRYPT SHA256-CRYPT'
+
+# DOVECOT_USER = 'vmail'
+
+KALABASH_API_URL = 'https://api.alphamonak.com/1/'
+
+DISABLE_DASHBOARD_EXTERNAL_QUERIES = False
+
+PID_FILE_STORAGE_PATH = '/var/run'
+
+# REDIS
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_QUOTA_DB = 0
+REDIS_URL = 'redis://{}:{}/{}'.format(REDIS_HOST, REDIS_PORT, REDIS_QUOTA_DB)
+
+# RQ
+
+RQ_QUEUES = {
+    'dkim': {
+        'HOST': REDIS_HOST,
+        'PORT': REDIS_PORT,
+        'DB': 0,
+    },
+}
+
+# Password validation
+# https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'kalabash.core.password_validation.ComplexityValidator',
+        'OPTIONS': {
+            'upper': 1,
+            'lower': 1,
+            'digits': 1,
+            'specials': 0
+        }
+    },
+]
+
+# 2FA
+
+OTP_TOTP_ISSUER = "localhost"
+
+# CKeditor
+
+CKEDITOR_UPLOAD_PATH = "uploads/"
+
+CKEDITOR_IMAGE_BACKEND = "pillow"
+
+CKEDITOR_RESTRICT_BY_USER = True
+
+CKEDITOR_BROWSE_SHOW_DIRS = True
+
+CKEDITOR_ALLOW_NONIMAGE_FILES = False
+
+CKEDITOR_CONFIGS = {
+    'default': {
+        'allowedContent': True,
+        'toolbar': 'Kalabash',
+        'width': None,
+        'toolbar_Kalabash': [
+            ['Bold', 'Italic', 'Underline'],
+            ['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock'],
+            ['BidiLtr', 'BidiRtl', 'Language'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
+            ['Undo', 'Redo'],
+            ['Link', 'Unlink', 'Anchor', '-', 'Smiley'],
+            ['TextColor', 'BGColor', '-', 'Source'],
+            ['Font', 'FontSize'],
+            ['Image', ],
+            ['SpellChecker']
+        ],
+    },
+}
+
+# Logging configuration
+
+LOGGING = {
+    'version': 1,
+    'formatters': {
+        'syslog': {
+            'format': '%(name)s: %(levelname)s %(message)s'
+        },
+        'django.server': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '[%(server_time)s] %(message)s',
+        }
+    },
+    'handlers': {
+        'mail-admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True
+        },
+        'syslog-auth': {
+            'class': 'logging.handlers.SysLogHandler',
+            'facility': SysLogHandler.LOG_AUTH,
+            'formatter': 'syslog'
+        },
+        'kalabash': {
+            'class': 'kalabash.core.loggers.SQLHandler',
+        },
+        'console': {
+            'class': 'logging.StreamHandler'
+        },
+        'django.server': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.server',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['mail-admins'],
+            'level': 'ERROR',
+            'propagate': False
+        },
+        'kalabash.auth': {
+            'handlers': ['syslog-auth', 'kalabash'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'kalabash.admin': {
+            'handlers': ['kalabash'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'django.server': {
+            'handlers': ['django.server'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # 'django_auth_ldap': {
+        #     'level': 'DEBUG',
+        #     'handlers': ['console']
+        # },
+    }
+}
+
+SILENCED_SYSTEM_CHECKS = [
+    "security.W019",  # kalabash uses iframes to display e-mails
+]
+
+PHONENUMBER_DB_FORMAT = 'INTERNATIONAL'
+
+# Load settings from extensions
