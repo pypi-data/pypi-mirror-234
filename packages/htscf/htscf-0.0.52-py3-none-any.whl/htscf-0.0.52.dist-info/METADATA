@@ -1,0 +1,69 @@
+Metadata-Version: 2.1
+Name: htscf
+Version: 0.0.52
+Summary: High-throughput computing flow
+Home-page: http://zhcloud.top
+Author: Hao Zhao
+Author-email: 601095001@qq.com
+License: OSI Approved :: MIT License
+Platform: Linux/Windows
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: ase ==3.22.1
+Requires-Dist: fastapi ==0.103.2
+Requires-Dist: pydantic ==1.10.9
+Requires-Dist: pymongo ==4.4.1
+Requires-Dist: Requests ==2.31.0
+Requires-Dist: setuptools ==65.5.0
+Requires-Dist: uvicorn ==0.23.2
+
+# 高通量计算流程
+
+## 创建流程步骤
+
+```python
+from htscf.core.createStep import create
+
+create(
+    _id="xxxx",  # 步骤id
+    program="python",  # 执行的程序名 
+    script="...........",  # 执行的脚本内容
+    settings={"a": "12"},  # 执行脚本相关设置
+    dbName="htscf",  # 数据库名
+    collectionName="xxx",  # 集合名
+    host="192.1.1.100",  # 数据库Ip
+    port=27017  # 数据库端口
+)
+```
+
+## 脚本格式
+
+```python
+from sys import argv
+
+rootPath, settingsId, prevLogId = argv[1:]
+
+# 输出到下一步的数组使用print,即可传递到下一步的prevData
+print(rootPath, settingsId)
+```
+
+## 流程化运行
+
+```python
+from htscf.core.flow import workflow
+
+workflow(
+    "./xxx",  # 流程执行根目录
+    stepIds=["xx", "yy"],  # 按照该数组中排列一次执行每一步
+    dbName="test",  # 数据库名
+    stepsCollectionName="steps",  # 流程数组集合
+    stepLogCollectionName="log",  # 
+    host="42.244.24.75",
+    port=27000
+)
+
+```
