@@ -1,0 +1,88 @@
+Metadata-Version: 2.1
+Name: aa_top
+Version: 0.2.0a0
+Summary: Alliance Auth Resource Monitor
+Keywords: allianceauth,eveonline
+Author-email: Joel Falknau <joel.falknau@gmail.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Classifier: Environment :: Web Environment
+Classifier: Framework :: Celery
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 4.0
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Requires-Dist: allianceauth>=3.0.0,<5.0.0
+Requires-Dist: django-eveuniverse
+Requires-Dist: django-solo>=2.0.0,<3.0.0
+Requires-Dist: py-cord>=2.0.0,<3.0.0
+Project-URL: Homepage, https://gitlab.com/tactical-supremacy/aa-top
+Project-URL: Source, https://gitlab.com/tactical-supremacy/aa-top
+Project-URL: Tracker, https://gitlab.com/tactical-supremacy/aa-top/-/issues
+
+# AA "Top"
+System Utilization and AA Statistics plugin for [Alliance Auth](https://gitlab.com/allianceauth/allianceauth/).
+
+Inspired by https://zkillboard.com/ztop/ by Squizz Caphinator
+
+![License](https://img.shields.io/badge/license-MIT-green)
+![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)
+
+![python](https://img.shields.io/badge/python-3.8-informational)
+![python](https://img.shields.io/badge/python-3.9-informational)
+![python](https://img.shields.io/badge/python-3.10-informational)
+
+![django-4.0](https://img.shields.io/badge/django-4.0-informational)
+
+## Features
+
+## Planned Features
+
+# Installation
+## Step 2 - Install app
+```bash
+pip install aa-top
+```
+
+## Step 3 - Configure Auth settings
+Configure your Auth settings (`local.py`) as follows:
+
+- Add `'top'` to `INSTALLED_APPS`
+- Add below lines to your settings file:
+
+```python
+## Settings for AA-Top
+# Update aatop.txt
+CELERYBEAT_SCHEDULE['top_update_aa_top_txt'] = {
+    'task': 'top.tasks.update_aa_top_txt',
+    'schedule': crontab(minute='*'),
+}
+```
+
+## Step 4 - Maintain Alliance Auth
+- Run migrations `python manage.py migrate`
+- Gather your staticfiles `python manage.py collectstatic`
+- Restart your project `supervisorctl restart myauth:`
+
+# Permissions
+| Perm | Admin Site	 | Perm | Description |
+| --- | --- | --- | --- |
+| basic_access | nill | Can access the web view for this app
+
+# Settings
+| Name | Description | Default |
+| --- | --- | --- |
+
+## Contributing
+Make sure you have signed the [License Agreement](https://developers.eveonline.com/resource/license-agreement) by logging in at <https://developers.eveonline.com> before submitting any pull requests. All bug fixes or features must not include extra superfluous formatting changes.
+

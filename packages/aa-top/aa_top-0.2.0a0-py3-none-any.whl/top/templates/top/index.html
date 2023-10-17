@@ -1,0 +1,26 @@
+{% extends 'allianceauth/base.html' %}
+{% load i18n %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}{% translate "AA-Top" %}{% endblock %}
+
+{% block content %}
+    <div class="aa-top">
+        <h1 class="page-header text-center">{% translate "AA-Top" %}</h1>
+    </div>
+
+    <pre id="aatop_textblock"></pre>
+{% endblock content %}
+
+{% block extra_javascript %}
+<script type="text/javascript">
+    updateTextBlock();
+    function updateTextBlock() {
+        setTimeout(updateTextBlock, 5000);
+        if (typeof $ != 'undefined') $.get("{% static 'top/aatop.txt'%}", function( data ) {
+            $("#aatop_textblock").text(data);
+        });
+    }
+</script>
+{% endblock extra_javascript %}
