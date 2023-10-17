@@ -1,0 +1,861 @@
+{
+  "$defs": {
+    "DeploymentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "deployment",
+          "description": "The name of the deployment.",
+          "title": "Name",
+          "type": "string"
+        },
+        "machine_type": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MachineType"
+            }
+          ],
+          "description": "The machine type to be used.",
+          "title": "Machine type"
+        },
+        "num_gpu": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of GPUs to use.",
+          "title": "Number of GPUs"
+        },
+        "config_variables": {
+          "description": "Optional user defined arguments to pass to the app.",
+          "title": "Arguments",
+          "type": "object"
+        },
+        "mounts": {
+          "description": "The mounts to be attached.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DOWNLOAD": "#/$defs/DownloadMountSpec",
+                "UPLOAD": "#/$defs/UploadMountSpec",
+                "VOLUME": "#/$defs/VolumeMountSpec"
+              },
+              "propertyName": "mode"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DownloadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/UploadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/VolumeMountSpec"
+              }
+            ]
+          },
+          "title": "Mounts",
+          "type": "array"
+        },
+        "attach_project_credentials": {
+          "default": true,
+          "description": "If true, will make an API key available to instances under the `SLINGSHOT_API_KEY` environmentvariable so that they can make requests using the Slingshot SDK for this project",
+          "title": "Attach project credentials",
+          "type": "boolean"
+        },
+        "cmd": {
+          "description": "The command to run.",
+          "title": "Command",
+          "type": "string"
+        },
+        "environment": {
+          "description": "The name of the environment.",
+          "title": "Environment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "machine_type",
+        "cmd",
+        "environment"
+      ],
+      "title": "Deployment",
+      "type": "object"
+    },
+    "DownloadMountSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "DOWNLOAD",
+          "description": "The mode to use for the mount.",
+          "title": "Mode"
+        },
+        "path": {
+          "description": "The path to mount into the environment.",
+          "pattern": "/mnt/[\\w-]+",
+          "title": "Path",
+          "type": "string"
+        },
+        "selector": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MountSelector"
+            }
+          ],
+          "description": "The artifact selector.",
+          "title": "Selector"
+        }
+      },
+      "required": [
+        "mode",
+        "path",
+        "selector"
+      ],
+      "title": "DownloadMountSpec",
+      "type": "object"
+    },
+    "EnvironmentSpec": {
+      "additionalProperties": false,
+      "example": {
+        "python_packages": [
+          "numpy",
+          "pandas",
+          "torch==2.0.1"
+        ],
+        "python_version": "3.10"
+      },
+      "properties": {
+        "python_version": {
+          "const": "3.10",
+          "default": "3.10",
+          "title": "Python version"
+        },
+        "python_packages": {
+          "description": "List of Python packages to install in the environment.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Python packages",
+          "type": "array"
+        },
+        "post_install_command": {
+          "default": "",
+          "description": "Custom command to run after all packages have been installed. Skipped if not specified.",
+          "title": "Post-install command",
+          "type": "string"
+        },
+        "apt_packages": {
+          "description": "List of APT packages to install",
+          "items": {
+            "type": "string"
+          },
+          "title": "APT packages",
+          "type": "array"
+        }
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "LabelStudioComponentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The name of the app.",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "machine_type": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MachineType"
+            }
+          ],
+          "description": "The machine type to be used.",
+          "title": "Machine type"
+        },
+        "num_gpu": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of GPUs to use.",
+          "title": "Number of GPUs"
+        },
+        "config_variables": {
+          "description": "Optional user defined arguments to pass to the app.",
+          "title": "Arguments",
+          "type": "object"
+        },
+        "mounts": {
+          "description": "The mounts to be attached.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DOWNLOAD": "#/$defs/DownloadMountSpec",
+                "UPLOAD": "#/$defs/UploadMountSpec",
+                "VOLUME": "#/$defs/VolumeMountSpec"
+              },
+              "propertyName": "mode"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DownloadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/UploadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/VolumeMountSpec"
+              }
+            ]
+          },
+          "title": "Mounts",
+          "type": "array"
+        },
+        "attach_project_credentials": {
+          "default": true,
+          "description": "If true, will make an API key available to instances under the `SLINGSHOT_API_KEY` environmentvariable so that they can make requests using the Slingshot SDK for this project",
+          "title": "Attach project credentials",
+          "type": "boolean"
+        },
+        "using": {
+          "const": "label-studio",
+          "description": "Which package to use. When specified, this feature automatically adjusts the behavior of the app.",
+          "title": "Using"
+        },
+        "import_run": {
+          "default": "label-studio-import",
+          "description": "The name of the run used to import data to Label Studio.",
+          "title": "Import Run",
+          "type": "string"
+        },
+        "export_run": {
+          "default": "label-studio-export",
+          "description": "The name of the run used to export data from Label Studio.",
+          "title": "Export Run",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "machine_type",
+        "using"
+      ],
+      "title": "Label Studio",
+      "type": "object"
+    },
+    "MachineType": {
+      "enum": [
+        "T4",
+        "L4",
+        "A100",
+        "CPU_TINY",
+        "CPU_SMALL",
+        "CPU_MEDIUM",
+        "CPU_LARGE"
+      ],
+      "title": "MachineType",
+      "type": "string"
+    },
+    "MountSelector": {
+      "properties": {
+        "name": {
+          "description": "The name of the artifact to download.",
+          "title": "Name",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "latest",
+          "description": "The tag of the artifact.",
+          "title": "Tag"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The id of a project to download an artifact from, only required when accessing artifacts from other projects",
+          "title": "Project"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "MountSelector",
+      "type": "object"
+    },
+    "MountTarget": {
+      "properties": {
+        "name": {
+          "description": "The name of the artifact to upload.",
+          "title": "Name",
+          "type": "string"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The tag(s) to apply to the artifact, comma separated.",
+          "title": "Tag"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "MountTarget",
+      "type": "object"
+    },
+    "RedisComponentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The name of the app.",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "machine_type": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MachineType"
+            }
+          ],
+          "description": "The machine type to be used.",
+          "title": "Machine type"
+        },
+        "num_gpu": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of GPUs to use.",
+          "title": "Number of GPUs"
+        },
+        "config_variables": {
+          "description": "Optional user defined arguments to pass to the app.",
+          "title": "Arguments",
+          "type": "object"
+        },
+        "mounts": {
+          "description": "The mounts to be attached.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DOWNLOAD": "#/$defs/DownloadMountSpec",
+                "UPLOAD": "#/$defs/UploadMountSpec",
+                "VOLUME": "#/$defs/VolumeMountSpec"
+              },
+              "propertyName": "mode"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DownloadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/UploadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/VolumeMountSpec"
+              }
+            ]
+          },
+          "title": "Mounts",
+          "type": "array"
+        },
+        "attach_project_credentials": {
+          "default": true,
+          "description": "If true, will make an API key available to instances under the `SLINGSHOT_API_KEY` environmentvariable so that they can make requests using the Slingshot SDK for this project",
+          "title": "Attach project credentials",
+          "type": "boolean"
+        },
+        "using": {
+          "const": "redis",
+          "description": "Which package to use. When specified, this feature automatically adjusts the behavior of the app.",
+          "title": "Using"
+        }
+      },
+      "required": [
+        "name",
+        "machine_type",
+        "using"
+      ],
+      "title": "Redis",
+      "type": "object"
+    },
+    "RunSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "default": "run",
+          "description": "The name of the run.",
+          "title": "Name",
+          "type": "string"
+        },
+        "machine_type": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MachineType"
+            }
+          ],
+          "description": "The machine type to be used.",
+          "title": "Machine type"
+        },
+        "num_gpu": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of GPUs to use.",
+          "title": "Number of GPUs"
+        },
+        "config_variables": {
+          "description": "Optional user defined arguments to pass to the app.",
+          "title": "Arguments",
+          "type": "object"
+        },
+        "mounts": {
+          "description": "The mounts to be attached.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DOWNLOAD": "#/$defs/DownloadMountSpec",
+                "UPLOAD": "#/$defs/UploadMountSpec",
+                "VOLUME": "#/$defs/VolumeMountSpec"
+              },
+              "propertyName": "mode"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DownloadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/UploadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/VolumeMountSpec"
+              }
+            ]
+          },
+          "title": "Mounts",
+          "type": "array"
+        },
+        "attach_project_credentials": {
+          "default": true,
+          "description": "If true, will make an API key available to instances under the `SLINGSHOT_API_KEY` environmentvariable so that they can make requests using the Slingshot SDK for this project",
+          "title": "Attach project credentials",
+          "type": "boolean"
+        },
+        "cmd": {
+          "description": "The command to run.",
+          "title": "Command",
+          "type": "string"
+        },
+        "environment": {
+          "description": "The name of the environment.",
+          "title": "Environment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "machine_type",
+        "cmd",
+        "environment"
+      ],
+      "title": "Run",
+      "type": "object"
+    },
+    "SessionComponentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The name of the app.",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "machine_type": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MachineType"
+            }
+          ],
+          "description": "The machine type to be used.",
+          "title": "Machine type"
+        },
+        "num_gpu": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of GPUs to use.",
+          "title": "Number of GPUs"
+        },
+        "config_variables": {
+          "description": "Optional user defined arguments to pass to the app.",
+          "title": "Arguments",
+          "type": "object"
+        },
+        "mounts": {
+          "description": "The mounts to be attached.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DOWNLOAD": "#/$defs/DownloadMountSpec",
+                "UPLOAD": "#/$defs/UploadMountSpec",
+                "VOLUME": "#/$defs/VolumeMountSpec"
+              },
+              "propertyName": "mode"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DownloadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/UploadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/VolumeMountSpec"
+              }
+            ]
+          },
+          "title": "Mounts",
+          "type": "array"
+        },
+        "attach_project_credentials": {
+          "default": true,
+          "description": "If true, will make an API key available to instances under the `SLINGSHOT_API_KEY` environmentvariable so that they can make requests using the Slingshot SDK for this project",
+          "title": "Attach project credentials",
+          "type": "boolean"
+        },
+        "using": {
+          "const": "session",
+          "description": "Which package to use. When specified, this feature automatically adjusts the behavior of the app.",
+          "title": "Using"
+        },
+        "environment": {
+          "description": "The name of the execution environment.",
+          "title": "Environment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "machine_type",
+        "using",
+        "environment"
+      ],
+      "title": "Session",
+      "type": "object"
+    },
+    "SourceMapping": {
+      "additionalProperties": false,
+      "description": "Represents an individual source mapping configuration, pointing a local directory to a remote one.",
+      "properties": {
+        "path": {
+          "description": "Mapping in the format <localdir>:<remotedir>.",
+          "title": "Path",
+          "type": "string"
+        },
+        "excludePaths": {
+          "description": "A list of .gitignore style rules used to exclude source files.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Exclude paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "SourceMapping",
+      "type": "object"
+    },
+    "UploadMountSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "UPLOAD",
+          "description": "The mode to use for the mount.",
+          "title": "Mode"
+        },
+        "path": {
+          "description": "The path to mount into the environment.",
+          "pattern": "/mnt/[\\w-]+",
+          "title": "Path",
+          "type": "string"
+        },
+        "target": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MountTarget"
+            }
+          ],
+          "description": "The artifact target.",
+          "title": "Target"
+        }
+      },
+      "required": [
+        "mode",
+        "path",
+        "target"
+      ],
+      "title": "UploadMountSpec",
+      "type": "object"
+    },
+    "VolumeMountSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "VOLUME",
+          "description": "The mode to use for the mount.",
+          "title": "Mode"
+        },
+        "path": {
+          "description": "The path to mount into the environment.",
+          "pattern": "/mnt/[\\w-]+",
+          "title": "Path",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name of the volume to mount.",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode",
+        "path",
+        "name"
+      ],
+      "title": "VolumeMountSpec",
+      "type": "object"
+    },
+    "WebappComponentSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "The name of the app.",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "machine_type": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/MachineType"
+            }
+          ],
+          "description": "The machine type to be used.",
+          "title": "Machine type"
+        },
+        "num_gpu": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The number of GPUs to use.",
+          "title": "Number of GPUs"
+        },
+        "config_variables": {
+          "description": "Optional user defined arguments to pass to the app.",
+          "title": "Arguments",
+          "type": "object"
+        },
+        "mounts": {
+          "description": "The mounts to be attached.",
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "DOWNLOAD": "#/$defs/DownloadMountSpec",
+                "UPLOAD": "#/$defs/UploadMountSpec",
+                "VOLUME": "#/$defs/VolumeMountSpec"
+              },
+              "propertyName": "mode"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/DownloadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/UploadMountSpec"
+              },
+              {
+                "$ref": "#/$defs/VolumeMountSpec"
+              }
+            ]
+          },
+          "title": "Mounts",
+          "type": "array"
+        },
+        "attach_project_credentials": {
+          "default": true,
+          "description": "If true, will make an API key available to instances under the `SLINGSHOT_API_KEY` environmentvariable so that they can make requests using the Slingshot SDK for this project",
+          "title": "Attach project credentials",
+          "type": "boolean"
+        },
+        "using": {
+          "const": "webapp",
+          "description": "Which package to use. Set to webapp for a custom web application.",
+          "title": "Using"
+        },
+        "port": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The port to expose.",
+          "title": "Port"
+        },
+        "cmd": {
+          "description": "The command to run.",
+          "title": "Command",
+          "type": "string"
+        },
+        "environment": {
+          "description": "The name of the environment.",
+          "title": "Environment",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "machine_type",
+        "using",
+        "cmd",
+        "environment"
+      ],
+      "title": "Web app",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/slingshot-ai/slingshot/blob/main/slingshot_client/src/slingshot/schemas/slingshot-schema.config.json",
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "environments": {
+      "additionalProperties": {
+        "$ref": "#/$defs/EnvironmentSpec"
+      },
+      "description": "The environments to use for the job.",
+      "title": "Environments",
+      "type": "object"
+    },
+    "apps": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "label-studio": "#/$defs/LabelStudioComponentSpec",
+            "redis": "#/$defs/RedisComponentSpec",
+            "session": "#/$defs/SessionComponentSpec",
+            "webapp": "#/$defs/WebappComponentSpec"
+          },
+          "propertyName": "using"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/SessionComponentSpec"
+          },
+          {
+            "$ref": "#/$defs/RedisComponentSpec"
+          },
+          {
+            "$ref": "#/$defs/LabelStudioComponentSpec"
+          },
+          {
+            "$ref": "#/$defs/WebappComponentSpec"
+          }
+        ]
+      },
+      "title": "Component",
+      "type": "array"
+    },
+    "runs": {
+      "items": {
+        "$ref": "#/$defs/RunSpec"
+      },
+      "title": "Run",
+      "type": "array"
+    },
+    "deployments": {
+      "items": {
+        "$ref": "#/$defs/DeploymentSpec"
+      },
+      "title": "Deployment",
+      "type": "array"
+    },
+    "sources": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/SourceMapping"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Sources to include for Slingshot components. If not set, the project directory will be used. Can be set to an empty list to explicitly disable sources.",
+      "title": "Sources"
+    }
+  },
+  "title": "Slingshot Config Spec",
+  "type": "object"
+}
