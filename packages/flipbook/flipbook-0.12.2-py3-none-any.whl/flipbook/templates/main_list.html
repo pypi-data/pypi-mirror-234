@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta content="width=device-width, initial-scale=1" charset="utf-8" name="viewport" />
+
+    <link rel="stylesheet" href="/static/css/semantic.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/datatables.min.css"/>
+
+    <script src="/static/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/js/semantic.min.js"></script>
+
+    <script type="text/javascript" src="/static/js/pdfmake.min.js"></script>
+    <script type="text/javascript" src="/static/js/vfs_fonts.js"></script>
+    <script type="text/javascript" src="/static/js/datatables.min.js"></script>
+
+    <link rel="icon" href="/static/images/favicon.png" type="image/x-icon"/>
+    <title>FlipBook</title>
+    <style>
+        .dt-buttons {
+            margin-top: 15px !important;
+        }
+        .keyboard-shortcut {
+            border-color: rgba(0, 0, 0, 0.55);
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 5px;
+            padding: 1px 4px 2px;
+            margin-left: 0.5em;
+            color: rgba(0, 0, 0, 0.55);
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body style="overflow-x: scroll">
+    <div class="ui stackable grid">
+        <div class="row"></div>
+        <div class="row">
+            <div class="one wide column"></div>
+            <div class="fourteen wide column">
+                {% if header_html %}
+                    {{ header_html }}
+                {% else %}
+                    <div style="font-size: 12pt">
+                        {% if form_column_names %}
+                            <b>{{ form_responses_dict|length }} out of {{ data_files_list|length }} rows</b> currently have entries in {{ form_responses_table_path }}
+                        {% else %}
+                            {{ data_files_list|length }} rows to review
+                        {% endif %}
+                    </div>
+                    <div class="ui divider"></div>
+                {% endif %}
+                <div id="data-table-container" style="width:100%">
+                    <table id="data-table" class="ui celled table">
+                        <thead>
+                            <tr>
+                                <th style="cursor: pointer; min-width:20px">#</th>
+                                <th style="cursor: pointer">Path</th>
+                                {% for column_name in form_column_names %}
+                                    <th style="cursor: pointer; width: {{ '100%' if column_name == 'Notes' else '1%'}}">
+                                        {{ column_name }}
+                                    </th>
+                                {% endfor %}
+                                {% for column_name in metadata_column_names %}
+                                    <th style="cursor: pointer">
+                                        {{ column_name }}
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        {% for page_number, relative_directory, filenames in data_files_list %}
+                            <tr>
+                                {% if page_number < 10 %}
+                                    <td><span class="keyboard-shortcut">{{ page_number }}</span></td>
+                                {% else %}
+                                    <td>{{ page_number }}.</td>
+                                {% endif %}
+                                <td style="padding-right: 50px;">
+                                    <a id="link{{page_number}}" href="{{ get_data_page_url(page_number, data_files_list | length) }}">
+                                        {{relative_directory or filenames[0]}}
+                                    </a>
+                                </td>
+                                {% for column_name in form_column_names %}
+                                    <td>
+                                        {{ form_responses_dict.get(relative_directory, {}).get(column_name, '') }}
+                                    </td>
+                                {% endfor %}
+                                {% for column_name in metadata_column_names %}
+                                    <td>
+                                        {{ metadata_dict.get(relative_directory, {}).get(column_name, '') }}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+            <div class="one wide column"></div>
+        </div>
+    </div>
+    <script type="text/javascript">
+      // data table
+      $('#data-table').DataTable({
+        stateSave: true,
+        stateDuration: 0,
+        paging: false,
+        dom: 'tB',
+        columnDefs: [
+          {
+            targets: [0, 1],
+            orderSequence: ['asc','desc'],
+          },
+          {
+            targets: '_all',
+            orderSequence: ['desc','asc'], // default to descending sort first
+          },
+        ],
+        responsive: true,
+        buttons: ['copy', 'csv', 'excel', 'pdf'],
+      })
+
+      //keyboard shortcuts
+      $(document).keypress((event) => {
+        const key = parseInt(String.fromCharCode(event.keyCode))
+        if (key > 0 && key < 10 && key <= parseInt("{{ data_files_list|length }}")) {
+          $("#link" + key)[0].click();
+        }
+      })
+    </script>
+</body>
+</html>
