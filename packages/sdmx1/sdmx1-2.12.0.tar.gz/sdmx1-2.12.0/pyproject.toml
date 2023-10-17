@@ -1,0 +1,102 @@
+[build-system]
+requires = ["build", "setuptools-scm"]
+
+[project]
+name = "sdmx1"
+description = "Statistical Data and Metadata eXchange (SDMX)"
+dynamic = ["version"]
+authors = [{ name = "SDMX Python developers" }]
+maintainers = [
+  { name = "Paul Natsuo Kishimoto", email = "mail@paul.kishimoto.name" },
+]
+readme = "README.rst"
+keywords = ["statistics", "SDMX", "pandas", "data", "economics", "science"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Financial and Insurance Industry",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+requires-python = ">=3.8"
+dependencies = [
+  "lxml >= 3.6",
+  "pandas >= 1.0",
+  "python-dateutil",
+  "requests >= 2.7",
+  "typing_extensions",
+]
+
+[project.optional-dependencies]
+cache = ["requests-cache"]
+docs = ["IPython", "sphinx >=4", "sphinx-book-theme"]
+tests = [
+  "Jinja2",
+  "pytest >= 5",
+  "pytest-cov",
+  "pytest-xdist",
+  "requests-mock >= 1.4",
+]
+
+[project.urls]
+homepage = "https://github.com/khaeru/sdmx"
+repository = "https://github.com/khaeru/sdmx"
+documentation = "https://sdmx1.readthedocs.io/en/latest"
+
+[tool.coverage.run]
+omit = [
+  "sdmx/experimental.py",
+  "sdmx/tests/writer/test_protobuf.py",
+  "sdmx/writer/protobuf.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+  # Don't complain about abstract methods, they aren't run
+  "@(abc\\.)?abstractmethod",
+]
+
+[tool.mypy]
+exclude = ["^build/"]
+
+[[tool.mypy.overrides]]
+# Packages/modules for which no type hints are available.
+module = [
+  "lxml.builder", # Not covered by types-lxml
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = """
+  sdmx
+  --cov sdmx --cov-report=
+  -m "not experimental and not source"
+"""
+markers = [
+  "experimental: test of experimental features",
+  "network: tests requiring a network connection",
+  "source: slower, network tests of individual SDMX web services",
+]
+
+[tool.ruff]
+select = ["C9", "E", "F", "I", "W"]
+
+[tool.ruff.mccabe]
+# Exceptions:
+# - .client.Client._request_from_args: 16
+# - .writer.pandas._maybe_convert_datetime: 27
+max-complexity = 13
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
