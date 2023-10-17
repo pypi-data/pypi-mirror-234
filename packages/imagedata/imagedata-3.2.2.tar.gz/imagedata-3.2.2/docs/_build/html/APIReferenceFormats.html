@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formats API Reference &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Archives API Reference" href="APIReferenceArchives.html" />
+    <link rel="prev" title="Imagedata packages" href="APIReferenceImagedata.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="UserGuide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Collections.html">Collections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Notebook.html">Jupyter Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Motivation and goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#design">Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#series-class">Series Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Input_output.html">Input/output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sorting.html">Sorting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DICOMAttributes.html">DICOM Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CommandLine.html">Console Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Examples.html">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Plugins.html">Plugin Architecture</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="APIReference.html">API Reference</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceSeries.html">Series Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceCollections.html">Collections Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceViewer.html">Viewer Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceImagedata.html">Imagedata packages</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Formats API Reference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#module-imagedata.formats.abstractplugin">Module imagedata.formats.abstractplugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-imagedata.formats.dicomplugin">Module imagedata.formats.dicomplugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-imagedata.formats.itkplugin">Module imagedata.formats.itkplugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-imagedata.formats.matplugin">Module imagedata.formats.matplugin</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-imagedata.formats.niftiplugin">Module imagedata.formats.niftiplugin</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceArchives.html">Archives API Reference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceTransports.html">Transports API Reference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="APIReferenceApps.html">Apps API Reference</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="UserGuide.html">User Guide</a></li>
+          <li class="breadcrumb-item"><a href="APIReference.html">API Reference</a></li>
+      <li class="breadcrumb-item active">Formats API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/APIReferenceFormats.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="formats-api-reference">
+<span id="apireferenceformats"></span><h1>Formats API Reference<a class="headerlink" href="#formats-api-reference" title="Permalink to this heading"></a></h1>
+<section id="module-imagedata.formats.abstractplugin">
+<span id="module-imagedata-formats-abstractplugin"></span><h2>Module imagedata.formats.abstractplugin<a class="headerlink" href="#module-imagedata.formats.abstractplugin" title="Permalink to this heading"></a></h2>
+<p>Abstract class for image formats.</p>
+<p>Defines generic functions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.abstractplugin.</span></span><span class="sig-name descname"><span class="pre">AbstractPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin" title="Permalink to this definition"></a></dt>
+<dd><p>Abstract base class definition for imagedata format plugins.
+Plugins must be a subclass of AbstractPlugin and
+must define the atttributes set in __init__() and
+the following methods:</p>
+<p>read() method
+write_3d_numpy() method
+write_4d_numpy() method</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_order</strong> – </p></li>
+<li><p><strong>tags</strong> – </p></li>
+<li><p><strong>transformationMatrix</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.authors">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">authors</span></span><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.authors" title="Permalink to this definition"></a></dt>
+<dd><p>Plugin authors</p>
+<p>Multi-line string naming the author(s) of the plugin.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.description">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">description</span></span><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.description" title="Permalink to this definition"></a></dt>
+<dd><p>Plugin description</p>
+<p>Single line string describing the image format.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.getPositionForVoxel">
+<span class="sig-name descname"><span class="pre">getPositionForVoxel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.getPositionForVoxel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.getPositionForVoxel" title="Permalink to this definition"></a></dt>
+<dd><p>Get patient position for center of given voxel r</p>
+<p>Use Patient Position and Image Orientation to calculate world
+coordinates for given voxel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r</strong> – (z,y,x) of voxel in voxel coordinates as numpy.array</p></li>
+<li><p><strong>transformation</strong> – transformation matrix when different from self.transformationMatrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(z,y,x) of voxel in world coordinates (mm) as numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.getTimeline">
+<span class="sig-name descname"><span class="pre">getTimeline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.getTimeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.getTimeline" title="Permalink to this definition"></a></dt>
+<dd><p>Get timeline</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Timeline in seconds, as numpy array of floats</dt><dd><p>Delta time is given as seconds. First image is t=0.
+Length of array is number of tags.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – tags for dataset is not time tags</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.getVoxelForPosition">
+<span class="sig-name descname"><span class="pre">getVoxelForPosition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.getVoxelForPosition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.getVoxelForPosition" title="Permalink to this definition"></a></dt>
+<dd><p>Get voxel for given patient position p</p>
+<p>Use Patient Position and Image Orientation to calculate world
+coordinates for given voxel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p</strong> – (z,y,x) of voxel in world coordinates (mm) as numpy.array</p></li>
+<li><p><strong>transformation</strong> – transformation matrix when different from self.transformationMatrix</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(z,y,x) of voxel in voxel coordinates as numpy.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.name" title="Permalink to this definition"></a></dt>
+<dd><p>Plugin name</p>
+<p>Single word string describing the image format.
+Typical names: dicom, nifti, itk.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_hdr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.read" title="Permalink to this definition"></a></dt>
+<dd><p>Read image data</p>
+<p>Generic version for images which will be sorted on their filenames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sources</strong> – list of sources to image data</p></li>
+<li><p><strong>pre_hdr</strong> – DICOM template</p></li>
+<li><p><strong>input_order</strong> – sort order</p></li>
+<li><p><strong>opts</strong> – Input options (dict)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple of</dt><dd><ul class="simple">
+<li><p>hdr: Header dict</p></li>
+<li><p>si[tag,slice,rows,columns]: numpy array</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.replace_geometry_attributes">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">replace_geometry_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.replace_geometry_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.replace_geometry_attributes" title="Permalink to this definition"></a></dt>
+<dd><p>Replace geometry attributes in image with values from gim</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.url">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">url</span></span><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.url" title="Permalink to this definition"></a></dt>
+<dd><p>Plugin URL</p>
+<p>URL string to the site of the plugin or the author(s).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.version">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.version" title="Permalink to this definition"></a></dt>
+<dd><p>Plugin version</p>
+<p>String giving the plugin version.
+Version scheme: 1.0.0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.write_3d_numpy">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write_3d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.write_3d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.write_3d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 3D Series image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – format plugin instance</p></li>
+<li><p><strong>si</strong><strong>[</strong><strong>slice</strong> – Series array</p></li>
+<li><p><strong>rows</strong> – Series array</p></li>
+<li><p><strong>columns</strong><strong>]</strong> – Series array</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.AbstractPlugin.write_4d_numpy">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write_4d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#AbstractPlugin.write_4d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.AbstractPlugin.write_4d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 4D Series image</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – format plugin instance</p></li>
+<li><p><strong>si</strong><strong>[</strong><strong>tag</strong> – Series array</p></li>
+<li><p><strong>slice</strong> – Series array</p></li>
+<li><p><strong>rows</strong> – Series array</p></li>
+<li><p><strong>columns</strong><strong>]</strong> – Series array</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.abstractplugin.NoOtherInstance">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.abstractplugin.</span></span><span class="sig-name descname"><span class="pre">NoOtherInstance</span></span><a class="reference internal" href="_modules/imagedata/formats/abstractplugin.html#NoOtherInstance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.abstractplugin.NoOtherInstance" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-imagedata.formats.dicomplugin">
+<span id="module-imagedata-formats-dicomplugin"></span><h2>Module imagedata.formats.dicomplugin<a class="headerlink" href="#module-imagedata.formats.dicomplugin" title="Permalink to this heading"></a></h2>
+<p>Read/Write DICOM files</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.dicomplugin.</span></span><span class="sig-name descname"><span class="pre">DICOMPlugin</span></span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin" title="Permalink to this definition"></a></dt>
+<dd><p>Read/write DICOM files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_order</strong> – </p></li>
+<li><p><strong>DicomHeaderDict</strong> – </p></li>
+<li><p><strong>instanceNumber</strong> – </p></li>
+<li><p><strong>today</strong> – </p></li>
+<li><p><strong>now</strong> – </p></li>
+<li><p><strong>serInsUid</strong> – </p></li>
+<li><p><strong>input_options</strong> – </p></li>
+<li><p><strong>output_sort</strong> – </p></li>
+<li><p><strong>output_dir</strong> – </p></li>
+<li><p><strong>seriesTime</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.create_affine">
+<span class="sig-name descname"><span class="pre">create_affine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hdr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.create_affine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.create_affine" title="Permalink to this definition"></a></dt>
+<dd><p>Function to generate the affine matrix for a dicom series
+This method was based on
+(<a class="reference external" href="http://nipy.org/nibabel/dicom/dicom_orientation.html">http://nipy.org/nibabel/dicom/dicom_orientation.html</a>)
+:param hdr: list with sorted dicom files</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.extractDicomAttributes">
+<span class="sig-name descname"><span class="pre">extractDicomAttributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.extractDicomAttributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.extractDicomAttributes" title="Permalink to this definition"></a></dt>
+<dd><p>Extract DICOM attributes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>dictionary</strong> – image dictionary</p></li>
+<li><p><strong>hdr</strong> – header</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>header</dt><dd><ul class="simple">
+<li><p>seriesNumber</p></li>
+<li><p>seriesDescription</p></li>
+<li><p>imageType</p></li>
+<li><p>spacing</p></li>
+<li><p>orientation</p></li>
+<li><p>imagePositions</p></li>
+<li><p>axes</p></li>
+<li><p>modality, laterality, protocolName, bodyPartExamined</p></li>
+<li><p>seriesDate, seriesTime, patientPosition</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>hdr</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.getDicomAttribute">
+<span class="sig-name descname"><span class="pre">getDicomAttribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.getDicomAttribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.getDicomAttribute" title="Permalink to this definition"></a></dt>
+<dd><p>Get DICOM attribute from first image for given slice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>dictionary</strong> – image dictionary</p></li>
+<li><p><strong>tag</strong> – DICOM tag of requested attribute.</p></li>
+<li><p><strong>slice</strong> – which slice to access. Default: slice=0</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.getOriginForSlice">
+<span class="sig-name descname"><span class="pre">getOriginForSlice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.getOriginForSlice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.getOriginForSlice" title="Permalink to this definition"></a></dt>
+<dd><p>Get origin of given slice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>dictionary</strong> – image dictionary</p></li>
+<li><p><strong>slice</strong> – slice number (int)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>coordinate for origin of given slice (np.array)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>z,y,x</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.get_dicom_files">
+<span class="sig-name descname"><span class="pre">get_dicom_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_pixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.get_dicom_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.get_dicom_files" title="Permalink to this definition"></a></dt>
+<dd><p>Get DICOM objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>sources</strong> – list of sources to image data</p></li>
+<li><p><strong>input_order</strong> – Determine how to sort the input images</p></li>
+<li><p><strong>opts</strong> – options (dict)</p></li>
+<li><p><strong>skip_pixels</strong> – Do not read pixel data (default: False)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple of</dt><dd><ul class="simple">
+<li><p>sorted_headers: dict where sliceLocations are keys</p></li>
+<li><p>hdr: Header</p></li>
+<li><p>shape: tuple</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pre_hdr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.read" title="Permalink to this definition"></a></dt>
+<dd><p>Read image data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>sources</strong> – list of sources to image data</p></li>
+<li><p><strong>pre_hdr</strong> – Pre-filled header dict. Can be None</p></li>
+<li><p><strong>input_order</strong> – sort order</p></li>
+<li><p><strong>opts</strong> – input options (dict)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple of</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>hdr: Header</dt><dd><ul>
+<li><p>input_format</p></li>
+<li><p>input_order</p></li>
+<li><p>slices</p></li>
+<li><p>sliceLocations</p></li>
+<li><p>DicomHeaderDict</p></li>
+<li><p>keep_uid</p></li>
+<li><p>tags</p></li>
+<li><p>seriesNumber</p></li>
+<li><p>seriesDescription</p></li>
+<li><p>imageType</p></li>
+<li><p>spacing</p></li>
+<li><p>orientation</p></li>
+<li><p>imagePositions</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>si[tag,slice,rows,columns]: multi-dimensional numpy array</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.read_files">
+<span class="sig-name descname"><span class="pre">read_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_pixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.read_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.read_files" title="Permalink to this definition"></a></dt>
+<dd><p>Read DICOM objects</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>sources</strong> – list of sources to image data</p></li>
+<li><p><strong>input_order</strong> – sort order</p></li>
+<li><p><strong>opts</strong> – input options (dict)</p></li>
+<li><p><strong>skip_pixels</strong> – Do not read pixel data (default: False)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple of</dt><dd><ul class="simple">
+<li><p>hdr: header</p></li>
+<li><p>si: numpy pixel matrix</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.removePrivateTags">
+<span class="sig-name descname"><span class="pre">removePrivateTags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.removePrivateTags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.removePrivateTags" title="Permalink to this definition"></a></dt>
+<dd><p>Remove private DICOM attributes.</p>
+<p>Ignore if no real dicom header exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>dictionary</strong> – image dictionary</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.setDicomAttribute">
+<span class="sig-name descname"><span class="pre">setDicomAttribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.setDicomAttribute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.setDicomAttribute" title="Permalink to this definition"></a></dt>
+<dd><p>Set a given DICOM attribute to the provided value.</p>
+<p>Ignore if no real dicom header exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>dictionary</strong> – image dictionary</p></li>
+<li><p><strong>tag</strong> – DICOM tag of addressed attribute.</p></li>
+<li><p><strong>value</strong> – Set attribute to this value.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.sort_images">
+<span class="sig-name descname"><span class="pre">sort_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.sort_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.sort_images" title="Permalink to this definition"></a></dt>
+<dd><p>Sort DICOM images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>header_dict</strong> – dict where sliceLocations are keys</p></li>
+<li><p><strong>input_order</strong> – determine how to sort the input images</p></li>
+<li><p><strong>opts</strong> – options (dict)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Tuple of</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>hdr</dt><dd><ul>
+<li><p>input_format</p></li>
+<li><p>input_order</p></li>
+<li><p>slices</p></li>
+<li><p>sliceLocations</p></li>
+<li><p>DicomHeaderDict</p></li>
+<li><p>tags</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>shape</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.write_3d_numpy">
+<span class="sig-name descname"><span class="pre">write_3d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.write_3d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.write_3d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 3D Series image as DICOM files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>si</strong> – Series array (3D or 4D)</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.write_4d_numpy">
+<span class="sig-name descname"><span class="pre">write_4d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.write_4d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.write_4d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 4D Series image as DICOM files</p>
+<p>si.series_number is inserted into each dicom object</p>
+<p>si.series_description is inserted into each dicom object</p>
+<p>si.image_type: Dicom image type attribute</p>
+<p>opts[‘output_sort’]: Which tag will sort the output images (slice or tag)</p>
+<p>opts[‘output_dir’]: Store all images in a single or multiple directories</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>si</strong> – Series array si[tag,slice,rows,columns]</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.write_enhanced">
+<span class="sig-name descname"><span class="pre">write_enhanced</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">archive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.write_enhanced"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.write_enhanced" title="Permalink to this definition"></a></dt>
+<dd><p>Write enhanced CT/MR object to DICOM file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>si</strong> – Series instance, including these attributes:</p></li>
+<li><p><strong>archive</strong> – archive object</p></li>
+<li><p><strong>filename_template</strong> – file name template, possible without ‘.dcm’ extension</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Raises:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.DICOMPlugin.write_slice">
+<span class="sig-name descname"><span class="pre">write_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">archive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#DICOMPlugin.write_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.DICOMPlugin.write_slice" title="Permalink to this definition"></a></dt>
+<dd><p>Write single slice to DICOM file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – DICOMPlugin instance</p></li>
+<li><p><strong>tag</strong> – tag index</p></li>
+<li><p><strong>slice</strong> – slice index</p></li>
+<li><p><strong>si</strong> – Series instance, including these attributes:</p></li>
+<li><p><strong>slices</strong> (<em>-</em>) – </p></li>
+<li><p><strong>sliceLocations</strong> (<em>-</em>) – </p></li>
+<li><p><strong>DicomHeaderDict</strong> (<em>-</em>) – </p></li>
+<li><p><strong>tags</strong> (<em>-</em>) – </p></li>
+<li><p><strong>seriesNumber</strong> (<em>-</em>) – </p></li>
+<li><p><strong>seriesDescription</strong> (<em>-</em>) – </p></li>
+<li><p><strong>imageType</strong> (<em>-</em>) – </p></li>
+<li><p><strong>frame</strong> (<em>-</em>) – </p></li>
+<li><p><strong>spacing</strong> (<em>-</em>) – </p></li>
+<li><p><strong>orientation</strong> (<em>-</em>) – </p></li>
+<li><p><strong>imagePositions</strong> (<em>-</em>) – </p></li>
+<li><p><strong>photometricInterpretation</strong> (<em>-</em>) – </p></li>
+<li><p><strong>archive</strong> – archive object</p></li>
+<li><p><strong>filename</strong> – file name, possible without ‘.dcm’ extension</p></li>
+<li><p><strong>ifile</strong> – instance number in series</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.FilesGivenForMultipleURLs">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.dicomplugin.</span></span><span class="sig-name descname"><span class="pre">FilesGivenForMultipleURLs</span></span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#FilesGivenForMultipleURLs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.FilesGivenForMultipleURLs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.NoDICOMAttributes">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.dicomplugin.</span></span><span class="sig-name descname"><span class="pre">NoDICOMAttributes</span></span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#NoDICOMAttributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.NoDICOMAttributes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.UnevenSlicesError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.dicomplugin.</span></span><span class="sig-name descname"><span class="pre">UnevenSlicesError</span></span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#UnevenSlicesError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.UnevenSlicesError" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.UnknownTag">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.dicomplugin.</span></span><span class="sig-name descname"><span class="pre">UnknownTag</span></span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#UnknownTag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.UnknownTag" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.dicomplugin.ValueErrorWrapperPrecisionError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.dicomplugin.</span></span><span class="sig-name descname"><span class="pre">ValueErrorWrapperPrecisionError</span></span><a class="reference internal" href="_modules/imagedata/formats/dicomplugin.html#ValueErrorWrapperPrecisionError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.dicomplugin.ValueErrorWrapperPrecisionError" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-imagedata.formats.itkplugin">
+<span id="module-imagedata-formats-itkplugin"></span><h2>Module imagedata.formats.itkplugin<a class="headerlink" href="#module-imagedata.formats.itkplugin" title="Permalink to this heading"></a></h2>
+<p>Read/Write image files using ITK</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.DependencyError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.itkplugin.</span></span><span class="sig-name descname"><span class="pre">DependencyError</span></span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#DependencyError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.DependencyError" title="Permalink to this definition"></a></dt>
+<dd><p>Thrown when a required module could not be loaded.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.ITKPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.itkplugin.</span></span><span class="sig-name descname"><span class="pre">ITKPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#ITKPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.ITKPlugin" title="Permalink to this definition"></a></dt>
+<dd><p>Read/write ITK files.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.ITKPlugin.get_image_from_numpy">
+<span class="sig-name descname"><span class="pre">get_image_from_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#ITKPlugin.get_image_from_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.ITKPlugin.get_image_from_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an itk Image created from the supplied scipy ndarray.</p>
+<p>If the image_type is supported, will be automatically transformed to that type,
+otherwise the most suitable is selected.</p>
+<dl class="simple">
+<dt>Note: always use this instead of directly the itk.PyBuffer, as that</dt><dd><p>object transposes the image axes.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>array</strong> (<em>image an</em>) – </p></li>
+<li><p><strong>np.ndarray</strong> (<em>type image</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>an instance of itk.Image holding the array’s data, type itk.Image (instance)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.ITKPlugin.write_3d_numpy">
+<span class="sig-name descname"><span class="pre">write_3d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#ITKPlugin.write_3d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.ITKPlugin.write_3d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 3D numpy image as ITK file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – ITKPlugin instance</p></li>
+<li><p><strong>si</strong> – Series array (3D or 4D), including these attributes:</p></li>
+<li><p><strong>slices</strong> (<em>-</em>) – </p></li>
+<li><p><strong>spacing</strong> (<em>-</em>) – </p></li>
+<li><p><strong>imagePositions</strong> (<em>-</em>) – </p></li>
+<li><p><strong>transformationMatrix</strong> (<em>-</em>) – </p></li>
+<li><p><strong>orientation</strong> (<em>-</em>) – </p></li>
+<li><p><strong>tags</strong> (<em>-</em>) – </p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.ITKPlugin.write_4d_numpy">
+<span class="sig-name descname"><span class="pre">write_4d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#ITKPlugin.write_4d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.ITKPlugin.write_4d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 4D numpy image as ITK files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – ITKPlugin instance</p></li>
+<li><p><strong>si</strong> – [tag,slice,rows,columns]: Series array, including these attributes:</p></li>
+<li><p><strong>slices</strong> (<em>-</em>) – </p></li>
+<li><p><strong>spacing</strong> (<em>-</em>) – </p></li>
+<li><p><strong>imagePositions</strong> (<em>-</em>) – </p></li>
+<li><p><strong>transformationMatrix</strong> (<em>-</em>) – </p></li>
+<li><p><strong>orientation</strong> (<em>-</em>) – </p></li>
+<li><p><strong>tags</strong> (<em>-</em>) – </p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.ITKPlugin.write_numpy_itk">
+<span class="sig-name descname"><span class="pre">write_numpy_itk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">archive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#ITKPlugin.write_numpy_itk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.ITKPlugin.write_numpy_itk" title="Permalink to this definition"></a></dt>
+<dd><p>Write single volume to file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – ITKPlugin instance, including these attributes:
+- slices (not used)
+- spacing
+- imagePositions
+- transformationMatrix
+- orientation (not used)
+- tags (not used)</p></li>
+<li><p><strong>si</strong> – numpy 3D array [slice,row,column]</p></li>
+<li><p><strong>archive</strong> – archive object</p></li>
+<li><p><strong>filename</strong> – file name, possibly without extentsion</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.itkplugin.ImageTypeError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.itkplugin.</span></span><span class="sig-name descname"><span class="pre">ImageTypeError</span></span><a class="reference internal" href="_modules/imagedata/formats/itkplugin.html#ImageTypeError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.itkplugin.ImageTypeError" title="Permalink to this definition"></a></dt>
+<dd><p>Thrown when trying to load or save an image of unknown type.</p>
+</dd></dl>
+
+</section>
+<section id="module-imagedata.formats.matplugin">
+<span id="module-imagedata-formats-matplugin"></span><h2>Module imagedata.formats.matplugin<a class="headerlink" href="#module-imagedata.formats.matplugin" title="Permalink to this heading"></a></h2>
+<p>Read/Write Matlab-compatible MAT files</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.DependencyError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.matplugin.</span></span><span class="sig-name descname"><span class="pre">DependencyError</span></span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#DependencyError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.DependencyError" title="Permalink to this definition"></a></dt>
+<dd><p>Thrown when a required module could not be loaded.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.ImageTypeError">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.matplugin.</span></span><span class="sig-name descname"><span class="pre">ImageTypeError</span></span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#ImageTypeError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.ImageTypeError" title="Permalink to this definition"></a></dt>
+<dd><p>Thrown when trying to load or save an image of unknown type.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.MatPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.matplugin.</span></span><span class="sig-name descname"><span class="pre">MatPlugin</span></span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#MatPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.MatPlugin" title="Permalink to this definition"></a></dt>
+<dd><p>Read/write MAT files.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.MatPlugin.write_3d_numpy">
+<span class="sig-name descname"><span class="pre">write_3d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#MatPlugin.write_3d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.MatPlugin.write_3d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 3D numpy image as MAT file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – MATPlugin instance</p></li>
+<li><p><strong>si</strong> – Series array (3D or 4D), including these attributes:
+slices,
+spacing,
+tags</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.MatPlugin.write_4d_numpy">
+<span class="sig-name descname"><span class="pre">write_4d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#MatPlugin.write_4d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.MatPlugin.write_4d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 4D numpy image as MAT files</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – MATPlugin instance</p></li>
+<li><p><strong>si</strong><strong>[</strong><strong>tag</strong> – Series array, including these attributes:
+slices,
+spacing,
+tags</p></li>
+<li><p><strong>slice</strong> – Series array, including these attributes:
+slices,
+spacing,
+tags</p></li>
+<li><p><strong>rows</strong> – Series array, including these attributes:
+slices,
+spacing,
+tags</p></li>
+<li><p><strong>columns</strong><strong>]</strong> – Series array, including these attributes:
+slices,
+spacing,
+tags</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.MatrixDimensionNotImplemented">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.matplugin.</span></span><span class="sig-name descname"><span class="pre">MatrixDimensionNotImplemented</span></span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#MatrixDimensionNotImplemented"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.MatrixDimensionNotImplemented" title="Permalink to this definition"></a></dt>
+<dd><p>Matrix dimension is not implemented.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.matplugin.MultipleVariablesInMatlabFile">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.matplugin.</span></span><span class="sig-name descname"><span class="pre">MultipleVariablesInMatlabFile</span></span><a class="reference internal" href="_modules/imagedata/formats/matplugin.html#MultipleVariablesInMatlabFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.matplugin.MultipleVariablesInMatlabFile" title="Permalink to this definition"></a></dt>
+<dd><p>Reading multiple variables from a MAT file is not implemented.</p>
+</dd></dl>
+
+</section>
+<section id="module-imagedata.formats.niftiplugin">
+<span id="module-imagedata-formats-niftiplugin"></span><h2>Module imagedata.formats.niftiplugin<a class="headerlink" href="#module-imagedata.formats.niftiplugin" title="Permalink to this heading"></a></h2>
+<p>Read/Write Nifti-1 files</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.FilesGivenForMultipleURLs">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.niftiplugin.</span></span><span class="sig-name descname"><span class="pre">FilesGivenForMultipleURLs</span></span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#FilesGivenForMultipleURLs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.FilesGivenForMultipleURLs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NiftiPlugin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.niftiplugin.</span></span><span class="sig-name descname"><span class="pre">NiftiPlugin</span></span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#NiftiPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.NiftiPlugin" title="Permalink to this definition"></a></dt>
+<dd><p>Read/write Nifti-1 files.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NiftiPlugin.create_affine_xyz">
+<span class="sig-name descname"><span class="pre">create_affine_xyz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#NiftiPlugin.create_affine_xyz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.NiftiPlugin.create_affine_xyz" title="Permalink to this definition"></a></dt>
+<dd><p>Create affine in xyz.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NiftiPlugin.url">
+<span class="sig-name descname"><span class="pre">url</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'www.helse-bergen.no'</span></em><a class="headerlink" href="#imagedata.formats.niftiplugin.NiftiPlugin.url" title="Permalink to this definition"></a></dt>
+<dd><p>data - getter and setter - NumPy array
+read() method
+write() method</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NiftiPlugin.write_3d_numpy">
+<span class="sig-name descname"><span class="pre">write_3d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#NiftiPlugin.write_3d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.NiftiPlugin.write_3d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 3D numpy image as Nifti file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – NiftiPlugin instance</p></li>
+<li><p><strong>si</strong> – Series array (3D or 4D), including these attributes:
+slices,
+spacing,
+imagePositions,
+transformationMatrix,
+orientation,
+tags</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NiftiPlugin.write_4d_numpy">
+<span class="sig-name descname"><span class="pre">write_4d_numpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">si</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#NiftiPlugin.write_4d_numpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.NiftiPlugin.write_4d_numpy" title="Permalink to this definition"></a></dt>
+<dd><p>Write 4D numpy image as Nifti file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – NiftiPlugin instance</p></li>
+<li><p><strong>si</strong><strong>[</strong><strong>tag</strong> – Series array, including these attributes:
+slices,
+spacing,
+imagePositions,
+transformationMatrix,
+orientation,
+tags</p></li>
+<li><p><strong>slice</strong> – Series array, including these attributes:
+slices,
+spacing,
+imagePositions,
+transformationMatrix,
+orientation,
+tags</p></li>
+<li><p><strong>rows</strong> – Series array, including these attributes:
+slices,
+spacing,
+imagePositions,
+transformationMatrix,
+orientation,
+tags</p></li>
+<li><p><strong>columns</strong><strong>]</strong> – Series array, including these attributes:
+slices,
+spacing,
+imagePositions,
+transformationMatrix,
+orientation,
+tags</p></li>
+<li><p><strong>destination</strong> – dict of archive and filenames</p></li>
+<li><p><strong>opts</strong> – Output options (dict)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NiftiPlugin.write_numpy_nifti">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write_numpy_nifti</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">archive</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#NiftiPlugin.write_numpy_nifti"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.NiftiPlugin.write_numpy_nifti" title="Permalink to this definition"></a></dt>
+<dd><p>Write nifti data to file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong> – ITKPlugin instance, including these attributes:</p></li>
+<li><p><strong>slices</strong> (<em>-</em>) – </p></li>
+<li><p><strong>spacing</strong> (<em>-</em>) – </p></li>
+<li><p><strong>imagePositions</strong> (<em>-</em>) – </p></li>
+<li><p><strong>transformationMatrix</strong> (<em>-</em>) – </p></li>
+<li><p><strong>orientation</strong> (<em>-</em>) – </p></li>
+<li><p><strong>tags</strong> (<em>-</em>) – </p></li>
+<li><p><strong>img</strong> – Nifti1Image</p></li>
+<li><p><strong>archive</strong> – archive object</p></li>
+<li><p><strong>filename</strong> – file name, possibly without extentsion</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="imagedata.formats.niftiplugin.NoInputFile">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">imagedata.formats.niftiplugin.</span></span><span class="sig-name descname"><span class="pre">NoInputFile</span></span><a class="reference internal" href="_modules/imagedata/formats/niftiplugin.html#NoInputFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#imagedata.formats.niftiplugin.NoInputFile" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="APIReferenceImagedata.html" class="btn btn-neutral float-left" title="Imagedata packages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="APIReferenceArchives.html" class="btn btn-neutral float-right" title="Archives API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

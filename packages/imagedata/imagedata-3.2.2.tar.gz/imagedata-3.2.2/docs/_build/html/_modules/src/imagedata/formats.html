@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.formats &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.imagedata.formats</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.formats</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module provides plugins for various imaging formats.</span>
+
+<span class="sd">Standard plugins provides support for DICOM and Nifti image file formats.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2013-2022 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="p">(</span><span class="n">SORT_ON_SLICE</span><span class="p">,</span>
+ <span class="n">SORT_ON_TAG</span><span class="p">)</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">sort_on_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">SORT_ON_SLICE</span><span class="p">,</span> <span class="n">SORT_ON_TAG</span><span class="p">}</span>
+
+<span class="n">INPUT_ORDER_AUTO</span> <span class="o">=</span> <span class="s1">&#39;auto&#39;</span>
+<span class="n">INPUT_ORDER_NONE</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
+<span class="n">INPUT_ORDER_TIME</span> <span class="o">=</span> <span class="s1">&#39;time&#39;</span>
+<span class="n">INPUT_ORDER_B</span> <span class="o">=</span> <span class="s1">&#39;b&#39;</span>
+<span class="n">INPUT_ORDER_FA</span> <span class="o">=</span> <span class="s1">&#39;fa&#39;</span>
+<span class="n">INPUT_ORDER_TE</span> <span class="o">=</span> <span class="s1">&#39;te&#39;</span>
+<span class="n">INPUT_ORDER_FAULTY</span> <span class="o">=</span> <span class="s1">&#39;faulty&#39;</span>
+<span class="n">input_order_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">INPUT_ORDER_NONE</span><span class="p">,</span> <span class="n">INPUT_ORDER_TIME</span><span class="p">,</span> <span class="n">INPUT_ORDER_B</span><span class="p">,</span> <span class="n">INPUT_ORDER_FA</span><span class="p">,</span>
+                   <span class="n">INPUT_ORDER_TE</span><span class="p">,</span> <span class="n">INPUT_ORDER_FAULTY</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="NotImageError"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.NotImageError">[docs]</a><span class="k">class</span> <span class="nc">NotImageError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="EmptyImageError"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.EmptyImageError">[docs]</a><span class="k">class</span> <span class="nc">EmptyImageError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UnknownInputError"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.UnknownInputError">[docs]</a><span class="k">class</span> <span class="nc">UnknownInputError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UnknownTag"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.UnknownTag">[docs]</a><span class="k">class</span> <span class="nc">UnknownTag</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="NotTimeOrder"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.NotTimeOrder">[docs]</a><span class="k">class</span> <span class="nc">NotTimeOrder</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="CannotSort"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.CannotSort">[docs]</a><span class="k">class</span> <span class="nc">CannotSort</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="SOPInstanceUIDNotFound"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.SOPInstanceUIDNotFound">[docs]</a><span class="k">class</span> <span class="nc">SOPInstanceUIDNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="FormatPluginNotFound"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.FormatPluginNotFound">[docs]</a><span class="k">class</span> <span class="nc">FormatPluginNotFound</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="WriteNotImplemented"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.WriteNotImplemented">[docs]</a><span class="k">class</span> <span class="nc">WriteNotImplemented</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="sort_on_to_str"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.sort_on_to_str">[docs]</a><span class="k">def</span> <span class="nf">sort_on_to_str</span><span class="p">(</span><span class="n">sort_on</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">sort_on</span> <span class="o">==</span> <span class="n">SORT_ON_SLICE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;SORT_ON_SLICE&quot;</span>
+    <span class="k">elif</span> <span class="n">sort_on</span> <span class="o">==</span> <span class="n">SORT_ON_TAG</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;SORT_ON_TAG&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="p">(</span><span class="n">UnknownTag</span><span class="p">(</span><span class="s2">&quot;Unknown numerical sort_on </span><span class="si">{:d}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sort_on</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="str_to_sort_on"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.str_to_sort_on">[docs]</a><span class="k">def</span> <span class="nf">str_to_sort_on</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;slice&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SORT_ON_SLICE</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;tag&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SORT_ON_TAG</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="p">(</span><span class="n">UnknownTag</span><span class="p">(</span><span class="s2">&quot;Unknown sort_on string </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="str_to_dtype"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.str_to_dtype">[docs]</a><span class="k">def</span> <span class="nf">str_to_dtype</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;uint8&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;uint16&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;int16&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;float&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;float32&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;float64&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;double&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">double</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Output data type </span><span class="si">{}</span><span class="s2"> not implemented.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="input_order_to_str"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.input_order_to_str">[docs]</a><span class="k">def</span> <span class="nf">input_order_to_str</span><span class="p">(</span><span class="n">input_order</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_NONE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;INPUT_ORDER_NONE&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_TIME</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;INPUT_ORDER_TIME&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_B</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;INPUT_ORDER_B&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_FA</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;INPUT_ORDER_FA&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_TE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;INPUT_ORDER_TE&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_FAULTY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;INPUT_ORDER_FAULTY&quot;</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">input_order</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">input_order</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="p">(</span><span class="n">UnknownTag</span><span class="p">(</span><span class="s2">&quot;Unknown numerical input_order </span><span class="si">{:d}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_order</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="input_order_to_dirname_str"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.input_order_to_dirname_str">[docs]</a><span class="k">def</span> <span class="nf">input_order_to_dirname_str</span><span class="p">(</span><span class="n">input_order</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_NONE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;none&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_TIME</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;time&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_B</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;b&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_FA</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;fa&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_TE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;te&quot;</span>
+    <span class="k">elif</span> <span class="n">input_order</span> <span class="o">==</span> <span class="n">INPUT_ORDER_FAULTY</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;faulty&quot;</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">input_order</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">keepcharacters</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">input_order</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()</span> <span class="ow">or</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">keepcharacters</span><span class="p">])</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="p">(</span><span class="n">UnknownTag</span><span class="p">(</span><span class="s2">&quot;Unknown numerical input_order </span><span class="si">{:d}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_order</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="str_to_input_order"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.str_to_input_order">[docs]</a><span class="k">def</span> <span class="nf">str_to_input_order</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;none&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INPUT_ORDER_NONE</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;time&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INPUT_ORDER_TIME</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INPUT_ORDER_B</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;fa&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INPUT_ORDER_FA</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;te&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INPUT_ORDER_TE</span>
+    <span class="k">elif</span> <span class="n">s</span> <span class="o">==</span> <span class="s2">&quot;faulty&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">INPUT_ORDER_FAULTY</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># raise (UnknownTag(&quot;Unknown input order {}.&quot;.format(s)))</span>
+        <span class="k">return</span> <span class="n">s</span></div>
+
+
+<div class="viewcode-block" id="shape_to_str"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.shape_to_str">[docs]</a><span class="k">def</span> <span class="nf">shape_to_str</span><span class="p">(</span><span class="n">shape</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert numpy image shape to printable string</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        shape</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        printable shape (str)</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: when shape cannot be converted to printable string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">tx</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">tx</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">x</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown shape&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_size"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.get_size">[docs]</a><span class="k">def</span> <span class="nf">get_size</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">seen</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Recursively finds size of objects&quot;&quot;&quot;</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">seen</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">obj_id</span> <span class="o">=</span> <span class="nb">id</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">obj_id</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="c1"># Important mark as seen *before* entering recursion to gracefully handle</span>
+    <span class="c1"># self-referential objects</span>
+    <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">obj_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">get_size</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="n">size</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">get_size</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;__dict__&#39;</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">+=</span> <span class="n">get_size</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+        <span class="n">size</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">get_size</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">size</span></div>
+
+
+<div class="viewcode-block" id="get_plugins_list"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.get_plugins_list">[docs]</a><span class="k">def</span> <span class="nf">get_plugins_list</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">plugins</span>
+    <span class="k">return</span> <span class="n">plugins</span><span class="p">[</span><span class="s1">&#39;format&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="s1">&#39;format&#39;</span> <span class="ow">in</span> <span class="n">plugins</span> <span class="k">else</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="find_plugin"><a class="viewcode-back" href="../../../source/src.imagedata.formats.html#src.imagedata.formats.find_plugin">[docs]</a><span class="k">def</span> <span class="nf">find_plugin</span><span class="p">(</span><span class="n">ftype</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return plugin for given format type.&quot;&quot;&quot;</span>
+    <span class="n">plugins</span> <span class="o">=</span> <span class="n">get_plugins_list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ptype</span> <span class="o">==</span> <span class="n">ftype</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pclass</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="n">FormatPluginNotFound</span><span class="p">(</span><span class="s2">&quot;Plugin for format </span><span class="si">{}</span><span class="s2"> not found.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ftype</span><span class="p">))</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

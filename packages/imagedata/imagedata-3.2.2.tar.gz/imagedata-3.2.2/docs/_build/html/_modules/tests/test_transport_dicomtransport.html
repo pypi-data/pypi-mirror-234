@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tests.test_transport_dicomtransport &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tests.test_transport_dicomtransport</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tests.test_transport_dicomtransport</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">pydicom.dataset</span> <span class="kn">import</span> <span class="n">FileMetaDataset</span>
+<span class="kn">from</span> <span class="nn">pynetdicom</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AE</span><span class="p">,</span> <span class="n">evt</span><span class="p">,</span>
+    <span class="n">StoragePresentationContexts</span><span class="p">,</span>
+    <span class="n">PYNETDICOM_IMPLEMENTATION_UID</span><span class="p">,</span>
+    <span class="n">PYNETDICOM_IMPLEMENTATION_VERSION</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.context</span> <span class="kn">import</span> <span class="n">imagedata</span>
+<span class="kn">import</span> <span class="nn">imagedata.cmdline</span>
+<span class="kn">import</span> <span class="nn">imagedata.readdata</span>
+<span class="kn">import</span> <span class="nn">imagedata.formats</span>
+<span class="kn">import</span> <span class="nn">imagedata.transports</span>
+<span class="kn">from</span> <span class="nn">imagedata.series</span> <span class="kn">import</span> <span class="n">Series</span>
+
+<span class="n">scpdir</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="TestDicomTransport"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport">[docs]</a><span class="k">class</span> <span class="nc">TestDicomTransport</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TestDicomTransport.setUp"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">imagedata</span><span class="o">.</span><span class="n">cmdline</span><span class="o">.</span><span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">output_format</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts_calling_aet</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--calling_aet&#39;</span><span class="p">,</span> <span class="s1">&#39;Temp&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">opts_calling_aet</span><span class="o">.</span><span class="n">output_format</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opts_calling_aet</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">]</span>
+
+        <span class="n">plugins</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">formats</span><span class="o">.</span><span class="n">get_plugins_list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dicom_plugin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ptype</span> <span class="o">==</span> <span class="s1">&#39;dicom&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dicom_plugin</span> <span class="o">=</span> <span class="n">pclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIsNotNone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dicom_plugin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setupDicomSCP</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">11112</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestDicomTransport.setupDicomSCP"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.setupDicomSCP">[docs]</a>    <span class="k">def</span> <span class="nf">setupDicomSCP</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">11112</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">scpdir</span>
+        <span class="n">ae</span> <span class="o">=</span> <span class="n">AE</span><span class="p">()</span>
+        <span class="n">ae</span><span class="o">.</span><span class="n">ae_title</span> <span class="o">=</span> <span class="s1">&#39;Temp&#39;</span>
+        <span class="n">ae</span><span class="o">.</span><span class="n">supported_contexts</span> <span class="o">=</span> <span class="n">StoragePresentationContexts</span>
+        <span class="c1"># ae.on_c_store = obj.on_c_store</span>
+        <span class="n">handlers</span> <span class="o">=</span> <span class="p">[(</span><span class="n">evt</span><span class="o">.</span><span class="n">EVT_C_STORE</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_store</span><span class="p">)]</span>
+        <span class="c1"># Returns a ThreadedAssociationServer instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">ae</span><span class="o">.</span><span class="n">start_server</span><span class="p">((</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="p">),</span> <span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">evt_handlers</span><span class="o">=</span><span class="n">handlers</span><span class="p">)</span>
+        <span class="n">scpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TestDicomTransport.tearDown"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">scpdir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+        <span class="c1"># noinspection PyUnresolvedReferences</span>
+        <span class="n">scpdir</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span></div>
+
+    <span class="c1"># Implement a handler evt.EVT_C_STORE</span>
+    <span class="c1"># @staticmethod</span>
+    <span class="c1"># def on_c_store(ds, context, info):</span>
+<div class="viewcode-block" id="TestDicomTransport.handle_store"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.handle_store">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">handle_store</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Store the pydicom Dataset `ds`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        event : pydicom.event</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        status : int or pydicom.dataset.Dataset</span>
+<span class="sd">            The status returned to the peer AE in the C-STORE response. Must be</span>
+<span class="sd">            a valid C-STORE status value for the applicable Service Class as</span>
+<span class="sd">            either an ``int`` or a ``Dataset`` object containing (at a</span>
+<span class="sd">            minimum) a (0000,0900) *Status* element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">global</span> <span class="n">scpdir</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">dataset</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">context</span>
+
+        <span class="c1"># logging.debug(&#39;on_c_store: info {}&#39;.format(info))</span>
+        <span class="c1"># calling_aet = info[&#39;requestor&#39;][&#39;ae_title&#39;]</span>
+        <span class="c1"># called_aet = info[&#39;acceptor&#39;][&#39;ae_title&#39;]</span>
+        <span class="c1"># logging.debug(&#39;on_c_store: calling_aet {}&#39;.format(calling_aet))</span>
+        <span class="c1"># logging.debug(&#39;on_c_store: called_aet {}&#39;.format(called_aet))</span>
+
+        <span class="c1"># Add the DICOM File Meta Information</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">FileMetaDataset</span><span class="p">()</span>
+        <span class="n">meta</span><span class="o">.</span><span class="n">MediaStorageSOPClassUID</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">SOPClassUID</span>
+        <span class="n">meta</span><span class="o">.</span><span class="n">MediaStorageSOPInstanceUID</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">SOPInstanceUID</span>
+        <span class="n">meta</span><span class="o">.</span><span class="n">ImplementationClassUID</span> <span class="o">=</span> <span class="n">PYNETDICOM_IMPLEMENTATION_UID</span>
+        <span class="n">meta</span><span class="o">.</span><span class="n">ImplementationVersionName</span> <span class="o">=</span> <span class="n">PYNETDICOM_IMPLEMENTATION_VERSION</span>
+        <span class="n">meta</span><span class="o">.</span><span class="n">TransferSyntaxUID</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">transfer_syntax</span>
+
+        <span class="c1"># Add the file meta to the dataset</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">file_meta</span> <span class="o">=</span> <span class="n">meta</span>
+
+        <span class="c1"># Set the transfer syntax attributes of the dataset</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">is_little_endian</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">transfer_syntax</span><span class="o">.</span><span class="n">is_little_endian</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">is_implicit_VR</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">transfer_syntax</span><span class="o">.</span><span class="n">is_implicit_VR</span>
+
+        <span class="c1"># Save the dataset using the SOP Instance UID as the filename</span>
+        <span class="n">ds</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">scpdir</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">ds</span><span class="o">.</span><span class="n">SOPInstanceUID</span><span class="p">),</span>
+            <span class="n">write_like_original</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Return a &#39;Success&#39; status</span>
+        <span class="k">return</span> <span class="mh">0x0000</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;skipping test_transport_single_image&quot;)</span>
+<div class="viewcode-block" id="TestDicomTransport.test_transport_single_image"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.test_transport_single_image">[docs]</a>    <span class="k">def</span> <span class="nf">test_transport_single_image</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">si1</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;time00&#39;</span><span class="p">,</span> <span class="s1">&#39;Image_00020.dcm&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">((</span><span class="mi">192</span><span class="p">,</span> <span class="mi">152</span><span class="p">),</span> <span class="n">si1</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">si1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;dicom://localhost:11112/Temp&#39;</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">])</span>
+        <span class="n">si2</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span>
+            <span class="n">scpdir</span><span class="o">.</span><span class="n">name</span>
+        <span class="p">)</span>
+        <span class="c1"># compare_headers(obj, si1, si2)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">si1</span><span class="p">,</span> <span class="n">si2</span><span class="p">)</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;skipping test_transport_single_image_calling_aet&quot;)</span>
+<div class="viewcode-block" id="TestDicomTransport.test_transport_single_image_calling_aet"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.test_transport_single_image_calling_aet">[docs]</a>    <span class="k">def</span> <span class="nf">test_transport_single_image_calling_aet</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">si1</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;time00&#39;</span><span class="p">,</span> <span class="s1">&#39;Image_00020.dcm&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">si1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s1">&#39;dicom://localhost:11112/Temp&#39;</span><span class="p">,</span>
+            <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">],</span>
+            <span class="n">opts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">opts_calling_aet</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TestDicomTransport.test_transport_walk"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.test_transport_walk">[docs]</a>    <span class="nd">@unittest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;skipping test_transport_walk&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_transport_walk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">patID</span> <span class="o">=</span> <span class="s1">&#39;123456&#39;</span>
+        <span class="n">stuInsUID</span> <span class="o">=</span> <span class="s1">&#39;1.2.3.4&#39;</span>
+        <span class="n">serInsUID</span> <span class="o">=</span> <span class="s1">&#39;1.2.3.4.5&#39;</span>
+        <span class="n">accno</span> <span class="o">=</span> <span class="s1">&#39;98765&#39;</span>
+        <span class="n">transport</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">transports</span><span class="o">.</span><span class="n">Transport</span><span class="p">(</span>
+            <span class="s1">&#39;dicom://localhost:11112/Temp&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">transport</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/*cerebrum*&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">patID</span><span class="p">)):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">dirs</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+            <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="nb">dir</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">transport</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/*&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">patID</span><span class="p">,</span> <span class="n">stuInsUID</span><span class="p">)):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">dirs</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+            <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="nb">dir</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">transport</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/*&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">patID</span><span class="p">,</span> <span class="n">stuInsUID</span><span class="p">,</span> <span class="n">serInsUID</span><span class="p">)):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">dirs</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+            <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="n">info</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TestDicomTransport.test_transport_cget_series"><a class="viewcode-back" href="../../source/tests.html#tests.test_transport_dicomtransport.TestDicomTransport.test_transport_cget_series">[docs]</a>    <span class="nd">@unittest</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="s2">&quot;skipping test_transport_cget_series&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_transport_cget_series</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">patID</span> <span class="o">=</span> <span class="s1">&#39;123456&#39;</span>
+        <span class="n">stuInsUID</span> <span class="o">=</span> <span class="s1">&#39;1.2.3.4&#39;</span>
+        <span class="n">serInsUID</span> <span class="o">=</span> <span class="s1">&#39;1.2.3.4.5&#39;</span>
+        <span class="n">accno</span> <span class="o">=</span> <span class="s1">&#39;98765&#39;</span>
+        <span class="n">serNum</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">si1</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;dicom://localhost:11112/Temp/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">patID</span><span class="p">,</span> <span class="n">stuInsUID</span><span class="p">,</span> <span class="n">serInsUID</span>
+        <span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">si1</span><span class="o">.</span><span class="n">spacing</span><span class="p">,</span> <span class="n">si1</span><span class="o">.</span><span class="n">patientName</span><span class="p">,</span> <span class="n">si1</span><span class="o">.</span><span class="n">accessionNumber</span><span class="p">,</span> <span class="n">si1</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">)</span>
+        <span class="n">si2</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;dicom://localhost:11112/Temp/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">patID</span><span class="p">,</span> <span class="n">accno</span><span class="p">,</span> <span class="n">serNum</span>
+        <span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">si2</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">spacing</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">patientName</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">accessionNumber</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

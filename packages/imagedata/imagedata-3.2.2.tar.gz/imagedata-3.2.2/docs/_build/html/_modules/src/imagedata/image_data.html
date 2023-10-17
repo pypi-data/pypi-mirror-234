@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.image_data &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.imagedata.image_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.image_data</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="sd">&quot;&quot;&quot;Read/write image data to file(s). Handles DICOM, Nifti, VTI and mhd.&quot;&quot;&quot;</span>
+
+<span class="c1"># Copyright (c) 2013-2023 Erling Andersen, Haukeland University Hospital, Bergen, Norway</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.cmdline</span> <span class="kn">import</span> <span class="n">add_argparse_options</span>
+<span class="kn">from</span> <span class="nn">.formats</span> <span class="kn">import</span> <span class="n">find_plugin</span><span class="p">,</span> <span class="n">NotImageError</span><span class="p">,</span> <span class="n">input_order_to_dirname_str</span><span class="p">,</span> <span class="n">shape_to_str</span>
+<span class="kn">from</span> <span class="nn">.readdata</span> <span class="kn">import</span> <span class="n">_get_sources</span>
+<span class="kn">from</span> <span class="nn">.transports</span> <span class="kn">import</span> <span class="n">Transport</span>
+<span class="kn">from</span> <span class="nn">.series</span> <span class="kn">import</span> <span class="n">Series</span>
+<span class="kn">from</span> <span class="nn">.collections</span> <span class="kn">import</span> <span class="n">Cohort</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="dump"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.dump">[docs]</a><span class="k">def</span> <span class="nf">dump</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;in_dirs&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input directories and files&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+
+    <span class="c1"># Let in_opts be a dict from args</span>
+    <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">in_opts</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">in_opts</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+        <span class="n">in_opts</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Unknown args type (</span><span class="si">{}</span><span class="s1">): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="n">args</span><span class="p">))</span>
+
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">find_plugin</span><span class="p">(</span><span class="s1">&#39;dicom&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;in_dirs </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">))</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">_get_sources</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+
+    <span class="n">image_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;archive&#39;</span><span class="p">]</span>
+        <span class="n">scan_files</span> <span class="o">=</span> <span class="n">source</span><span class="p">[</span><span class="s1">&#39;files&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">scan_files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">scan_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">scan_files</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">archive</span><span class="o">.</span><span class="n">getnames</span><span class="p">(</span><span class="n">scan_files</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;DICOMDIR&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">member</span> <span class="o">=</span> <span class="n">archive</span><span class="o">.</span><span class="n">getmembers</span><span class="p">([</span><span class="n">path</span><span class="p">,</span> <span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">member</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;Should not be multiple files for a filename&#39;</span><span class="p">)</span>
+            <span class="n">member</span> <span class="o">=</span> <span class="n">member</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">archive</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">reader</span><span class="o">.</span><span class="n">process_member</span><span class="p">(</span><span class="n">image_dict</span><span class="p">,</span> <span class="n">archive</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">in_opts</span><span class="p">,</span> <span class="n">skip_pixels</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">raise</span>
+
+    <span class="n">StuInsUID</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">SerInsUID</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">SerTim</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">SeqNam</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">AcqNum</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">ImaTyp</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">Echo</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">sloc</span> <span class="ow">in</span> <span class="n">image_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">archive</span><span class="p">,</span> <span class="n">member_name</span><span class="p">,</span> <span class="n">im</span> <span class="ow">in</span> <span class="n">image_dict</span><span class="p">[</span><span class="n">sloc</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">StudyInstanceUID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">StuInsUID</span><span class="p">:</span>
+                <span class="n">StuInsUID</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">StudyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">StuInsUID</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">StudyInstanceUID</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">SeriesInstanceUID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SerInsUID</span><span class="p">:</span>
+                <span class="n">SerInsUID</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">SeriesInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">SerInsUID</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">SeriesInstanceUID</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">SeriesTime</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SerTim</span><span class="p">:</span>
+                <span class="n">SerTim</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">SeriesTime</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">SerTim</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">SeriesTime</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">SequenceName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SeqNam</span><span class="p">:</span>
+                <span class="n">SeqNam</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">SequenceName</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">SeqNam</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">SequenceName</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">AcquisitionNumber</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">AcqNum</span><span class="p">:</span>
+                <span class="n">AcqNum</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">AcqNum</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">im</span><span class="o">.</span><span class="n">ImageType</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ImaTyp</span><span class="p">:</span>
+                <span class="n">ImaTyp</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">ImageType</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">ImaTyp</span><span class="p">[</span><span class="n">im</span><span class="o">.</span><span class="n">ImageType</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="n">im</span><span class="o">.</span><span class="n">EchoNumbers</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">num</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+            <span class="k">if</span> <span class="n">num</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Echo</span><span class="p">:</span>
+                <span class="n">Echo</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">Echo</span><span class="p">[</span><span class="n">num</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">uid</span> <span class="ow">in</span> <span class="n">StuInsUID</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;StuInsUID </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uid</span><span class="p">,</span> <span class="n">StuInsUID</span><span class="p">[</span><span class="n">uid</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">uid</span> <span class="ow">in</span> <span class="n">SerInsUID</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SerInsUID </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uid</span><span class="p">,</span> <span class="n">SerInsUID</span><span class="p">[</span><span class="n">uid</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">tm</span> <span class="ow">in</span> <span class="n">SerTim</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SerTim </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tm</span><span class="p">,</span> <span class="n">SerTim</span><span class="p">[</span><span class="n">tm</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">nam</span> <span class="ow">in</span> <span class="n">SeqNam</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SeqNam </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nam</span><span class="p">,</span> <span class="n">SeqNam</span><span class="p">[</span><span class="n">nam</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">AcqNum</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;AcqNum </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">AcqNum</span><span class="p">[</span><span class="n">num</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">typ</span> <span class="ow">in</span> <span class="n">ImaTyp</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ImaTyp </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">typ</span><span class="p">,</span> <span class="n">ImaTyp</span><span class="p">[</span><span class="n">typ</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">Echo</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Echo </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2"> images&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">Echo</span><span class="p">[</span><span class="n">num</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="calculator"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.calculator">[docs]</a><span class="k">def</span> <span class="nf">calculator</span><span class="p">():</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Image calculator.&#39;</span><span class="p">,</span>
+                                     <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
+                                     <span class="n">epilog</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;Expression examples:</span>
+<span class="s2">        1  : New image, same shape, all ones</span>
+<span class="s2">        a*2: Multiply first input by 2</span>
+<span class="s2">        a+b: Add first and second image&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="c1"># parser.add_argument(&#39;--mask&#39;,</span>
+    <span class="c1">#                    help=&#39;Mask value&#39;, default=1)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;outdir&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output directory&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;expression&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Expression&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;indirs&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input arguments&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">output_format</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">output_format</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;dicom&#39;</span><span class="p">)</span>
+    <span class="c1"># if args.version:</span>
+    <span class="c1">#    print(&#39;This is {} version {}&#39;.format(sys.argv[0], __version__))</span>
+
+    <span class="c1"># Verify non-existing output directory, create</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Output directory already exist. Aborted.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">2</span>
+
+    <span class="n">ch</span> <span class="o">=</span> <span class="s2">&quot;abcdefghijklmnopqrstuvwxyz&quot;</span>
+    <span class="n">si</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">indir</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">indirs</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">ch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">names</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">indir</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">si</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">indir</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">input_order</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not determine input format of </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">indir</span><span class="p">))</span>
+            <span class="k">return</span> <span class="mi">1</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># DICOM templates</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">geometry</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">template</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">template</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">template</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">geometry</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">geometry</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">geometry</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="c1"># si[key][tag,slice,rows,columns]</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    mask=mask.round()</span>
+<span class="sd">    mask=mask.astype(int)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Convert input if requested</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">si</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">si</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">si</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="c1"># Print input data</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">si</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> = </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">names</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">si</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">si</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+    <span class="c1"># Calculate</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">indirs</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">si</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">si</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">si</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">exec</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span><span class="si">{}</span><span class="s2">=si[&#39;</span><span class="si">{}</span><span class="s2">&#39;][tag]&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expression</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">expression</span><span class="p">),</span> <span class="n">template</span><span class="o">=</span><span class="n">template</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">geometry</span><span class="p">)</span>
+
+    <span class="c1"># Save output series</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> = </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">expression</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">out</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">outdir</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="statistics"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.statistics">[docs]</a><span class="k">def</span> <span class="nf">statistics</span><span class="p">(</span><span class="n">cmdline</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">_key_study_time</span><span class="p">(</span><span class="n">study</span><span class="p">):</span>
+        <span class="n">_date</span> <span class="o">=</span> <span class="n">study</span><span class="o">.</span><span class="n">studyDate</span> <span class="k">if</span> <span class="n">study</span><span class="o">.</span><span class="n">studyDate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">date</span><span class="o">.</span><span class="n">min</span>
+        <span class="n">_time</span> <span class="o">=</span> <span class="n">study</span><span class="o">.</span><span class="n">studyTime</span> <span class="k">if</span> <span class="n">study</span><span class="o">.</span><span class="n">studyTime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">time</span><span class="o">.</span><span class="n">min</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">_date</span><span class="p">,</span> <span class="n">_time</span><span class="p">)</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--mask&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Image mask&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--bash&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print bash commands&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;in_dirs&quot;</span><span class="p">,</span>  <span class="c1"># nargs=&#39;+&#39;,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input directories and files&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cmdline</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">cmdline</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">cmdline</span> <span class="o">=</span> <span class="p">[</span><span class="n">cmdline</span><span class="p">]</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">cmdline</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">cohort</span> <span class="o">=</span> <span class="n">Cohort</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+        <span class="c1"># si = Series(args.in_dirs, args.input_order, args)</span>
+    <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not determine input format of &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="kn">import</span> <span class="nn">traceback</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="n">mask</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not determine input format of &quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">mask</span><span class="p">)</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cohort</span><span class="p">))</span>
+    <span class="n">patient_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">patientID</span> <span class="ow">in</span> <span class="n">cohort</span><span class="p">:</span>
+        <span class="n">patient_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cohort</span><span class="p">[</span><span class="n">patientID</span><span class="p">])</span>
+    <span class="n">patient_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">patient</span><span class="p">:</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">patient</span><span class="o">.</span><span class="n">patientName</span><span class="o">.</span><span class="n">family_comma_given</span><span class="p">()))</span>
+    <span class="k">for</span> <span class="n">patient</span> <span class="ow">in</span> <span class="n">patient_list</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">patient</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">studyInstanceUID</span> <span class="ow">in</span> <span class="n">patient</span><span class="p">:</span>
+            <span class="n">study_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">study_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">patient</span><span class="p">[</span><span class="n">studyInstanceUID</span><span class="p">])</span>
+        <span class="c1"># study_list.sort(key=lambda study: datetime.combine(study.studyDate, study.studyTime))</span>
+        <span class="n">study_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">_key_study_time</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">study</span> <span class="ow">in</span> <span class="n">study_list</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">study</span><span class="p">))</span>
+            <span class="n">series_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">seriesInstanceUID</span> <span class="ow">in</span> <span class="n">study</span><span class="p">:</span>
+                <span class="n">series_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">study</span><span class="p">[</span><span class="n">seriesInstanceUID</span><span class="p">])</span>
+            <span class="n">series_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">series</span><span class="p">:</span> <span class="n">series</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">series_list</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">_seriesDescription</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">seriesDescription</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">_seriesDescription</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;      Series [</span><span class="si">{}</span><span class="s2">] </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">, shape: </span><span class="si">{}</span><span class="s2">, dtype: </span><span class="si">{}</span><span class="s2">, input order: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">series</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">,</span> <span class="n">series</span><span class="o">.</span><span class="n">modality</span><span class="p">,</span>
+                    <span class="n">_seriesDescription</span><span class="p">,</span>
+                    <span class="n">shape_to_str</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">series</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                    <span class="n">input_order_to_dirname_str</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">input_order</span><span class="p">)</span>
+                <span class="p">))</span>
+                <span class="n">print_statistics</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">bash</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">bash</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="print_statistics"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.print_statistics">[docs]</a><span class="k">def</span> <span class="nf">print_statistics</span><span class="p">(</span><span class="n">si</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bash</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="n">si</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="n">si</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+    <span class="n">_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+    <span class="n">_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+    <span class="n">_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+    <span class="n">_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">selection</span><span class="p">)</span>
+    <span class="n">_median</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">selection</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">bash</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;min=</span><span class="si">{}</span><span class="se">\n</span><span class="s1">max=</span><span class="si">{}</span><span class="se">\n</span><span class="s1">mean=</span><span class="si">{}</span><span class="se">\n</span><span class="s1">std=</span><span class="si">{}</span><span class="se">\n</span><span class="s1">median=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">_min</span><span class="p">,</span> <span class="n">_max</span><span class="p">,</span> <span class="n">_mean</span><span class="p">,</span> <span class="n">_std</span><span class="p">,</span> <span class="n">_median</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;export min max mean std median&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;        Min: </span><span class="si">{}</span><span class="s1">, max: </span><span class="si">{}</span><span class="s1">, mean: </span><span class="si">{}</span><span class="s1"> +/- </span><span class="si">{}</span><span class="s1">, median: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">_min</span><span class="p">,</span> <span class="n">_max</span><span class="p">,</span> <span class="n">_mean</span><span class="p">,</span> <span class="n">_std</span><span class="p">,</span> <span class="n">_median</span><span class="p">))</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="timeline"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.timeline">[docs]</a><span class="k">def</span> <span class="nf">timeline</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;in_dirs&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input directories and files&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+    <span class="c1"># if args.version:</span>
+    <span class="c1">#    print(&#39;This is {} version {}&#39;.format(sys.argv[0], __version__))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">input_order</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not determine input format of </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="kn">import</span> <span class="nn">traceback</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Timeline:</span><span class="se">\n</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">si</span><span class="o">.</span><span class="n">timeline</span><span class="p">))</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="show"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.show">[docs]</a><span class="k">def</span> <span class="nf">show</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;in_dirs&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input directories and files&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+    <span class="c1"># if args.version:</span>
+    <span class="c1">#    print(&#39;This is {} version {}&#39;.format(sys.argv[0], __version__))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">input_order</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not determine input format of </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="kn">import</span> <span class="nn">traceback</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="n">si</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="conversion"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.conversion">[docs]</a><span class="k">def</span> <span class="nf">conversion</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;out_name&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output directory&quot;</span><span class="p">)</span>
+    <span class="c1"># parser.add_argument(&quot;in_dirs&quot;, nargs=&#39;+&#39;,</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;in_dirs&quot;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input directories and files&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+    <span class="c1"># if args.version:</span>
+    <span class="c1">#    print(&#39;This is {} version {}&#39;.format(sys.argv[0], __version__))</span>
+    <span class="c1"># print(&quot;Output format: %s, %s, in %s directory.&quot; % (</span>
+    <span class="c1">#    args.output_format, sort_on_to_str(args.output_sort), args.output_dir))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="n">Cohort</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+        <span class="c1"># si = Series(args.in_dirs, args.input_order, args)</span>
+    <span class="k">except</span> <span class="n">NotImageError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Could not determine input format of </span><span class="si">%s</span><span class="s2">.&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">in_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="kn">import</span> <span class="nn">traceback</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="n">si</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">out_name</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="image_list"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.image_data.image_list">[docs]</a><span class="k">def</span> <span class="nf">image_list</span><span class="p">():</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--recursive&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Descend into directory tree&quot;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Input URL&quot;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">loglevel</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;input: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">))</span>
+    <span class="n">url_tuple</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+    <span class="n">netloc</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">://</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url_tuple</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span> <span class="n">url_tuple</span><span class="o">.</span><span class="n">netloc</span><span class="p">)</span>
+    <span class="n">transport</span> <span class="o">=</span> <span class="n">Transport</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">dirs</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">transport</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">):</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="nb">dir</span> <span class="ow">in</span> <span class="n">dirs</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="nb">dir</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">netloc</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">info</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">/</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">netloc</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">info</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">recursive</span><span class="p">:</span>
+            <span class="k">break</span>  <span class="c1"># Do not descend down the tree</span>
+    <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No matching data found.&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">1</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">conversion</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

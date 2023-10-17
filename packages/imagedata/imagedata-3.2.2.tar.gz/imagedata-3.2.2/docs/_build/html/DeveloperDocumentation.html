@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Documentation &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Apps Diffusion API Reference" href="APIReferenceAppsDiffusion.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="UserGuide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#writing-plugins">Writing plugins</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#generating-distribution-archives">Generating distribution archives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#uploading-the-distribution-archives">Uploading the distribution archives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-your-newly-uploaded-package">Installing your newly uploaded package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-the-documentation">Build the documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-numbers">Version numbers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#uploading-official-release">Uploading official release</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">Developer Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/DeveloperDocumentation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="developer-documentation">
+<span id="developerdocumentation"></span><h1>Developer Documentation<a class="headerlink" href="#developer-documentation" title="Permalink to this heading"></a></h1>
+<section id="writing-plugins">
+<h2>Writing plugins<a class="headerlink" href="#writing-plugins" title="Permalink to this heading"></a></h2>
+<p>Plugins will be defined by entry points in setup.cfg. See
+<a class="reference external" href="https://github.com/erling6232/imagedata_format_ps">imagedata_format_ps</a>
+for an example.</p>
+<p>Entry points are defined the <em>setup.cfg</em>, and shall always be named <strong>imagedata_plugins</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">options</span><span class="o">.</span><span class="n">entry_points</span><span class="p">]</span>
+<span class="n">imagedata_plugins</span> <span class="o">=</span>
+    <span class="n">psformat</span> <span class="o">=</span> <span class="n">imagedata_format_ps</span><span class="o">.</span><span class="n">psplugin</span><span class="p">:</span><span class="n">PSPlugin</span>
+</pre></div>
+</div>
+<p>The plugin should inherit <strong>AbstractPlugin</strong>, <strong>AbstractArchive</strong> or
+<strong>AbstractTransport</strong>.
+The inheritance will determine whether the plugin handles format, archive or transport.</p>
+</section>
+<section id="generating-distribution-archives">
+<h2>Generating distribution archives<a class="headerlink" href="#generating-distribution-archives" title="Permalink to this heading"></a></h2>
+<p>See: <a class="reference external" href="https://packaging.python.org/tutorials/packaging-projects/">https://packaging.python.org/tutorials/packaging-projects/</a></p>
+<p>Update setuptools and wheel:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install --user --upgrade setuptools wheel
+</pre></div>
+</div>
+<p>Generate distribution packages for the imagedata:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make all
+</pre></div>
+</div>
+</section>
+<section id="uploading-the-distribution-archives">
+<h2>Uploading the distribution archives<a class="headerlink" href="#uploading-the-distribution-archives" title="Permalink to this heading"></a></h2>
+<p>The first thing you’ll need to do is register an account on Test PyPI.
+Test PyPI is a separate instance of the package index intended for testing
+and experimentation.</p>
+<p>Update twine:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install --user --upgrade twine
+</pre></div>
+</div>
+<p>Run Twine to upload all of the archives under dist:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make test_upload
+</pre></div>
+</div>
+<p>You will be prompted for a username and password. For the username, use
+__token__. For the password, use the token value, including the pypi- prefix.</p>
+<p>Once uploaded your package should be viewable on TestPyPI, for example,
+<a class="reference external" href="https://test.pypi.org/project/imagedata">https://test.pypi.org/project/imagedata</a></p>
+</section>
+<section id="installing-your-newly-uploaded-package">
+<h2>Installing your newly uploaded package<a class="headerlink" href="#installing-your-newly-uploaded-package" title="Permalink to this heading"></a></h2>
+<p>You can use pip to install your package and verify that it works. Create a new
+virtualenv (see Installing Packages for detailed instructions) and install your
+package from TestPyPI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install --upgrade --index-url https://test.pypi.org/simple/ imagedata
+</pre></div>
+</div>
+<p>You can test that it was installed correctly by importing the package. Run the Python interpreter (make sure you’re still in your virtualenv):</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python3</span>
+<span class="go">import imagedata</span>
+</pre></div>
+</div>
+<p>Note that the import package is imagedata regardless of what name you
+gave your distribution package in setup.py (in this case,
+example-pkg-YOUR-USERNAME-HERE).</p>
+</section>
+<section id="build-the-documentation">
+<h2>Build the documentation<a class="headerlink" href="#build-the-documentation" title="Permalink to this heading"></a></h2>
+<p>From the package directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make html
+</pre></div>
+</div>
+</section>
+<section id="version-numbers">
+<h2>Version numbers<a class="headerlink" href="#version-numbers" title="Permalink to this heading"></a></h2>
+<p>Bump patch number:</p>
+<p>Edit VERSION.txt.</p>
+<p>Use version number 1.2.9dev0, ..dev1, etc., for development work.</p>
+<p>Use version number 1.2.9rc0, etc., for release candidates.</p>
+<p>Use version number 1.2.9 for official release.</p>
+<p>To label the github storage with VERSION.txt version:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make git
+</pre></div>
+</div>
+</section>
+<section id="uploading-official-release">
+<h2>Uploading official release<a class="headerlink" href="#uploading-official-release" title="Permalink to this heading"></a></h2>
+<p>Make sure VERSION.txt has a valid version number.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make all
+make git
+make upload
+</pre></div>
+</div>
+<p>Then go to <a class="reference external" href="https://readthedocs.org/projects/imagedata/">https://readthedocs.org/projects/imagedata/</a> and build documentation.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="APIReferenceAppsDiffusion.html" class="btn btn-neutral float-left" title="Apps Diffusion API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

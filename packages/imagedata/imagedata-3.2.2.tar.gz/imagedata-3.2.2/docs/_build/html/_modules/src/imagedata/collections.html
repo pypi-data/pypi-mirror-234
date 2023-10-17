@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.imagedata.collections &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.imagedata.collections</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.imagedata.collections</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Image cohort</span>
+
+<span class="sd">The Cohort class is a collection of Patient objects.</span>
+
+<span class="sd">  Typical example usage:</span>
+
+<span class="sd">  cohort = Cohort(&#39;input&#39;)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">sortedcontainers</span> <span class="kn">import</span> <span class="n">SortedDict</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span> <span class="nn">.series</span> <span class="kn">import</span> <span class="n">Series</span>
+<span class="kn">from</span> <span class="nn">.readdata</span> <span class="kn">import</span> <span class="n">read</span> <span class="k">as</span> <span class="n">r_read</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_attribute</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="n">_attr</span><span class="p">):</span>
+    <span class="c1"># Get attribute from first instance in _data</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s1">&#39;No instance in present </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">)))</span>
+    <span class="n">_instance</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_data</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_instance</span><span class="p">),</span> <span class="n">Series</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_instance</span><span class="o">.</span><span class="n">getDicomAttribute</span><span class="p">(</span><span class="n">_attr</span><span class="p">)</span>
+    <span class="c1"># Recurse to lower level, until finding a Series instance</span>
+    <span class="k">return</span> <span class="n">_get_attribute</span><span class="p">(</span><span class="n">_instance</span><span class="p">,</span> <span class="n">_attr</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_sort_in_series</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="n">_opts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sort series into a dict of Series</span>
+<span class="sd">    Called by Cohort for url data</span>
+<span class="sd">    Called by Patient, Study ?</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        _data: url (str) or dict of Series instances</span>
+<span class="sd">        _opts</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict of Series instances, key is SeriesInstanceUID</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_series_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Series</span><span class="p">):</span>
+                <span class="c1"># _data is list of Series</span>
+                <span class="k">for</span> <span class="n">_series</span> <span class="ow">in</span> <span class="n">_data</span><span class="p">:</span>
+                    <span class="n">_series_dict</span><span class="p">[</span><span class="n">_series</span><span class="o">.</span><span class="n">seriesInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_series</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Unexpected series data type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_data</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_data</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Series</span><span class="p">):</span>
+                <span class="c1"># _data is list of Series</span>
+                <span class="k">for</span> <span class="n">_seriesInstanceUID</span> <span class="ow">in</span> <span class="n">_data</span><span class="p">:</span>
+                    <span class="n">_series_dict</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_data</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s1">&#39;Unexpected series data type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">_data</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">])))</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">),</span> <span class="n">Study</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Why here&#39;</span><span class="p">)</span>
+        <span class="c1"># return {_data.seriesInstanceUID: _data}</span>
+    <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">),</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="c1"># _data is URL</span>
+        <span class="c1"># Read input, hdr is dict of attributes</span>
+        <span class="n">_opts</span><span class="p">[</span><span class="s1">&#39;separate_series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">_hdr</span><span class="p">,</span> <span class="n">_si</span> <span class="o">=</span> <span class="n">r_read</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">_opts</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_uid</span> <span class="ow">in</span> <span class="n">_hdr</span><span class="p">:</span>
+            <span class="n">_series</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">_si</span><span class="p">[</span><span class="n">_uid</span><span class="p">])</span>
+            <span class="n">_series</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">_hdr</span><span class="p">[</span><span class="n">_uid</span><span class="p">]</span>
+            <span class="n">_series_dict</span><span class="p">[</span><span class="n">_series</span><span class="o">.</span><span class="n">seriesInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_series</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected series type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_data</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">_series_dict</span>
+
+
+<span class="k">def</span> <span class="nf">_sort_in_studies</span><span class="p">(</span><span class="n">_series_dict</span><span class="p">,</span> <span class="n">_opts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sort series in studies</span>
+<span class="sd">    Called by Cohort for series dict</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        _series_dict: dict of Series instances</span>
+<span class="sd">        _opts:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict of Study instances, key is StudyInstanceUID</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_studies</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">_seriesInstanceUID</span> <span class="ow">in</span> <span class="n">_series_dict</span><span class="p">:</span>
+        <span class="n">_series</span> <span class="o">=</span> <span class="n">_series_dict</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span>
+        <span class="n">_studyInstanceUID</span> <span class="o">=</span> <span class="n">_series</span><span class="o">.</span><span class="n">studyInstanceUID</span>
+        <span class="k">if</span> <span class="n">_studyInstanceUID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_studies</span><span class="p">:</span>
+            <span class="n">_studies</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_studies</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">][</span><span class="n">_seriesInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_series</span>
+    <span class="c1"># Make found _studies into Study instances</span>
+    <span class="n">_study_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="n">_studies</span><span class="p">:</span>
+        <span class="n">_study_dict</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">Study</span><span class="p">(</span><span class="n">_studies</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">],</span> <span class="n">opts</span><span class="o">=</span><span class="n">_opts</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_study_dict</span>
+    <span class="c1"># if issubclass(type(_data), dict):</span>
+    <span class="c1">#     # _data is list of Study</span>
+    <span class="c1">#     for _seriesInstanceUID in _data:</span>
+    <span class="c1">#         _series = _data[_seriesInstanceUID]</span>
+    <span class="c1">#         if _series.studyInstanceUID not in _studies:</span>
+    <span class="c1">#             _studies[_series.studyInstanceUID] = {}</span>
+    <span class="c1">#         _studies[_series.studyInstanceUID][_seriesInstanceUID] = _series</span>
+    <span class="c1">#     return _studies</span>
+    <span class="c1"># raise ValueError(&#39;Why here?&#39;)</span>
+
+
+<span class="k">def</span> <span class="nf">_sort_in_patients</span><span class="p">(</span><span class="n">_study_dict</span><span class="p">,</span> <span class="n">_opts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sort studies in patients</span>
+<span class="sd">    Called by Cohort for study dict</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        _study_dict: dict of Study instances</span>
+<span class="sd">        _opts:</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict of Patient instances</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_patients</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="n">_study_dict</span><span class="p">:</span>
+        <span class="n">_study</span> <span class="o">=</span> <span class="n">_study_dict</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span>
+        <span class="n">_series</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_study</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">_patientID</span> <span class="o">=</span> <span class="n">_series</span><span class="o">.</span><span class="n">patientID</span>
+        <span class="k">if</span> <span class="n">_patientID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_patients</span><span class="p">:</span>
+            <span class="n">_patients</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">_study</span> <span class="o">=</span> <span class="n">Study</span><span class="p">(</span><span class="n">_study_dict</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">])</span>
+        <span class="n">_patients</span><span class="p">[</span><span class="n">_patientID</span><span class="p">][</span><span class="n">_studyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_study</span>
+    <span class="c1"># Make found _patients into Patient instances</span>
+    <span class="n">_patient_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">_patientID</span> <span class="ow">in</span> <span class="n">_patients</span><span class="p">:</span>
+        <span class="c1"># _patient_dict[_patientID] = _patients[_patientID]</span>
+        <span class="n">_patient_dict</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span> <span class="o">=</span> <span class="n">Patient</span><span class="p">(</span><span class="n">_patients</span><span class="p">[</span><span class="n">_patientID</span><span class="p">],</span> <span class="n">opts</span><span class="o">=</span><span class="n">_opts</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_patient_dict</span>
+    <span class="c1"># return _patients</span>
+
+
+<div class="viewcode-block" id="UnknownOptionType"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.UnknownOptionType">[docs]</a><span class="k">class</span> <span class="nc">UnknownOptionType</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="GeneralEquipment"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.GeneralEquipment">[docs]</a><span class="k">class</span> <span class="nc">GeneralEquipment</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">_equipment_attributes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;manufacturer&#39;</span><span class="p">,</span> <span class="s1">&#39;manufacturersModelName&#39;</span><span class="p">,</span> <span class="s1">&#39;stationName&#39;</span><span class="p">,</span> <span class="s1">&#39;deviceSerialNumber&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;softwareVersions&#39;</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GeneralEquipment</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_equipment_attributes</span><span class="p">:</span>
+            <span class="n">_dicom_attribute</span> <span class="o">=</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="n">obj</span><span class="o">.</span><span class="n">getDicomAttribute</span><span class="p">(</span><span class="n">_dicom_attribute</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="ClinicalTrialSubject"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.ClinicalTrialSubject">[docs]</a><span class="k">class</span> <span class="nc">ClinicalTrialSubject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">_clinical_trial_attributes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;sponsorName&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;protocolID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;protocolName&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;siteID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;siteName&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;subjectID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;subjectReadingID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;protocolEthicsCommitteeName&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;protocolEthicsCommitteeApprovalNumber&#39;</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ClinicalTrialSubject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clinical_trial_attributes</span><span class="p">:</span>
+            <span class="n">_dicom_attribute</span> <span class="o">=</span> <span class="s1">&#39;ClinicalTrial&#39;</span> <span class="o">+</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="n">_get_attribute</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">_dicom_attribute</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Study"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.Study">[docs]</a><span class="k">class</span> <span class="nc">Study</span><span class="p">(</span><span class="n">SortedDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Study -- Read and sort images into a collection of Series objects.</span>
+
+<span class="sd">    Study(data, opts=None)</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        &gt;&gt;&gt; from imagedata import Study</span>
+<span class="sd">        &gt;&gt;&gt; study = Study(&#39;directory/&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; for uid in study:</span>
+<span class="sd">        &gt;&gt;&gt;     series = study[uid]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: URL to input data, or list of Series instances</span>
+<span class="sd">        opts: Dict of input options, mostly for format specific plugins</span>
+<span class="sd">            (argparse.Namespace or dict)</span>
+<span class="sd">            * &#39;strict_values&#39;: Whether study attributes should match in each series (bool)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Study instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Study&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Image study&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+
+    <span class="n">_attributes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;studyDate&#39;</span><span class="p">,</span> <span class="s1">&#39;studyTime&#39;</span><span class="p">,</span> <span class="s1">&#39;studyDescription&#39;</span><span class="p">,</span> <span class="s1">&#39;studyID&#39;</span><span class="p">,</span> <span class="s1">&#39;studyInstanceUID&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;referringPhysiciansName&#39;</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Study</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="n">opts</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnknownOptionType</span><span class="p">(</span><span class="s1">&#39;Unknown opts type (</span><span class="si">{}</span><span class="s1">): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span>
+                                                                        <span class="n">opts</span><span class="p">))</span>
+
+        <span class="n">_strict_values</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="s1">&#39;strict_values&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_in_opts</span> \
+            <span class="k">else</span> <span class="n">_in_opts</span><span class="p">[</span><span class="s1">&#39;strict_values&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_series_dict</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">Study</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Why here?&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Assume data is URL</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_series_dict</span> <span class="o">=</span> <span class="n">_sort_in_series</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;data: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+                <span class="k">raise</span>
+
+        <span class="k">for</span> <span class="n">_seriesInstanceUID</span> <span class="ow">in</span> <span class="n">_series_dict</span><span class="p">:</span>
+            <span class="n">_series</span> <span class="o">=</span> <span class="n">_series_dict</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span>
+            <span class="bp">self</span><span class="p">[</span><span class="n">_series</span><span class="o">.</span><span class="n">seriesInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_series</span>
+            <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span><span class="p">:</span>
+                <span class="n">_dicom_attribute</span> <span class="o">=</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="n">_value</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span><span class="o">.</span><span class="n">getDicomAttribute</span><span class="p">(</span><span class="n">_dicom_attribute</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_attr</span> <span class="o">==</span> <span class="s1">&#39;studyDate&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">_value</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">_value</span><span class="p">,</span> <span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">_value</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">elif</span> <span class="n">_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_attr</span> <span class="o">==</span> <span class="s1">&#39;studyTime&#39;</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">_value</span><span class="p">:</span>
+                            <span class="n">_value</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">_value</span><span class="p">,</span> <span class="s2">&quot;%H%M%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">_value</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">_value</span><span class="p">,</span> <span class="s2">&quot;%H%M%S&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">_value</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+                <span class="c1"># Update self property if None from series</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># _series = self[_seriesInstanceUID]</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="n">_value</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">_strict_values</span> <span class="ow">and</span> \
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_value</span><span class="p">:</span>
+                    <span class="c1"># Study attributes differ, should be considered an exception.</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Study attribute &quot;</span><span class="si">{}</span><span class="s1">&quot; differ (&quot;</span><span class="si">{}</span><span class="s1">&quot; vs. &quot;</span><span class="si">{}</span><span class="s1">&quot;)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">_attr</span><span class="p">,</span>
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="n">_value</span>
+                    <span class="p">))</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;generalEquipment&#39;</span><span class="p">,</span> <span class="n">GeneralEquipment</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyDate</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyDate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">date</span><span class="o">.</span><span class="n">min</span>
+        <span class="n">_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyTime</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyTime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">time</span><span class="o">.</span><span class="n">min</span>
+        <span class="n">_descr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyDescription</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">studyDescription</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> \
+            <span class="s2">&quot;Study: </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">_date</span><span class="p">,</span> <span class="n">_time</span><span class="p">),</span> <span class="n">_descr</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Study.write"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.Study.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write image data, calling appropriate format plugins</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: Study instance</span>
+<span class="sd">            url: output destination url</span>
+<span class="sd">            opts: Output options (argparse.Namespace or dict)</span>
+<span class="sd">            formats: list of output formats, overriding opts.output_format (list or str)</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            UnknownOptionType: When opts cannot be made into a dict.</span>
+<span class="sd">            TypeError: List of output format is not list().</span>
+<span class="sd">            ValueError: Wrong number of destinations given,</span>
+<span class="sd">                or no way to write multidimensional image.</span>
+<span class="sd">            imagedata.formats.WriteNotImplemented: Cannot write this image format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_used_urls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_seriesInstanceUID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">_series</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span>
+            <span class="n">_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">url</span><span class="p">,</span>
+                <span class="n">_series</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">,</span> <span class="n">_series</span><span class="o">.</span><span class="n">seriesDescription</span>
+            <span class="p">)</span>
+            <span class="k">while</span> <span class="n">_url</span> <span class="ow">in</span> <span class="n">_used_urls</span><span class="p">:</span>
+                <span class="n">_url</span> <span class="o">=</span> <span class="n">_url</span> <span class="o">+</span> <span class="s2">&quot;0&quot;</span>  <span class="c1"># Make unique output file</span>
+            <span class="n">_used_urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_url</span><span class="p">)</span>
+            <span class="n">_series</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="n">formats</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Patient"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.Patient">[docs]</a><span class="k">class</span> <span class="nc">Patient</span><span class="p">(</span><span class="n">SortedDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Patient -- Read and sort images into a collection of Study objects.</span>
+
+<span class="sd">    Patient(data, opts=None)</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        &gt;&gt;&gt; from imagedata import Patient</span>
+<span class="sd">        &gt;&gt;&gt; patient = Patient(&#39;directory/&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; for uid in patient:</span>
+<span class="sd">        &gt;&gt;&gt;     study = patient[uid]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: URL to input data, or list of Study instances</span>
+<span class="sd">        opts: Dict of input options, mostly for format specific plugins</span>
+<span class="sd">            (argparse.Namespace or dict)</span>
+<span class="sd">            * &#39;strict_values&#39;: Whether attributes should match in each study (bool)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Patient instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Patient&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Image patient&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+
+    <span class="n">_attributes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;patientName&#39;</span><span class="p">,</span> <span class="s1">&#39;patientID&#39;</span><span class="p">,</span> <span class="s1">&#39;patientBirthDate&#39;</span><span class="p">,</span> <span class="s1">&#39;patientSex&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;patientAge&#39;</span><span class="p">,</span> <span class="s1">&#39;patientSize&#39;</span><span class="p">,</span> <span class="s1">&#39;patientWeight&#39;</span><span class="p">,</span> <span class="s1">&#39;qualityControlSubject&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;patientIdentityRemoved&#39;</span><span class="p">,</span> <span class="s1">&#39;deidentificationMethod&#39;</span>
+                   <span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Patient</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="n">opts</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnknownOptionType</span><span class="p">(</span><span class="s1">&#39;Unknown opts type (</span><span class="si">{}</span><span class="s1">): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span>
+                                                                        <span class="n">opts</span><span class="p">))</span>
+
+        <span class="n">_strict_values</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="s1">&#39;strict_values&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_in_opts</span> \
+            <span class="k">else</span> <span class="n">_in_opts</span><span class="p">[</span><span class="s1">&#39;strict_values&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Study</span><span class="p">):</span>
+            <span class="c1"># Add each study to self patient</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_studies</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Study</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_studies</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># _study_dict = data</span>
+            <span class="c1"># for _studyInstanceUID in data:</span>
+            <span class="c1">#     self[_studyInstanceUID] = _study_dict[_studyInstanceUID]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_series_dict</span> <span class="o">=</span> <span class="n">_sort_in_series</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+            <span class="n">_study_dict</span> <span class="o">=</span> <span class="n">_sort_in_studies</span><span class="p">(</span><span class="n">_series_dict</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+            <span class="c1"># Add each study to self patient</span>
+            <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="n">_study_dict</span><span class="p">:</span>
+                <span class="c1"># self[_studyInstanceUID] = Study(_study_dict[_studyInstanceUID])</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_study_dict</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span><span class="p">:</span>
+                <span class="n">_dicom_attribute</span> <span class="o">=</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="n">_value</span> <span class="o">=</span> <span class="n">_get_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">],</span> <span class="n">_dicom_attribute</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">_attr</span> <span class="o">==</span> <span class="s1">&#39;patientSize&#39;</span> <span class="ow">or</span> <span class="n">_attr</span> <span class="o">==</span> <span class="s1">&#39;patientWeight&#39;</span><span class="p">):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="n">_value</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="c1"># Update self property if None from study</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="n">_value</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">_strict_values</span> <span class="ow">and</span> \
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_value</span><span class="p">:</span>
+                    <span class="c1"># Patient attributes differ, should be considered an exception.</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Patient attribute &quot;</span><span class="si">{}</span><span class="s1">&quot; differ (&quot;</span><span class="si">{}</span><span class="s1">&quot; vs. &quot;</span><span class="si">{}</span><span class="s1">&quot;)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">_attr</span><span class="p">,</span>
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="n">_value</span>
+                    <span class="p">))</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;clinicalTrialSubject&#39;</span><span class="p">,</span> <span class="n">ClinicalTrialSubject</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]))</span>
+
+    <span class="k">def</span> <span class="nf">_add_studies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add each study to self patient</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: dict of Study instances</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self: added Study instances to self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]),</span> <span class="n">Study</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;Unexpected patient data type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">])</span>
+                        <span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_study</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">_study</span><span class="p">),</span> <span class="n">Study</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="p">[</span><span class="n">_study</span><span class="o">.</span><span class="n">studyInstanceUID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_study</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;Unexpected study data type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="nb">type</span><span class="p">(</span><span class="n">_study</span><span class="p">)</span>
+                        <span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected data type </span><span class="si">{}</span><span class="s1"> (expected: dict or list)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientID</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">_id</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_patientName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patientName</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">_patientName</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> \
+            <span class="s2">&quot;Patient: [</span><span class="si">{}</span><span class="s2">] </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_id</span><span class="p">,</span> <span class="n">_patientName</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Patient.write"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.Patient.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write image data, calling appropriate format plugins</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: Patient instance</span>
+<span class="sd">            url: output destination url</span>
+<span class="sd">            opts: Output options (argparse.Namespace or dict)</span>
+<span class="sd">            formats: list of output formats, overriding opts.output_format (list or str)</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            UnknownOptionType: When opts cannot be made into a dict.</span>
+<span class="sd">            TypeError: List of output format is not list().</span>
+<span class="sd">            ValueError: Wrong number of destinations given,</span>
+<span class="sd">                or no way to write multidimensional image.</span>
+<span class="sd">            imagedata.formats.WriteNotImplemented: Cannot write this image format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_used_urls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">_study</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">_seriesInstanceUID</span> <span class="ow">in</span> <span class="n">_study</span><span class="p">:</span>
+                <span class="n">_series</span> <span class="o">=</span> <span class="n">_study</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span>
+                <span class="n">_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">url</span><span class="p">,</span>
+                    <span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">_study</span><span class="o">.</span><span class="n">studyDate</span><span class="p">,</span> <span class="n">_study</span><span class="o">.</span><span class="n">studyTime</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">),</span>
+                    <span class="n">_series</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">,</span> <span class="n">_series</span><span class="o">.</span><span class="n">seriesDescription</span>
+                <span class="p">)</span>
+                <span class="k">while</span> <span class="n">_url</span> <span class="ow">in</span> <span class="n">_used_urls</span><span class="p">:</span>
+                    <span class="n">_url</span> <span class="o">=</span> <span class="n">_url</span> <span class="o">+</span> <span class="s2">&quot;0&quot;</span>  <span class="c1"># Make unique output file</span>
+                <span class="n">_used_urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_url</span><span class="p">)</span>
+                <span class="n">_series</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="n">formats</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="Cohort"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.Cohort">[docs]</a><span class="k">class</span> <span class="nc">Cohort</span><span class="p">(</span><span class="n">SortedDict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Cohort -- Read and sort images into a collection of Patient objects.</span>
+
+<span class="sd">    Cohort(data, opts=None)</span>
+
+<span class="sd">    Examples:</span>
+
+<span class="sd">        &gt;&gt;&gt; from imagedata import Cohort</span>
+<span class="sd">        &gt;&gt;&gt; cohort = Cohort(&#39;directory/&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; for id in cohort:</span>
+<span class="sd">        &gt;&gt;&gt;     patient = cohort[id]</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data: URL to input data, or list of Patient instances</span>
+<span class="sd">        opts: Dict of input options, mostly for format specific plugins</span>
+<span class="sd">            (argparse.Namespace or dict)</span>
+<span class="sd">            * &#39;strict_values&#39;: Whether attributes should match in each study (bool)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Cohort instance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Cohort&quot;</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;Image cohort&quot;</span>
+    <span class="n">authors</span> <span class="o">=</span> <span class="s2">&quot;Erling Andersen&quot;</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="s2">&quot;1.0.0&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;www.helse-bergen.no&quot;</span>
+
+    <span class="n">_attributes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Cohort</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">opts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="n">opts</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span> <span class="n">argparse</span><span class="o">.</span><span class="n">Namespace</span><span class="p">):</span>
+            <span class="n">_in_opts</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">opts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">UnknownOptionType</span><span class="p">(</span><span class="s1">&#39;Unknown opts type (</span><span class="si">{}</span><span class="s1">): </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">opts</span><span class="p">),</span>
+                                                                        <span class="n">opts</span><span class="p">))</span>
+
+        <span class="n">_strict_values</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="s1">&#39;strict_values&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_in_opts</span> \
+            <span class="k">else</span> <span class="n">_in_opts</span><span class="p">[</span><span class="s1">&#39;strict_values&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">Patient</span><span class="p">):</span>
+            <span class="c1"># Add each patient to self cohort</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_patients</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">Path</span><span class="p">):</span>
+            <span class="c1"># Read input data from url</span>
+            <span class="n">_series_dict</span> <span class="o">=</span> <span class="n">_sort_in_series</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+            <span class="n">_study_dict</span> <span class="o">=</span> <span class="n">_sort_in_studies</span><span class="p">(</span><span class="n">_series_dict</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+            <span class="n">_patient_dict</span> <span class="o">=</span> <span class="n">_sort_in_patients</span><span class="p">(</span><span class="n">_study_dict</span><span class="p">,</span> <span class="n">_in_opts</span><span class="p">)</span>
+            <span class="c1"># Add each patient to self cohort</span>
+            <span class="k">for</span> <span class="n">_patientID</span> <span class="ow">in</span> <span class="n">_patient_dict</span><span class="p">:</span>
+                <span class="c1"># self[_patientID] = Patient(_patient_dict[_patientID])</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span> <span class="o">=</span> <span class="n">_patient_dict</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected cohort data type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">_patientID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">_attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_attributes</span><span class="p">:</span>
+                <span class="n">_dicom_attribute</span> <span class="o">=</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">_attr</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="c1"># Update self property if None from study</span>
+                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span>
+                            <span class="n">_get_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">_patientID</span><span class="p">],</span> <span class="n">_dicom_attribute</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">_strict_values</span> <span class="ow">and</span>\
+                    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> \
+                        <span class="n">_get_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">_patientID</span><span class="p">],</span> <span class="n">_dicom_attribute</span><span class="p">):</span>
+                    <span class="c1"># Patient attributes differ, should be considered an exception.</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cohort attribute &quot;</span><span class="si">{}</span><span class="s1">&quot; differ (&quot;</span><span class="si">{}</span><span class="s1">&quot; vs. &quot;</span><span class="si">{}</span><span class="s1">&quot;)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">_attr</span><span class="p">,</span>
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="n">_get_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">_patientID</span><span class="p">],</span> <span class="n">_dicom_attribute</span><span class="p">)</span>
+                    <span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> \
+            <span class="s2">&quot;Cohort: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_add_patients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add each patient to self cohort</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: dict of Patient instances</span>
+<span class="sd">            opts:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self: added Patient instances to self</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_patientID</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">_patientID</span><span class="p">],</span> <span class="n">Patient</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="s1">&#39;Unexpected patient data type </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                            <span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">_patientID</span><span class="p">])</span>
+                        <span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected data type </span><span class="si">{}</span><span class="s1"> (expected: dict)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="Cohort.write"><a class="viewcode-back" href="../../../source/src.imagedata.html#src.imagedata.collections.Cohort.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write image data, calling appropriate format plugins</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            self: Cohort instance</span>
+<span class="sd">            url: output destination url</span>
+<span class="sd">            opts: Output options (argparse.Namespace or dict)</span>
+<span class="sd">            formats: list of output formats, overriding opts.output_format (list or str)</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            UnknownOptionType: When opts cannot be made into a dict.</span>
+<span class="sd">            TypeError: List of output format is not list().</span>
+<span class="sd">            ValueError: Wrong number of destinations given,</span>
+<span class="sd">                or no way to write multidimensional image.</span>
+<span class="sd">            imagedata.formats.WriteNotImplemented: Cannot write this image format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">_used_urls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_patientID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">_patient</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">_patientID</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">_studyInstanceUID</span> <span class="ow">in</span> <span class="n">_patient</span><span class="p">:</span>
+                <span class="n">_study</span> <span class="o">=</span> <span class="n">_patient</span><span class="p">[</span><span class="n">_studyInstanceUID</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">_seriesInstanceUID</span> <span class="ow">in</span> <span class="n">_study</span><span class="p">:</span>
+                    <span class="n">_series</span> <span class="o">=</span> <span class="n">_study</span><span class="p">[</span><span class="n">_seriesInstanceUID</span><span class="p">]</span>
+                    <span class="n">_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">url</span><span class="p">,</span>
+                        <span class="n">_patientID</span><span class="p">,</span>
+                        <span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">_study</span><span class="o">.</span><span class="n">studyDate</span><span class="p">,</span> <span class="n">_study</span><span class="o">.</span><span class="n">studyTime</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span>
+                            <span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">),</span>
+                        <span class="n">_series</span><span class="o">.</span><span class="n">seriesNumber</span><span class="p">,</span> <span class="n">_series</span><span class="o">.</span><span class="n">seriesDescription</span>
+                    <span class="p">)</span>
+                    <span class="k">while</span> <span class="n">_url</span> <span class="ow">in</span> <span class="n">_used_urls</span><span class="p">:</span>
+                        <span class="n">_url</span> <span class="o">=</span> <span class="n">_url</span> <span class="o">+</span> <span class="s2">&quot;0&quot;</span>  <span class="c1"># Make unique output file</span>
+                    <span class="n">_used_urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_url</span><span class="p">)</span>
+                    <span class="n">_series</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_url</span><span class="p">,</span> <span class="n">opts</span><span class="o">=</span><span class="n">opts</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="n">formats</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

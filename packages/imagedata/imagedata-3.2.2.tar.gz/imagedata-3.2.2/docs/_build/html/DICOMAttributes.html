@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DICOM Attributes &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Console Applications" href="CommandLine.html" />
+    <link rel="prev" title="Sorting" href="Sorting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="UserGuide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Collections.html">Collections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Notebook.html">Jupyter Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Motivation and goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#design">Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#series-class">Series Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Input_output.html">Input/output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sorting.html">Sorting</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">DICOM Attributes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#series-properties">Series properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#full-access-to-dicom-attributes">Full access to DICOM attributes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="CommandLine.html">Console Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Examples.html">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Plugins.html">Plugin Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APIReference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="UserGuide.html">User Guide</a></li>
+      <li class="breadcrumb-item active">DICOM Attributes</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/DICOMAttributes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dicom-attributes">
+<span id="dicomattributes"></span><h1>DICOM Attributes<a class="headerlink" href="#dicom-attributes" title="Permalink to this heading"></a></h1>
+<section id="series-properties">
+<h2>Series properties<a class="headerlink" href="#series-properties" title="Permalink to this heading"></a></h2>
+<p>A handful of DICOM attributes are available directly as Series properties.
+The table below lists the available Series properties.</p>
+<p>These attributes can be set and interrogated directly from the Series object:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Series</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;in_dir&#39;</span><span class="p">)</span>
+<span class="n">patientName</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">patientName</span>
+<span class="n">a</span><span class="o">.</span><span class="n">seriesDescription</span> <span class="o">=</span> <span class="s1">&#39;DWI MASK&#39;</span>
+<span class="n">a</span><span class="o">.</span><span class="n">imageType</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DERIVED&#39;</span><span class="p">,</span> <span class="s1">&#39;SECONDARY&#39;</span><span class="p">,</span> <span class="s1">&#39;MPR&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 34%" />
+<col style="width: 34%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Series property
+name</p></th>
+<th class="head"><p>DICOM
+Attribute Name</p></th>
+<th class="head"><p>Usage</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td colspan="3"><p><strong>SOP Common Module</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>SOPClassUID</p></td>
+<td><p>SOPClassUID</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>Patient Module Attributes</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>patientName</p></td>
+<td><p>PatientName</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>patientID</p></td>
+<td><p>PatientID</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-odd"><td><p>patientBirthDate</p></td>
+<td><p>PatientBirthDate</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>General Study Module Attributes</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>studyInstanceUID</p></td>
+<td><p>StudyInstanceUID</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>studyID</p></td>
+<td><p>StudyID</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-odd"><td><p>accessionNumber</p></td>
+<td><p>AccessionNumber</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>General Series Module Attributes</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>seriesInstanceUID</p></td>
+<td><p>SeriesInstanceUID</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>seriesNumber</p></td>
+<td><p>SeriesNumber</p></td>
+<td><p>int</p></td>
+</tr>
+<tr class="row-odd"><td><p>seriesDescription</p></td>
+<td><p>SeriesDescription</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>Frame Of Reference Module Attributes</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>frameOfReferenceUID</p></td>
+<td><p>FrameOfReferenceUID</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>General Image Module Attributes</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>imageType</p></td>
+<td><p>ImageType</p></td>
+<td><p>List of str</p></td>
+</tr>
+<tr class="row-even"><td><p>timeline</p></td>
+<td><p>AcquisitionTime</p></td>
+<td><p>Read-only numpy array
+(can be set using tags)</p></td>
+</tr>
+<tr class="row-odd"><td><p>bvalues</p></td>
+<td><p>DiffusionBValue
+or propietary</p></td>
+<td><p>Read-only numpy array</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>Image Plane Module</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>spacing</p></td>
+<td><p>PixelSpacing and
+SliceThickness</p></td>
+<td><p>numpy array(dz,dy,dx)
+in mm</p></td>
+</tr>
+<tr class="row-even"><td><p>orientation</p></td>
+<td><p>ImageOrientationPatient</p></td>
+<td><p>numpy array
+with 6 elements</p></td>
+</tr>
+<tr class="row-odd"><td><p>imagePositions</p></td>
+<td><p>ImagePositionPatient</p></td>
+<td><p>dict of ImagePositions
+[z,y,x] of upper left
+hand corner (in mm).
+dict.keys() are slice
+numbers (int)</p></td>
+</tr>
+<tr class="row-even"><td><p>sliceLocations</p></td>
+<td><p>SliceLocation</p></td>
+<td><p>numpy array (in mm)</p></td>
+</tr>
+<tr class="row-odd"><td colspan="3"><p><strong>Image Pixel Module</strong></p></td>
+</tr>
+<tr class="row-even"><td><p>color</p></td>
+<td><p>SamplesPerPixel</p></td>
+<td><p>bool</p></td>
+</tr>
+<tr class="row-odd"><td><p>photometricInterpretation</p></td>
+<td><p>PhotometricInterpretation</p></td>
+<td><p>str</p></td>
+</tr>
+<tr class="row-even"><td><p>rows</p></td>
+<td><p>Rows</p></td>
+<td><p>Read-only (int)</p></td>
+</tr>
+<tr class="row-odd"><td><p>columns</p></td>
+<td><p>Columns</p></td>
+<td><p>Read-only (int)</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p><strong>Composite Attributes</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>slices</p></td>
+<td></td>
+<td><p>Read-only (int)</p></td>
+</tr>
+<tr class="row-even"><td><p>tags</p></td>
+<td><p>Input order tag</p></td>
+<td><p>Tags for each slice.
+a.tags[slice][tag]</p></td>
+</tr>
+<tr class="row-odd"><td><p>axes</p></td>
+<td></td>
+<td><p>List of Axis objects</p></td>
+</tr>
+<tr class="row-even"><td><p>transformationMatrix</p></td>
+<td></td>
+<td><p>numpy array 4x4
+in z,y,x order</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="full-access-to-dicom-attributes">
+<h2>Full access to DICOM attributes<a class="headerlink" href="#full-access-to-dicom-attributes" title="Permalink to this heading"></a></h2>
+<p>Any DICOM attribute can be set or fetched using the getDicomAttribute()
+and setDicomAttribute() methods.</p>
+<p>The getDicomAttribute() method will by default fetch the DICOM attribute
+for slice 0 and tag 0. When an attribute varies in a series, a
+specific slice and/or tag can be specified.</p>
+<p>By default the setDicomAttribute() method will set an attribute
+for all slices and tags of a series. Alternatively, a specific slice
+and/or tag can be targeted.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fetch the MR Repetition Time</span>
+<span class="n">TR</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">getDicomAttribute</span><span class="p">(</span><span class="s1">&#39;RepetitionTime&#39;</span><span class="p">)</span>
+
+<span class="c1"># Fetch the Acquisition Time from tag 9, and duplicate this for tag 10</span>
+<span class="n">acqTime</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">getDicomAttribute</span><span class="p">(</span><span class="s1">&#39;AcquisitionTime&#39;</span><span class="p">,</span> <span class="nb">slice</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">setDicomAttribute</span><span class="p">(</span><span class="s1">&#39;AcquisitionTime&#39;</span><span class="p">,</span> <span class="n">acqTime</span><span class="p">,</span> <span class="nb">slice</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Sorting.html" class="btn btn-neutral float-left" title="Sorting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="CommandLine.html" class="btn btn-neutral float-right" title="Console Applications" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

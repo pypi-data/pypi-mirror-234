@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Collections" href="Collections.html" />
+    <link rel="prev" title="Installation" href="Installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="UserGuide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Installation.html">Installation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#reading-data">Reading data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#displaying-data">Displaying data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#saving-data">Saving data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-dicom-template-to-other-image-formats">Add DICOM template to other image formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-dicom-template-to-numpy-array">Add DICOM template to numpy array</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sorting-dicom-files-into-multiple-series">Sorting DICOM files into multiple Series</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Collections.html">Collections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Notebook.html">Jupyter Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Motivation and goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#design">Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#series-class">Series Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Input_output.html">Input/output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sorting.html">Sorting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DICOMAttributes.html">DICOM Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CommandLine.html">Console Applications</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Examples.html">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Plugins.html">Plugin Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APIReference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="UserGuide.html">User Guide</a></li>
+      <li class="breadcrumb-item active">Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Tutorial.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial">
+<span id="id1"></span><h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this heading"></a></h1>
+<section id="reading-data">
+<h2>Reading data<a class="headerlink" href="#reading-data" title="Permalink to this heading"></a></h2>
+<p>Let’s start by reading some data:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Series</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;in_dir&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The basic assumption when reading data from files is that a folder (directory)
+contains one image series. In the example above, the ‘in_dir’ folder will be
+searched for image files which will constitute the ‘a’ variable. Imagedata will
+not sort multiple series for you.</p>
+<p>When reading a Series, the library will automatically detect the image format,
+whether it is DICOM, Nifti, or one of the other formats supported.</p>
+<p>All files found will be sorted according to your ‘input_order’ criteria.
+The default input_order is ‘none’, which will assume that the data
+can be sorted into a 3D volume. When there is one slice only, the data will
+be stored as a 2D slice. To see how the data has been sorted, look at the shape
+and axes properties of ‘a’:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">.</span><span class="n">shape</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">152</span><span class="p">)</span>
+<span class="n">a</span><span class="o">.</span><span class="n">axes</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="n">UniformLengthAxis</span><span class="p">(</span><span class="nb">slice</span><span class="p">,</span><span class="mf">209.07554320292</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mf">3.0</span><span class="p">),</span>
+<span class="o">&gt;&gt;&gt;</span>  <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">row</span><span class="p">,</span><span class="o">-</span><span class="mf">29.985630130569</span><span class="p">,</span><span class="mi">192</span><span class="p">,</span><span class="mf">2.0833332538605</span><span class="p">),</span>
+<span class="o">&gt;&gt;&gt;</span>  <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">column</span><span class="p">,</span><span class="o">-</span><span class="mf">199.72427744686</span><span class="p">,</span><span class="mi">152</span><span class="p">,</span><span class="mf">2.0833332538605</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>When reading a 4D dataset, you need to specify the input_order criteria.
+At present, the following input_orders can be specified:</p>
+<ul class="simple">
+<li><p>‘none’: 2D/3D dataset, sorted on slice position</p></li>
+<li><p>‘time’: 4D time-dependent dataset, sorted on time</p></li>
+<li><p>‘b’: 4D MRI diffusion-weighted dataset, sorted on diffusion b value</p></li>
+<li><p>‘fa’: 4D MRI flip-angle dataset, sorted on flip angle</p></li>
+<li><p>‘te’: 4D MRI echo time dataset, sorted on echo time (TE)</p></li>
+</ul>
+<p>An example reading a time-dependent dataset:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dynamic</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;dynamic_dir&#39;</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">)</span>
+<span class="n">dynamic</span><span class="o">.</span><span class="n">shape</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">152</span><span class="p">)</span>
+<span class="n">dynamic</span><span class="o">.</span><span class="n">axes</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="n">VariableAxis</span><span class="p">(</span><span class="n">time</span><span class="p">,</span><span class="n">array</span><span class="p">([</span><span class="mf">52531.6625</span><span class="p">,</span> <span class="mf">52534.65</span>  <span class="p">,</span> <span class="mf">52537.6375</span><span class="p">,</span> <span class="mf">52540.625</span> <span class="p">,</span> <span class="mf">52543.6125</span><span class="p">,</span>
+<span class="o">&gt;&gt;&gt;</span>     <span class="mf">52546.6025</span><span class="p">,</span> <span class="mf">52549.59</span>  <span class="p">,</span> <span class="mf">52552.5775</span><span class="p">,</span> <span class="mf">52555.565</span> <span class="p">,</span> <span class="mf">52558.5525</span><span class="p">])),</span>
+<span class="o">&gt;&gt;&gt;</span>  <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="nb">slice</span><span class="p">,</span><span class="mf">209.07554320292</span><span class="p">,</span><span class="mi">40</span><span class="p">,</span><span class="mf">3.0</span><span class="p">),</span>
+<span class="o">&gt;&gt;&gt;</span>  <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">row</span><span class="p">,</span><span class="o">-</span><span class="mf">29.985630130569</span><span class="p">,</span><span class="mi">192</span><span class="p">,</span><span class="mf">2.0833332538605</span><span class="p">),</span>
+<span class="o">&gt;&gt;&gt;</span>  <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">column</span><span class="p">,</span><span class="o">-</span><span class="mf">199.72427744686</span><span class="p">,</span><span class="mi">152</span><span class="p">,</span><span class="mf">2.0833332538605</span><span class="p">)]</span>
+<span class="n">dynamic</span><span class="o">.</span><span class="n">timeline</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">array</span><span class="p">([</span> <span class="mf">0.</span>    <span class="p">,</span>  <span class="mf">2.9875</span><span class="p">,</span>  <span class="mf">5.975</span> <span class="p">,</span>  <span class="mf">8.9625</span><span class="p">,</span> <span class="mf">11.95</span>  <span class="p">,</span> <span class="mf">14.94</span>  <span class="p">,</span> <span class="mf">17.9275</span><span class="p">,</span>
+<span class="o">&gt;&gt;&gt;</span>        <span class="mf">20.915</span> <span class="p">,</span> <span class="mf">23.9025</span><span class="p">,</span> <span class="mf">26.89</span>  <span class="p">])</span>
+</pre></div>
+</div>
+<p>Notice how the time axis is given in seconds from midnight (DICOM style),
+while the timeline property give the time as seconds from the first time step.</p>
+</section>
+<section id="displaying-data">
+<h2>Displaying data<a class="headerlink" href="#displaying-data" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The show() method will use matplotlib to display your dataset.
+The following controls can be used to manipulate the viewer:</p>
+<ul class="simple">
+<li><p>Mouse scroll wheel: scroll through the slices of a volume</p></li>
+<li><p>Array up/down: scroll through the slices of a volume</p></li>
+<li><p>Array left/right: step through the 4th dimension of a 4D dataset</p></li>
+<li><p>PgUp/PgDown: Page through datasets when there are more datasets than views</p></li>
+<li><p>Left mouse key pressed: adjust window/level of display</p></li>
+<li><p>Mouse over: will display 2D coordinate and signal intensity at mouse position</p></li>
+<li><p>‘q’: Quit. Will end the show() method.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dynamic</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The show() method can display multiple series. The example above will setup
+a viewport of two series, where each series can be manipulated independently.
+When you want to display additional datasets, specify them in a list:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dynamic</span><span class="o">.</span><span class="n">show</span><span class="p">([</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Additionally, you can draw a region of interest (ROI):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">roi</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">get_roi</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The returned ‘roi’ variable will be a new 3D Series instance, where
+voxels are one inside the ROI, and zero elsewhere.</p>
+<p>For dynamic data, it is possible to draw ROI for each time step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">roi</span> <span class="o">=</span> <span class="n">dynamic</span><span class="o">.</span><span class="n">get_roi</span><span class="p">(</span><span class="n">follow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Draw a ROI for the first time step, then move to next time step using right array key.
+For each time step, the ROI polygon can be adjusted using the mouse:</p>
+<ul class="simple">
+<li><p>Move a polygon vertex using left mouse key</p></li>
+<li><p>Move the polygon outline using shift key and left mouse key</p></li>
+</ul>
+<p>The returned ROI will be a 4D ROI Series.</p>
+</section>
+<section id="saving-data">
+<h2>Saving data<a class="headerlink" href="#saving-data" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;my_dir&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The write() method will save the given series in a new folder.
+With no additional information, the series will be saved in the
+same format (DICOM, Nifti, …) as the input data.
+You can specify a different image format, e.g.:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;my_itk_dir&#39;</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;itk&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>or even multiple formats, where ‘%p’ is replaced be the format name:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;my_dirs/%p&#39;</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nifti&#39;</span><span class="p">,</span> <span class="s1">&#39;mat&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>This will save the data in Nifti format in ‘my_dirs/nifti’, and
+in Matlab format in ‘my_dirs/mat’.</p>
+</section>
+<section id="add-dicom-template-to-other-image-formats">
+<h2>Add DICOM template to other image formats<a class="headerlink" href="#add-dicom-template-to-other-image-formats" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;my_dirs/mat&#39;</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The above example will read a series from a Matlab formatted file, then
+add DICOM headers and geometry from existing Series instance ‘a’.</p>
+<p>Alternatively, the template can be given as a URL:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;my_dirs/mat&#39;</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="s1">&#39;in_dir&#39;</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="s1">&#39;in_dir&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="add-dicom-template-to-numpy-array">
+<h2>Add DICOM template to numpy array<a class="headerlink" href="#add-dicom-template-to-numpy-array" title="Permalink to this heading"></a></h2>
+<p>When processing image data using e.g. NumPy or SciPy, you may end up
+with numpy arrays with no imagedata header. The DICOM header from an
+existing dataset can be added to the numpy array:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># eye is numpy array</span>
+<span class="n">eye</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">eye</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">a</span><span class="p">)</span>
+<span class="n">c</span><span class="o">.</span><span class="n">seriesNumber</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">c</span><span class="o">.</span><span class="n">seriesDescription</span> <span class="o">=</span> <span class="s1">&#39;eye</span>
+<span class="n">c</span><span class="o">.</span><span class="n">axes</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">row</span><span class="p">,</span><span class="o">-</span><span class="mf">29.985630130569</span><span class="p">,</span><span class="mi">192</span><span class="p">,</span><span class="mf">2.0833332538605</span><span class="p">),</span>
+<span class="o">&gt;&gt;&gt;</span>  <span class="n">UniformLengthAxis</span><span class="p">(</span><span class="n">column</span><span class="p">,</span><span class="o">-</span><span class="mf">199.72427744686</span><span class="p">,</span><span class="mi">152</span><span class="p">,</span><span class="mf">2.0833332538605</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Patient</span><span class="p">:</span> <span class="mf">19.02.07</span><span class="o">-</span><span class="mi">14</span><span class="p">:</span><span class="mi">04</span><span class="p">:</span><span class="mi">17</span><span class="o">-</span><span class="n">STD</span><span class="o">-</span><span class="mf">1.3.12.2.1107.5.2.43.66035</span> <span class="n">PHANTOM</span><span class="o">^</span><span class="n">T1</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Study</span>  <span class="n">Time</span><span class="p">:</span> <span class="mi">20190207</span> <span class="mf">140516.555000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Series</span> <span class="n">Time</span><span class="p">:</span> <span class="mi">20190207</span> <span class="mf">143634.267000</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Series</span> <span class="c1">#50: eye</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">Shape</span><span class="p">:</span> <span class="mi">128</span><span class="n">x128</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">float64</span><span class="p">,</span> <span class="nb">input</span> <span class="n">order</span><span class="p">:</span> <span class="n">none</span>
+</pre></div>
+</div>
+</section>
+<section id="sorting-dicom-files-into-multiple-series">
+<h2>Sorting DICOM files into multiple Series<a class="headerlink" href="#sorting-dicom-files-into-multiple-series" title="Permalink to this heading"></a></h2>
+<p>The Study class can be used to sort DICOM file according to SeriesInstanceUID.
+The input order of each Series is auto-detected.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Study</span>
+
+<span class="n">vibe</span><span class="p">,</span> <span class="n">dce</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">study</span> <span class="o">=</span> <span class="n">Study</span><span class="p">(</span><span class="s1">&#39;data/dicom&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">uid</span> <span class="ow">in</span> <span class="n">study</span><span class="p">:</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">study</span><span class="p">[</span><span class="n">uid</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">series</span><span class="o">.</span><span class="n">seriesDescription</span> <span class="o">==</span> <span class="s1">&#39;vibe&#39;</span><span class="p">:</span>
+        <span class="n">vibe</span> <span class="o">=</span> <span class="n">series</span>
+    <span class="o">...</span>
+<span class="n">If</span> <span class="ow">not</span> <span class="p">(</span><span class="n">vibe</span> <span class="ow">and</span> <span class="n">dce</span><span class="p">):</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Some series not found in study.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Collections.html" class="btn btn-neutral float-right" title="Collections" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

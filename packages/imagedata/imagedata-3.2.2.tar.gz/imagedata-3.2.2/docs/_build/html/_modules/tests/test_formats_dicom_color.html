@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>tests.test_formats_dicom_color &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../UserGuide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">tests.test_formats_dicom_color</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for tests.test_formats_dicom_color</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">from</span> <span class="nn">.context</span> <span class="kn">import</span> <span class="n">imagedata</span>
+<span class="kn">import</span> <span class="nn">imagedata.cmdline</span>
+<span class="kn">import</span> <span class="nn">imagedata.readdata</span>
+<span class="kn">import</span> <span class="nn">imagedata.formats</span>
+<span class="kn">from</span> <span class="nn">imagedata.series</span> <span class="kn">import</span> <span class="n">Series</span>
+
+
+<div class="viewcode-block" id="TestDicomColor"><a class="viewcode-back" href="../../source/tests.html#tests.test_formats_dicom_color.TestDicomColor">[docs]</a><span class="k">class</span> <span class="nc">TestDicomColor</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TestDicomColor.setUp"><a class="viewcode-back" href="../../source/tests.html#tests.test_formats_dicom_color.TestDicomColor.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">imagedata</span><span class="o">.</span><span class="n">cmdline</span><span class="o">.</span><span class="n">add_argparse_options</span><span class="p">(</span><span class="n">parser</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--of&#39;</span><span class="p">,</span> <span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="s1">&#39;--serdes&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">opts_gray</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([</span><span class="s1">&#39;--of&#39;</span><span class="p">,</span> <span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="s1">&#39;--serdes&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+                                            <span class="s1">&#39;--psopt&#39;</span><span class="p">,</span> <span class="s1">&#39;pnggray&#39;</span><span class="p">])</span>
+
+        <span class="n">plugins</span> <span class="o">=</span> <span class="n">imagedata</span><span class="o">.</span><span class="n">formats</span><span class="o">.</span><span class="n">get_plugins_list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dicom_plugin</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">ptype</span><span class="p">,</span> <span class="n">pclass</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ptype</span> <span class="o">==</span> <span class="s1">&#39;dicom&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dicom_plugin</span> <span class="o">=</span> <span class="n">pclass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIsNotNone</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dicom_plugin</span><span class="p">)</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;skipping test_read_dicom_color&quot;)</span>
+<div class="viewcode-block" id="TestDicomColor.test_read_dicom_color"><a class="viewcode-back" href="../../source/tests.html#tests.test_formats_dicom_color.TestDicomColor.test_read_dicom_color">[docs]</a>    <span class="k">def</span> <span class="nf">test_read_dicom_color</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">si1</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;lena_color.jpg&#39;</span><span class="p">))</span>
+        <span class="n">si2</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="s1">&#39;lena_color.dcm&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">input_format</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">color</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">si1</span><span class="p">,</span> <span class="n">si2</span><span class="p">)</span></div>
+
+    <span class="c1"># @unittest.skip(&quot;skipping test_write_dicom_color&quot;)</span>
+<div class="viewcode-block" id="TestDicomColor.test_write_dicom_color"><a class="viewcode-back" href="../../source/tests.html#tests.test_formats_dicom_color.TestDicomColor.test_write_dicom_color">[docs]</a>    <span class="k">def</span> <span class="nf">test_write_dicom_color</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">si1</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;lena_color.jpg&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;none&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s1">&#39;itk&#39;</span><span class="p">,</span> <span class="n">si1</span><span class="o">.</span><span class="n">input_format</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">si1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">d</span><span class="p">:</span>
+            <span class="n">si1</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;dicom&#39;</span><span class="p">])</span>
+            <span class="n">si2</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="s1">&#39;dicom&#39;</span><span class="p">,</span> <span class="n">si2</span><span class="o">.</span><span class="n">input_format</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_array_equal</span><span class="p">(</span><span class="n">si1</span><span class="p">,</span> <span class="n">si2</span><span class="p">)</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

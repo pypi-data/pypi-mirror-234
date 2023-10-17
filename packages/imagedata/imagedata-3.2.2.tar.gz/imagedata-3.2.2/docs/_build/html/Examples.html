@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples &mdash; imagedata 2.1.2 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Plugin Architecture" href="Plugins.html" />
+    <link rel="prev" title="Console Applications" href="CommandLine.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> imagedata
+          </a>
+              <div class="version">
+                2.1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="UserGuide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Installation.html">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Collections.html">Collections</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Notebook.html">Jupyter Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html">Motivation and goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#design">Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Introduction.html#series-class">Series Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Input_output.html">Input/output</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sorting.html">Sorting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DICOMAttributes.html">DICOM Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CommandLine.html">Console Applications</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#split-mri-diffusion-series-into-separate-series-for-each-b-value">Split MRI diffusion series into separate series for each b value</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#segment-an-image-display-fused-image-with-segmented-roi-in-red">Segment an image, display fused image with segmented ROI in red</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#motion-correction-using-fsl-mcflirt">Motion correction using FSL MCFLIRT</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Plugins.html">Plugin Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="APIReference.html">API Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DeveloperDocumentation.html">Developer Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">imagedata</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="UserGuide.html">User Guide</a></li>
+      <li class="breadcrumb-item active">Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Examples.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="examples">
+<span id="id1"></span><h1>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h1>
+<section id="split-mri-diffusion-series-into-separate-series-for-each-b-value">
+<h2>Split MRI diffusion series into separate series for each b value<a class="headerlink" href="#split-mri-diffusion-series-into-separate-series-for-each-b-value" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>Using python:</dt><dd><p>Write each b value in turn by looping over first index of 4D DWI dataset.
+Each new series will have a unique Series Instance UID,
+such that a PACS will handle each b value as separate series.</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Series</span>
+
+<span class="n">dwi</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;10_ep2d_diff_b50_400_800/&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
+
+<span class="c1"># dwi.tags[0] has the b values, e.g. [50, 400, 800]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dwi</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="c1"># Output to folders b50/, b400/ and b800/</span>
+    <span class="n">dwi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;b</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>More elaborate example in python:</dt><dd><p>To set a separate series number and description for each series,
+each volume of b values must be separate objects:</p>
+</dd>
+</dl>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Series</span>
+
+<span class="n">dwi</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;10_ep2d_diff_b50_400_800/&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dwi</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+    <span class="c1"># Output to folders b50/, b400/ and b800/</span>
+    <span class="n">dwi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;b</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dwi</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">dwi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">seriesNumber</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">+</span> <span class="n">i</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">seriesDescription</span> <span class="o">=</span> <span class="s1">&#39;b </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">s</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;b</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl>
+<dt>Using command line:</dt><dd><p>Split b values using <cite>–odir multi</cite> parameter. Each b value
+will be written to folder tmp/b0, tmp/b1, etc.
+However, all folders will share the Series Instance UID.</p>
+<p>To make unique Series Instance UIDs, run image_data on each
+created folder.</p>
+<p>In the following example, the b values are first split to folders
+tmp/b0, tmp/b1, etc.
+Next, each tmp/b* series is copied again, producing separate
+Series Instance UIDs.
+Notice how each series is given a separate series number and
+series description.</p>
+</dd>
+</dl>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>image_data --order b --odir multi tmp 10_ep2d_diff_b50_400_800
+
+image_data --sernum <span class="m">100</span> --serdes <span class="s2">&quot;b0&quot;</span> out/b0 tmp/b0
+image_data --sernum <span class="m">101</span> --serdes <span class="s2">&quot;b50&quot;</span> out/b50 tmp/b1
+image_data --sernum <span class="m">102</span> --serdes <span class="s2">&quot;b100&quot;</span> out/b100 tmp/b2
+
+rm -r tmp
+</pre></div>
+</div>
+</section>
+<section id="segment-an-image-display-fused-image-with-segmented-roi-in-red">
+<h2>Segment an image, display fused image with segmented ROI in red<a class="headerlink" href="#segment-an-image-display-fused-image-with-segmented-roi-in-red" title="Permalink to this heading"></a></h2>
+<p>The following example will let the user segment an image (using get_roi()
+method).
+A fused image where the segmented area is enhanced with red color is produced by fuse_segment().</p>
+<p>Finally, the color image is displayed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Series</span>
+
+<span class="n">T2</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="s1">&#39;801_Obl T2 TSE HR SENSE/&#39;</span><span class="p">)</span>
+<span class="n">segment</span> <span class="o">=</span> <span class="n">T2</span><span class="o">.</span><span class="n">get_roi</span><span class="p">()</span>
+
+<span class="n">T2rgb</span> <span class="o">=</span> <span class="n">T2</span><span class="o">.</span><span class="n">fuse_mask</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+
+<span class="n">T2rgb</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="motion-correction-using-fsl-mcflirt">
+<h2>Motion correction using FSL MCFLIRT<a class="headerlink" href="#motion-correction-using-fsl-mcflirt" title="Permalink to this heading"></a></h2>
+<p>Motion correction using image registration is a process where different images of a patient
+are transformed to a common reference frame.
+This example uses the FSL MCFLIRT program for this task.
+MCFLIRT takes NIfTI input and output. Hence, this example will write a Series instance
+to a temporary NIfTI file, call MCFLIRT, then read back the resulting NIfTI file using the
+original Series instance as a template for DICOM header information.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">imagedata</span> <span class="kn">import</span> <span class="n">Series</span>
+<span class="kn">import</span> <span class="nn">nipype.interfaces.fsl</span> <span class="k">as</span> <span class="nn">fsl</span>
+
+
+<span class="k">def</span> <span class="nf">mcflirt</span><span class="p">(</span><span class="n">moving</span><span class="p">,</span> <span class="n">fixed</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Register dynamic series using FSL MCFLIRT</span>
+<span class="sd">    Args:</span>
+<span class="sd">        moving: moving (Series)</span>
+<span class="sd">        fixed:  reference volume, either</span>
+<span class="sd">            index into moving (Series), or</span>
+<span class="sd">            separate volume (int)</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        registered Series</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">fixed</span><span class="p">),</span> <span class="n">Series</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fixed</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">fixed</span>
+            <span class="n">ref_volume</span> <span class="o">=</span> <span class="n">fixed</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Fixed volume should be 3D (is </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fixed</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">fixed</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">fixed</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">moving</span><span class="p">),</span> <span class="s2">&quot;Wrong fixed index </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fixed</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">fixed</span>
+        <span class="n">ref_volume</span> <span class="o">=</span> <span class="n">moving</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Preparing for MCFLIRT ...&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmp</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+        <span class="n">tmp_fixed</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="s1">&#39;fixed&#39;</span>
+        <span class="n">tmp_moving</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="s1">&#39;moving&#39;</span>
+        <span class="n">tmp_out</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="s1">&#39;out.nii.gz&#39;</span>
+        <span class="n">moving</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmp_moving</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nifti&#39;</span><span class="p">])</span>
+        <span class="n">moving_file</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tmp_moving</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MCFLIRT running ...&#39;</span><span class="p">)</span>
+
+        <span class="n">mcflt</span> <span class="o">=</span> <span class="n">fsl</span><span class="o">.</span><span class="n">MCFLIRT</span><span class="p">()</span>
+        <span class="n">mcflt</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">in_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">moving_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span> <span class="n">Series</span><span class="p">):</span>
+            <span class="n">ref</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">tmp_fixed</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;nifti&#39;</span><span class="p">])</span>
+            <span class="n">fixed_file</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tmp_fixed</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">mcflt</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">ref_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fixed_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mcflt</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">ref_vol</span> <span class="o">=</span> <span class="n">ref</span>
+        <span class="n">mcflt</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">out_file</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">tmp_out</span><span class="p">)</span>
+        <span class="n">mcflt</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="s2">&quot;corratio&quot;</span>  <span class="c1"># &quot;normcorr&quot;</span>
+        <span class="c1"># mcflt.inputs.cost     = &quot;normcorr&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mcflt</span><span class="o">.</span><span class="n">cmdline</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">mcflt</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Result code: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">runtime</span><span class="o">.</span><span class="n">returncode</span><span class="p">))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">Series</span><span class="p">(</span><span class="n">tmp_out</span><span class="p">,</span> <span class="n">input_order</span><span class="o">=</span><span class="n">moving</span><span class="o">.</span><span class="n">input_order</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="n">moving</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">ref_volume</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">moving</span><span class="o">.</span><span class="n">tags</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">moving</span><span class="o">.</span><span class="n">axes</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">seriesDescription</span> <span class="o">=</span> <span class="s1">&#39;MCFLIRT </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mcflt</span><span class="o">.</span><span class="n">inputs</span><span class="o">.</span><span class="n">cost</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MCFLIRT ended.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="CommandLine.html" class="btn btn-neutral float-left" title="Console Applications" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Plugins.html" class="btn btn-neutral float-right" title="Plugin Architecture" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2013-2023, Erling Andersen, Haukeland University Hospital, Bergen, Norway.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
