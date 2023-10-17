@@ -1,0 +1,40 @@
+[tool.black]
+#line-length = 79
+target-version = ['py38']
+include = '\.py$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv.*
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+  | conftest.py
+)
+'''
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-glob='*.rst' --ignore=tests/resources"
+markers = [
+    "require_sqlalchemy: mark a test that requires SQLAlchemy.",
+    "require_rstr: mark a test that requires rstr.",
+    "without_rstr: mark a test that is skipped if rstr is installed.",
+    "require_yaml: mark a test that requires yaml.",
+    "without_yaml: mark a test that is skipped if yaml is installed.",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "randog",
+]
+
+[tool.coverage.report]
+show_missing = true
