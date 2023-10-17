@@ -1,0 +1,36 @@
+apiVersion: engine.h2o.ai/v1alpha1
+kind: DriverlessAISetup
+metadata:
+  # Name of this object corresponds to the workspaceID of DAIEngine resource.
+  # (this additional setup is applied on all DAIEngines that are in 'dai-mocked-server-logs' workspace)
+  name: dai-mocked-server-logs
+spec:
+  podTemplateSpec:
+    metadata:
+      annotations:
+        custom-key: custom-value
+    spec:
+      containers:
+        - name: driverless-ai
+          # Always use the mocked DAI server.
+          image: gcr.io/vorvan/h2oai/mockdai
+          # Simulate how long it takes for the DAI server to startup.
+          args: [ "--sleep", "5s" ]
+  cpuConstraint:
+    min: 1
+    default: 1
+  gpuConstraint:
+    min: 0
+    default: 0
+  memoryBytesConstraint:
+    min: 1
+    default: 1
+  storageBytesConstraint:
+    min: 1
+    default: 1
+  maxIdleDurationConstraint:
+    min: "0s"
+    default: "2h"
+  maxRunningDurationConstraint:
+    min: "0s"
+    default: "2h"

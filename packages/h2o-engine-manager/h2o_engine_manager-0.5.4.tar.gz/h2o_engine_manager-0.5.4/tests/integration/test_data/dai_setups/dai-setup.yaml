@@ -1,0 +1,56 @@
+apiVersion: engine.h2o.ai/v1alpha1
+kind: DriverlessAISetup
+metadata:
+  # Name of this object corresponds to the workspaceID of DAIEngine resource.
+  # (this additional setup is applied on all DAIEngines that are in 'dai-setup' workspace)
+  name: dai-setup
+spec:
+  configurationOverride:
+    disk_limit_gb: "10"
+    my_new_config: "my-new-value"
+  podTemplateSpec:
+    metadata:
+      annotations:
+        custom-key: custom-value
+    spec:
+      containers:
+        - name: driverless-ai
+          env:
+            - name: CUSTOM_VAR
+              value: "CUSTOM_VAL"
+            - name: DRIVERLESS_AI_OVERRIDE_VIRTUAL_CORES
+              value: "20"
+        - name: custom-container
+          image: gcr.io/vorvan/h2oai/mockdai
+          ports:
+            - containerPort: 21212
+          # Use different port to avoid collision with driverless-ai container.
+          args: [ "--port", "1111" ]
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "steam"
+          effect: "NoSchedule"
+  cpuConstraint:
+    min: 1
+    default: 1
+  gpuConstraint:
+    min: 0
+    default: 0
+  memoryBytesConstraint:
+    min: 1
+    default: 1
+  storageBytesConstraint:
+    min: 1
+    default: 1
+  maxIdleDurationConstraint:
+    min: "0s"
+    default: "2h"
+  maxRunningDurationConstraint:
+    min: "0s"
+    default: "2h"
+  gpuTolerations:
+    - key: "gpu"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoSchedule"
