@@ -1,0 +1,1 @@
+The automl-client-core-nativeclient package is a package used to automatically train models without using AzureML.
