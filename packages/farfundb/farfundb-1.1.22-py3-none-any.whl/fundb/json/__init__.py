@@ -1,0 +1,1 @@
+from .jsonextendsclass import JSONStorage
