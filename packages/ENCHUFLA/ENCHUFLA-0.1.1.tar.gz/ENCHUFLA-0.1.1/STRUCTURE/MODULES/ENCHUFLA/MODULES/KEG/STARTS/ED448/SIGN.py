@@ -1,0 +1,62 @@
+
+
+'''
+import requests
+import json
+r = requests.put (
+	'http://127.0.0.1:1110', 
+	data = json.dumps ({
+		"START": "ED448 SIGN",
+		"FIELDS": {
+			"PRIVATE KEY PATH": "",
+			"UNSIGNED BYTES PATH": "",
+			"SIGNED BYTES PATH": ""
+		}
+	})
+)
+print (r.text)
+'''
+def SIGN (
+	FIELDS
+):
+	PRIVATE_KEY_PATH = FIELDS ["PRIVATE KEY PATH"]
+	UNSIGNED_BYTES_PATH = FIELDS ["UNSIGNED BYTES PATH"]
+	SIGNED_BYTES_PATH = FIELDS ["SIGNED BYTES PATH"]
+
+	from DUOM.ED448.PRIVATE_KEY.SCAN import SCAN_PRIVATE_KEY
+	[ PRIVATE_KEY, PRIVATE_KEY_BYTES, PRIVATE_KEY_STRING ] = SCAN_PRIVATE_KEY (PRIVATE_KEY_PATH)
+
+
+
+	from UTF8.SCAN import SCAN_UTF8_NOTE
+	[ UTF8_STRING, UNSIGNED_BYTES, HEX_STRING ] = SCAN_UTF8_NOTE (UNSIGNED_BYTES_PATH)
+
+
+	from DUOM.ED448.SIGN import SIGN
+	[ SIGNED_MESSAGE ] = SIGN (
+		PRIVATE_KEY,
+		UNSIGNED_BYTES = UNSIGNED_BYTES,
+		
+		PATH = SIGNED_BYTES_PATH
+	)
+	
+	
+
+	return {
+		"GOOD": True,
+		"SIGNED.2**4": SIGNED_MESSAGE.hex ()
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
