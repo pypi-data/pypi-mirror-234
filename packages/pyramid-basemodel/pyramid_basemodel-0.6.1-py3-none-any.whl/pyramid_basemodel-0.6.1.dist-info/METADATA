@@ -1,0 +1,138 @@
+Metadata-Version: 2.1
+Name: pyramid-basemodel
+Version: 0.6.1
+Summary: pyramid_basemodel - a thin, low level SQLAlchemy bindings to pyramid
+Author: James Arthur
+Maintainer-email: Grzegorz Śliwiński <fizyk+pypi@fizyk.dev>
+License: This is free and unencumbered software released into the public domain.
+        
+        Anyone is free to copy, modify, publish, use, compile, sell, or
+        distribute this software, either in source code form or as a compiled
+        binary, for any purpose, commercial or non-commercial, and by any
+        means.
+        
+        In jurisdictions that recognize copyright laws, the author or authors
+        of this software dedicate any and all copyright interest in the
+        software to the public domain. We make this dedication for the benefit
+        of the public at large and to the detriment of our heirs and
+        successors. We intend this dedication to be an overt act of
+        relinquishment in perpetuity of all present and future rights to this
+        software under copyright law.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+        IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+        OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+        ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+        OTHER DEALINGS IN THE SOFTWARE.
+        
+        For more information, please refer to <http://unlicense.org/>
+        
+Project-URL: Source, https://github.com/fizyk/pyramid_basemodel/
+Project-URL: Bug Tracker, https://github.com/fizyk/pyramid_basemodel/issues
+Project-URL: Changelog, https://github.com/fizyk/pyramid_basemodel/blob/v0.6.1/CHANGES.rst
+Keywords: pyramid,sqlalchemy
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: The Unlicense (Unlicense)
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Framework :: Pyramid
+Classifier: Topic :: Database :: Front-Ends
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: WSGI
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.8
+Description-Content-Type: text/x-rst
+Requires-Dist: pyramid
+Requires-Dist: pyramid-tm
+Requires-Dist: requests
+Requires-Dist: SQLAlchemy >=2
+Requires-Dist: zope.interface
+Requires-Dist: zope.sqlalchemy
+Requires-Dist: python-slugify
+Requires-Dist: inflect
+
+pyramid_basemodel
+=================
+
+**pyramid_basemodel** is a thin, low level package that provides an SQLAlchemy
+declarative `Base` and a thread local scoped `Session` that can be used by
+different packages whilst only needing to be bound to a db engine once.
+
+Usage
+-----
+
+You can use these as base classes for declarative model definitions, e.g.:
+
+.. code-block:: python
+
+    from pyramid_basemodel import Base, BaseMixin, Session, save
+
+    class MyModel(Base, BaseMixin):
+        """Example model class."""
+
+        @classmethod
+        def do_foo(cls):
+            instance = Session.query(cls).first()
+            save(instance)
+
+
+You can then bind these to the `sqlalchemy.url` in your paster `.ini` config by
+importing your model and this package, e.g.:
+
+.. code-block:: python
+
+    # for example in yourapp.__init__.py
+    import mymodel
+    
+    def main(global_config, **settings):
+        config = Configurator(settings=settings)
+        config.include('pyramid_basemodel')
+        config.include('pyramid_tm')
+        return config.make_wsgi_app()
+
+Or if this is all too much voodoo, you can just use the `bind_engine` function::
+
+.. code-block:: python
+
+    from pyramid_basemodel import bind_engine
+    from mypackage import mymodel
+
+    # assuming `engine` is a bound SQLAlchemy engine.
+    bind_engine(engine)
+
+Note that the `Session` is designed to be used in tandem with [pyramid_tm][].
+If you don't include `pyramid_tm`, you'll need to take care of committing
+transactions yourself.
+
+Tests
+-----
+
+To run the tests use:
+
+.. code-block::
+
+    py.test -v --cov pyramid_basemodel tests/
+
+[pyramid_basemodel]: http://github.com/fizyk/pyramid_basemodel
+[pyramid_simpleauth]: http://github.com/thruflo/pyramid_simpleauth
+[pyramid_tm]: http://pyramid_tm.readthedocs.org
+
+Release
+=======
+
+Install pipenv and --dev dependencies first, Then run:
+
+.. code-block::
+
+    pipenv run tbump [NEW_VERSION]
