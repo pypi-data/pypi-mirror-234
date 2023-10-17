@@ -1,0 +1,97 @@
+Metadata-Version: 2.1
+Name: aiconsole
+Version: 0.2.0a2
+Summary: Run and expand your personal AI tools
+License: MIT
+Author: Maciej Cielecki
+Author-email: maciej.cielecki@10clouds.com
+Requires-Python: >=3.9,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: beautifulsoup4 (>=4.12.2,<5.0.0)
+Requires-Dist: fastapi (>=0.103.2,<0.104.0)
+Requires-Dist: litellm (>=0.6.2,<0.7.0)
+Requires-Dist: openai-function-call (>=0.2.6,<0.3.0)
+Requires-Dist: pillow (>=10.0.1,<11.0.0)
+Requires-Dist: pydantic (>=2.4.2,<3.0.0)
+Requires-Dist: pydantic-settings (>=2.0.3,<3.0.0)
+Requires-Dist: selenium (>=4.14.0,<5.0.0)
+Requires-Dist: tiktoken (>=0.5.1,<0.6.0)
+Requires-Dist: uvicorn (>=0.23.2,<0.24.0)
+Requires-Dist: watchdog (>=3.0.0,<4.0.0)
+Requires-Dist: webdriver-manager (>=4.0.1,<5.0.0)
+Description-Content-Type: text/markdown
+
+# AIConsole
+
+## Installing & Running
+
+```shell
+pip install --upgrade aiconsole --pre # (in some environments it must be pip3 instead of pip)
+mkdir your_project_dir
+cd your_project_dir
+export OPENAI_API_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+aiconsole
+```
+
+In your project directory, aiconsole will create a bunch of working files like standard materials and agents
+
+## Running Your AIConsole Dev Mode
+
+In order to run your own AIConsole:
+
+1. CD into the project folder `/ai-console`
+2. Install dependencies `poetry install` and `cd aiconsole/web && yarn`
+3. In two distinct terminal windows run: `poetry run aiconsole-dev`
+
+Requires OPENAI_API_KEY env variable to be set.
+
+### Running in another directory in dev mode
+
+Often times you want to host aiconsole working files in another directory, even while developing. In order to do that you need to:
+
+1. Discover the path to your env:
+poetry env info
+
+2. You will get something like: /Users/user/Library/Caches/pypoetry/virtualenvs/aiconsole-rmLpd4fO-py3.10
+
+3. Execute in your directory of choice the following command:
+
+```shell
+vepath/bin/python -m aiconsole.init
+```
+
+so in our example that would be:
+
+```shell
+/Users/user/Library/Caches/pypoetry/virtualenvs/aiconsole-rmLpd4fO-py3.10bin/python -m aiconsole.init
+```
+
+## Publishing process
+
+```shell
+cd web && npm run build && cd .. && poetry build && poetry publish --username __token__ --password ...
+```
+
+## Materials
+
+Create .md files in ./materials directory in the following format:
+
+
+```md
+<!---
+Description of when this material should be used?
+-->
+
+# Title of the material
+
+Actual content of a material
+```
+
+Files are monitored and automatically loaded, then used as context. You can keep there API manuals, login information, prompts and other contextual information.
+
+You can see examples of materials in the ./preset/materials directory
+
