@@ -1,0 +1,65 @@
+{% load i18n %}
+{% if app_list %}
+    {% for app in app_list %}
+        {% if app.models|length > 1 %}
+            <li class="nav-item dropdown {% if app.app_url in request.path|urlencode %} active{% endif %}">
+                <a class="nav-link dropdown-toggle"
+                   href="#navbar-help"
+                   data-bs-toggle="dropdown"
+                   data-bs-auto-close="outside"
+                   role="button"
+                   aria-expanded="false">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/lifebuoy -->
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="icon"
+                             width="24"
+                             height="24"
+                             viewBox="0 0 24 24"
+                             stroke-width="2"
+                             stroke="currentColor"
+                             fill="none"
+                             stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="9"></circle><line x1="15" y1="15" x2="18.35" y2="18.35"></line><line x1="9" y1="15" x2="5.65" y2="18.35"></line><line x1="5.65" y1="5.65" x2="9" y2="9"></line><line x1="18.35" y1="5.65" x2="15" y2="9"></line>
+                        </svg>
+                    </span>
+                    <span class="nav-link-title">{{ app.name }}</span>
+                </a>
+                <div class="dropdown-menu">
+                    {% for model in app.models %}
+                        {% if model.admin_url %}
+                            <a class="dropdown-item {% if model.admin_url in request.path|urlencode %}active{% endif %}"
+                               href="{{ model.admin_url }}">{{ model.name }}</a>
+                        {% else %}
+                            <a class="dropdown-item disabled" href="#">{{ model.name }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </li>
+        {% else %}
+            <li class="nav-item {% if app.models.0.admin_url in request.path|urlencode %}active{% endif %}">
+                <a class="nav-link" href="{{ app.models.0.admin_url }}">
+                    <span class="nav-link-icon d-md-none d-lg-inline-block"><!-- Download SVG icon from http://tabler-icons.io/i/ghost -->
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="icon"
+                             width="24"
+                             height="24"
+                             viewBox="0 0 24 24"
+                             stroke-width="2"
+                             stroke="currentColor"
+                             fill="none"
+                             stroke-linecap="round"
+                             stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="9"></circle><line x1="15" y1="15" x2="18.35" y2="18.35"></line><line x1="9" y1="15" x2="5.65" y2="18.35"></line><line x1="5.65" y1="5.65" x2="9" y2="9"></line><line x1="18.35" y1="5.65" x2="15" y2="9"></line>
+                        </svg>
+                    </span>
+                    <span class="nav-link-title">{{ app.models.0.name }}</span>
+                </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% else %}
+    <p>{% translate "You don’t have permission to view or edit anything." %}</p>
+{% endif %}

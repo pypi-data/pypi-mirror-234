@@ -1,0 +1,133 @@
+{% load i18n static milea_tags %}
+<!DOCTYPE html>
+<!--
+* The MILEA Framework
+* by red pepper services - Webdesign und IT-Dienstleistungen aus Vorarlberg
+* @version {% milea_setting "FW_VERSION" %}
+* @link https://www.red-pepper.at
+* Copyright 2022-2023 red pepper Services e.U.
+-->
+<html lang="{{ LANGUAGE_CODE|default:'en-us' }}" dir="ltr">
+    <head>
+        <!-- Meta -->
+        <meta charset="utf-8" />
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <meta name="description" content="{% milea_setting "FW_NAME" %}" />
+        <meta name="keywords" content="" />
+        <link rel="icon" href="{% custom_static 'img/favicon.ico' %}" />
+        {% block blockbots %}
+            <meta name="robots" content="NONE,NOARCHIVE" />
+        {% endblock blockbots %}
+        {% block extrahead %}
+        {% endblock extrahead %}
+        <!-- Title -->
+        <title>
+            {% block title %}
+                rps-django-template
+            {% endblock title %}
+        </title>
+        <!-- CSS -->
+        <link rel="stylesheet" href="{% static 'milea/css/tabler.css' %}" />
+        <link rel="stylesheet" href="{% static 'milea/css/tabler-vendor.css' %}" />
+        <link rel="stylesheet" href="{% static 'milea/css/tabler-icons.css' %}" />
+        <link rel="stylesheet" href="{% static 'milea/css/custom.css' %}" />
+        {% block extrastyle %}
+        {% endblock extrastyle %}
+    </head>
+    <body class="{% if is_popup %}popup{% endif %}{% block bodyclass %}{% endblock bodyclass %}"
+          data-admin-utc-offset="{% now "Z" %}">
+        <div class="page">
+
+            <!-- Header -->
+            {% block header %}
+                {% include "admin/header.html" %}
+            {% endblock header %}
+            <!-- ./ Header -->
+
+            <!-- Navbar -->
+            {% if not is_popup and is_nav_sidebar_enabled %}
+                {% block nav-sidebar %}
+                    {% include "admin/nav_sidebar.html" %}
+                {% endblock nav-sidebar %}
+            {% endif %}
+            <!-- ./ Navbar -->
+
+            <div class="page-wrapper">
+                <div class="page-header d-print-none">
+                    <div class="container-xxl">
+                        <div class="row g-2 align-items-center">
+                            <div class="col mt-0">
+                                <!-- Breadcrumbs -->
+                                {% block breadcrumbs %}
+                                {% endblock breadcrumbs %}
+                                <!-- ./ Breadcrumbs -->
+
+                                <!-- Titel -->
+                                {% block pretitle %}
+                                {% endblock pretitle %}
+                                {% block content_title %}
+                                    {% if title %}<h1 class="page-title">{{ title }}</h1>{% endif %}
+                                {% endblock content_title %}
+                                <!-- ./ Titel -->
+                            </div>
+                            <!-- Header Actions -->
+                            <div class="col-auto ms-auto d-print-none">
+                                <div class="btn-list">
+                                    <span class="d-none d-sm-inline">
+                                        {% block object-tools %}
+                                        {% endblock object-tools %}
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- ./ Header Actions -->
+                        </div>
+                    </div>
+                </div>
+                <div class="page-body">
+                    <div class="container-xxl">
+                        <!-- Messages -->
+                        {% block messages %}
+                            {% if messages %}
+                                <div class="row g-2 align-items-center">
+                                    <div class="col alert-messages">
+                                        {% for message in messages %}
+                                            <div class="alert alert-dismissible alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}"
+                                                 role="alert">
+                                                <div class="d-flex">
+                                                    <div>
+                                                        <i class="ti ti-check alert-icon display-6"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h4 class="alert-title fs-3">{{ message|capfirst }}</h4>
+                                                    </div>
+                                                </div>
+                                                <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                                            </div>
+                                            <!--<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>-->
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endblock messages %}
+                        <!-- ./ Messages -->
+                        <!-- Content -->
+                        {% block content %}
+                            {{ content }}
+                        {% endblock content %}
+                        {% block sidebar %}
+                        {% endblock sidebar %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Footer -->
+        {% block footer %}
+            <div id="footer"></div>
+        {% endblock footer %}
+        <!-- JS -->
+        <script src="{% static 'milea/js/tabler.js' %}"></script>
+        <script src="{% static 'milea/js/custom.js' %}"></script>
+    </body>
+</html>
