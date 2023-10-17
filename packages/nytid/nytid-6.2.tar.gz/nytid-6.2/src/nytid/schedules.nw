@@ -1,0 +1,189 @@
+\chapter{Working with schedules}
+
+In this chapter we describe the module [[nytid.schedules]] that we provide for 
+working with schedules, indirectly TimeEdit.
+We want to be able to use the course schedule and the personal schedules 
+provided by TimeEdit.
+
+The idea is as follows.
+We'll use the [[ics]] package to handle events and schedules (calendars).
+This means that we can use the ICS exports from TimeEdit, Google Calendar etc.
+
+
+\section{Outline}
+
+The module consists only of the file [[schedules.py]].
+<<schedules.py>>=
+<<imports>>
+<<constants>>
+<<functions>>
+@
+
+
+\section{Representing events}
+
+We will use the ICS calendar format to represent events.
+For this we will use the [[ics]] package.
+We will use the [[arrow]] package instead of [[datetime]], as this is suggested 
+by the [[ics]] package.
+<<imports>>=
+import arrow.arrow as arrow
+import calendar
+import dateutil
+import ics.event
+import ics.icalendar
+@ Using the [[ics]] package allows us to work with calendar related things in a 
+standard way, so that we later can just import calendars through [[.ics]] 
+files.
+
+When we print such an object, it will print the ICS formatted version.
+This is useful for creating [[.ics]] files, but not for pretty-printing the 
+schedule to the terminal, for instance.
+We introduce the two following functions to handle that.
+<<functions>>=
+def format_header(event):
+    """
+    Formats the event header, a one-line representation (week, date, time, 
+    event title)
+    """
+    header = f"Week {event.begin.isocalendar()[1]} " + \
+            calendar.day_name[event.begin.weekday()] + " " + \
+            event.begin.to(dateutil.tz.tzlocal()).format('DD/MM HH:mm')
+
+    header += f" {event.name}"
+
+    return header
+
+def format_event(event):
+    """
+    Takes event (ics.event.Event) object,
+    returns long string representation (header, location, description over 
+    several lines)
+    """
+    header = format_header(event)
+    location = event.location
+    description = "\n".join(filter(lambda x: "http" not in x,
+            event.description.splitlines()))
+
+    return f"{header}\n{location}\n{description}".strip()
+@
+
+We also want a shorter version, where we can filter the description.
+<<functions>>=
+def filter_event_description(event_desc, ignore=[
+        "http", "grupp", "group", "ID ", "Daniel Bosk"
+    ], separator="; "):
+    """
+    Takes event description event_desc as string,
+    returns filtered string with newlines replaced by semicolons.
+    Rows of description containing any term in list ignore, will not appear in 
+    the returned string.
+    The filtered rows of the description are joined again by the string in 
+    separator.
+    """
+    desc_parts = event_desc.splitlines()
+    desc_parts_keep = []
+
+    for part in desc_parts:
+        found = False
+        for term in ignore:
+            if term in part:
+                found = True
+                break
+
+        if not found:
+            desc_parts_keep.append(part)
+
+    return separator.join(desc_parts_keep)
+
+def format_event_short(event):
+    """Takes event (ics.event.Event) object,
+    returns a short string representation (one line)"""
+    header = format_header(event)
+    description = filter_event_description(event.description)
+
+    return f"{header} {description}".strip()
+@
+
+
+\section{Handling calendars from URLs}
+
+We want to provide a URL to an ICS-formatted file, for instance, an export from 
+TimeEdit.
+Here we provide a function that takes a URL to an ICS-formatted file and 
+returns a calendar, in the same format as the course schedule above.
+This will allow us to easily compare to \eg see which sessions someone can 
+attend.
+<<functions>>=
+def read_calendar(url):
+  """
+  Input: url is a string containing the URL to the ICS-formatted calendar.
+  Output: an [[ics.icalendar.Calendar]] object.
+  """
+  response = requests.get(url)
+  if response.status_code == requests.codes.ok:
+    return ics.icalendar.Calendar(imports=response.text)
+  raise Exception(response.text)
+<<imports>>=
+import requests
+@
+
+
+\section{Filtering events}
+
+To filter the list of events, we do the following.
+We want to filter events using a whitelist, this is because otherwise we'll end 
+up with holidays in our sign-up sheet.
+<<functions>>=
+def event_filter(events, whitelisted=TIMEEDIT_EVENTS):
+  """
+  Takes a list of events (ics.event.Event), returns a filtered list of events 
+  (generator). The events to include are the teaching events.
+
+  It covers the following events:
+  
+    <<whitelisted events>>
+  """
+  for event in events:
+    for event_type in whitelisted:
+      if event_type in event.name:
+        yield event
+        break
+@
+
+The events that we whitelist are taken from TimeEdits activity types\footnote{%
+  URL: 
+  \url{https://intra.kth.se/polopoly_fs/1.932668.1685102637!/Aktivitetstyper.pdf}
+}:
+<<constants>>=
+TIMEEDIT_EVENTS = [
+  <<whitelisted events>>
+]
+<<whitelisted events>>=
+"Datorlaboration", "Computer lab",
+"Examination",
+"Exkursion", "Excursion",
+"Fältövning", "Field exercise",
+"Frågestund", "Question time", "Question Time",
+"Föreläsning", "Lecture",
+"FX-komplettering", "FX-completion",
+"Handledning", "Tutorial",
+"Information",
+"Kontrollskrivning", "Partial Exam/Quiz",
+"Laboration", "Lab",
+"Lektion", "Lesson",
+"Omtenta", "Re-exam", "Re-Exam",
+"Presentation",
+"Projektarbete", "Project work", "Project Work",
+"Redovisning", "Reporting",
+"Räknestuga", "Math work session",
+"Seminarium", "Seminar",
+"Samverkansinlärning", "Supplemental instruction",
+"Supplemental Instruction",
+"Studiebesök", "Study visit",
+"Tentamen", "Exam",
+"Upprop", "Roll-call",
+"Webinarium", "Webinar",
+"Verksamhetsförlagd utbildning", "Pre-service Placement",
+"Workshop",
+"Övning", "Exercise"
