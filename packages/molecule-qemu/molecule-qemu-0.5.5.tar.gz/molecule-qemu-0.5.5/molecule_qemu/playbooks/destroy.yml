@@ -1,0 +1,64 @@
+---
+- name: Destroy
+  hosts: localhost
+  gather_facts: false
+  no_log: "{{ molecule_no_log }}"
+
+  environment:
+    http_proxy: "{{ lookup('ansible.builtin.env', 'http_proxy') | default(omit) }}"
+    https_proxy: "{{ lookup('ansible.builtin.env', 'https_proxy') | default(omit) }}"
+
+  tasks:
+    - name: Prepare VMs config
+      block:
+        - name: Prepare VMs config
+          ansible.builtin.set_fact:
+            instance_conf: "{{ lookup('file', molecule_instance_config) | from_yaml }}"
+      rescue:
+        - name: Prepare VMs config when file missing
+          ansible.builtin.set_fact:
+            instance_conf: []
+
+    - name: Read PID files
+      ansible.builtin.set_fact:
+        pid: "{{ lookup('file', item.pidfile) }}"
+      loop: "{{ instance_conf }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: qemu_processes
+
+    - name: Destroy running VMs
+      become: "{{ item.item.privileged | default(false) }}"
+      ansible.builtin.command: >
+        kill {{ item.ansible_facts.pid }}
+      changed_when: false
+      loop: "{{ qemu_processes.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Delete PID files
+      become: "{{ item.item.privileged | default(false) }}"
+      ansible.builtin.file:
+        path: "{{ item.pidfile }}"
+        state: absent
+      loop: "{{ instance_conf }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Destroy VMs disks
+      ansible.builtin.file:
+        path: "{{ item.diskfile }}"
+        state: absent
+      loop: "{{ instance_conf }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Prepare VMs config list
+      ansible.builtin.set_fact:
+        instance_conf: []
+
+    - name: Dump VMs config
+      ansible.builtin.copy:
+        content: "{{ instance_conf | to_json | from_json | to_yaml }}"
+        dest: "{{ molecule_instance_config }}"
+        mode: "0644"
