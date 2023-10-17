@@ -1,0 +1,74 @@
+[tool.poetry]
+name = "unitelabs-connector-framework"
+version = "0.1.5"
+description = "A framework to build connectors based on the SiLA 2 standard specification."
+license = "MIT"
+authors = ["UniteLabs AG <developers+connector@unitelabs.ch>"]
+readme = "README.md"
+homepage = "https://unitelabs.ch"
+repository = "https://gitlab.com/unitelabs/connector-framework"
+documentation = "https://gitlab.com/unitelabs/connector-framework/-/tree/main/docs/"
+keywords = ["SiLA 2", "laboratory", "automation", "connectivity"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries",
+]
+packages = [{ include = "unitelabs", from = "src" }]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://gitlab.com/unitelabs/connector-framework/-/issues"
+
+[tool.poetry.scripts]
+certificate = 'unitelabs.cli:certificate'
+connector = 'unitelabs.cli:connector'
+
+[tool.poetry.dependencies]
+python = "^3.9"
+click = "8.1.4"
+pydantic_settings = "2.0.1"
+unitelabs-sila = "0.1.3"
+
+[tool.poetry.group.dev.dependencies]
+black = "23.3.0"
+isort = "5.12.0"
+pylint = "2.17.4"
+pytest = "7.3.1"
+pytest-asyncio = "0.21.0"
+pytest-cov = "4.1.0"
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+
+[tool.isort]
+line_length = 120
+profile = "black"
+
+[tool.pylint.format]
+max-line-length = "120"
+
+[tool.pylint.messages_control]
+disable = ["missing-module-docstring"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = [
+    "--import-mode=importlib",
+]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
