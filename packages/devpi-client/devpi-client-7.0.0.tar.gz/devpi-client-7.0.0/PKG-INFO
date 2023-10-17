@@ -1,0 +1,163 @@
+Metadata-Version: 2.1
+Name: devpi-client
+Version: 7.0.0
+Summary: devpi upload/install/... workflow commands for Python developers
+Maintainer-email: Florian Schulze <mail@pyfidelity.com>
+License: 
+          Permission is hereby granted, free of charge, to any person obtaining a copy
+          of this software and associated documentation files (the "Software"), to deal
+          in the Software without restriction, including without limitation the rights
+          to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+          copies of the Software, and to permit persons to whom the Software is
+          furnished to do so, subject to the following conditions:
+             
+          The above copyright notice and this permission notice shall be included in all
+          copies or substantial portions of the Software.
+         
+          THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+          IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+          FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+          AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+          LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+          OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+          SOFTWARE.
+        
+        
+Project-URL: Bug Tracker, https://github.com/devpi/devpi/issues
+Project-URL: Changelog, https://github.com/devpi/devpi/blob/main/client/CHANGELOG
+Project-URL: Documentation, https://doc.devpi.net
+Project-URL: Homepage, https://devpi.net
+Project-URL: Source Code, https://github.com/devpi/devpi
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.7
+Description-Content-Type: text/x-rst
+License-File: LICENSE
+License-File: AUTHORS
+Requires-Dist: build
+Requires-Dist: check-manifest>=0.28
+Requires-Dist: colorama; platform_system == "Windows"
+Requires-Dist: devpi_common<5,>=4dev
+Requires-Dist: iniconfig
+Requires-Dist: pkginfo>=1.4.2
+Requires-Dist: platformdirs
+Requires-Dist: pluggy<2.0,>=0.6.0
+
+===============================================================
+devpi-client: manage devpi-server, Python packaging and testing
+===============================================================
+
+The ``devpi`` command line tool is typically used in conjunction
+with `devpi-server <https://pypi.org/project/devpi-server/>`_.
+It allows to upload, test and install packages from devpi indexes.
+
+See https://doc.devpi.net for quickstart and more documentation.
+
+Support
+=======
+
+If you find a bug, use the `issue tracker at Github`_.
+
+For general questions use `GitHub Discussions`_ or the `devpi-dev@python.org mailing list`_.
+
+For support contracts and paid help contact ``mail at pyfidelity.com``.
+
+.. _issue tracker at Github: https://github.com/devpi/devpi/issues/
+.. _devpi-dev@python.org mailing list: https://mail.python.org/mailman3/lists/devpi-dev.python.org/
+.. _GitHub Discussions: https://github.com/devpi/devpi/discussions
+
+
+
+=========
+Changelog
+=========
+
+
+
+
+.. towncrier release notes start
+
+7.0.0 (2023-10-11)
+==================
+
+Deprecations and Removals
+-------------------------
+
+- Use ``build`` instead of deprecated ``pep517`` package.
+
+- Removed dependency on py package.
+  Plugins which expect py.path.local need to be adjusted to work with pathlib.Path.
+
+- Dropped support for Python <= 3.6.
+
+
+
+Other Changes
+-------------
+
+- .. note::
+      Potentially breaking fix #939: devpi-common 4.x now has custom legacy version parsing (non PEP 440) after packaging >= 22.0 removed support. This might affect commands like ``devpi remove`` if used with version ranges. Legacy versions were always and still are sorted before PEP 440 compliant versions, but the ordering between legacy versions might be affected.
+
+- Fix #946: output ``name==version`` instead of ``name-version`` for ``devpi list -v``.
+
+
+6.0.6 (2023-10-11)
+==================
+
+Bug Fixes
+---------
+
+- Fix #997: Directly use ``BDist``, ``SDist`` and ``Wheel`` from ``pkginfo`` based on file extension instead of ``get_metadata``, as the latter does auto-detection on content which fails in some cases.
+
+- Fix #1002: cleanup ``build`` directory before running Sphinx to prevent build artifacts from being added to documentation zip.
+
+
+6.0.5 (2023-07-02)
+==================
+
+Bug Fixes
+---------
+
+- Remember URL when ``devpi use`` causes a 403, so one can use ``devpi login`` afterwards.
+
+- Fix #978: Quote username and password when adding to URL.
+
+- Fix #980: Remove long deprecated backward compatibility for old pluggy versions to fix error with pluggy 1.1.0.
+
+
+6.0.4 (2023-04-13)
+==================
+
+Bug Fixes
+---------
+
+- Fix precedence of URL from command line over DEVPI_INDEX environment variable for ``devpi use``.
+
+- Fix relative DEVPI_INDEX environment variable with user and index causing an invalid URL in some cases.
+
+- Fix persistence of username when DEVPI_INDEX environment variable is used with ``devpi login``.
+
+- Fix precedence of ``--sdist`` and ``--wheel`` over ``formats`` setting from setup.cfg ``[devpi:upload]`` section.
+
+
+6.0.3 (2023-02-20)
+==================
+
+Bug Fixes
+---------
+
+- Fix #919: Retry 3 times and wait a moment on PermissionError during file removal to fix race condition after running tox.
+
+- Restore ability to build docs if project uses separate build and source directories for documentation.
+
+- Fix for changes in pypitoken 6.x.
+
