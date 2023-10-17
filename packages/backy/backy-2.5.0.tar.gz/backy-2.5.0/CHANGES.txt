@@ -1,0 +1,303 @@
+=========
+Changelog
+=========
+
+Unreleased
+==========
+
+See the fragment files in the `changelog.d` directory.
+
+.. scriv-insert-here
+
+.. _changelog-2.5.0dev:
+
+2.5.0dev (2023-10-11)
+=====================
+
+- Separate pool into fast and slow. According to our statistics 90% of jobs are
+  faster than 10 minutes and after that they might run for hours. We now run
+  the configured amount of workers both in a fast and slow pool so that long
+  jobs may delay other long jobs but fast jobs should be able to squeeze
+  through quickly.
+
+- Port to Python 3.10+.
+
+- Continue deleting snapshots even if some are protected.
+
+- Improve detection for 'whole object' RBD export: we failed to detect this is
+  Ceph is built with wrong version options and shows itself as 'Development'
+  instead of a real version.
+
+- Do not count running jobs as overdue.
+
+- Regularly log overdue jobs.
+
+- Delete Tags from former schedules
+
+- Add forget subcommand
+
+- Add compatibility to changed `rbd showmapped` output format in Ceph Nautilus.
+  Ceph Jewel and Luminous clusters remain supported.
+
+- Use structlog for logging
+
+- Static typechecking with mypy
+
+- List all manual tags in `backy check`
+
+- Fix crash for non-numeric Ceph version strings
+
+- Fix a missing lock on distrust
+
+- use `scriv` for changelog management
+
+- Restore default value for missing entries on daemon reload
+
+- Crash on invalid config while reloading
+
+- remove find subcommand and nbd-server
+
+- Compute parent revision at runtime
+
+- Remove the `last` and `last.rev` symlink
+
+- Distrust revisions on verification failure
+
+- Quarantine differences between source and backend
+
+- Fix race condition when reloading while generating a status file
+
+- Add nix flake support
+
+- Call configured script on (scheduler triggered) backup completion
+
+2.4.3 (2019-04-17)
+==================
+
+- Avoid superfluous work when a source is missing, specifically avoid
+  unnecessary Ceph/KVM interaction. (#27020)
+
+
+2.4.2 (2019-04-17)
+==================
+
+- Optimize handling offline/deletion pending VMs: don't just timeout. Take
+  snapshots and make backups (as long as the image exists). (#22345)
+
+- Documentation update about performance implications.
+
+- Clean up build system instrumentation to get our Jenkins going again.
+
+
+2.4.1 (2018-12-06)
+==================
+
+- Optimization: bundle 'unlink' calls to improve cache locality of VFS metadata
+
+- Optimization: load all known chunks at startup to avoid further seeky IO
+  and large metadata parsing, this also speeds up purges.
+
+- Reduce OS VFS cache trashing by explicitly indicating data we don't expect
+  to read again.
+
+
+2.4 (2018-11-30)
+================
+
+- Add support for Ceph Jewel's --whole-object diff export. (#24636)
+
+- Improve garbage collection of old snapshot requests. (#100024)
+
+- Switch to a new chunked store format: remove one level of directories
+  to massively reduce seeky IO.
+
+- Reorder and improve potentially seeky IOPS in the per-chunk write effort.
+  Do not create directories lazily.
+
+- Require Python 3.6.
+
+2.3 (2018-05-16)
+================
+
+- Add major operational support for handling inconsistencies.
+
+- Operators can mark revisions as 'distrusted', either all for a backup, or
+  individual revisions or time ranges.
+
+- If the newest revision is distrusted then we always perform a full backup
+  instead of a differential backup.
+
+- If there is any revision that is distrusted then every chunk will be written
+  even if it exists (once during a backup, identical chunks within a backup will
+  be trusted once written).
+
+- Implement an explicit verification procedure that will automatically trigger
+  after a backup and will verify distrusted revisions and either delete them or
+  mark them as verified.
+
+- Safety belt: always verify content hashes when reading chunks.
+
+- Improve status report logging.
+
+2.2 (2017-08-28)
+================
+
+- Introduce a new backend storage mechanism, independent of BTRFS: instead of
+  using COW, use a directory with content-hashed 4MiB chunks of the file.
+  Deduplication happens automatically based on the 4MiB chunks.
+
+- Made the use of fadvise features more opportunistic: don't fail if they are
+  not supported by the backend as they are only optimizations anyway.
+
+- Introduce an exponential backoff after a failed backup: instead of retrying
+  quickly and thus hogging the queue (in the case that timeouts are involved)
+  we now backoff exponentially starting with 2 minutes, then 4, then 8, ...
+  until we reach 6 hours as the biggest backoff time.
+
+  You can still trigger an explicit run using the telnet "run" command for
+  the affected backup. This will put the backup in the run queue immediately
+  but will not reset the error counter or backoff interval in case it
+  fails again.
+
+- Performance improvement on restore: don't read the restore target. We don't
+  have to optimize CoW in this case. (#28268)
+
+2.1.5 (2016-07-01)
+==================
+
+- Bugfix release: fix data corruption bug in the new full-always mode. (FC
+  #21963)
+
+
+2.1.4 (2016-06-20)
+==================
+
+- Add "full-always" flag to Ceph and Flyingcircus sources. (FC #21960)
+
+- Rewrite full backup code to make use of shallow copies to conserve disk space.
+  (FC #21960)
+
+
+2.1.3 (2016-06-09)
+==================
+
+- Fix new timeout to be 5 minutes by default, not 5 days.
+
+- Do not sort blocks any longer: we do not win much from seeking
+  over volumes with random blocks anyway and this helps for a more
+  even distribution with the new timeout over multiple runs.
+
+
+2.1.2 (2016-06-09)
+==================
+
+- Fix backup of images containing holes (#33).
+
+- Introduce a (short) timeout for partial image verification. Especially
+  very large images and images that are backed up frequently do not profit
+  from running for hours to verify them, blocking further backups.
+  (FC #21879)
+
+2.1.1 (2016-01-15)
+==================
+
+- Fix logging bugs.
+
+- Shut down daemon loop cleanly on signal reception.
+
+
+2.1 (2016-01-08)
+================
+
+- Add optional regex filter to the `jobs` command in the telnet shell.
+
+- Provide list of failed jobs in check output, not only the total number.
+
+- Add `status-interval`, `telnet-addrs`, and `telnet-port` configuration
+  options.
+
+- Automatically recover from missing/damaged last or last.rev symlinks (#19532).
+
+- Use `{BASE_DIR}/.lock` as daemon lock file instead of the status file.
+
+- Usability improvements: count jobs, more informative log output.
+
+- Support restoring to block special files like LVM volumes (#31).
+
+
+2.0 (2015-11-06)
+================
+
+- backy now accepts a `-l` option to specify a log file. If no such option is
+  given, it logs to stdout.
+
+- Add `backy find -r REVISION` subcommand to query image paths from shell scripts.
+
+- Fix monitoring bug where partially written images made the check go green
+  (#30).
+
+- Greatly improve error handling and detection of failed jobs.
+
+- Performance improvement: turn off line buffering in bulk file operations
+  (#20).
+
+- The scheduler reports child failures (exit status > 0) now in the main log.
+
+- Fix fallocate() behaviour on 32 bit systems.
+
+- The `flyingcircus` source type now requires 3 arguments: vm, pool, image.
+
+
+2.0b3 (2015-10-02)
+==================
+
+- Improve telnet console.
+
+- Provide Nix build script.
+
+- Generate `requirements.txt` automatically from buildout's `versions.cfg`.
+
+
+2.0b2 (2015-09-15)
+==================
+
+- Introduce scheduler and rework the main backup command. The backy
+  command is now only responsible for dealing with individual backups.
+
+  It does no longer care about scheduling.
+
+  A new daemon and a central configuration file is responsible for that
+  now. However, it simply calls out to the existing backy command
+  so we can still manually interact with the system even if we do not
+  use the daemon.
+
+- Add consul integration for backing up Flying Circus root disk images
+  with clean snapshots (by asking fc.qemu to use fs-freeze before preparing
+  a Ceph snapshot).
+
+- Switch to shorter UUIDs. Existing files with old UUIDs are compatible.
+
+- Turn the configuration format into YAML. Old files are still compatible.
+  New configs will be generated as YAML.
+
+- Performance: defrag all new files automatically to avoid btrfs degrading
+  extent performance. It appears this doesn't completely duplicate all CoW
+  data. Will have to monitor this in the future.
+
+2.0b1 (2014-07-07)
+==================
+
+- Clean up docs.
+
+- Add classifiers in setup.py.
+
+- More or less complete rewrite expecting a copy-on-write filesystem as the
+  target.
+
+- Flexible backup scheduling using free-form tags.
+
+- Compatible with Python 3.2-3.4.
+
+- Initial open source import as provided by Daniel Kraft (D9T).
+
+.. vim: set ft=rst spell spelllang=en:
