@@ -1,0 +1,165 @@
+[project]
+name = "hatch-modulefile"
+dynamic = ["version"]
+description = "Hatch plugin for use in Modulefiles environments"
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+keywords = [
+  "modulefiles",
+  "build",
+  "hatch",
+  "plugin",
+  "pth",
+]
+authors = [
+  { name = "Reuben Vandezande", email = "reuben.vandezande@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Hatch",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.7",
+]
+dependencies = [
+  "hatchling>=1.6.0",
+]
+
+[project.urls]
+Documentation = "https://github.com/rvandezande/hatch-modulefile#readme"
+Issues = "https://github.com/rvandezande/hatch-modulefile/issues"
+Source = "https://github.com/rvandezande/hatch-modulefile"
+
+[project.entry-points.hatch]
+modulefile = "hatch_modulefile.hooks"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+  "pytest-mock",
+  "build[virtualenv]",
+]
+system-packages = true
+dev_mode = true
+
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report --show-missing",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+
+[tool.hatch.version]
+path = "hatch_modulefile/__about__.py"
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.7"]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = [
+  "black>=22.10.0",
+  "ruff>=0.0.166",
+]
+[tool.hatch.envs.lint.scripts]
+style = [
+  "ruff {args:.}",
+  "black --check --diff {args:.}",
+]
+fmt = [
+  "black {args:.}",
+  "ruff --fix {args:.}",
+  "style",
+]
+all = [
+  "style",
+]
+
+[tool.black]
+target-version = ["py37"]
+line-length = 120
+skip-string-normalization = true
+
+[tool.ruff]
+target-version = "py37"
+line-length = 120
+select = [
+  "A",
+  "ARG",
+  "B",
+  "C",
+  "DTZ",
+  "E",
+  "EM",
+  "F",
+  "FBT",
+  "I",
+  "ICN",
+  "ISC",
+  "N",
+  "PLC",
+  "PLE",
+  "PLR",
+  "PLW",
+  "Q",
+  "RUF",
+  "S",
+  "T",
+  "TID",
+  "UP",
+  "W",
+  "YTT",
+]
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+[tool.ruff.isort]
+known-first-party = ["hatch_modulefile"]
+
+[tool.ruff.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+
+[tool.coverage.run]
+source_pkgs = ["hatch_modulefile", "tests"]
+branch = true
+parallel = true
+omit = [
+  "hatch_modulefile/__about__.py",
+]
+
+[tool.coverage.paths]
+hatch_modulefile = ["hatch_modulefile"]
+tests = ["tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
