@@ -1,0 +1,59 @@
+import argparse
+from pyrecdp.core.utils import Timer
+
+
+def classify(dataset_path, result_path, read_data_file_type, write_data_file_type, classify_column):
+    from pyrecdp.LLM import TextPipeline
+    from pyrecdp.primitives.operations import JsonlReader, ParquetReader, ClassifyParquetWriter, ClassifyJsonlWriter
+
+    pipeline = TextPipeline()
+    if read_data_file_type == 'jsonl':
+        reader = JsonlReader(dataset_path)
+    elif read_data_file_type == 'parquet':
+        reader = ParquetReader(dataset_path)
+    else:
+        raise NotImplementedError(f"{read_data_file_type} is not supported in RecDP LLM ResumableTextPipeline yet.")
+
+    if write_data_file_type == 'jsonl':
+        writer = ClassifyParquetWriter(result_path, classify_column)
+    elif write_data_file_type == 'parquet':
+        writer = ClassifyJsonlWriter(result_path, classify_column)
+    else:
+        raise NotImplementedError(f"{write_data_file_type} is not supported in RecDP LLM ResumableTextPipeline yet.")
+    ops = [
+        reader,
+        writer
+    ]
+    pipeline.add_operations(ops)
+    pipeline.execute()
+
+
+def classify_spark(spark_df, classify_column, write_data_file_type, result_path):
+    from pyrecdp.primitives.operations import ClassifyParquetWriter, ClassifyJsonlWriter
+    if write_data_file_type == 'jsonl':
+        op = ClassifyParquetWriter(result_path, classify_column)
+    elif write_data_file_type == 'parquet':
+        op = ClassifyJsonlWriter(result_path, classify_column)
+    else:
+        raise NotImplementedError(f"{write_data_file_type} is not supported in RecDP LLM ResumableTextPipeline yet.")
+    pred = op.process_spark(spark_df.sparkSession, spark_df)
+    return pred
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset_path", dest="dataset_path", type=str)
+    parser.add_argument("--result_path", dest="result_path", type=str)
+    parser.add_argument("--read_data_file_type", dest="read_data_file_type", type=str)
+    parser.add_argument("--write_data_file_type", dest="write_data_file_type", type=str)
+    parser.add_argument("--classify_column", dest="classify_column", type=str)
+
+    args = parser.parse_args()
+    dataset_path = args.dataset_path
+    result_path = args.result_path
+    read_data_file_type = args.read_data_file_type
+    write_data_file_type = args.write_data_file_type
+    classify_column = args.classify_column
+
+    with Timer(f"Classify data for {dataset_path}"):
+        classify(dataset_path, result_path, read_data_file_type, write_data_file_type, classify_column)
