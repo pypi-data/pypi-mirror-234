@@ -1,0 +1,63 @@
+#!python
+import os
+import sys
+from rich import print
+from rich.panel import Panel
+from wglib.wg import Wireguard
+
+# Actions for the WireGuard VPN
+ACTIONS = {
+    "connect": "wgconnect",
+    "disconnect": "wgdisconnect",
+    "configure": "configure",
+    "logingit": "logingit",
+    "logoutgit": "logoutgit",
+    "adddevice": "adddevice",
+    "addip": "addip",
+    "showinfo": "showinfo",
+    "myprivatekey": "myprivatekey",
+    "mypublickey": "mypublickey"
+}
+
+# Manually formatted help message
+help_message = """
+[bold green1]Ninja Connect[/bold green1]
+
+[bold green1]OPTIONS:[/bold green1]
+        :small_blue_diamond:[bold]configure[/bold]: Set up your tool
+        :small_blue_diamond:[bold]logingit[/bold]: Log in to your Gitlab account
+        :small_blue_diamond:[bold]adddevice[/bold]: Add a new device
+        :small_blue_diamond:[bold]addip[/bold]: Add an IP address
+        :small_blue_diamond:[bold]connect[/bold]: Establish a connection
+        :small_blue_diamond:[bold]disconnect[/bold]: Terminate the connection
+        :small_blue_diamond:[bold]myprivatekey[/bold]: Manage your private key
+        :small_blue_diamond:[bold]mypublickey[/bold]: Manage your public key
+
+[bold green1]Example Commands:[/bold green1]
+        $ [bold]ninja connect[/bold]
+        $ [bold]ninja disconnect[/bold]
+
+[bold orchid]Discover the power of ninjaconnect with these commands![/bold orchid] :Star:
+"""
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] == "--help" or sys.argv[1] =="-h":
+        print(help_message)
+        return
+
+    action = sys.argv[1]
+
+    if action in ACTIONS:
+        action_function_name = ACTIONS[action]
+        wireguard = Wireguard()
+
+        if hasattr(wireguard, action_function_name):
+            action_function = getattr(wireguard, action_function_name)
+            print(f"[bold orchid]Performing action: [bold]{action}[/bold][/bold orchid]")
+            action_function()
+        else:
+            print(f"[red]Error:[/red] Action '{action}' not supported.")
+    else:
+        print(f"[red]Error:[/red] Action '{action}' not recognized. Use one of the available actions.")
+
+if __name__ == "__main__":
+    main()
