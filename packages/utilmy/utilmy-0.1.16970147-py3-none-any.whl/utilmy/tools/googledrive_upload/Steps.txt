@@ -1,0 +1,85 @@
+Google Drive API v3 in python ( avoiding Manual Intervention )
+
+If you are only accessing a google drive account that you control. Then you should consider using a service account. Suppose you want to download/upload/rename some of your own google drive account data then you don’t need to manually authenticate to google drive login portal so you don’t need to redirect to your web app as well i.e. there will be no need for user interaction and a consent screen to popup. If you are going to be accessing data that belongs to another user then you should be using Oauth2.
+
+So first you need to make a new user in service account. Think of a service account as a dummy user. You can pre authorize a service account granting it access to your data. So I can take the service account’s email address and share with it a directory on my Google Drive account then it will have access to upload to that directory on my google drive account.
+You should consider using a service account if you are going to be accessing private data that you the developer own, 
+
+
+Steps to get the Credential 
+
+Step1:
+First Make a project in https://console.cloud.google.com/cloud-resource-manager
+Step2:
+go to the library under APIs and services search Google Drive API and enable it.
+Step3:
+After creating a new project, go to the credentials under APIs and services and click on create credentials 
+Step4:
+Select Service Account and fill a name in service account name and press done
+Step5:
+Select Service Account option under IAM and Admin and go to the Add key tab and create a new key there. Select key type as JSON
+Step5:
+Then click on credentials under APIs and services and Download the json file from service accounts scope; let's say “token.json”
+Step6: You have to share the new dummy service account in your google drive, and give him editor permission [the folder or files you want to work with ]. 
+
+
+Code part:
+
+Library:
+
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from google.oauth2 import service_account
+
+Configuration:
+
+SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+key_file_location = 'token.json' #download from google cloud console
+
+Create and Get google drive service:
+
+def get_service(api_name, api_version, scopes, key_file_location):
+ 
+    credentials = service_account.Credentials.from_service_account_file(
+    key_file_location)
+ 
+    scoped_credentials = credentials.with_scopes(scopes)
+ 
+    # Build the service object.
+    service = build(api_name, api_version, credentials=scoped_credentials)
+ 
+    return service
+
+ 
+
+service of request
+
+    service = get_service(
+            api_name='drive',
+            api_version='v3',
+            scopes=[scope],
+            key_file_location=key_file_location)
+
+Request parameter:
+
+       results = service.files().list(
+            pageSize=10, fields="nextPageToken, files(id, name)").execute()
+
+
+          
+Get and print file list - example
+
+
+ items = results.get(‘files’,[])
+ if not items:
+            print('No files found.')
+            return
+        print('Files:')
+        for item in items:
+            print(u'{0} ({1})'.format(item['name'], item['id']))
+
+
+
+
+
+
