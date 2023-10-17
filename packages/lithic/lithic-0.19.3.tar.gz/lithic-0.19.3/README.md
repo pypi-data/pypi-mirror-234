@@ -1,0 +1,520 @@
+# Lithic Python API library
+
+> **Migration Guide**
+>
+> We've made some major improvements to how you pass arguments to methods which will require migrating your existing code.
+>
+> If you want to migrate to the new patterns incrementally you can do so by installing `v0.5.0`. This release contains both
+> the new and old patterns with a backwards compatibility layer.
+>
+> You can find a guide to migrating in [this document](#migration-guide).
+
+[![PyPI version](https://img.shields.io/pypi/v/lithic.svg)](https://pypi.org/project/lithic/)
+
+The Lithic Python library provides convenient access to the Lithic REST API from any Python 3.7+
+application. The library includes type definitions for all request params and response fields,
+and offers both synchronous and asynchronous clients powered by [httpx](https://github.com/encode/httpx).
+
+## Documentation
+
+The API documentation can be found at [https://docs.lithic.com](https://docs.lithic.com).
+
+## Installation
+
+```sh
+pip install lithic
+```
+
+## Usage
+
+The full API of this library can be found in [api.md](https://www.github.com/lithic-com/lithic-python/blob/main/api.md).
+
+```python
+from lithic import Lithic
+
+client = Lithic(
+    # defaults to os.environ.get("LITHIC_API_KEY")
+    api_key="my api key",
+    # defaults to "production".
+    environment="sandbox",
+)
+
+card = client.cards.create(
+    type="SINGLE_USE",
+)
+print(card.token)
+```
+
+While you can provide an `api_key` keyword argument, we recommend using [python-dotenv](https://pypi.org/project/python-dotenv/)
+and adding `LITHIC_API_KEY="my api key"` to your `.env` file so that your API Key is not stored in source control.
+
+## Async usage
+
+Simply import `AsyncLithic` instead of `Lithic` and use `await` with each API call:
+
+```python
+from lithic import AsyncLithic
+
+client = AsyncLithic(
+    # defaults to os.environ.get("LITHIC_API_KEY")
+    api_key="my api key",
+    # defaults to "production".
+    environment="sandbox",
+)
+
+
+async def main():
+    card = await client.cards.create(
+        type="SINGLE_USE",
+    )
+    print(card.token)
+
+
+asyncio.run(main())
+```
+
+Functionality between the synchronous and asynchronous clients is otherwise identical.
+
+## Using types
+
+Nested request parameters are [TypedDicts](https://docs.python.org/3/library/typing.html#typing.TypedDict). Responses are [Pydantic models](https://docs.pydantic.dev), which provide helper methods for things like serializing back into JSON ([v1](https://docs.pydantic.dev/1.10/usage/models/), [v2](https://docs.pydantic.dev/latest/usage/serialization/)). To get a dictionary, call `dict(model)`.
+
+Typed requests and responses provide autocomplete and documentation within your editor. If you would like to see type errors in VS Code to help catch bugs earlier, set `python.analysis.typeCheckingMode` to `basic`.
+
+## Pagination
+
+List methods in the Lithic API are paginated.
+
+This library provides auto-paginating iterators with each list response, so you do not have to request successive pages manually:
+
+```python
+import lithic
+
+client = Lithic()
+
+all_cards = []
+# Automatically fetches more pages as needed.
+for card in client.cards.list():
+    # Do something with card here
+    all_cards.append(card)
+print(all_cards)
+```
+
+Or, asynchronously:
+
+```python
+import asyncio
+import lithic
+
+client = AsyncLithic()
+
+
+async def main() -> None:
+    all_cards = []
+    # Iterate through items across all pages, issuing requests as needed.
+    async for card in client.cards.list():
+        all_cards.append(card)
+    print(all_cards)
+
+
+asyncio.run(main())
+```
+
+Alternatively, you can use the `.has_next_page()`, `.next_page_info()`, or `.get_next_page()` methods for more granular control working with pages:
+
+```python
+first_page = await client.cards.list()
+if first_page.has_next_page():
+    print(f"will fetch next page using these details: {first_page.next_page_info()}")
+    next_page = await first_page.get_next_page()
+    print(f"number of items we just fetched: {len(next_page.data)}")
+
+# Remove `await` for non-async usage.
+```
+
+Or just work directly with the returned data:
+
+```python
+first_page = await client.cards.list()
+
+print(f"next page cursor: {first_page.starting_after}")  # => "next page cursor: ..."
+for card in first_page.data:
+    print(card.token)
+
+# Remove `await` for non-async usage.
+```
+
+## Nested params
+
+Nested parameters are dictionaries, typed using `TypedDict`, for example:
+
+```python
+from lithic import Lithic
+
+client = Lithic()
+
+client.cards.create(
+    foo={
+        "bar": True,
+    },
+)
+```
+
+## Webhook Verification
+
+We provide helper methods for verifying that a webhook request came from Lithic, and not a malicious third party.
+
+You can use `lithic.webhooks.verify_signature(body: string, headers, secret?) -> None` or `lithic.webhooks.unwrap(body: string, headers, secret?) -> Payload`,
+both of which will raise an error if the signature is invalid.
+
+Note that the "body" parameter must be the raw JSON string sent from the server (do not parse it first).
+The `.unwrap()` method can parse this JSON for you into a `Payload` object.
+
+For example, in [FastAPI](https://fastapi.tiangolo.com/):
+
+```py
+@app.post('/my-webhook-handler')
+async def handler(request: Request):
+    body = await request.body()
+    secret = os.environ['LITHIC_WEBHOOK_SECRET']  # env var used by default; explicit here.
+    payload = client.webhooks.unwrap(body, request.headers, secret)
+    print(payload)
+
+    return {'ok': True}
+```
+
+## Handling errors
+
+When the library is unable to connect to the API (for example, due to network connection problems or a timeout), a subclass of `lithic.APIConnectionError` is raised.
+
+When the API returns a non-success status code (that is, 4xx or 5xx
+response), a subclass of `lithic.APIStatusError` is raised, containing `status_code` and `response` properties.
+
+All errors inherit from `lithic.APIError`.
+
+```python
+import lithic
+from lithic import Lithic
+
+client = Lithic()
+
+try:
+    client.cards.create(
+        type="an_incorrect_type",
+    )
+except lithic.APIConnectionError as e:
+    print("The server could not be reached")
+    print(e.__cause__)  # an underlying Exception, likely raised within httpx.
+except lithic.RateLimitError as e:
+    print("A 429 status code was received; we should back off a bit.")
+except lithic.APIStatusError as e:
+    print("Another non-200-range status code was received")
+    print(e.status_code)
+    print(e.response)
+```
+
+Error codes are as followed:
+
+| Status Code | Error Type                 |
+| ----------- | -------------------------- |
+| 400         | `BadRequestError`          |
+| 401         | `AuthenticationError`      |
+| 403         | `PermissionDeniedError`    |
+| 404         | `NotFoundError`            |
+| 422         | `UnprocessableEntityError` |
+| 429         | `RateLimitError`           |
+| >=500       | `InternalServerError`      |
+| N/A         | `APIConnectionError`       |
+
+### Retries
+
+Certain errors are automatically retried 2 times by default, with a short exponential backoff.
+Connection errors (for example, due to a network connectivity problem), 408 Request Timeout, 409 Conflict,
+429 Rate Limit, and >=500 Internal errors are all retried by default.
+
+You can use the `max_retries` option to configure or disable retry settings:
+
+```python
+from lithic import Lithic
+
+# Configure the default for all requests:
+client = Lithic(
+    # default is 2
+    max_retries=0,
+)
+
+# Or, configure per-request:
+client.with_options(max_retries=5).cards.list(
+    page_size=10,
+)
+```
+
+### Timeouts
+
+By default requests time out after 1 minute. You can configure this with a `timeout` option,
+which accepts a float or an [`httpx.Timeout`](https://www.python-httpx.org/advanced/#fine-tuning-the-configuration) object:
+
+```python
+from lithic import Lithic
+
+# Configure the default for all requests:
+client = Lithic(
+    # default is 60s
+    timeout=20.0,
+)
+
+# More granular control:
+client = Lithic(
+    timeout=httpx.Timeout(60.0, read=5.0, write=10.0, connect=2.0),
+)
+
+# Override per-request:
+client.with_options(timeout=5 * 1000).cards.list(
+    page_size=10,
+)
+```
+
+On timeout, an `APITimeoutError` is thrown.
+
+Note that requests that time out are [retried twice by default](#retries).
+
+## Default Headers
+
+We automatically send the `X-Lithic-Pagination` header set to `cursor`.
+
+If you need to, you can override it by setting default headers per-request or on the client object.
+
+```python
+from lithic import Lithic
+
+client = Lithic(
+    default_headers={"X-Lithic-Pagination": "My-Custom-Value"},
+)
+```
+
+## Advanced
+
+### How to tell whether `None` means `null` or missing
+
+In an API response, a field may be explicitly `null`, or missing entirely; in either case, its value is `None` in this library. You can differentiate the two cases with `.model_fields_set`:
+
+```py
+if response.my_field is None:
+  if 'my_field' not in response.model_fields_set:
+    print('Got json like {}, without a "my_field" key present at all.')
+  else:
+    print('Got json like {"my_field": null}.')
+```
+
+### Configuring the HTTP client
+
+You can directly override the [httpx client](https://www.python-httpx.org/api/#client) to customize it for your use case, including:
+
+- Support for proxies
+- Custom transports
+- Additional [advanced](https://www.python-httpx.org/advanced/#client-instances) functionality
+
+```python
+import httpx
+from lithic import Lithic
+
+client = Lithic(
+    base_url="http://my.test.server.example.com:8083",
+    http_client=httpx.Client(
+        proxies="http://my.test.proxy.example.com",
+        transport=httpx.HTTPTransport(local_address="0.0.0.0"),
+    ),
+)
+```
+
+### Managing HTTP resources
+
+By default the library closes underlying HTTP connections whenever the client is [garbage collected](https://docs.python.org/3/reference/datamodel.html#object.__del__). You can manually close the client using the `.close()` method if desired, or with a context manager that closes when exiting.
+
+# Migration guide
+
+This section outlines the features that were deprecated in `v0.5.0`, and subsequently removed in `v0.6.0` and how to migrate your code.
+
+## Breaking changes
+
+### TypedDict → keyword arguments
+
+The way you pass arguments to methods has been changed from a single `TypedDict` to individual arguments. For example, this snippet:
+
+```python
+card = await client.cards.create({"type": "VIRTUAL"})
+```
+
+Now becomes:
+
+```python
+card = await client.cards.create(type="VIRTUAL")
+```
+
+#### Migrating
+
+The easiest way to make your code compatible with this change is to add `**{`, for example:
+
+```diff
+- card = await client.cards.create({'type': 'VIRTUAL'})
++ card = await client.cards.create(**{'type': 'VIRTUAL'})
+```
+
+However, it is highly recommended to completely switch to explicit keyword arguments:
+
+```diff
+- card = await client.cards.create({'type': 'VIRTUAL'})
++ card = await client.cards.create(type='VIRTUAL')
+```
+
+### Named path arguments
+
+All but the last path parameter must now be passed as named arguments instead of positional arguments, for example, for a method that calls the endpoint `/account_holders/{account_holder_token}/documents/{document_token}` you would've been able to call the method like this:
+
+```python
+card = await client.account_holders.retrieve(
+    "account_holder_token", "my_document_token"
+)
+```
+
+But now you must call the method like this:
+
+```python
+card = await client.account_holders.retrieve(
+    "my_document_token", account_holder_token="account_holder_token"
+)
+```
+
+If you have type checking enabled in your IDE it will tell you which parts of your code need to be updated.
+
+### Request options
+
+You used to be able to set request options on a per-method basis, now you can only set them on the client. There are two methods that you can use to make this easy, `with_options` and `copy`.
+
+If you need to make multiple requests with changed options, you can use `.copy()` to get a new client object with those options. This can be useful if you need to set a custom header for multiple requests, for example:
+
+```python
+copied = client.copy(default_headers={"X-My-Header": "Foo"})
+card = await copied.cards.create(type="VIRTUAL")
+await copied.cards.provision(card.token, digital_wallet="GOOGLE_PAY")
+```
+
+If you just need to override one of the client options for one request, you can use `.with_options()`, for example:
+
+```python
+await client.with_options(timeout=None).cards.create(type="VIRTUAL")
+```
+
+It should be noted that the `.with_options()` method is simply an alias to `.copy()`, you can use them interchangeably.
+
+You can pass nearly every argument that is supported by the Client `__init__` method to the `.copy()` method, except for `proxies` and `transport`.
+
+```python
+copied = client.copy(
+    api_key="...",
+    environment="sandbox",
+    timeout=httpx.Timeout(read=10),
+    max_retries=5,
+    default_headers={
+        "X-My-Header": "value",
+    },
+    default_query={
+        "my_default_param": "value",
+    },
+)
+```
+
+## New features
+
+### Pass custom headers
+
+If you need to add additional headers to a request you can easily do so with the `extra_headers` argument:
+
+```python
+card = await client.cards.create(
+    type="VIRTUAL",
+    extra_headers={
+        "X-Foo": "my header",
+    },
+)
+```
+
+### Pass custom JSON properties
+
+You can add additional properties to the JSON request body that are not included directly in the method definition through the `extra_body` argument. This can be useful when there are in new properties in the API that are in beta and aren't in the SDK yet.
+
+```python
+card = await client.cards.create(
+    type="VIRTUAL",
+    extra_body={
+        "special_prop": "foo",
+    },
+)
+# sends this to the API:
+# {"type": "VIRTUAL", "special_prop": "foo"}
+```
+
+### Pass custom query parameters
+
+You can add additional query parameters that aren't specified in the method definition through the `extra_query` argument. This can be useful when there are any new/beta query parameters that are not yet in the SDK.
+
+```python
+card = await client.cards.create(
+    type="VIRTUAL",
+    extra_query={
+        "special_param": "bar",
+    },
+)
+# makes the request to this URL:
+# https://api.lithic.com/v1/cards?special_param=bar
+```
+
+## Rich `date` and `datetime` types
+
+We've improved the types for response fields / request params that correspond to `date` or `datetime` values!
+
+Previously they were just raw strings but now response fields will be instances of `date` or `datetime`.
+
+This means that if you're working with these fields and parsing them into `datetime` instances manually you will have to remove
+any code that performs said parsing.
+
+```diff
+card = client.cards.retrieve('<token>')
+- created = datetime.fromisoformat(card.created_at)
++ created = card.created_at
+print(created.month)
+```
+
+For request params you can continue to pass in strings if you want to use a datetime library other than the standard library version but if you
+were writing code that looked like this:
+
+```py
+dt = datetime(...)
+for card in client.cards.list(begin=dt.isoformat()):
+  ...
+```
+
+You can remove the explicit call to `isoformat`!
+
+```diff
+dt = datetime(...)
+- for card in client.cards.list(begin=dt.isoformat()):
++ for card in client.cards.list(begin=dt):
+  ...
+```
+
+## Versioning
+
+This package generally attempts to follow [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
+
+1. Changes that only affect static types, without breaking runtime behavior.
+2. Changes to library internals which are technically public but not intended or documented for external use. _(Please open a GitHub issue to let us know if you are relying on such internals)_.
+3. Changes that we do not expect to impact the vast majority of users in practice.
+
+We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
+
+We are keen for your feedback; please open an [issue](https://www.github.com/lithic-com/lithic-python/issues) with questions, bugs, or suggestions.
+
+## Requirements
+
+Python 3.7 or higher.
