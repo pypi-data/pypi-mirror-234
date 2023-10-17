@@ -1,0 +1,123 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools-git-versioning"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "reaction-network"
+description = "Reaction-network is a Python package for synthesis planning and predicting chemical reaction pathways in inorganic materials synthesis."
+readme = "README.md"
+keywords = [
+    "reaction",
+    "network",
+    "computational",
+    "graph",
+    "inorganic",
+    "materials",
+    "retrosynthesis",
+    "synthesis",
+    "planning",
+]
+license = { text = "modified BSD" }
+authors = [{ name = "Matthew McDermott", email = "mcdermott@lbl.gov" }]
+dynamic = ["version"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "pymatgen>=2023.5.31",
+    "numba>=0.57.0",
+    "jobflow>=0.1.13",
+    "ray>=2.5.0",
+    "rustworkx>=0.12.1",
+]
+
+[project.optional-dependencies]
+docs = [
+    "autodoc_pydantic==1.9.0",
+    "furo==2023.8.19",
+    "ipython==8.14.0",
+    "myst_parser==2.0.0",
+    "nbsphinx==0.9.3",
+    "sphinx-copybutton==0.5.2",
+    "sphinx==7.2.4",
+
+]
+tests = [
+    "mp-api==0.35.1",
+    "pytest==7.4.0",
+    "pytest-cov==4.1.0",
+    "pytest-xdist==3.3.1",
+]
+strict = [
+    "numba==0.57.0",
+    "pymatgen==2023.08.10",
+    "jobflow==0.1.13",
+    "ray==2.6.3",
+    "rustworkx==0.12.1",
+]
+
+[project.urls]
+homepage = "https://materialsproject.github.io/reaction-network/"
+documentation = "https://materialsproject.github.io/reaction-network/"
+repository = "https://github.com/materialsproject/reaction-network"
+changelog = "https://github.com/materialsproject/reaction-network/blob/main/docs/CHANGELOG.md"
+
+[tool.coverage.run]
+include = ["src/*"]
+parallel = true
+branch = false
+
+[tool.coverage.paths]
+source = ["src/"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = [
+    '\#\s*pragma: no cover',
+    '^\s*assert False(,|$)',
+    'if typing.TYPE_CHECKING:',
+    '^\s*@overload( |$)',
+    'if TYPE_CHECKING:',
+]
+omit = [
+    "src/rxn_network/data/nist/generate_janaf_data.py",
+    "src/rxn_network/network/visualize.py",
+    "src/rxn_network/pathways/plotting.py",
+]
+
+[tool.flake8]
+exclude = ".git,__pycache__,tests"
+max-line-length = 88
+max-doc-length = 88
+extend-ignore = "E741,W291,W293,E501,E231,E203,F401"
+min-python-version = "3.8.0"
+docstring-convention = "google"
+
+[tool.isort]
+profile = "black"
+known_first_party = "rxn_network"
+
+[tool.pytest]
+addopts = "--durations=10"
+
+[tool.pytest.ini_options]
+addopts = "-n auto"
+
+[tool.setuptools.package-data]
+rxn_network = ["py.typed"]
+
+[tool.setuptools-git-versioning]
+enabled = true
