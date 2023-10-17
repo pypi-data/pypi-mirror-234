@@ -1,0 +1,43 @@
+name: "Publish to PyPI"
+# Publish a lumaCLI branch to PyPI. 
+# The branch is either picked from the dropdown (if the workflow is ran manually),
+# or the branch where the workflow was triggered.
+run-name: "Publish silica to PyPI (@${{ github.actor }})"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish_pypi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Copy django_silica app from dev
+        run: |
+          cp -r ./dev/example_project/django_silica ./django_silica          
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Add changes for build" --allow-empty          
+        
+      - name: Install Flit
+        run: python3 -m pip install flit  
+
+      - name: Build the package
+        run: flit build   
+
+      - name: Publish the package to PyPI
+        run: flit publish
+        env:
+          FLIT_USERNAME: "__token__"
+          FLIT_PASSWORD: ${{ secrets.PYPI_TOKEN }}
