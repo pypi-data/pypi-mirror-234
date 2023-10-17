@@ -1,0 +1,2 @@
+class CategoricalDataCloud:
+    pass
