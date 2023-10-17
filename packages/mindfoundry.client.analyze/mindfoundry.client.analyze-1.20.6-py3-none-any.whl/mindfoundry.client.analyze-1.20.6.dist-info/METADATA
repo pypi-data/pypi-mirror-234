@@ -1,0 +1,92 @@
+Metadata-Version: 2.1
+Name: mindfoundry.client.analyze
+Version: 1.20.6
+Summary: Mind Foundry Analyze Python Client
+Home-page: https://www.mindfoundry.ai/platform
+Author: Mind Foundry Ltd
+Author-email: support@mindfoundry.ai
+License: MIT
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/x-rst
+License-File: LICENSE
+Requires-Dist: attrs
+Requires-Dist: httpx (<0.23.1,>=0.22)
+Requires-Dist: pandas
+Requires-Dist: pyarrow
+Requires-Dist: requests
+Provides-Extra: all
+Requires-Dist: pre-commit ; extra == 'all'
+Requires-Dist: freezegun ; extra == 'all'
+Requires-Dist: requests-toolbelt ; extra == 'all'
+Requires-Dist: mypy ; extra == 'all'
+Requires-Dist: pylint ; extra == 'all'
+Requires-Dist: isort ; extra == 'all'
+Requires-Dist: black ; extra == 'all'
+Requires-Dist: pytest-freezegun ; extra == 'all'
+Requires-Dist: check-manifest ; extra == 'all'
+Requires-Dist: pytest-httpx ; extra == 'all'
+Requires-Dist: tox ; extra == 'all'
+Requires-Dist: pytest ; extra == 'all'
+Requires-Dist: pylint-pytest ; extra == 'all'
+Requires-Dist: coverage ; extra == 'all'
+Provides-Extra: dev
+Requires-Dist: black ; extra == 'dev'
+Requires-Dist: check-manifest ; extra == 'dev'
+Requires-Dist: coverage ; extra == 'dev'
+Requires-Dist: freezegun ; extra == 'dev'
+Requires-Dist: isort ; extra == 'dev'
+Requires-Dist: mypy ; extra == 'dev'
+Requires-Dist: pre-commit ; extra == 'dev'
+Requires-Dist: pylint ; extra == 'dev'
+Requires-Dist: pytest ; extra == 'dev'
+Requires-Dist: pytest-freezegun ; extra == 'dev'
+Requires-Dist: pytest-httpx ; extra == 'dev'
+Requires-Dist: pylint-pytest ; extra == 'dev'
+Requires-Dist: requests-toolbelt ; extra == 'dev'
+Requires-Dist: tox ; extra == 'dev'
+
+=====================================
+Mind Foundry Analyze — Python Client
+=====================================
+
+Mind Foundry Analyze is a Data Science workbench developed by Mind Foundry.
+
+This Python client makes it easier to interact with the API and integrate with other Python libraries.
+
+Quick start::
+
+    from mindfoundry.client.analyze import create_project_api_client
+
+    client = create_project_api_client(YOUR_INSTANCE_URL, YOUR_CLIENT_ID, YOUR_CLIENT_SECRET)
+    with open('./your-training-data.csv', 'rb') as data:
+        data_set_id = client.create_file_data_set(data, 'Your Data Set Name', 'Your description')
+
+    model_id = client.create_classification_model('Your Model Name', data_set_id, 'Target Column')
+
+    with open('./your-prediction-data.csv', 'rb') as other_data:
+        other_data_set_id = client.create_file_data_set(other_data, 'Prediction Data')
+
+    prediction_id = client.create_prediction(model_id, other_data_set_id, 'Your Prediction Name')
+
+    client.download_prediction_as_csv(prediction_id, './your-output-file.csv')
+
+
+You can also create a data set from a Pandas DataFrame, or an array of dicts, or an array of arrays::
+
+    data_dicts = [{'a': 1, 'b': 2}, {'a': 3}, {'b': 4}]
+    client.create_file_data_set(data_dicts, 'Array of dicts')
+
+    df = pd.DataFrame(data_dicts)
+    client.create_file_data_set(df, 'Pandas DataFrame')
+
+    data_arrays = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    client.create_file_data_set(data_arrays, 'Array of arrays')
+
+
+
