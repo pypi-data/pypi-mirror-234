@@ -1,0 +1,50 @@
+_metadata:
+  module_name: terraform_httplb_cloudrun
+  version: 1.0.0
+  destination_path: .
+
+# questions
+component_name:
+  type: str
+  help: What is the name of this component?
+  default: terraform_httplb_cloudrun
+
+loadbalancer_name:
+  type: str
+  help: Name of the HTTP load balancer?
+  default: httplb-cloudrun
+
+region:
+  type: str
+  help: GCP region
+  default: us-central1
+
+domains:
+  type: str
+  help: DNS domains (comma-separated string)?
+
+cloudrun_services:
+  type: str
+  help: Cloud Run service names as the LB backend? (comma-separated string)
+  default: "{{project_id | get_cloud_run_services}}"
+
+_answers_file: ".st/module_answers/{{component_name}}.yaml"
+
+_templates_suffix: ""
+
+_exclude:
+  - "README.md"
+  - "copier.yaml"
+  - "copier_extensions"
+  - ".terraform*"
+  - ".tmp"
+  - ".venv"
+  - ".pytest_cache"
+  - "__pycache__"
+  - "*-debug.log"
+  - ".skip"
+
+_jinja_extensions:
+  - jinja2_time.TimeExtension
+  - copier_templates_extensions.TemplateExtensionLoader
+  - ../../copier_extensions/sb_helpers.py:SolutionsTemplateHelpersExtension

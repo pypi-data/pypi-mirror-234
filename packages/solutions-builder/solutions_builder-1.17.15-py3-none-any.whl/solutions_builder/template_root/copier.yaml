@@ -1,0 +1,108 @@
+# questions
+folder_name:
+  type: str
+  help: What is your project folder name?
+
+project_name:
+  type: str
+  help: What is your project name? (Spaces are allowed.)
+  default: "{{folder_name}}"
+
+project_id:
+  type: str
+  help: What is your Google Cloud project ID?
+  default: "{{folder_name}}"
+
+project_number:
+  type: str
+  help: What is your Google Cloud project number? (Leave it as empty if the project hasn't created yet.)
+  default: "{{project_id | get_project_number}}"
+
+gcp_region:
+  type: str
+  help: Which Google Cloud region?
+  default: us-central1
+
+use_jump_host:
+  type: bool
+  help: Use a jump-host for running terraform foundations?
+  default: true
+
+jump_host_zone:
+  type: str
+  help: Google Cloud zone for creating the jump host?
+  default: us-central1-a
+  when: "{{use_jump_host}}"
+
+has_common:
+  type: bool
+  help: Include a common container image for shared libraries, data models, utils, etc?
+  default: true
+
+terraform_backend_gcs:
+  type: bool
+  help: Use GCS Bucket for Terraform backend?
+  default: true
+
+advanced_settings:
+  type: bool
+  help: Show advanced settings (VPC, Storage, Region, etc)?
+  default: false
+
+create_vpc_network:
+  type: bool
+  help: Create a default VPC Network?
+  default: true
+  when: "{{advanced_settings}}"
+
+vpc_network:
+  type: str
+  help: VPC Network ID?
+  default: "{{'default-vpc' if create_vpc_network}}"
+  when: "{{advanced_settings and create_vpc_network}}"
+
+vpc_subnetwork:
+  type: str
+  help: VPC Subnetwork ID?
+  default: "{{'default-vpc-subset' if create_vpc_network}}"
+  when: "{{advanced_settings and create_vpc_network}}"
+
+ip_cidr_range:
+  type: str
+  help: IP CIDR range?
+  default: 10.0.0.0/16
+  when: "{{advanced_settings and create_vpc_network}}"
+
+master_ipv4_cidr_block:
+  type: str
+  help: Master IPv4 CIDR block?
+  default: 172.16.0.0/28
+  when: "{{advanced_settings and create_vpc_network}}"
+
+secondary_pod_ip_cidr_range:
+  type: str
+  help: Secondary pod ranges?
+  default: 10.1.0.0/16
+  when: "{{advanced_settings and create_vpc_network}}"
+
+secondary_service_ip_cidr_range:
+  type: str
+  help: Secondary service ranges?
+  default: 10.2.0.0/16
+  when: "{{advanced_settings and create_vpc_network}}"
+
+_templates_suffix: ""
+
+_exclude:
+  - "copier.yaml"
+  - ".terraform*"
+  - ".tmp"
+  - ".venv"
+  - ".pytest_cache"
+  - "__pycache__"
+  - "*-debug.log"
+
+_jinja_extensions:
+  - jinja2_time.TimeExtension
+  - copier_templates_extensions.TemplateExtensionLoader
+  - ../copier_extensions/sb_helpers.py:SolutionsTemplateHelpersExtension
