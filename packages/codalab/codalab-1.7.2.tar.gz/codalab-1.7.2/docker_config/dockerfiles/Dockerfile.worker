@@ -1,0 +1,59 @@
+FROM ubuntu:20.04
+MAINTAINER CodaLab Worksheets <codalab.worksheets@gmail.com>
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends software-properties-common curl && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends \
+    amazon-ecr-credential-helper \
+    build-essential \
+    libssl-dev \
+    uuid-dev \
+    libgpgme11-dev \
+    squashfs-tools \
+    libseccomp-dev \
+    pkg-config \
+    zip \ 
+    git \
+    wget \
+    unzip && \
+    rm -rf /var/lib/apt/lists/*;
+
+# Miniconda 4.5.11 installs Python 3.7 by default.
+RUN curl -o ~/miniconda.sh -O  https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86_64.sh && \
+     chmod +x ~/miniconda.sh && \
+     ~/miniconda.sh -b -p /opt/conda && \
+     rm ~/miniconda.sh
+ENV PATH /opt/conda/bin:$PATH
+RUN conda --version
+
+RUN mkdir $HOME/.docker
+RUN echo "{\"credsStore\": \"ecr-login\"}" >> ~/.docker/config.json
+
+WORKDIR /opt
+RUN mkdir ${WORKDIR}/codalab
+RUN mkdir ${WORKDIR}/scripts
+
+# Install dependencies
+COPY requirements.txt requirements.txt
+RUN python3 -m pip install --user --upgrade pip==20.3.4; \
+    python3 -m pip install setuptools --upgrade; \
+    python3 -m pip install --no-cache-dir -r requirements.txt;
+
+# Install code
+COPY setup.py setup.py
+RUN python3 -m pip install --no-cache-dir -e .
+COPY codalab/lib codalab/lib
+COPY codalab/worker codalab/worker
+COPY codalab/common.py codalab/common.py
+COPY scripts/detect-ec2-spot-preemption.sh scripts/detect-ec2-spot-preemption.sh
+
+# Allow non-root to read everything
+RUN chmod -R og=u-w .
+# When running the worker container as a non-root user on the host,
+# we need to create a user `codalab` in the Docker container that corresponds to the specified uid / gid.
+# See https://medium.com/@mccode/understanding-how-uid-and-gid-work-in-docker-containers-c37a01d01cf
+# the container, but we need to map to a default username. The underlying user is the same, just with
+# different names.
+RUN useradd codalab
