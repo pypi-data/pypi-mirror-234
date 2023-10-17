@@ -1,0 +1,111 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[project]
+authors = [{name = "Geoff Boeing", email = "boeing@usc.edu"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "geopandas>=0.12",
+    "networkx>=2.5",
+    "numpy>=1.20",
+    "pandas>=1.1",
+    "requests>=2.27",
+    "shapely>=2.0",
+]
+description = "Download, model, analyze, and visualize street networks and other geospatial features from OpenStreetMap"
+dynamic = ["version"]
+keywords = ["GIS", "Networks", "OpenStreetMap", "Routing"]
+license = {text = "MIT License"}
+maintainers = [{name = "OSMnx contributors"}]
+name = "osmnx"
+readme = "README.md"
+requires-python = ">=3.8"  # match classifiers above and ruff target-version below
+
+[project.optional-dependencies]
+entropy = ["scipy>=1.5"]
+neighbors = ["scikit-learn>=0.23", "scipy>=1.5"]
+raster = ["gdal", "rasterio>=1.3"]
+visualization = ["matplotlib>=3.5"]
+
+[project.urls]
+Documentation = "https://osmnx.readthedocs.io"
+Repository = "https://github.com/gboeing/osmnx"
+
+[tool.black]
+line_length = 100
+
+[tool.hatch.build]
+packages = ["osmnx"]
+
+[tool.hatch.version]
+path = "osmnx/_version.py"
+
+[tool.ruff]
+cache-dir = "~/.cache/ruff"
+exclude = ["build/*"]
+ignore = ["PLR091"]  # ignore complexity checks (we check mccabe elsewhere)
+line-length = 110  # black line length + 10%
+select = [
+    "A",    # check python builtins being used as variables or parameters
+    "ARG",  # check unused function arguments
+    "B",    # check common design problems a la flake8-bugbear
+    "BLE",  # check for blind exception catching
+    "C4",   # check proper comprehensions
+    "C9",   # check mccabe complexity
+    "D",    # check docstring conventions a la pydocstyle
+    "DTZ",  # check unsafe naive datetime use a la flake8-datetimez
+    "E",    # check code style conventions a la pycodestyle errors
+    "EM",   # check raw literals inside exception raising
+    "ERA",  # check commented-out code from python files a la eradicate
+    "F",    # check python source code for errors a la pyflakes
+    "I",    # check isort imports
+    "ISC",  # check implicit string literal concatenation
+    "PERF", # check performance anti-patterns a la perflint
+    "PGH",  # check pygrep hooks
+    "PIE",  # check misc lints a la flake8-pie
+    "PL",   # check code errors and smells a la pylint
+    "PT",   # check common pytest issues
+    "PTH",  # check pathlib usage
+    "RET",  # check return statements a la flake8-return
+    "T20",  # check for print statements
+    "TRY",  # check exception handling anti-patterns a la tryceratops
+    "UP",   # check outdated syntax a la pyupgrade
+    "W",    # check code style conventions a la pycodestyle warnings
+]
+target-version = "py38"
+
+[tool.ruff.isort]
+force-single-line = true
+
+[tool.ruff.mccabe]
+max-complexity = 14
+
+[tool.ruff.per-file-ignores]
+"./osmnx/_api.py" = ["F401"]  # allow API imports to go unused
+"./tests/test_osmnx.py" = [
+    "E402",    # allow imports not at the top of the file
+    "F841",    # allow unused local variables
+    "PLR2004", # allow magic values in comparisons
+]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
