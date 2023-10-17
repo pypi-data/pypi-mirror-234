@@ -1,0 +1,37 @@
+[build-system]
+requires = ["cffi", "setuptools", "urllib3>=2.0.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+skip-string-normalization = true
+
+[tool.ruff]
+select = ["E", "F"]
+line-length = 88
+target-version = "py38"
+exclude = [
+    ".git",
+    ".ruff_cache",
+]
+
+[tool.cibuildwheel]
+build = [
+    "cp38-*",
+    "cp39-*",
+    "cp310-*",
+    "cp311-*",
+    "cp312-*",
+    "pp38-*",
+    "pp39-*",
+]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+before-all = "make c_lib"
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "universal2", "arm64"]
+environment = { MACOSX_DEPLOYMENT_TARGET="10.15" }
+before-build = "make clean && make c_lib"
