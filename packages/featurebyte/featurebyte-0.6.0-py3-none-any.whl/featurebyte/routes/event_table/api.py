@@ -1,0 +1,266 @@
+"""
+EventTable API routes
+"""
+from __future__ import annotations
+
+from typing import List, Optional, cast
+
+from http import HTTPStatus
+
+from fastapi import APIRouter, Request
+
+from featurebyte.models.base import PydanticObjectId
+from featurebyte.models.event_table import EventTableModel, FeatureJobSettingHistoryEntry
+from featurebyte.models.persistent import AuditDocumentList
+from featurebyte.routes.base_router import BaseRouter
+from featurebyte.routes.common.schema import (
+    AuditLogSortByQuery,
+    NameQuery,
+    PageQuery,
+    PageSizeQuery,
+    SearchQuery,
+    SortByQuery,
+    SortDirQuery,
+    VerboseQuery,
+)
+from featurebyte.schema.common.base import DescriptionUpdate
+from featurebyte.schema.event_table import EventTableCreate, EventTableList, EventTableUpdate
+from featurebyte.schema.info import EventTableInfo
+from featurebyte.schema.table import (
+    ColumnCriticalDataInfoUpdate,
+    ColumnDescriptionUpdate,
+    ColumnEntityUpdate,
+    ColumnSemanticUpdate,
+)
+
+router = APIRouter(prefix="/event_table")
+
+
+class EventTableRouter(BaseRouter):
+    """
+    Event table router
+    """
+
+    def __init__(self) -> None:
+        super().__init__(router=router)
+
+
+@router.post("", response_model=EventTableModel, status_code=HTTPStatus.CREATED)
+async def create_event_table(request: Request, data: EventTableCreate) -> EventTableModel:
+    """
+    Create EventTable
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.create_table(data=data)
+    return event_table
+
+
+@router.get("", response_model=EventTableList)
+async def list_event_table(
+    request: Request,
+    page: int = PageQuery,
+    page_size: int = PageSizeQuery,
+    sort_by: Optional[str] = SortByQuery,
+    sort_dir: Optional[str] = SortDirQuery,
+    search: Optional[str] = SearchQuery,
+    name: Optional[str] = NameQuery,
+) -> EventTableList:
+    """
+    List EventTable
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table_list: EventTableList = await controller.list(
+        page=page,
+        page_size=page_size,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        search=search,
+        name=name,
+    )
+    return event_table_list
+
+
+@router.get("/{event_table_id}", response_model=EventTableModel)
+async def get_event_table(request: Request, event_table_id: PydanticObjectId) -> EventTableModel:
+    """
+    Retrieve EventTable
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.get(
+        document_id=event_table_id,
+    )
+    return event_table
+
+
+@router.patch("/{event_table_id}", response_model=EventTableModel)
+async def update_event_table(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    data: EventTableUpdate,
+) -> EventTableModel:
+    """
+    Update EventTable
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.update_table(
+        document_id=event_table_id,
+        data=data,
+    )
+    return event_table
+
+
+@router.get("/audit/{event_table_id}", response_model=AuditDocumentList)
+async def list_event_table_audit_logs(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    page: int = PageQuery,
+    page_size: int = PageSizeQuery,
+    sort_by: Optional[str] = AuditLogSortByQuery,
+    sort_dir: Optional[str] = SortDirQuery,
+    search: Optional[str] = SearchQuery,
+) -> AuditDocumentList:
+    """
+    List EventTable audit logs
+    """
+    controller = request.state.app_container.event_table_controller
+    audit_doc_list: AuditDocumentList = await controller.list_audit(
+        document_id=event_table_id,
+        page=page,
+        page_size=page_size,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
+        search=search,
+    )
+    return audit_doc_list
+
+
+@router.get(
+    "/history/default_feature_job_setting/{event_table_id}",
+    response_model=List[FeatureJobSettingHistoryEntry],
+)
+async def list_default_feature_job_setting_history(
+    request: Request,
+    event_table_id: PydanticObjectId,
+) -> List[FeatureJobSettingHistoryEntry]:
+    """
+    List EventTable default feature job settings history
+    """
+    controller = request.state.app_container.event_table_controller
+    history_values = await controller.list_field_history(
+        document_id=event_table_id,
+        field="default_feature_job_setting",
+    )
+
+    return [
+        FeatureJobSettingHistoryEntry(
+            created_at=record.created_at,
+            setting=record.value,
+        )
+        for record in history_values
+    ]
+
+
+@router.get("/{event_table_id}/info", response_model=EventTableInfo)
+async def get_event_table_info(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    verbose: bool = VerboseQuery,
+) -> EventTableInfo:
+    """
+    Retrieve EventTable info
+    """
+    controller = request.state.app_container.event_table_controller
+    info = await controller.get_info(
+        document_id=event_table_id,
+        verbose=verbose,
+    )
+    return cast(EventTableInfo, info)
+
+
+@router.patch("/{event_table_id}/description", response_model=EventTableModel)
+async def update_event_table_description(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    data: DescriptionUpdate,
+) -> EventTableModel:
+    """
+    Update event_table description
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.update_description(
+        document_id=event_table_id,
+        description=data.description,
+    )
+    return event_table
+
+
+@router.patch("/{event_table_id}/column_entity", response_model=EventTableModel)
+async def update_column_entity(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    data: ColumnEntityUpdate,
+) -> EventTableModel:
+    """
+    Update column entity
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.update_column_entity(
+        document_id=event_table_id,
+        column_name=data.column_name,
+        entity_id=data.entity_id,
+    )
+    return event_table
+
+
+@router.patch("/{event_table_id}/column_critical_data_info", response_model=EventTableModel)
+async def update_column_critical_data_info(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    data: ColumnCriticalDataInfoUpdate,
+) -> EventTableModel:
+    """
+    Update column critical data info
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.update_column_critical_data_info(
+        document_id=event_table_id,
+        column_name=data.column_name,
+        critical_data_info=data.critical_data_info,
+    )
+    return event_table
+
+
+@router.patch("/{event_table_id}/column_description", response_model=EventTableModel)
+async def update_column_description(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    data: ColumnDescriptionUpdate,
+) -> EventTableModel:
+    """
+    Update column description
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.update_column_description(
+        document_id=event_table_id,
+        column_name=data.column_name,
+        description=data.description,
+    )
+    return event_table
+
+
+@router.patch("/{event_table_id}/column_semantic", response_model=EventTableModel)
+async def update_column_semantic(
+    request: Request,
+    event_table_id: PydanticObjectId,
+    data: ColumnSemanticUpdate,
+) -> EventTableModel:
+    """
+    Update column semantic
+    """
+    controller = request.state.app_container.event_table_controller
+    event_table: EventTableModel = await controller.update_column_semantic(
+        document_id=event_table_id,
+        column_name=data.column_name,
+        semantic_id=data.semantic_id,
+    )
+    return event_table
