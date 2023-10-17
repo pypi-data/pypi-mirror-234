@@ -1,0 +1,125 @@
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "description": "Definition of slice to dump",
+  "title": "Slice dump definition",
+  "definitions": {
+    "column": {
+      "description": "Name of column",
+      "type": "string",
+      "title": "Column"
+    },
+    "reference": {
+      "description": "Reference to another table, i.e. a foreign key.",
+      "title": "Reference",
+      "required": ["table", "columns", "referenceColumns", "referenceTable"],
+      "properties": {
+        "columns": {
+          "description": "Local columns",
+          "title": "Local columns",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/column"
+          }
+        },
+        "directions": {
+          "default": ["forward", "reverse"],
+          "description": "Directions to use when discovering rows",
+          "items": {
+            "$ref": "#/definitions/referenceDirection"
+          },
+          "title": "Directions",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "referenceColumns": {
+          "description": "Foreign columns",
+          "title": "Foreign columns",
+          "items": {
+            "$ref": "#/definitions/column"
+          }
+        },
+        "referenceTable": {
+          "description": "ID of foreign table",
+          "title": "Foreign table ID",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "referenceDirection": {
+      "description": "Direction of reference",
+      "choices": ["forward", "reverse"],
+      "type": "string"
+    },
+    "sequence": {
+      "description": "Sequence.",
+      "properties": {
+        "schema": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "title": "Sequence"
+    },
+    "table": {
+      "description": "Table",
+      "required": ["columns", "name"],
+      "properties": {
+        "name": {
+          "description": "Name",
+          "type": "string"
+        },
+        "columns": {
+          "description": "Columns",
+          "items": {
+            "$ref": "#/definitions/column"
+          }
+        },
+        "schema": {
+          "default": null,
+          "description": "Schema name. If null, uses the usual schema search path.",
+          "type": ["null", "string"]
+        },
+        "sequences": {
+          "description": "Sequence IDs that this table depends on.",
+          "item": {
+            "type": "string"
+          },
+          "title": "Sequences",
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "references": {
+      "additionalProperties": {
+        "$ref": "#/definitions/reference"
+      },
+      "description": "References",
+      "title": "References",
+      "type": "object"
+    },
+    "sequences": {
+      "additionalProperties": {
+        "$ref": "#/definitions/sequence"
+      },
+      "description": "Sequences.",
+      "title": "Sequences",
+      "type": "object"
+    },
+    "tables": {
+      "additionalProperties": {
+        "$ref": "#/definitions/table"
+      },
+      "description": "Tables",
+      "title": "Tables",
+      "type": "object"
+    }
+  },
+  "required": ["references", "tables"],
+  "type": "object"
+}
