@@ -1,0 +1,793 @@
+import type {
+  PartialMessage
+} from "@bufbuild/protobuf";
+import {
+  Deferred,
+  Event,
+  IQueryRequest,
+  IQueryResponse,
+  Mutation,
+  QueryRequest,
+  QueryResponse,
+  ResponseOrError,
+  filterSet,
+  parseStreamedValue,
+  popMutationMaybeFromLocalStorage,
+  pushMutationMaybeToLocalStorage,
+  retryForever,
+  useResembleContext
+} from "@reboot-dev/resemble-react";
+import {
+  Dispatch,
+  MutableRefObject,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { v4 as uuidv4 } from "uuid";
+// There are known bugs with the following input / output message imports:
+// 1. It doesn't correctly handle input / output messages that don't have a
+// corresponding const definition in the generated _pb,
+// e.g. google.protobuf.Empty.
+// 2. It will try to import the same message twice if any input message is the
+// same as any output message.
+// TODO: correctly handle messages like google.protobuf.Empty.
+// TODO: create a set of input messages AND output messages and |map ..|unique
+// over those to ensure there are no duplicates.
+import {
+{{ all_types|map("replace", pb2_name + ".",
+"")|unique|list|join(', \n') }},
+} from "./{{ pb2_name.split(".")[-1][:-1] }}";
+
+
+// Start of service specific code.
+///////////////////////////////////////////////////////////////////////////
+
+{% macro name(type_full_name) -%}{{type_full_name.split(".")[-1]}}{%- endmacro %}
+{% for service in services %}
+export interface {{service.name}}Api {
+  {% for method in service.methods %}
+  {% if not method.server_streaming %}
+  {{ method.name }}: (partialRequest?: PartialMessage<{{ name(method.input_type) }}>) =>
+  Promise<{{ name(method.output_type) }}>;
+  {% endif %}
+  {% if method.server_streaming %}
+  {{ method.name }}: (partialRequest?: PartialMessage<{{ name(method.input_type) }}>) =>
+  AsyncGenerator<{{ name(method.output_type) }}, void, unknown>;
+  {% endif %}
+  {% endfor %}
+  {%- for method in service.methods -%}
+  {% if method.options.kind == 'reader' %}
+  {% if not method.server_streaming and not method.client_streaming and not
+     method.options.state_streaming %}
+  use{{method.name}}: (partialRequest?: PartialMessage<{{ name(method.input_type) }}>) => {
+   response: {{ name(method.output_type) }} | undefined;
+    isLoading: boolean;
+    error: unknown;
+    mutations: {
+      {% for method in service.methods %}
+      {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+       {{method.name}}: (request: PartialMessage<{{ name(method.input_type) }}>,
+       optimistic_metadata?: any ) =>
+      Promise<ResponseOrError<{{ name(method.output_type) }}>>;
+      {% endif %}
+      {% endfor %}
+    };
+    {% for method in service.methods %}
+      {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+      pending{{method.name}}Mutations: {
+        request: {{ name(method.input_type) }};
+        idempotencyKey: string;
+        isLoading: boolean;
+        error?: unknown;
+        optimistic_metadata?: any;
+      }[];
+      failed{{method.name}}Mutations: {
+        request: {{ name(method.input_type) }};
+        idempotencyKey: string;
+        isLoading: boolean;
+        error?: unknown;
+      }[];
+      recovered{{method.name}}Mutations: {
+        request: {{ name(method.input_type) }};
+        idempotencyKey: string;
+        run: () => void;
+      }[];
+      {% endif %}
+      {% endfor %}
+  };
+  {% endif %}
+  {% endif %}
+  {% endfor %}
+}
+{% endfor %}
+
+
+{% for service in services %}
+export interface SettingsParams {
+  id: string;
+  storeMutationsLocallyInNamespace?: string;
+}
+export const {{ service.name }} = ({ id, storeMutationsLocallyInNamespace}: SettingsParams): {{ service.name }}Api => {
+  const headers = new Headers();
+  headers.set("Content-Type", "application/json");
+  headers.append("x-resemble-service-name", "{{ package_name }}.{{ service.name }}");
+  headers.append("x-resemble-actor-id", id);
+  headers.append("Connection", "keep-alive");
+
+  const resembleContext = useResembleContext();
+
+  const newRequest = (
+    requestBody: any,
+    path: string,
+    method: "GET" | "POST",
+    idempotencyKey?: string,
+  ) => {
+    if (idempotencyKey !== undefined) {
+      headers.set("x-resemble-idempotency-key", idempotencyKey);
+    }
+    return new Request(`${resembleContext.client?.endpoint}${path}`, {
+      method: method,
+      headers: headers,
+      body:
+        Object.keys(requestBody).length !== 0
+          ? JSON.stringify(requestBody)
+          : null,
+    });
+  };
+
+  {% for method in service.methods %}
+  {% if method.options.kind == 'reader' %}
+  {% if not method.server_streaming %}
+  const {{ method.name }} = async (partialRequest: PartialMessage<{{ name(method.input_type) }}> = {}) => {
+    const request = partialRequest instanceof {{ name(method.input_type) }} ? partialRequest : new {{ name(method.input_type) }}(partialRequest);
+    const requestBody = request.toJson();
+    // Invariant here is that we use the '/package.service.method'
+    // path and HTTP 'POST' method.
+    //
+    // See also 'resemble/helpers.py'.
+    const req = newRequest(requestBody, "/{{ package_name }}.{{ service.name }}.{{ method.name }}", "POST");
+
+    const response = await fetch(req);
+    return await response.json();
+  };
+
+  const use{{ method.name }} = (partialRequest: PartialMessage<{{ name(method.input_type) }}> = {}) => {
+    const [response, setResponse] = useState<{{ name(method.output_type) }}>();
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [error, setError] = useState<unknown>();
+
+    // NOTE: using "refs" here because we want to "remember" some
+    // state, but don't want setting that state to trigger new renders (see
+    // https://react.dev/learn/referencing-values-with-refs).
+    // Using a ref here so that we don't render every time we set it.
+
+    const observedIdempotencyKeys = useRef(new Set<string>());
+    // NOTE: rather than starting with undefined for 'flushMutations'
+    // we start with an event so any mutations that may get created
+    // before we've started reading will get queued.
+    const flushMutations = useRef<Event | undefined>(new Event());
+
+    const abortController = useRef<AbortController>();
+    // Helper function to get 'abortController' since it is immutable
+    // and this way we don't need to do 'new AbortController()' on
+    // every render.
+    function getAbortController() {
+      if (abortController.current === undefined) {
+        abortController.current = new AbortController();
+      }
+
+      return abortController.current;
+    }
+
+    useEffect(() => {
+      const abortController = getAbortController();
+      return () => {
+        abortController.abort();
+      };
+    }, []);
+
+    const request = partialRequest instanceof {{ name(method.input_type) }}
+        ? partialRequest
+        : new {{ name(method.input_type) }}(partialRequest)
+
+    // NOTE: using a ref for the 'request' and 'settings' (below) so
+    // that it doesn't get changed after the first time calling 'usePing'.
+    const requestRef = useRef(request);
+
+    // We are using serialized string comparison here since we can't do value
+    // equality of anonymous objects. We must use the proto library's toBinary()
+    // since JavaScript's standard JSON library can't serialize every possible
+    // field type (notably BigInt).
+    const first_request_serialized = requestRef.current.toBinary().toString();
+    const current_request_serialized = request.toBinary().toString();
+    if (current_request_serialized !== first_request_serialized) {
+      throw new Error("Changing the request is not supported!");
+    }
+
+    const settingsRef = useRef({id, storeMutationsLocallyInNamespace});
+    // We are using string comparison here since we can't do value
+    // equality of anonymous objects.
+    if (JSON.stringify(settingsRef.current) !== JSON.stringify({id, storeMutationsLocallyInNamespace})) {
+      throw new Error("Changing settings is not supported!");
+    }
+
+    const localStorageKeyRef = useRef(storeMutationsLocallyInNamespace);
+
+    const queuedMutations = useRef<Array<() => void>>([]);
+
+    function hasRunningMutations(): boolean {
+      if (
+      {% for method in service.methods if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+      running{{ method.name }}Mutations.current.length > 0
+      {%- if not loop.last -%}
+        ||
+      {% endif %}
+      {% endfor -%}
+      ) {
+        return true;
+      }
+      return false;
+    }
+
+    {% for method in service.methods -%}
+    {%- if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+
+    const running{{ method.name }}Mutations = useRef<Mutation<{{ name(method.input_type) }}>[]>([]);
+    const recovered{{ method.name }}Mutations = useRef<
+      [Mutation<{{ name(method.input_type) }}>, () => void][]
+    >([]);
+    const shouldClearFailed{{ method.name }}Mutations = useRef(false);
+    const [failed{{ method.name }}Mutations, setFailed{{ method.name }}Mutations] = useState<
+      Mutation<{{ name(method.input_type) }}>[]
+    >([]);
+    const queued{{ method.name }}Mutations = useRef<[Mutation<{{ name(method.input_type) }}>, () => void][]>(
+      []
+    );
+    const recoverAndPurge{{ method.name }}Mutations = (): [
+      Mutation<{{ name(method.input_type) }}>,
+      () => void
+    ][] => {
+      if (localStorageKeyRef.current === undefined) {
+        return [];
+      }
+      const suffix = {{ method.name }}
+      const value = localStorage.getItem(localStorageKeyRef.current + suffix);
+      if (value === null) {
+        return [];
+      }
+
+      localStorage.removeItem(localStorageKeyRef.current);
+      const mutations: Mutation<{{ name(method.input_type) }}>[] = JSON.parse(value);
+      const recovered{{ method.name }}Mutations: [
+        Mutation<{{ name(method.input_type) }}>,
+        () => void
+      ][] = [];
+      for (const mutation of mutations) {
+        recovered{{ method.name }}Mutations.push([mutation, () => __{{ method.name }}(mutation)]);
+      }
+      return recovered{{ method.name }}Mutations;
+    }
+    const doOnce{{ method.name }} = useRef(true)
+    if (doOnce{{ method.name }}.current) {
+      doOnce{{ method.name }}.current = false
+      recovered{{ method.name }}Mutations.current = recoverAndPurge{{ method.name }}Mutations()
+    }
+
+    // User facing state that only includes the pending mutations that
+    // have not been observed.
+    const [unobservedPending{{ method.name }}Mutations, setUnobservedPending{{ method.name }}Mutations] =
+      useState<Mutation<{{ name(method.input_type) }}>[]>([]);
+
+    useEffect(() => {
+      shouldClearFailed{{ method.name }}Mutations.current = true;
+    }, [failed{{ method.name }}Mutations]);
+
+    async function __{{ method.name }}(
+      mutation: Mutation<{{ name(method.input_type) }}>
+    ): Promise<ResponseOrError<{{ name(method.output_type) }}>> {
+      try {
+        // Invariant that we won't yield to event loop before pushing to
+        // running{{method.name}}Mutations
+        running{{method.name}}Mutations.current.push(mutation)
+        return _Mutation<{{ name(method.input_type) }}, {{ name(method.output_type) }}>(
+          // Invariant here is that we use the '/package.service.method'.
+          //
+          // See also 'resemble/helpers.py'.
+          "/{{ package_name }}.{{ service.name }}.{{ method.name }}",
+          mutation,
+          mutation.request,
+          mutation.idempotencyKey,
+          setUnobservedPending{{ method.name }}Mutations,
+          getAbortController(),
+          shouldClearFailed{{ method.name }}Mutations,
+          setFailed{{ method.name }}Mutations,
+          running{{ method.name }}Mutations,
+          flushMutations,
+          queuedMutations,
+          {{ name(method.input_type) }},
+          {{ name(method.output_type) }}.fromJson
+        );
+      } finally {
+        running{{method.name}}Mutations.current = running{{method.name}}Mutations.current.filter(
+          ({ idempotencyKey }) => mutation.idempotencyKey !== idempotencyKey
+        );
+
+        popMutationMaybeFromLocalStorage(
+          localStorageKeyRef.current,
+          "{{ method.name }}",
+          (mutationRequest: Mutation<Request>) =>
+            mutationRequest.idempotencyKey !== mutation.idempotencyKey
+        );
+
+
+      }
+    }
+    async function _{{ method.name }}(mutation: Mutation<{{ name(method.input_type) }}>) {
+      setUnobservedPending{{ method.name }}Mutations(
+        (mutations) => [...mutations, mutation]
+      )
+
+      // NOTE: we only run one mutation at a time so that we provide a
+      // serializable experience for the end user but we will
+      // eventually support mutations in parallel when we have strong
+      // eventually consistent writers.
+      if (
+        hasRunningMutations() ||
+        queuedMutations.current.length > 0 ||
+        flushMutations.current !== undefined
+      ) {
+        const deferred = new Deferred<ResponseOrError<{{ name(method.output_type) }}>>(() =>
+          __{{ method.name }}(mutation)
+        );
+
+        // Add to localStorage here.
+        queued{{ method.name }}Mutations.current.push([mutation, () => deferred.start()]);
+        queuedMutations.current.push(() => {
+          for (const [, run] of queued{{ method.name }}Mutations.current) {
+            queued{{ method.name }}Mutations.current.shift();
+            run();
+            break;
+          }
+        });
+        // Maybe add to localStorage.
+        pushMutationMaybeToLocalStorage(localStorageKeyRef.current, "{{ method.name }}", mutation);
+
+        return deferred.promise;
+      } else {
+        // NOTE: we'll add this mutation to `running{{ method.name }}Mutations` in `__{{ method.name }}`
+        // without yielding to event loop so that we are guaranteed atomicity with checking `hasRunningMutations()`.
+        return await __{{ method.name }}(mutation);
+      }
+    }
+
+    async function {{ method.name }}(
+      partialRequest: PartialMessage<{{ name(method.input_type)}}>, optimistic_metadata?: any
+    ): Promise<ResponseOrError<{{ name(method.output_type) }}>> {
+      const idempotencyKey = uuidv4();
+      const request = partialRequest instanceof {{ name(method.input_type) }} ? partialRequest : new {{ name(method.input_type) }}(partialRequest);
+
+      const mutation = {
+        request,
+        idempotencyKey,
+        optimistic_metadata,
+        isLoading: false, // Won't start loading if we're flushing mutations.
+      };
+
+      return _{{ method.name }}(mutation);
+    }
+    {% endif %}
+    {% endfor %}
+
+    useEffect(() => {
+      const loop = async () => {
+        await retryForever(async () => {
+          try {
+            // Wait for any mutations to complete before starting to
+            // read so that we read the latest state including those
+            // mutations.
+            if (
+              {%- for method in service.methods if method.options.kind == 'writer' or method.options.kind == 'transaction' -%}
+              running{{ method.name }}Mutations.current.length > 0
+              {%- if not loop.last -%}
+              {{" "}}||{{" "}}
+              {%- endif -%}
+              {%- endfor -%}
+            ) {
+              // TODO(benh): check invariant
+              // 'flushMutations.current !== undefined' but don't
+              // throw an error since that will just retry, instead
+              // add support for "bailing" from a 'retry' by calling a
+              // function passed into the lambda that 'retry' takes.
+              await flushMutations.current?.wait();
+            }
+
+            const responses = ReactQuery(
+              QueryRequest.create({
+                method: "{{ method.name }}",
+                request: requestRef.current.toBinary(),
+              }),
+              getAbortController().signal
+            );
+
+            for await (const response of responses) {
+              setIsLoading(false);
+
+              for (const idempotencyKey of response.idempotencyKeys) {
+                observedIdempotencyKeys.current.add(idempotencyKey);
+              }
+
+              // Only keep around the idempotency keys that are
+              // still pending as the rest are not useful for us.
+              observedIdempotencyKeys.current = filterSet(
+                observedIdempotencyKeys.current,
+                (observedIdempotencyKey) =>
+                  [
+                  {% for method in service.methods %}
+                  {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+                  ...running{{ method.name }}Mutations.current,
+                  {% endif %}
+                  {% endfor %}
+                  ].some(
+                    (mutation) =>
+                      observedIdempotencyKey === mutation.idempotencyKey
+                  )
+              );
+
+              if (flushMutations.current !== undefined) {
+                // TODO(benh): check invariant
+                // 'pendingMutations.current.length === 0' but don't
+                // throw an error since that will just retry, instead
+                // add support for "bailing" from a 'retry' by calling a
+                // function passed into the lambda that 'retry' takes.
+
+                flushMutations.current = undefined;
+
+                // Dequeue 1 queue and run 1 mutation from it.
+                for (const run of queuedMutations.current) {
+                  queuedMutations.current.shift();
+                  run();
+                  break;
+                }
+              }
+
+              {% for method in service.methods %}
+              {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+              setUnobservedPending{{ method.name }}Mutations(
+              (mutations) =>
+                mutations
+                  .filter(
+                    (mutation) =>
+                      // Only keep mutations that are queued, pending or
+                      // recovered.
+                      queued{{ method.name }}Mutations.current.some(
+                        ([queued{{ method.name }}Mutation]) =>
+                          mutation.idempotencyKey ===
+                          queued{{ method.name }}Mutation.idempotencyKey
+                      ) ||
+                      running{{ method.name }}Mutations.current.some(
+                        (running{{ method.name }}Mutations) =>
+                          mutation.idempotencyKey ===
+                          running{{ method.name }}Mutations.idempotencyKey
+                      )
+                  )
+                  .filter(
+                    (mutation) =>
+                      // Only keep mutations whose effects haven't been observed.
+                      !observedIdempotencyKeys.current.has(
+                        mutation.idempotencyKey
+                      )
+                  )
+              )
+
+              {% endif %}
+              {% endfor %}
+
+              setResponse({{ name(method.output_type)
+              }}.fromBinary(response.response));
+            }
+          } catch (e: unknown) {
+            if (getAbortController().signal.aborted) {
+              return;
+            }
+
+            setError(e);
+            setIsLoading(true);
+
+            // Run a mutation in the event that we are trying to read
+            // from an unconstructed actor and the mutation will peform
+            // the construction.
+            //
+            // TODO(benh): only do this if the reason we failed to
+            // read was because the actor does not exist.
+            for (const run of queuedMutations.current) {
+              queuedMutations.current.shift();
+              run();
+              break;
+            }
+
+            // TODO(benh): check invariant
+            // 'flushMutations.current === undefined' but don't
+            // throw an error since that will just retry, instead
+            // add support for "bailing" from a 'retry' by calling a
+            // function passed into the lambda that 'retry' takes.
+            flushMutations.current = new Event();
+
+            throw e;
+          }
+        });
+      };
+
+      loop();
+    }, []);
+
+    return {
+      response,
+      isLoading,
+      error,
+      mutations: {
+      {% for method in service.methods %}
+      {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+        {{ method.name }},
+      {% endif %}
+      {% endfor %}
+      },
+      {% for method in service.methods %}
+      {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+      pending{{ method.name }}Mutations: unobservedPending{{ method.name }}Mutations,
+      failed{{ method.name }}Mutations,
+      recovered{{ method.name }}Mutations: recovered{{ method.name }}Mutations.current.map(
+        ([mutation, run]) => ({ ...mutation, run: run })
+      ),
+      {% endif %}
+      {% endfor %}
+    };
+  };
+
+  {% endif %}
+  {% if method.server_streaming %}
+  async function* {{ method.name}}(
+    partialRequest: PartialMessage<{{ name(method.input_type) }}> = {}
+  ): AsyncGenerator<{{ name(method.output_type) }}, void, unknown> {
+    const request = partialRequest instanceof {{ name(method.input_type) }} ? partialRequest : new {{ name(method.input_type) }}(partialRequest);
+    const requestBody = request.toJson();
+    // Invariant here is that we use the '/package.service.method'
+    // path and HTTP 'GET' method.
+    //
+    // See also 'resemble/helpers.py'.
+    const request = newRequest(requestBody, "/{{ package_name }}.{{ service.name }}.{{ method.name }}", "GET");
+    const response = await fetch(request);
+
+    if (response.body == null) {
+      throw new Error("Unable to read body of response.");
+    }
+
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    if (reader == undefined) {
+      throw new Error("Not able to instantiate reader on response body.");
+    }
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      } else {
+        const json_message = JSON.parse(parseStreamedValue(value));
+        yield await Promise.resolve({{ name(method.output_type) }}.fromJson(json_message));
+      }
+    }
+  }
+  {% endif %}
+  {# End of: if method is reader #}
+  {% endif %}
+  {% if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+  const {{ method.name }} = async (partialRequest: PartialMessage<{{ name(method.input_type) }}> = {}) => {
+    const request = partialRequest instanceof {{ name(method.input_type) }} ? partialRequest : new {{ name(method.input_type) }}(partialRequest);
+    const requestBody = request.toJson();
+    // Invariant here is that we use the '/package.service.method'
+    // path and HTTP 'POST' method.
+    //
+    // See also 'resemble/helpers.py'.
+    const req = newRequest(requestBody, "/{{ package_name }}.{{ service.name }}.{{ method.name }}", "POST");
+
+    const response = await fetch(req);
+    return await response.json();
+  };
+  {% endif %}
+
+  {# End of: for every method in service.method. #}
+  {% endfor %}
+
+  async function _Mutation<
+    Request extends
+    {% for method in service.methods if method.options.kind == 'writer' or method.options.kind == 'transaction' -%}
+    {{ name(method.input_type) }}
+    {%- if not loop.last %}
+    |
+    {%- endif -%}
+    {%- if loop.last -%}
+    ,
+    {% endif %}
+    {% endfor %}
+    Response extends
+    {%- for method in service.methods if method.options.kind == 'writer' or method.options.kind == 'transaction' %}
+    {{ name(method.output_type) }}
+    {%- if not loop.last %}
+    |
+    {%- endif %}
+    {% endfor %}
+  >(
+    path: string,
+    mutation: Mutation<Request>,
+    request: Request,
+    idempotencyKey: string,
+    setUnobservedPendingMutations: Dispatch<
+      SetStateAction<Mutation<Request>[]>
+    >,
+    abortController: AbortController,
+    shouldClearFailedMutations: MutableRefObject<boolean>,
+    setFailedMutations: Dispatch<SetStateAction<Mutation<Request>[]>>,
+    runningMutations: MutableRefObject<Mutation<Request>[]>,
+    flushMutations: MutableRefObject<Event | undefined>,
+    queuedMutations: MutableRefObject<Array<() => void>>,
+    requestType: { new (request: Request): Request },
+    responseTypeFromJson: (json: any) => Response
+  ): Promise<ResponseOrError<Response>> {
+
+    try {
+      return await retryForever(
+        async () => {
+          try {
+            setUnobservedPendingMutations(
+              (mutations) => {
+                return mutations.map((mutation) => {
+                  if (mutation.idempotencyKey === idempotencyKey) {
+                    return { ...mutation, isLoading: true };
+                  }
+                  return mutation;
+                });
+              }
+            );
+            const req: Request =
+              request instanceof requestType
+                ? request
+                : new requestType(request);
+
+            const response = await fetch(
+              newRequest(req.toJson(), path, "POST", idempotencyKey),
+              { signal: abortController.signal }
+            );
+
+            if (!response.ok && response.headers.has("grpc-status")) {
+              const grpcStatus = response.headers.get("grpc-status");
+              let grpcMessage = response.headers.get("grpc-message");
+              const error = new Error(
+                `'{{ package_name }}.{{ service.name }}' for '${id}' responded ` +
+                  `with status ${grpcStatus}` +
+                  `${grpcMessage !== null ? ": " + grpcMessage : ""}`
+              );
+
+              if (shouldClearFailedMutations.current) {
+                shouldClearFailedMutations.current = false;
+                setFailedMutations([
+                  { request, idempotencyKey, isLoading: false, error },
+                ]);
+              } else {
+                setFailedMutations((failedMutations) => [
+                  ...failedMutations,
+                  { request, idempotencyKey, isLoading: false, error },
+                ]);
+              }
+              setUnobservedPendingMutations(
+                (mutations) =>
+                  mutations.filter(
+                    (mutation) => mutation.idempotencyKey !== idempotencyKey
+                  )
+              );
+
+              return { error } as ResponseOrError<Response>;
+            }
+            if (!response.ok) {
+              throw new Error("Failed to fetch");
+            }
+            const jsonResponse = await response.json();
+            return {
+              response: responseTypeFromJson(jsonResponse),
+            };
+          } catch (e: unknown) {
+            setUnobservedPendingMutations(
+              (mutations) =>
+                mutations.map((mutation) => {
+                  if (mutation.idempotencyKey === idempotencyKey) {
+                    return { ...mutation, error: e, isLoading: false };
+                  } else {
+                    return mutation;
+                  }
+                })
+            );
+
+            if (abortController.signal.aborted) {
+              // TODO(benh): instead of returning 'undefined' as a
+              // means of knowing that we've aborted provide a way
+              // of "bailing" from a 'retry' by calling a function
+              // passed into the lambda that 'retry' takes.
+              return { error: new Error("Aborted") };
+            } else {
+              throw e;
+            }
+          }
+        },
+        {
+          maxBackoffSeconds: 3,
+        }
+      );
+    } finally {
+      // NOTE: we deliberately DO NOT remove from
+      // 'unobservedPendingMutations' but instead wait
+      // for a response first so that we don't cause a render
+      // before getting the updated state from the server.
+
+      if (
+        flushMutations.current !== undefined &&
+        runningMutations.current.length === 0
+      ) {
+        flushMutations.current.set();
+      } else {
+        // Dequeue 1 queue and run 1 mutation from it.
+        for (const run of queuedMutations.current) {
+          queuedMutations.current.shift();
+          run();
+          break;
+        }
+      }
+    }
+  }
+
+  async function* ReactQuery(
+    request: IQueryRequest,
+    signal: AbortSignal
+  ): AsyncGenerator<IQueryResponse, void, unknown> {
+    const response = await fetch(
+      newRequest(QueryRequest.toJson(request), "/query", "POST"),
+      { signal: signal }
+    );
+
+    if (response.body == null) {
+      throw new Error("Unable to read body of response");
+    }
+
+    const reader = response.body
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    if (reader === undefined) {
+      throw new Error("Not able to instantiate reader on response body");
+    }
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      } else {
+        yield QueryResponse.fromJson(JSON.parse(parseStreamedValue(value)));
+      }
+    }
+  }
+
+  return {
+    {% for method in service.methods %}
+    {{ method.name }},
+    {% if method.options.kind == "reader" %}
+    use{{ method.name }},
+    {% endif %}
+    {% endfor %}
+  };
+};
+
+
+{# End of: for every service in services. #}
+{% endfor %}
