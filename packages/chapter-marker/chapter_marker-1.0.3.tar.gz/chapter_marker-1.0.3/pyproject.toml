@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "chapter-marker"
+license = "MIT"
+version = "1.0.3" # set via tool.poetry-dynamic-versioning
+repository = "https://github.com/Binaergewitter/chapter-marker"
+description = "chapter-marking utility"
+readme = "README.md"
+authors = ["Felix Richter <github@krebsco.de>"]
+maintainers = ["Felix Richter <github@krebsco.de>", "Fliiiix <hi@l33t.name>"]
+keywords = ["chapter marks", "podcast", "meta data"]
+classifiers=[
+   "Natural Language :: English",
+   "Operating System :: POSIX :: Linux",
+   "Development Status :: 3 - Alpha",
+   "Programming Language :: Python",
+   "Programming Language :: Python :: 3",
+   "Programming Language :: Python :: Implementation :: CPython",
+]
+packages = [
+    { include = "chapter_marker" },
+    { include = "fakenotify2" }
+]
+include = ["res/*.png"]
+
+[tool.poetry.scripts]
+bgt-current-show = "chapter_marker.bgt_current_show:main"
+bgt-replace-text = "chapter_marker.bgt_replace_text:main"
+bgt-get-titles = "chapter_marker.bgt_get_titles:main"
+
+chapter-marker = "chapter_marker.tray:main"
+
+[tool.poetry.dependencies]
+# ^ is shorthand for >=3.X, <4
+# https://github.com/python-poetry/poetry/issues/1013#issuecomment-479511436
+python = "^3.8"
+requests = "*"
+docopt = "*"
+pyqt5 = "*"
+pynput = "*"
+notify2 = "*"
+
+[tool.poetry.dev-dependencies]
+ruff = "*"
+black = "*"
+
+[tool.black]
+line-length = 140
+
+[tool.ruff]
+line-length = 140
+select = ["I", "E", "B", "F", "W", "C90", "PLR", "ARG", "PL", "RUF"]
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 140
+
+[build-system]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry-dynamic-versioning]
+enable = false
+pattern = "^((?P<epoch>\\d+)!)?(?P<base>\\d+(\\.\\d+)*)"
