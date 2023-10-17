@@ -1,0 +1,67 @@
+[project]
+name = "zmag"
+version = "0.0.2"
+description = "Distributed Systems with GraphQL"
+authors = [
+    { name = "hlop3z", email = "23062270+hlop3z@users.noreply.github.com" },
+]
+requires-python = ">=3.11"
+readme = "README.md"
+dependencies = [
+    "pyzmq>=25.1.1",
+    "strawberry-graphql>=0.205.0",
+    "spoc>=0.1.10",
+    "click>=8.1.7",
+]
+
+[project.license]
+text = "MIT"
+
+[project.scripts]
+startproject = "zmq_gql.scripts.start_project:cli"
+
+[project.optional-dependencies]
+mongo = [
+    "dbcontroller[mongo]>=0.1.52",
+]
+sql = [
+    "dbcontroller[sql]>=0.1.52",
+]
+testing = [
+    "starlette>=0.31.1",
+    "uvicorn>=0.23.2",
+    "dbcontroller[sqlite]>=0.1.52",
+]
+
+[build-system]
+requires = [
+    "pdm-backend",
+]
+build-backend = "pdm.backend"
+
+[tool.pdm.dev-dependencies]
+docs = [
+    "mkdocs-material>=9.4.4",
+    "mkdocs>=1.5.3",
+]
+
+[tool.pdm.scripts.debug]
+shell = "cd tests/one && python manage.py run -d -p"
+
+[tool.pdm.scripts.manage]
+shell = "cd tests/one && python manage.py"
+
+[tool.pdm.scripts.linter]
+shell = "python scripts/linter.py"
+
+[tool.pdm.scripts.test]
+shell = "python client_tests/test_client.py"
+
+[tool.pdm.scripts.docs-dev]
+shell = "cd docs/ && python -m mkdocs serve --dev-addr 0.0.0.0:8055"
+
+[tool.pdm.scripts.docs-build]
+shell = "cd docs/ && python -m mkdocs build"
+
+[tool.pdm.scripts.docs-gh]
+shell = "cd docs/ && python -m mkdocs gh-deploy --force"
