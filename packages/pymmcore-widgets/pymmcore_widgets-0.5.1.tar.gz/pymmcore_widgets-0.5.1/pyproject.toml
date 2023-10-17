@@ -1,0 +1,172 @@
+# https://peps.python.org/pep-0517/
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+# https://hatch.pypa.io/latest/config/metadata/
+[tool.hatch.version]
+source = "vcs"
+
+# https://hatch.pypa.io/latest/config/build/#file-selection
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests"]
+
+[tool.hatch.build.targets.wheel]
+only-include = ["src"]
+sources = ["src"]
+
+# https://peps.python.org/pep-0621/
+[project]
+name = "pymmcore-widgets"
+description = "A set of Qt-based widgets onto the pymmcore-plus model"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "BSD 3-Clause License" }
+authors = [
+    { email = "federico.gasparoli@gmail.com", name = "Federico Gasparoli" },
+    { email = "talley.lambert@gmail.com", name = "Talley Lambert" },
+    { email = "ianhuntisaak@gmail.com", name = "Ian Hunt-Isaak" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Widget Sets",
+    "Topic :: System :: Hardware :: Hardware Drivers",
+    "Topic :: System :: Hardware",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dynamic = ["version"]
+dependencies = [
+    'fonticon-materialdesignicons6',
+    'pymmcore-plus >=0.8.1',
+    'qtpy >=2.0',
+    'superqt[quantity] >=0.5.3',
+    'useq-schema >=0.4.6',
+]
+
+# extras
+# https://peps.python.org/pep-0621/#dependencies-optional-dependencies
+[project.optional-dependencies]
+test = ["pytest>=6.0", "pytest-cov", "pytest-qt", "PyYAML", "vispy"]
+pyqt5 = ["PyQt5"]
+pyside2 = ["PySide2"]
+pyqt6 = ["PyQt6"]
+pyside6 = ["PySide6<6.5"]
+image = ["vispy"]
+
+dev = [
+    "black",
+    "cruft",
+    "ruff",
+    "ipython",
+    "mypy",
+    "pdbpp",
+    "pre-commit",
+    "pytest-cov",
+    "pytest",
+    "rich",
+]
+docs = [
+    "vispy",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings-python",
+    "mkdocs-literate-nav",
+    "mkdocs-gen-files",
+]
+
+[project.urls]
+Homepage = "https://github.com/pymmcore-plus/pymmcore-widgets"
+"Source Code" = "https://github.com/pymmcore-plus/pymmcore-widgets"
+Documentation = "https://pymmcore-plus.github.io/pymmcore-widgets"
+
+# https://beta.ruff.rs/docs/rules/
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+src = ["src", "tests"]
+select = [
+    "E",    # style errors
+    "F",    # flakes
+    "W",    # warnings
+    "D",    # pydocstyle
+    "I",    # isort
+    "UP",   # pyupgrade
+    "C4",   # flake8-comprehensions
+    "B",    # flake8-bugbear
+    "A001", # flake8-builtins
+    "RUF",  # ruff-specific rules
+    "TID",  # tidy
+    "TCH",  # typecheck
+    # "SLF",  # private-access
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D107", # Missing docstring in __init__
+    "D203", # 1 blank line required before class docstring
+    "D212", # Multi-line docstring summary should start at the first line
+    "D213", # Multi-line docstring summary should start at the second line
+    "D401", # First line should be in imperative mood
+    "D413", # Missing blank line after last section
+    "D416", # Section name should end with a colon
+]
+
+[tool.ruff.per-file-ignores]
+"tests/*.py" = ["D", "SLF"]
+
+# https://docs.pytest.org/en/6.2.x/customize.html
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["tests"]
+filterwarnings = [
+    "error",
+    "ignore:distutils Version classes are deprecated",
+    # warning, but not error, that will show up on useq<0.3.3
+]
+
+# https://mypy.readthedocs.io/en/stable/config_file.html
+[tool.mypy]
+files = "src/**/"
+strict = true
+disallow_any_generics = false
+disallow_subclassing_any = false
+show_error_codes = true
+pretty = true
+plugins = ["pydantic.mypy"]
+
+
+# https://coverage.readthedocs.io/en/6.4/config.html
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "@overload",
+    "except ImportError",
+    "raise AssertionError",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+show_missing = true
+[tool.coverage.run]
+source = ['pymmcore_widgets']
+
+# https://github.com/mgedmin/check-manifest#configuration
+[tool.check-manifest]
+ignore = [
+    ".github_changelog_generator",
+    ".pre-commit-config.yaml",
+    "tests/**/*",
+    "docs/**/*",
+    "mkdocs.yml",
+    "examples/**/*",
+]
