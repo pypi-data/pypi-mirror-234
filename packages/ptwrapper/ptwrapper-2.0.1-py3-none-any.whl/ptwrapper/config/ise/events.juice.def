@@ -1,0 +1,660 @@
+#
+# EPS Events Definition File
+#
+# Mission: EJSM
+#
+#          This event definition file contains the events for the EJSM
+#          mission. In case the mission keyword in the EPS configuration
+#          file is set to "EJSM", then this event definition file will
+#          automatically be used by the EventHandler.
+#
+# Format: <ID> <name> <EPS active> <EPS inactive> <POR active> <POR inactive>
+#            <has subs> <key> <offset> <type> <state type> <default>
+#
+# Description: This file contains the EPS event definitions. Each line
+#              contains a single event definition. For each event definition
+#              all elements need to be given. In case a required label does
+#              not have a value, then the dash character '-' has to be used.
+#              Empty lines are allowed. Comment lines start with the '#' at
+#              the first column. The individual elements are defined below.
+#
+#    ID:           The event ID is a unique positive integer number that
+#                  will be used by the PTB simulator to relate the event
+#                  to an actual physical computation.
+#    name:         The event name is a label that is used when the event
+#                  is referenced e.g. by the error reporting functions.
+#    EPS active:   The EPS active label defines the event label used in
+#                  the EPS event file and in the ITL to indicate an active
+#                  event. For PTB and EPS type of events this label shall
+#                  always be defined.
+#    EPS inactive: The EPS inactive label defines the event label used in
+#                  the EPS event file and in the ITL to indicate an inactive
+#                  event. For PTB and EPS type of events this label shall
+#                  always be defined, except for MOMENTARY events for which
+#                  this label has no meaning as the nominal event state is
+#                  always inactive here.
+#    POR active:   The POR active label defines the event label used in the
+#                  ESOC FD event file and in the POR to indicate an active
+#                  event. For FIXED and GLOBAL type of events this label
+#                  shall always be defined, for PTB and EPS event this label
+#                  shall be empty using the '-' character.
+#    POR inactive: The POR inactive label defines the event label used in
+#                  the ESOC FD event file and in the POR to indicate an
+#                  in active event. For FIXED and GLOBAL type of events this
+#                  label shall always be defined (except for MOMENTARY events
+#                  for which this label has no meaning as the nominal event
+#                  state is always inactive here), for PTB and EPS event this
+#                  label shall be empty using the '-' character.
+#    has subs:     Some events may have sub-events, such as e.g. the ground
+#                  station visibility event that may have its specialisation
+#                  for various ground stations. This is compatible with the
+#                  ESOC FD event file definition, where the EVTDES field is
+#                  used for a specific sub-event. This element should either
+#                  be TRUE or FALSE. When a PTB event has sub-events, then
+#                  it is a so-called multi-event, where a composite event
+#                  count is used to specify a unique multi-event instance.
+#    key:          The sub-event key is the specific EVTDES text expected
+#                  in the ESOC FD event file to define the sub-event. The
+#                  key is a text string that is separated by a space or
+#                  an underscore character in the EVTDES field. For multi-
+#                  events this field contains the total number of defined
+#                  multi-event items.
+#    offset:       The sub-event offset defines the offset of the key string
+#                  in the ESOC FD event file EVTDES field. For multi-events,
+#                  this fields defines the number of event counts per multi-
+#                  event item. The multi-event ID is multiplied with this
+#                  value to obtain the actual event count number.
+#    type:         The event type is one of the four FIXED, GLOBAL, PTB or
+#                  EPS. The FIXED and GLOBAL events are defined in the ESOC
+#                  FD event file. FIXED events are considered non-computable
+#                  events by the PTB software, GLOBAL events are considered
+#                  to be computable by the PTB; this may be useful in case
+#                  these events are not yet available from ESOC FD. PTB and
+#                  EPS events are only known within the EPS software, and
+#                  will not appear in the ESOC FD event file nor in the POR.
+#                  EPS events are special events because they are related to
+#                  an experiment item (e.g. Sun in FOV is specific for an
+#                  experiment FOV). The event item is normally related to
+#                  an experiment property that is available in the EDF. The
+#                  use of EPS events may require some specific code in the
+#                  source of the EventDefines component.
+#    state type:   The event state type is either CONTINUOUS 
+#                  have two states: an active state (when the event actually
+#                  occurs) and an inactive state (when the event does not
+#                  occur), e.g. a ground station visible event (VIS or LOS).
+#                  MOMENTARY events are events that occur at one point in
+#                  time only, these events are considered inactive for the
+#                  remaining part of the time, e.g. a pericenter pass event.
+#    default:      This element defines the default initial state value of
+#                  the event, which is either INACTIVE (off) or ACTIVE (on).
+#
+
+# <ID> <name> <EPS active> <EPS inactive> <POR active> <POR inactive> <has subs> <key> <offset> <type> <state type> <default>
+
+# --------------------
+# Pointing events
+# --------------------
+
+# Classic Events
+3300  POINTING                POINTING_START                     POINTING_END                     -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3301  SLEW                    SLEW_START                         SLEW_END                         -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3302  SETTLING                SETTLING_START                     SETTLING_END                     -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+
+# Specific pointing Events
+3303  INERT                   INERT_START                        INERT_END                        -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3304  NADIR                   NADIR_START                        NADIR_END                        -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3305  TRACK_SUN               TRACK_SUN_START                    TRACK_SUN_END                    -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3306  TRACK_EARTH             TRACK_EARTH_START                  TRACK_EARTH_END                  -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3307  TRACK_LANDMARK          TRACK_LANDMARK_START               TRACK_LANDMARK_END               -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3308  LIMB                    LIMB_START                         LIMB_END                         -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE       
+3309  ILLUM_POINT             ILLUM_POINT_START                  ILLUM_POINT_END                  -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE       
+
+# New composite events Track Raster
+3310  TRACK_RASTER_START      TRACK_RASTER_START                 -                                -       -        FALSE    -      0  PTB      MOMENTARY    INACTIVE
+3311  TRACK_RASTER_PT         TRACK_RASTER_PT_S                  TRACK_RASTER_PT_E                -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3312  TRACK_RASTER_SL         TRACK_RASTER_SL_S                  TRACK_RASTER_SL_E                -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3313  TRACK_RASTER_END        TRACK_RASTER_END                   -                                -       -        FALSE    -      0  PTB      MOMENTARY    INACTIVE
+
+# New composite events Track Scan
+3320  TRACK_SCAN_START        TRACK_SCAN_START                   -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+3321  TRACK_SCAN_PT           TRACK_SCAN_PT_S                    TRACK_SCAN_PT_E                  -        -       FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3322  TRACK_SCAN_SL           TRACK_SCAN_SL_S                    TRACK_SCAN_SL_E                  -        -       FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3323  TRACK_SCAN_END          TRACK_SCAN_END                     -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+
+# New composite events Track Custom
+3330  TRACK_CUSTOM            TRACK_CUSTOM_START                 TRACK_CUSTOM_END                 -        -       FALSE    -      0  PTB      CONTINUOUS   INACTIVE
+3331  TRACK_CUSTOM_PT_S       TRACK_CUSTOM_PT_S                  -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+3332  TRACK_CUSTOM_PT_E       TRACK_CUSTOM_PT_E                  -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+
+# New composite events Inertial Raster
+3340  INERT_RASTER_START      INERT_RASTER_START                 -                                -       -        FALSE    -      0  PTB      MOMENTARY    INACTIVE
+3341  INERT_RASTER_PT         INERT_RASTER_PT_S                  INERT_RASTER_PT_E                -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3342  INERT_RASTER_SL         INERT_RASTER_SL_S                  INERT_RASTER_SL_E                -       -        FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3343  INERT_RASTER_END        INERT_RASTER_END                   -                                -       -        FALSE    -      0  PTB      MOMENTARY    INACTIVE
+
+# New composite events Inertial Scan
+3350  INERT_SCAN_START        INERT_SCAN_START                   -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+3351  INERT_SCAN_PT           INERT_SCAN_PT_S                    INERT_SCAN_PT_E                  -        -       FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3352  INERT_SCAN_SL           INERT_SCAN_SL_S                    INERT_SCAN_SL_E                  -        -       FALSE   -       0  PTB      CONTINUOUS   INACTIVE
+3353  INERT_SCAN_END          INERT_SCAN_END                     -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+
+# New composite events Inertial Custom
+3360  INERT_CUSTOM            INERT_CUSTOM_START                 INERT_CUSTOM_END                 -        -       FALSE    -      0  PTB      CONTINUOUS   INACTIVE
+3361  INERT_CUSTOM_PT_S       INERT_CUSTOM_PT_S                  -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+3362  INERT_CUSTOM_PT_E       INERT_CUSTOM_PT_E                  -                                -        -       FALSE    -      0  PTB      MOMENTARY    INACTIVE
+
+# New event for Well Off-Loading for the Simplified Power Model (JUST IN CASE THAT REACTION WHEELS REQUIRES A DIFFERENT POWER LOAD FOR WOLs)
+3299  WOL                     WOL_START                          WOL_END                          -       -        FALSE    -       0  PTB      CONTINUOUS   INACTIVE
+
+# Downlink events
+3500  DUMP_HGA_X              DUMP_HGA_X_START                   DUMP_HGA_X_END                   -        -       FALSE    -    0  PTB     CONTINUOUS  INACTIVE
+3501  DUMP_HGA_KA             DUMP_HGA_KA_START                  DUMP_HGA_KA_END                  -        -       FALSE    -    0  PTB     CONTINUOUS  INACTIVE
+3502  DUMP_MGA_X              DUMP_MGA_X_START                   DUMP_MGA_X_END                   -        -       FALSE    -    0  PTB     CONTINUOUS  INACTIVE
+3503  DUMP_MGA_KA             DUMP_MGA_KA_START                  DUMP_MGA_KA_END                  -        -       FALSE    -    0  PTB     CONTINUOUS  INACTIVE
+3504  DUMP_HGA_X_KA           DUMP_HGA_X_KA_START                DUMP_HGA_X_KA_END                -        -       FALSE    -    0  PTB     CONTINUOUS  INACTIVE
+3505  DUMP_MGA_X_KA           DUMP_MGA_X_KA_START                DUMP_MGA_X_KA_END                -        -       FALSE    -    0  PTB     CONTINUOUS  INACTIVE
+
+
+# Illumination events
+4000  SPC_PX_ILL              SPC_PX_ILL_START                   SPC_PX_ILL_END                   PXIS      PXIE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+
+# Wheel momentum events
+4010  WMM_WHEEL1_ACC_MOM              WMM_WHEEL1_ACC_MOM_START                   WMM_WHEEL1_ACC_MOM_END                   WM1S      WM1E     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+4011  WMM_WHEEL2_ACC_MOM              WMM_WHEEL2_ACC_MOM_START                   WMM_WHEEL2_ACC_MOM_END                   WM2S      WM2E     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+4012  WMM_WHEEL3_ACC_MOM              WMM_WHEEL3_ACC_MOM_START                   WMM_WHEEL3_ACC_MOM_END                   WM3S      WM3E     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+4013  WMM_WHEEL4_ACC_MOM              WMM_WHEEL4_ACC_MOM_START                   WMM_WHEEL4_ACC_MOM_END                   WM4S      WM4E     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+# Any wheel
+4014  WMM_WHEEL_ANY              WMM_WHEEL_ANY_ACC_MOM_START                   WMM_WHEEL_ANY_ACC_MOM_END                   WMAS      WMAE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+# Assembly
+4015  WMM_WHEEL_ASS              WMM_WHEEL_ASS_ACC_MOM_START                   WMM_WHEEL_ASS_ACC_MOM_END                   WASS      WAAE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+
+# MAPPS Ground Station events
+5000  GS_CEB_VIS            GS_CEB_VIS_START          GS_CEB_VIS_END            A83F  L83F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5001  GS_NNO_VIS            GS_NNO_VIS_START          GS_NNO_VIS_END            A74F  L74F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5002  GS_MLG_VIS            GS_MLG_VIS_START          GS_MLG_VIS_END            A84F  L84F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5003  GS_GLS_VIS            GS_GLS_VIS_START          GS_GLS_VIS_END            A94F  L94F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5010  GS_MLG_GAN_OCC        GS_MLG_GAN_OCC_START      GS_MLG_GAN_OCC_END        G5HS  G5HE     FALSE  -    0  FIXED      CONTINUOUS  INACTIVE
+5020  DWL                   DWL_START                 DWL_END                   -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5032  GS_MLG_10             GS_MLG_10_START           GS_MLG_10_END             A84F  L84F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5042  MAL_VIS               MAL_VIS_START             MAL_VIS_END               A84F  L84F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5043  MAL_VIS_20            MAL_VIS_20_START          MAL_VIS_20_END            A84T  L84T     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5044  MAL_VIS_50            MAL_VIS_50_START          MAL_VIS_50_END            A84T  L84T     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5052  MAL_DL                MAL_DL_START              MAL_DL_END                A84F  L84F     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5053  MAL_DL_20             MAL_DL_20_START           MAL_DL_20_END             A84T  L84T     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5054  MAL_DL_50             MAL_DL_50_START           MAL_DL_50_END             A84T  L84T     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+
+
+# JUICE Distance events
+5110  CLS_APP_JUP           CLS_APP_JUP               -                         JPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5111  CLS_APP_GAN           CLS_APP_GAN               -                         GPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5112  CLS_APP_EUR           CLS_APP_EUR               -                         EPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5113  CLS_APP_CAL           CLS_APP_CAL               -                         CPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5114  CLS_APP_IO            CLS_APP_IO                -                         IPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5120  FAR_JUP               FAR_JUP                   -                         JFAR     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5121  FAR_GAN               FAR_GAN                   -                         GFAR     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5122  FAR_EUR               FAR_EUR                   -                         EFAR     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5123  FAR_CAL               FAR_CAL                   -                         CFAR     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5124  FAR_IO                FAR_IO                    -                         IFAR     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+5201  SC_JUP_GT500KM        SC_JUP_GT500KM_START      SC_JUP_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5202  SC_JUP_GT1000KM       SC_JUP_GT1000KM_START     SC_JUP_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5203  SC_JUP_GT1500KM       SC_JUP_GT1500KM_START     SC_JUP_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5204  SC_JUP_GT150000KM     SC_JUP_GT150000KM_START   SC_JUP_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5205  SC_JUP_GT700000KM     SC_JUP_GT700000KM_START   SC_JUP_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5206  SC_JUP_GT1E6KM        SC_JUP_GT1E6KM_START      SC_JUP_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5207  SC_JUP_GT1E7KM        SC_JUP_GT1E7KM_START      SC_JUP_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5211  SC_EUR_GT500KM        SC_EUR_GT500KM_START      SC_EUR_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5212  SC_EUR_GT1000KM       SC_EUR_GT1000KM_START     SC_EUR_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5213  SC_EUR_GT1500KM       SC_EUR_GT1500KM_START     SC_EUR_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5214  SC_EUR_GT150000KM     SC_EUR_GT150000KM_START   SC_EUR_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5215  SC_EUR_GT700000KM     SC_EUR_GT700000KM_START   SC_EUR_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5216  SC_EUR_GT1E6KM        SC_EUR_GT1E6KM_START      SC_EUR_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5217  SC_EUR_GT1E7KM        SC_EUR_GT1E7KM_START      SC_EUR_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5221  SC_CAL_GT500KM        SC_CAL_GT500KM_START      SC_CAL_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5222  SC_CAL_GT1000KM       SC_CAL_GT1000KM_START     SC_CAL_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5223  SC_CAL_GT1500KM       SC_CAL_GT1500KM_START     SC_CAL_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5224  SC_CAL_GT150000KM     SC_CAL_GT150000KM_START   SC_CAL_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5225  SC_CAL_GT700000KM     SC_CAL_GT700000KM_START   SC_CAL_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5226  SC_CAL_GT1E6KM        SC_CAL_GT1E6KM_START      SC_CAL_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5227  SC_CAL_GT1E7KM        SC_CAL_GT1E7KM_START      SC_CAL_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5231  SC_GAN_GT500KM        SC_GAN_GT500KM_START      SC_GAN_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5232  SC_GAN_GT1000KM       SC_GAN_GT1000KM_START     SC_GAN_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5233  SC_GAN_GT1500KM       SC_GAN_GT1500KM_START     SC_GAN_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5234  SC_GAN_GT150000KM     SC_GAN_GT150000KM_START   SC_GAN_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5235  SC_GAN_GT700000KM     SC_GAN_GT700000KM_START   SC_GAN_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5236  SC_GAN_GT1E6KM        SC_GAN_GT1E6KM_START      SC_GAN_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5237  SC_GAN_GT1E7KM        SC_GAN_GT1E7KM_START      SC_GAN_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5241  SC_IO_GT500KM         SC_IO_GT500KM_START       SC_IO_GT500KM_END         -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5242  SC_IO_GT1000KM        SC_IO_GT1000KM_START      SC_IO_GT1000KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5243  SC_IO_GT1500KM        SC_IO_GT1500KM_START      SC_IO_GT1500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5244  SC_IO_GT150000KM      SC_IO_GT150000KM_START    SC_IO_GT150000KM_END      -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5245  SC_IO_GT700000KM      SC_IO_GT700000KM_START    SC_IO_GT700000KM_END      -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5246  SC_IO_GT1E6KM         SC_IO_GT1E6KM_START       SC_IO_GT1E6KM_END         -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5247  SC_IO_GT1E7KM         SC_IO_GT1E7KM_START       SC_IO_GT1E7KM_END         -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5251  SC_AMA_GT500KM        SC_AMA_GT500KM_START      SC_AMA_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5252  SC_AMA_GT1000KM       SC_AMA_GT1000KM_START     SC_AMA_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5253  SC_AMA_GT1500KM       SC_AMA_GT1500KM_START     SC_AMA_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5254  SC_AMA_GT150000KM     SC_AMA_GT150000KM_START   SC_AMA_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5255  SC_AMA_GT700000KM     SC_AMA_GT700000KM_START   SC_AMA_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5256  SC_AMA_GT1E6KM        SC_AMA_GT1E6KM_START      SC_AMA_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5257  SC_AMA_GT1E7KM        SC_AMA_GT1E7KM_START      SC_AMA_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5261  SC_HIM_GT500KM        SC_HIM_GT500KM_START      SC_HIM_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5262  SC_HIM_GT1000KM       SC_HIM_GT1000KM_START     SC_HIM_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5263  SC_HIM_GT1500KM       SC_HIM_GT1500KM_START     SC_HIM_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5264  SC_HIM_GT150000KM     SC_HIM_GT150000KM_START   SC_HIM_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5265  SC_HIM_GT700000KM     SC_HIM_GT700000KM_START   SC_HIM_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5266  SC_HIM_GT1E6KM        SC_HIM_GT1E6KM_START      SC_HIM_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5267  SC_HIM_GT1E7KM        SC_HIM_GT1E7KM_START      SC_HIM_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5271  SC_PAS_GT500KM        SC_PAS_GT500KM_START      SC_PAS_GT500KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5272  SC_PAS_GT1000KM       SC_PAS_GT1000KM_START     SC_PAS_GT1000KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5273  SC_PAS_GT1500KM       SC_PAS_GT1500KM_START     SC_PAS_GT1500KM_END       -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5274  SC_PAS_GT150000KM     SC_PAS_GT150000KM_START   SC_PAS_GT150000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5275  SC_PAS_GT700000KM     SC_PAS_GT700000KM_START   SC_PAS_GT700000KM_END     -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5276  SC_PAS_GT1E6KM        SC_PAS_GT1E6KM_START      SC_PAS_GT1E6KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+5277  SC_PAS_GT1E7KM        SC_PAS_GT1E7KM_START      SC_PAS_GT1E7KM_END        -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+# New EUROPA_CA defined to be aligned with events coming from the geopipeline
+5278  CA_EUROPA             CA_EUROPA                 -                         EPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+
+# New EUROPA_CA defined to be aligned with events coming from the geopipeline
+5279  CA_JUPITER             CA_JUPITER                 -                         EPER     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+
+
+# JUICE Latitude events
+5300  LAT_SC_GAN_EQUATOR    LAT_SC_GAN_EQUATOR_START   -                        -        -     FALSE  -    0  PTB        MOMENTARY   INACTIVE
+5301  LAT_SC_JUP_EQUATOR    LAT_SC_JUP_EQUATOR_START   -                        -        -     FALSE  -    0  PTB        MOMENTARY   INACTIVE
+5302  LAT_SC_JUP_GT_15DEG   LAT_SC_JUP_GT_15DEG_START  LAT_SC_JUP_GT_15DEG_END  -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE 
+5303  LAT_SC_JUP_LT_m15DEG  LAT_SC_JUP_LT_m15DEG_START LAT_SC_JUP_LT_m15DEG_END -        -     FALSE  -    0  PTB        CONTINUOUS  INACTIVE
+
+# MAPPS Eclipse and Occultation events
+5500  ECL                   ECL_START                 ECL_END                   ECLS     ECLE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5501  OCC                   OCC_START                 OCC_END                   OCCC     OCCE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5510  SUN_JUP_SC_ECL        SUN_JUP_SC_ECL_START      SUN_JUP_SC_ECL_END        SJES     SJEE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5511  EAR_JUP_SC_OCC        EAR_JUP_SC_OCC_START      EAR_JUP_SC_OCC_END        EJOS     EJOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5512  JUP_JUP_SC_OCC        JUP_JUP_SC_OCC_START      JUP_JUP_SC_OCC_END        JJOS     JJOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5513  EUR_JUP_SC_OCC        EUR_JUP_SC_OCC_START      EUR_JUP_SC_OCC_END        UJOS     UJOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5514  GAN_JUP_SC_OCC        GAN_JUP_SC_OCC_START      GAN_JUP_SC_OCC_END        GJOS     GJOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5515  CAL_JUP_SC_OCC        CAL_JUP_SC_OCC_START      CAL_JUP_SC_OCC_END        CJOS     CJOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5520  SUN_GAN_SC_ECL        SUN_GAN_SC_ECL_START      SUN_GAN_SC_ECL_END        SGES     SGEE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5521  EAR_GAN_SC_OCC        EAR_GAN_SC_OCC_START      EAR_GAN_SC_OCC_END        EGOS     EGOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5522  JUP_GAN_SC_OCC        JUP_GAN_SC_OCC_START      JUP_GAN_SC_OCC_END        JGOS     JGOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5523  EUR_GAN_SC_OCC        EUR_GAN_SC_OCC_START      EUR_GAN_SC_OCC_END        UGOS     UGOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5524  GAN_GAN_SC_OCC        GAN_GAN_SC_OCC_START      GAN_GAN_SC_OCC_END        GGOS     GGOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5525  CAL_GAN_SC_OCC        CAL_GAN_SC_OCC_START      CAL_GAN_SC_OCC_END        CGOS     CGOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5530  SUN_EUR_SC_ECL        SUN_EUR_SC_ECL_START      SUN_EUR_SC_ECL_END        SEES     SEEE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5531  EAR_EUR_SC_OCC        EAR_EUR_SC_OCC_START      EAR_EUR_SC_OCC_END        EEOS     EEOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5532  JUP_EUR_SC_OCC        JUP_EUR_SC_OCC_START      JUP_EUR_SC_OCC_END        JEOS     JEOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5533  EUR_EUR_SC_OCC        EUR_EUR_SC_OCC_START      EUR_EUR_SC_OCC_END        UEOS     UEOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5534  GAN_EUR_SC_OCC        GAN_EUR_SC_OCC_START      GAN_EUR_SC_OCC_END        GEOS     GEOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5535  CAL_EUR_SC_OCC        CAL_EUR_SC_OCC_START      CAL_EUR_SC_OCC_END        CEOS     CEOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5540  SUN_CAL_SC_ECL        SUN_CAL_SC_ECL_START      SUN_CAL_SC_ECL_END        SCES     SCEE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5541  EAR_CAL_SC_OCC        EAR_CAL_SC_OCC_START      EAR_CAL_SC_OCC_END        ECOS     ECOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5542  JUP_CAL_SC_OCC        JUP_CAL_SC_OCC_START      JUP_CAL_SC_OCC_END        JCOS     JCOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5543  EUR_CAL_SC_OCC        EUR_CAL_SC_OCC_START      EUR_CAL_SC_OCC_END        UCOS     UCOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5544  GAN_CAL_SC_OCC        GAN_CAL_SC_OCC_START      GAN_CAL_SC_OCC_END        GCOS     GCOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+5545  CAL_CAL_SC_OCC        CAL_CAL_SC_OCC_START      CAL_CAL_SC_OCC_END        CCOS     CCOE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+
+5600  SUN_OCC_SUN           SUN_OCC_SUN_000_DESC      SUN_OCC_SUN_000_ASCE      SJES     SJEE       FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+
+# MAPPS Observation Conditions events
+6000  ILL                   ILL_START                 ILL_END                   ILS      ILE      FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+6001  JUP_ILLUM             JUP_ILLUM_START           JUP_ILLUM_END             JILS     JILE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+6002  GAN_ILLUM             GAN_ILLUM_START           GAN_ILLUM_END             GILS     GILE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+6003  EUR_ILLUM             EUR_ILLUM_START           EUR_ILLUM_END             EILS     EILE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+6004  CAL_ILLUM             CAL_ILLUM_START           CAL_ILLUM_END             CILS     CILE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+6005  IO_ILLUM              IO_ILLUM_START            IO_ILLUM_END              IILS     IILE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+
+# JSGS Reference Events
+7000  APO                   APO                       -                         APOC     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+7001  PER                   PER                       -                         PERI     -     FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+7010  PERIOD                PERIOD_START              PERIOD_END                PRDS     PRDE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+7011  PERIOD_CENTER         PERIOD_CENTER             -                         PRDC     -        FALSE  -    0  GLOBAL     MOMENTARY   INACTIVE
+7020  MISSION_PHASE         PHASE_START               PHASE_END                 MPHS     MPHE     FALSE  -    0  GLOBAL     CONTINUOUS  INACTIVE
+
+# GCoO events (included by Claudio)
+8018 GCO500_SWI_NADIR       GCO500_SWI_NADIR_START    GCO500_SWI_NADIR_END     SWGS SWGE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8020 GCO500_STELL_OCC       GCO500_STELL_OCC          -                        G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8021 STELLAR_OCC_callisto   STELLAR_OCC_callisto_000_DES STELLAR_OCC_callisto_000_ASC   G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8022 STELLAR_OCC_europa     STELLAR_OCC_europa_000_DES   STELLAR_OCC_europa_000_ASC G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8023 STELLAR_OCC_ganymede   STELLAR_OCC_ganymede_000_DES STELLAR_OCC_ganymede_000_ASC   G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8024 STELLAR_OCC_jupiter    STELLAR_OCC_jupiter_000_DES  STELLAR_OCC_jupiter_000_ASC    G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8100 ANTIJOV_GANYMEDE       ANTIJOV_ENTER             ANTIJOV_LEAVE            G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+# 8110 ANTIJOV_LEAVE          ANTIJOV_LEAVE             -                        G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+
+
+# JSGS Operational Events
+8000  MAX_PAYLOAD_POWER     MAX_PAYLOAD_POWER_START   MAX_PAYLOAD_POWER_END     -     -     FALSE  -    0  PTB     CONTINUOUS  INACTIVE
+
+# GCO500 events (Claire)
+8001  DL            DL_START                  DL_END                   DLES DLEE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE    
+8002  G500                  G500_START                G500_END                 G5HS G5HE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8003  GCO500_3GM_OCC        GCO500_3GM_OCC_START      GCO500_3GM_OCC_END       3GOS 3GOE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8004  GCO500_RIME_SOUND     GCO500_RIME_SOUND_START   GCO500_RIME_SOUND_END    RSGS RSGE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8005  GCO500_SWI_CONT       GCO500_SWI_CONT_START     GCO500_SWI_CONT_END      SWGS SWGE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8006  GCO500_AURORAL_OVAL   GCO500_AURORAL_OVAL_START GCO500_AURORAL_OVAL_END  OOCS OOCE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8007  GCO500_RPWI_AURORA    GCO500_RPWI_AURORA_START  GCO500_RPWI_AURORA_END   RAOS RAOE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8008  GCO500_RPWI_IS_NRML   GCO500_RPWI_IS_NRML_START GCO500_RPWI_IS_NRML_END  RINS RINE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8009  GCO500_RPWI_IS_SLOW   GCO500_RPWI_IS_SLOW_START GCO500_RPWI_IS_SLOW_END  RISS RISE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8010  GCO500_RPWI_RA_SLOW   GCO500_RPWI_RA_SLOW_START GCO500_RPWI_RA_SLOW_END  RRSS RRSE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8011  GCO500_MAJIS_EVENTS   GCO500_MAJIS_EVENTS_START GCO500_MAJIS_EVENTS_END  MAES MAEE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE    
+8012  GCO500_UVS_MONITOR    GCO500_UVS_MONITOR_START  GCO500_UVS_MONITOR_END   UVMS UVME    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8013  GCO500_GALA_target    GCO500_GALA_target_START  GCO500_GALA_target_END   GATS GATE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE 
+8014  GCO500_GALA_NML       GCO500_GALA_NML_START     GCO500_GALA_NML_END      GANS GANE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE 
+8015  GCO500_JAN_CONT       GCO500_JAN_CONT_START     GCO500_JAN_CONT_END      GJCS GJCE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE 
+8016  GCO500_JAN_ILL        GCO500_JAN_ILL_START      GCO500_JAN_ILL_END       GJIS GJIE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+8017  GCO500_USO            GCO500_USO_START          GCO500_USO_END           G3US G3UE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+
+# OLD GC0500 Observation events used for Yellow Book Study
+9901  G500_NADIR_RS_ILL     G500_NADIR_RS_ILL_START   G500_NADIR_RS_ILL_END     -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE
+9902  G500_NADIR_RS         G500_NADIR_RS_START       G500_NADIR_RS_END         -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE
+9903  G500_JUP_OCC          G500_JUP_OCC_START        G500_JUP_OCC_END          -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE
+9904  G500_JUP_OCC_COMM     G500_JUP_OCC_COMM_START   G500_JUP_OCC_COMM_END     -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE
+9905  G500_NADIR_PW         G500_NADIR_PW_START       G500_NADIR_PW_END         -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE
+9906  G500_GP_UMBRA         G500_GP_UMBRA_START       G500_GP_UMBRA_END         -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE 
+9907  G500_NADIR_GP         G500_NADIR_GP_START       G500_NADIR_GP_END         -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE    
+9908  G500_RIME_COMM        G500_RIME_COMM_START      G500_RIME_COMM_END        -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE                                                                                                                         
+9909  G500_HGA_FORCED       G500_HGA_FORCED_START     G500_HGA_FORCED_END       -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE                                                                                                                     
+9910  G500_NADIR_MJ_ILL     G500_NADIR_MJ_ILL_START   G500_NADIR_MJ_ILL_END     -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE
+9911  G500_NADIR_GPR        G500_NADIR_GPR_START      G500_NADIR_GPR_END        -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE    
+9912  GCO500_RIME_SOUND_VIS GCO500_RIME_SOUND_VIS_START GCO500_RIME_SOUND_VIS_END  -  -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE  
+9913  GCO500_SWI_RIME_PW    GCO500_SWI_RIME_PW_START  GCO500_SWI_RIME_PW_END        -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE 
+9914  GCO500_RIME_RS        GCO500_RIME_RS_START      GCO500_RIME_RS_END        -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE    
+9915  GCO500_RIME_GP         GCO500_RIME_GP_START     GCO500_RIME_GP_END        -     -     FALSE  -    0  PTB    CONTINUOUS  INACTIVE 
+
+# OLD MAPPS Derived events
+9990  GS                    GS_START                  GS_END                    -     -     FALSE  -    0  PTB     CONTINUOUS  INACTIVE
+9991  ILL_WO_GS             ILL_WO_GS_START           ILL_WO_GS_END             -     -     FALSE  -    0  PTB     CONTINUOUS  INACTIVE
+9992  NILL_WO_GS            NILL_WO_GS_START          NILL_WO_GS_END            -     -     FALSE  -    0  PTB     CONTINUOUS  INACTIVE
+
+#Majis Science events added by Nico 
+10001 SC_JUPITER_000_PHASE  SC_JUPITER_000_PHASE        -                      JUPR   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10002 SC_JUPITER_010_PHASE  SC_JUPITER_010_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10003 SC_JUPITER_020_PHASE  SC_JUPITER_020_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10004 SC_JUPITER_030_PHASE  SC_JUPITER_030_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10005 SC_JUPITER_040_PHASE  SC_JUPITER_040_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10006 SC_JUPITER_050_PHASE  SC_JUPITER_050_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10007 SC_JUPITER_060_PHASE  SC_JUPITER_060_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10008 SC_JUPITER_070_PHASE  SC_JUPITER_070_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10009 SC_JUPITER_080_PHASE  SC_JUPITER_080_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10010 SC_JUPITER_090_PHASE  SC_JUPITER_090_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10011 SC_JUPITER_100_PHASE  SC_JUPITER_100_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10012 SC_JUPITER_110_PHASE  SC_JUPITER_110_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10013 SC_JUPITER_120_PHASE  SC_JUPITER_120_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10014 SC_JUPITER_130_PHASE  SC_JUPITER_130_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10015 SC_JUPITER_140_PHASE  SC_JUPITER_140_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10016 SC_JUPITER_150_PHASE  SC_JUPITER_150_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10017 SC_JUPITER_160_PHASE  SC_JUPITER_160_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10018 SC_JUPITER_170_PHASE  SC_JUPITER_170_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10019 SC_JUPITER_180_PHASE  SC_JUPITER_180_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10020 SC_JUPITER_001_PHASE  SC_JUPITER_001_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10021 SC_JUPITER_002_PHASE  SC_JUPITER_002_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10022 SC_JUPITER_003_PHASE  SC_JUPITER_003_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10023 SC_JUPITER_004_PHASE  SC_JUPITER_004_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10024 SC_JUPITER_005_PHASE  SC_JUPITER_005_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10025 SC_JUPITER_175_PHASE  SC_JUPITER_175_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10026 SC_JUPITER_176_PHASE  SC_JUPITER_176_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10027 SC_JUPITER_177_PHASE  SC_JUPITER_177_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10028 SC_JUPITER_178_PHASE  SC_JUPITER_178_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+10029 SC_JUPITER_179_PHASE  SC_JUPITER_179_PHASE        -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+
+#Janus Science events added by Nico
+11000 JANUS_JUP_LIGHTNING     JANUS_JUP_LIGHTNING       -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+11100 JANUS_JUP_FEATURE_TRACK JANUS_JUP_FEATURE_TRACK   -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+11200 JANUS_JUP_LIMB_ATMOS    JANUS_JUP_LIMB_ATMOS      -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+11300 JANUS_JUP_AURORA        JANUS_JUP_AURORA          -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+11400 JANUS_JUP_DISKMOS       JANUS_JUP_DISKMOS         -                      JUPP   -     FALSE  -    0  GLOBAL  MOMENTARY   INACTIVE
+
+#jmag science events
+12000 JMAG_MONITORING      JMAG_MONITORING_START      JMAG_MONITORING_END        JCES JCEE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE 
+12010 GAN_MP                 GAN_MP_START                 GAN_MP_END                   GMPS GMPE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+12020 GAN_CS                 GAN_CS_START                 GAN_CS_END                   GCSS GCSE    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+
+#RPWI science events
+12030 RPWI_MONITORING    RPWI_MONITORING_START      RPWI_MONITORING_END        RPMS RPME    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+
+#PEP science events
+13000 PEP_MONITORING     PEP_MONITORING_START       PEP_MONITORING_END         PEMS PEME    FALSE  -    0  FIXED     CONTINUOUS  INACTIVE
+
+#UVS science events1.198202696
+14000 UVS_JUP_OCC_EGR    UVS_JUP_OCC_EGR                -                      JUPP   -     FALSE  -    0  GLOBAL    MOMENTARY  INACTIVE
+14010 UVS_JUP_OCC_ING    UVS_JUP_OCC_ING                -                      JUPP   -     FALSE  -    0  GLOBAL    MOMENTARY  INACTIVE
+
+# ROI events (added by claudio)
+20010 PENEPALIM_ANZ            PENEPALIM_ANZ_ENTER      PENEPALIM_ANZ_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20050 HERSHEF_CRAT             HERSHEF_CRAT_ENTER       HERSHEF_CRAT_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20070 PEDES_CRAT               PEDES_CRAT_ENTER         PEDES_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20090 PERRINE_REG              PERRINE_REG_ENTER        PERRINE_REG_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20110 PUNT_CRAT                PUNT_CRAT_ENTER          PUNT_CRAT_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20130 NINEVEH_SULC             NINEVEH_SULC_ENTER       NINEVEH_SULC_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20150 UNNAMED_PEDES            UNNAMED_PEDES_ENTER      UNNAMED_PEDES_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20170 ADAPA_CRAT               ADAPA_CRAT_ENTER         ADAPA_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20190 PITCRAT_PALIM            PITCRAT_PALIM_ENTER      PITCRAT_PALIM_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20250 MIR_CRAT                 MIR_CRAT_ENTER           MIR_CRAT_LEAVE                G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20310 TAMMUZ_CRAT              TAMMUZ_CRAT_ENTER        TAMMUZ_CRAT_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20350 ANTUM_CRAT               ANTUM_CRAT_ENTER         ANTUM_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20370 TIAMSULC_KISH            TIAMSULC_KISH_ENTER      TIAMSULC_KISH_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20390 MARIUS_SOUTH             MARIUS_SOUTH_ENTER       MARIUS_SOUTH_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20410 TROS_CRAT                TROS_CRAT_ENTER          TROS_CRAT_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20430 KISHAR_ETANA             KISHAR_ETANA_ENTER       KISHAR_ETANA_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20450 MARIUS_REG_W             MARIUS_REG_W_ENTER       MARIUS_REG_W_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20470 GROUP_PALIM              GROUP_PALIM_ENTER        GROUP_PALIM_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20510 KHONSU_CRAT_N            KHONSU_CRAT_N_ENTER      KHONSU_CRAT_N_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20590 DARDANUS_SULC            DARDANUS_SULC_ENTER      DARDANUS_SULC_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20610 PENEPALIM_DAM            PENEPALIM_DAM_ENTER      PENEPALIM_DAM_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20630 UNNAMED_PALIM            UNNAMED_PALIM_ENTER      UNNAMED_PALIM_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20650 SHU_CRAT_S               SHU_CRAT_S_ENTER         SHU_CRAT_S_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20670 ANU_SOUTH                ANU_SOUTH_ENTER          ANU_SOUTH_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20690 OSIRIS_CRAT              OSIRIS_CRAT_ENTER        OSIRIS_CRAT_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20710 UNNAMED_CRAT             UNNAMED_CRAT_ENTER       UNNAMED_CRAT_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20750 KADI_CRAT                KADI_CRAT_ENTER          KADI_CRAT_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20770 URUKSULC_W               URUKSULC_W_ENTER         URUKSULC_W_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20830 MARIUS_EAST              MARIUS_EAST_ENTER        MARIUS_EAST_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20850 REGULAR_CRAT             REGULAR_CRAT_ENTER       REGULAR_CRAT_LEAVE            G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20870 GALREGTWO                GALREGTWO_ENTER          GALREGTWO_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20890 NICHOLSON                NICHOLSON_ENTER          NICHOLSON_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20910 KITTU_CRAT               KITTU_CRAT_ENTER         KITTU_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20950 RINGBASIN_GIL            RINGBASIN_GIL_ENTER      RINGBASIN_GIL_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+20990 NUNSULC_E                NUNSULC_E_ENTER          NUNSULC_E_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21010 GALREGONE                GALREGONE_ENTER          GALREGONE_LEAVE               G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21030 CENT_PIT_CRAT            CENT_PIT_CRAT_ENTER      CENT_PIT_CRAT_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21070 NICHOL_DOME              NICHOL_DOME_ENTER        NICHOL_DOME_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21150 NEAR_NICHOL              NEAR_NICHOL_ENTER        NEAR_NICHOL_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21190 MEMPHIS_NID              MEMPHIS_NID_ENTER        MEMPHIS_NID_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21210 RINGBASIN_NIN            RINGBASIN_NIN_ENTER      RINGBASIN_NIN_LEAVE           G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21230 WEILA_CRAT               WEILA_CRAT_ENTER         WEILA_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21270 TERAH_CRAT               TERAH_CRAT_ENTER         TERAH_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21310 HARAK_CRAT               HARAK_CRAT_ENTER         HARAK_CRAT_LEAVE              G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21330 GALREGXIBAL              GALREGXIBAL_ENTER        GALREGXIBAL_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+21350 TASHME_CRAT              TASHME_CRAT_ENTER        TASHME_CRAT_LEAVE             G5HS G5HE     FALSE  -    0  FIXED    CONTINUOUS  INACTIVE
+
+# Ganymde long lat crossing events for crema3.1 orbit
+30000 NEG_55_S2N            NEG_55_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30010 NEG_45_S2N            NEG_45_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30020 NEG_35_S2N            NEG_35_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30040 NEG_25_S2N            NEG_25_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30050 NEG_15_S2N            NEG_15_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30070 NEG_05_S2N            NEG_05_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30080 05_S2N                05_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30090 15_S2N                15_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30100 25_S2N                25_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30120 35_S2N                35_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30130 45_S2N                45_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30140 55_S2N                55_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30160 65_S2N                65_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30170 75_S2N                75_S2N                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30190 75_N2S                75_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30210 65_N2S                65_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30230 55_N2S                55_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30250 45_N2S                45_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30270 35_N2S                35_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30280 25_N2S                25_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30290 15_N2S                15_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30300 05_N2S                05_N2S                     -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30320 NEG_05_N2S            NEG_05_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30330 NEG_15_N2S            NEG_15_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30340 NEG_25_N2S            NEG_25_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30350 NEG_35_N2S            NEG_35_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30370 NEG_45_N2S            NEG_45_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30380 NEG_55_N2S            NEG_55_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30400 NEG_65_N2S            NEG_65_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30420 NEG_75_N2S            NEG_75_N2S                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30430 NEG_75_S2N            NEG_75_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+30440 NEG_65_S2N            NEG_65_S2N                 -                        G5HS G5HE  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+
+30500 GAN_S_AURORAE         GAN_ENTER_S_AURORAE        GAN_LEAVE_S_AURORAE      G5HS G5HE  FALSE  -   0  GLOBAL  CONTINUOUS  INACTIVE
+30502 GAN_N_AURORAE         GAN_ENTER_N_AURORAE        GAN_LEAVE_N_AURORAE      G5HS G5HE  FALSE  -   0  GLOBAL  CONTINUOUS  INACTIVE
+
+# ---------------------------------------------------------------------
+# Segmentation Events
+# ---------------------------------------------------------------------
+
+40000   PR                  PR_START                   PR_END                   S001 E001  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40001   J_RING              J_RING_START               J_RING_END               S002 E002  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40002   TOR_RS              TOR_RS_START               TOR_RS_END               S003 E003  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40003   IO_RS               IO_RS_START                IO_RS_END                S004 E004  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40004   J_SAT               J_SAT_START                J_SAT_END                S005 E005  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40005   DL_                 DL__START                  DL__END                  S006 E006  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40006   DL_EXT              DL_EXT_START               DL_EXT_END               S007 E007  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40007   E_GPH               E_GPH_START                E_GPH_END                S008 E008  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40008   E_IS                E_IS_START                 E_IS_END                 S009 E009  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40009   E_RS                E_RS_START                 E_RS_END                 S010 E010  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40010   JA_PE               JA_PE_START                JA_PE_END                S011 E011  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40011   JM_CB               JM_CB_START                JM_CB_END                S012 E012  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40012   JM_ENA              JM_ENA_START               JM_ENA_END               S013 E013  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40013   NAV                 NAV_START                  NAV_END                  S014 E014  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40014   STAR_OCC            STAR_OCC_START             STAR_OCC_END             S015 E015  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40015   G_RS_2G2            G_RS_2G2_START             G_RS_2G2_END             S016 E016  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40016   G_RS_3G3            G_RS_3G3_START             G_RS_3G3_END             S017 E017  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40017   G_RS_4G4            G_RS_4G4_START             G_RS_4G4_END             S018 E018  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40018   C_RS_5C1            C_RS_5C1_START             C_RS_5C1_END             S019 E019  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40019   E_RS_6E1            E_RS_6E1_START             E_RS_6E1_END             S020 E020  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40020   E_RS_7E2            E_RS_7E2_START             E_RS_7E2_END             S021 E021  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40021   C_RS_8C2            C_RS_8C2_START             C_RS_8C2_END             S022 E022  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40022   C_RS_9C3            C_RS_9C3_START             C_RS_9C3_END             S023 E023  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40023   C_RS_10C4           C_RS_10C4_START            C_RS_10C4_END            S024 E024  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40024   C_RS_11C5           C_RS_11C5_START            C_RS_11C5_END            S025 E025  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40025   C_RS_12C6           C_RS_12C6_START            C_RS_12C6_END            S026 E026  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40026   C_RS_13C7           C_RS_13C7_START            C_RS_13C7_END            S027 E027  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40027   C_RS_14C8           C_RS_14C8_START            C_RS_14C8_END            S028 E028  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40028   C_RS_15C9           C_RS_15C9_START            C_RS_15C9_END            S029 E029  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40029   C_RS_16C10          C_RS_16C10_START           C_RS_16C10_END           S030 E030  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40030   G_RS_17G5           G_RS_17G5_START            G_RS_17G5_END            S031 E031  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40031   G_RS_18G6           G_RS_18G6_START            G_RS_18G6_END            S032 E032  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40032   C_RS_19C11          C_RS_19C11_START           C_RS_19C11_END           S033 E033  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40033   C_RS_20C12          C_RS_20C12_START           C_RS_20C12_END           S034 E034  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40034   C_RS_21C13          C_RS_21C13_START           C_RS_21C13_END           S035 E035  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40035   G_RS_22G7           G_RS_22G7_START            G_RS_22G7_END            S036 E036  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40036   G_RS_23G8           G_RS_23G8_START            G_RS_23G8_END            S037 E037  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40037   G_RS_24G9           G_RS_24G9_START            G_RS_24G9_END            S038 E038  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40038   G_RS_25G10          G_RS_25G10_START           G_RS_25G10_END           S039 E039  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40039   G_RS_26G11          G_RS_26G11_START           G_RS_26G11_END           S040 E040  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40040   JA_PE2              JA_PE2_START               JA_PE2_END               S041 E041  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40041   JA_PE3              JA_PE3_START               JA_PE3_END               S042 E042  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40042   JA_PE4              JA_PE4_START               JA_PE4_END               S043 E043  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40043   JA_PE5              JA_PE5_START               JA_PE5_END               S044 E044  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40044   JA_PE6              JA_PE6_START               JA_PE6_END               S045 E045  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40045   JA_PE7              JA_PE7_START               JA_PE7_END               S046 E046  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40046   JA_PE8              JA_PE8_START               JA_PE8_END               S047 E047  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40047   JA_PE9              JA_PE9_START               JA_PE9_END               S048 E048  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40048   JA_PE10             JA_PE10_START              JA_PE10_END              S049 E049  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40049   JA_PE11             JA_PE11_START              JA_PE11_END              S050 E050  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40050   JA_PE12             JA_PE12_START              JA_PE12_END              S051 E051  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40051   JM_PE13             JM_PE13_START              JM_PE13_END              S052 E052  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40052   JA_PE14             JA_PE14_START              JA_PE14_END              S053 E053  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40053   JM_PE15             JM_PE15_START              JM_PE15_END              S054 E054  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40054   JA_PE16             JA_PE16_START              JA_PE16_END              S055 E055  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40055   JM_PE17             JM_PE17_START              JM_PE17_END              S056 E056  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40056   JA_PE18             JA_PE18_START              JA_PE18_END              S057 E057  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40057   JA_PE19             JA_PE19_START              JA_PE19_END              S058 E058  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40058   JA_PE20             JA_PE20_START              JA_PE20_END              S059 E059  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40059   JA_PE21             JA_PE21_START              JA_PE21_END              S060 E060  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40060   JA_PE22             JA_PE22_START              JA_PE22_END              S061 E061  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40061   JA_PE23             JA_PE23_START              JA_PE23_END              S062 E062  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40062   JA_PE24             JA_PE24_START              JA_PE24_END              S063 E063  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40063   JA_PE25             JA_PE25_START              JA_PE25_END              S064 E064  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40064   JA_PE26             JA_PE26_START              JA_PE26_END              S065 E065  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40065   JA_PE27             JA_PE27_START              JA_PE27_END              S066 E066  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40066   JA_PE28             JA_PE28_START              JA_PE28_END              S067 E067  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40067   JA_PE29             JA_PE29_START              JA_PE29_END              S068 E068  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40068   JA_PE30             JA_PE30_START              JA_PE30_END              S069 E069  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40069   JA_PE31             JA_PE31_START              JA_PE31_END              S070 E070  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40070   JA_PE32             JA_PE32_START              JA_PE32_END              S071 E071  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40071   JA_PE33             JA_PE33_START              JA_PE33_END              S072 E072  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40072   JA_PE34             JA_PE34_START              JA_PE34_END              S073 E073  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40073   JA_PE35             JA_PE35_START              JA_PE35_END              S074 E074  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40074   JA_PE36             JA_PE36_START              JA_PE36_END              S075 E075  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40075   JA_PE37             JA_PE37_START              JA_PE37_END              S076 E076  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40076   JA_PE38             JA_PE38_START              JA_PE38_END              S077 E077  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40077   JA_PE39             JA_PE39_START              JA_PE39_END              S078 E078  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40078   JA_PE40             JA_PE40_START              JA_PE40_END              S079 E079  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40079   JA_PE41             JA_PE41_START              JA_PE41_END              S080 E080  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40080   JA_PE42             JA_PE42_START              JA_PE42_END              S081 E081  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40081   JA_PE43             JA_PE43_START              JA_PE43_END              S082 E082  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40082   JA_PE44             JA_PE44_START              JA_PE44_END              S083 E083  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40083   JA_PE45             JA_PE45_START              JA_PE45_END              S084 E084  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40084   JA_PE46             JA_PE46_START              JA_PE46_END              S085 E085  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40085   JA_PE47             JA_PE47_START              JA_PE47_END              S086 E086  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40086   JA_PE48             JA_PE48_START              JA_PE48_END              S087 E087  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40087   JA_PE49             JA_PE49_START              JA_PE49_END              S088 E088  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40088   JA_PE50             JA_PE50_START              JA_PE50_END              S089 E089  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40089   G_GPH_2G2           G_GPH_2G2_START            G_GPH_2G2_END            S090 E090  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40090   G_GPH_4G4           G_GPH_4G4_START            G_GPH_4G4_END            S091 E091  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40091   C_GPH_5C1           C_GPH_5C1_START            C_GPH_5C1_END            S092 E092  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40092   E_GPH_6E1           E_GPH_6E1_START            E_GPH_6E1_END            S093 E093  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40093   E_GPH_7E2           E_GPH_7E2_START            E_GPH_7E2_END            S094 E094  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40094   C_GPH_8C2           C_GPH_8C2_START            C_GPH_8C2_END            S095 E095  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40095   C_GPH_9C3           C_GPH_9C3_START            C_GPH_9C3_END            S096 E096  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40096   C_GPH_10C4          C_GPH_10C4_START           C_GPH_10C4_END           S097 E097  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40097   C_GPH_11C5          C_GPH_11C5_START           C_GPH_11C5_END           S098 E098  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40098   C_GPH_13C7          C_GPH_13C7_START           C_GPH_13C7_END           S099 E099  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40099   C_GPH_14C8          C_GPH_14C8_START           C_GPH_14C8_END           S100 E100  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40100   C_GPH_15C9          C_GPH_15C9_START           C_GPH_15C9_END           S101 E101  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40101   C_GPH_16C10         C_GPH_16C10_START          C_GPH_16C10_END          S102 E102  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40102   G_GPH_17G5          G_GPH_17G5_START           G_GPH_17G5_END           S103 E103  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40103   C_GPH_19C11         C_GPH_19C11_START          C_GPH_19C11_END          S104 E104  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40104   C_GPH_21C13         C_GPH_21C13_START          C_GPH_21C13_END          S105 E105  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40105   JA_PE51             JA_PE51_START              JA_PE51_END              S106 E106  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40106   G_IS_4G4            G_IS_4G4_START             G_IS_4G4_END             S107 E107  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40107   JA_INCL_NODL        JA_INCL_NODL_START         JA_INCL_NODL_END         S108 E108  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40108   JA_PE_NODL          JA_PE_NODL_START           JA_PE_NODL_END           S109 E109  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40109   JUPITER_PHASE_MIN   JUPITER_PHASE_MIN_START    JUPITER_PHASE_MIN_END    S110 E110  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40110   JUPITER_PHASE_090   JUPITER_PHASE_090_START    JUPITER_PHASE_090_END    S111 E111  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40111   JUPITER_PHASE_MAX   JUPITER_PHASE_MAX_START    JUPITER_PHASE_MAX_END    S112 E112  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40112   JUPITER_MONITORING  JUPITER_MONITORING_START   JUPITER_MONITORING_END   S113 E113  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40113   TCM                 TCM_START                  TCM_END                  S114 E114  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40114   FD_EPHEM_EUR        FD_EPHEM_EUR_START         FD_EPHEM_EUR_END         S115 E115  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40115   FD_EPHEM_CAL        FD_EPHEM_CAL_START         FD_EPHEM_CAL_END         S116 E116  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40116   FD_WOL              FD_WOL_START               FD_WOL_END               S117 E117  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40117   J_FD_WOL_FB         J_FD_WOL_FB_START          J_FD_WOL_FB_END          S118 E118  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+40118   J_FD_NAV_FB         J_FD_NAV_FB_START          J_FD_NAV_FB_END          S119 E119  FALSE  -   0  FIXED   CONTINUOUS  INACTIVE
+
+# MISSION EVENT FILE DEFINITION
+50000  VISIBILITY_GOLDSTONE        VISIBILITY_GOLDSTONE_START        VISIBILITY_GOLDSTONE_END            -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50001  IO_TRANSIT                  IO_TRANSIT_START                  IO_TRANSIT_END                      -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50002  VISIBILITY_CANBERRA         VISIBILITY_CANBERRA_START         VISIBILITY_CANBERRA_END             -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50003  VISIBILITY_MADRID           VISIBILITY_MADRID_START           VISIBILITY_MADRID_END               -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50004  VISIBILITY_CEBREROS         VISIBILITY_CEBREROS_START         VISIBILITY_CEBREROS_END             -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50005  VISIBILITY_MALARGUE         VISIBILITY_MALARGUE_START         VISIBILITY_MALARGUE_END             -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50006  DOWNLINK_MALARGUE           DOWNLINK_MALARGUE_START           DOWNLINK_MALARGUE_END               -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50007  EUROPA_TRANSIT              EUROPA_TRANSIT_START              EUROPA_TRANSIT_END                  -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50008  GANYMEDE_TRANSIT            GANYMEDE_TRANSIT_START            GANYMEDE_TRANSIT_END                -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50009  PHASE_010                   PHASE_010                         -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50010  LATITUDE_XING_P01_N2S       LATITUDE_XING_P01_N2S             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50011  FLYBY_GANYMEDE              FLYBY_GANYMEDE                    -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50012  LATITUDE_XING_M01_N2S       LATITUDE_XING_M01_N2S             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50013  PERIJOVE                    PERIJOVE                          -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50014  PHASE_090                   PHASE_090                         -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50015  PHASE_150                   PHASE_150                         -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50016  LATITUDE_XING_M01_S2N       LATITUDE_XING_M01_S2N             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50017  CALLISTO_TRANSIT            CALLISTO_TRANSIT_START            CALLISTO_TRANSIT_END                -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50018  SUN_CONJUNCTION_SUP         SUN_CONJUNCTION_SUP_START         SUN_CONJUNCTION_SUP_END             -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50019  LATITUDE_XING_P01_S2N       LATITUDE_XING_P01_S2N             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50020  APOJOVE                     APOJOVE                           -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50021  FLYBY_CALLISTO              FLYBY_CALLISTO                    -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50022  CAL_OCC_EARTH_000           CAL_OCC_EARTH_000_DESC            CAL_OCC_EARTH_000_ASCE              -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50023  FLYBY_EUROPA                FLYBY_EUROPA                      -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50024  JUP_OCC_EARTH_000           JUP_OCC_EARTH_000_DESC            JUP_OCC_EARTH_000_ASCE              -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50025  SUN_OCC_BY_JUPITER_TRANSIT  SUN_OCC_BY_JUPITER_TRANSIT_START  SUN_OCC_BY_JUPITER_TRANSIT_END      -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
+50026  LATITUDE_XING_M15_N2S       LATITUDE_XING_M15_N2S             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50027  LATITUDE_XING_M15_S2N       LATITUDE_XING_M15_S2N             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50028  LATITUDE_XING_P15_S2N       LATITUDE_XING_P15_S2N             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50029  LATITUDE_XING_P15_N2S       LATITUDE_XING_P15_N2S             -                                   -      -  FALSE  -  0  PTB  MOMENTARY    INACTIVE
+50030  GAN_OCC_EARTH_000           GAN_OCC_EARTH_000_DESC            GAN_OCC_EARTH_000_ASCE              -      -  FALSE  -  0  PTB  CONTINUOUS   INACTIVE
