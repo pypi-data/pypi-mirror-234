@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: servicefoundry-server-env-secret
+  namespace: truefoundry
+stringData:
+  DB_HOST: {{ truefoundry_db_host }}
+  DB_USERNAME: {{ truefoundry_db_username }}
+  DB_PASSWORD: {{ truefoundry_db_password }}
+  DB_NAME: {{ truefoundry_db_name }}
+  NATS_CONTROLPLANE_ACCOUNT_SEED: {{ nats_controlplane_account_seed }}
+  SVC_FOUNDRY_SERVICE_API_KEY: {{ truefoundry_svc_account_api_key }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mlfoundry-server-env-secret
+  namespace: truefoundry
+stringData:
+  DB_HOST: {{ truefoundry_db_host }}
+  DB_USERNAME: {{ truefoundry_db_username }}
+  DB_PASSWORD: {{ truefoundry_db_password }}
+  DB_NAME: {{ truefoundry_db_name }}
+  SVC_FOUNDRY_SERVICE_API_KEY: {{ truefoundry_svc_account_api_key }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sfy-manifest-service-env-secret
+  namespace: truefoundry
+stringData:
+  SFY_API_KEY: {{ truefoundry_svc_account_api_key }}
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/dockerconfigjson
+metadata:
+  name: truefoundry-image-pull-secret
+  namespace: truefoundry
+data:
+  .dockerconfigjson: {{ image_pull_secret }}
+---
