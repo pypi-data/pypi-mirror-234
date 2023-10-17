@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "render_engine"
+dynamic = ["version"]
+description = "A Flexible Static Site Generator for Python"
+readme = "README.md"
+
+dependencies = [
+    "dtyper",
+    "gitpython",
+    "jinja2",
+    "markdown2",
+    "more-itertools",
+    "pluggy",
+    "python-dateutil",
+    "python-frontmatter",
+    "python-slugify",
+    "rich",
+    "typer",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-mock",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "pymdown-extensions",
+    "ruff",
+    "black",
+    ]
+
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+# version_scheme = "python-simplified-semver"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[project.urls]
+homepage = "https://github.com/kjaymiller/render_engine/"
+repository = "https://github.com/kjaymiller/render_engine/"
+documentation = "https://render-engine.readthedocs.io/en/latest/"
+
+[tool.setuptools.package-data]
+"*" = ["*.html", "*.txt", "*.xml", "*.md"]
+
+[project.scripts]
+render-engine = "render_engine.cli:cli"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.semantic_release]
+version_toml = "pyproject.toml:project.version"
+branch = "main"
+
+[tool.ruff]
+select = ["E", "F", "I", "UP"]
+target-version = "py311"
+line-length = 120
+src = ["src"]
+ignore-init-module-imports = true
+
+[tool.black]
+target-version =  ["py311"]
+line-length = 120
