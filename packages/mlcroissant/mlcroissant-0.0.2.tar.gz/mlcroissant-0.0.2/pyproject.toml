@@ -1,0 +1,83 @@
+[project]
+# Project metadata. Available keys are documented at:
+# https://packaging.python.org/en/latest/specifications/declaring-project-metadata
+name = "mlcroissant"
+description = "MLCommons datasets format."
+version = "0.0.2"
+authors = [
+  { name = "Joaquin Vanschoren" },
+  { name = "Jos van der Velde" },
+  { name = "Omar Benjelloun" },
+  { name = "Peter Mattson" },
+  { name = "Pieter Gijsbers" },
+  { name = "Pierre Marcenac" },
+  { name = "Pierre Ruyssen" },
+  { name = "Prabhant Singh" },
+]
+
+# pip dependencies of the project
+# Installed locally with `pip install -e .`
+dependencies = [
+  "absl-py",
+  "etils[epath]",
+  "jsonpath-rw",
+  "networkx",
+  "pandas",
+  "rdflib",
+  "requests",
+  "tqdm",
+]
+readme = "README.md"
+
+[project.optional-dependencies]
+# Development deps (linting, formatting,...)
+# Installed through `pip install -e .[dev]`
+dev = [
+  "black",
+  "datasets",
+  "flake8-docstrings",
+  "mlcroissant[git]",
+  "mlcroissant[image]",
+  "mlcroissant[parquet]",
+  "pyflakes",
+  "pylint",
+  "pytest",
+  "pytype",
+]
+git = ["GitPython"]
+image = ["Pillow"]
+parquet = ["pyarrow"]
+
+# Formatting configurations.
+[tool.black]
+line-length = 88
+
+[tool.pytype]
+inputs = ["."]
+# PyLint is skipped for migrations as migrations are supposed to be launched on
+# fixed previous versions of the code.
+exclude = ["*/migrations/previous/*"]
+
+[tool.isort]
+profile = "google"
+line_length = 88
+use_parentheses = true
+known_first_party = ["mlcroissant"]
+multi_line_output = 3
+
+[tool.distutils.bdist_wheel]
+universal = true
+
+[tool.setuptools.packages.find]
+exclude = ["recipes*"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+# Pytest settings configurations.
+addopts = "--strict-markers"
+markers = [
+    "nonhermetic: Non-hermetic test cases (data from the internet)."
+]
