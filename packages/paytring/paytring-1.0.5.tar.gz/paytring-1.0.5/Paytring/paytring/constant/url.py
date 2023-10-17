@@ -1,0 +1,12 @@
+class URL:
+    BASE_URL = "https://api.paytring.com/api/v1/"
+    ORDER_CREATE = "https://api.paytring.com/api/v1/order/create"
+    FETCH_ORDER = "https://api.paytring.com/api/v1/order/fetch"
+    FETCH_ORDER_BY_RECIEPT = "https://api.paytring.com/api/v1/order/fetch/receipt"
+    REFUND = "https://api.paytring.com/api/v1/order/refund"
+    PLAN_CREATE = "https://api.paytring.com/api/v1/subscription/plan/create"
+    PLAN_FETCH = "https://api.paytring.com/api/v1/subscription/plan/fetch"
+    PLAN_FETCH_BY_RECIEPT = "https://api.paytring.com/api/v1/subscription/plan/fetch/receipt"
+    SUBSCRIPTION_CREATE = "https://api.paytring.com/api/v1/subscription/create"
+    SUBSCRIPTION_FETCH = "https://api.paytring.com/api/v1/subscription/fetch"
+    SUBSCRIPTION_FETCH_BY_RECIEPT = "https://api.paytring.com/api/v1/subscription/fetch/receipt"
