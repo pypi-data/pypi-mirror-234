@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "async-processor"
+version = "0.1.9rc1"
+description = ""
+authors = ["debajyoti-truefoundry <debajyoti@truefoundry.com>"]
+readme = "README.md"
+packages = [{include = "async_processor"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+prometheus_client = ">=0.17.1,<0.18.0"
+fastapi = ">=0.100.1,<0.101.0"
+gunicorn = ">=21.2.0,<21.3.0"
+uvicorn = ">=0.23.2,<0.24.0"
+orjson = ">=3.9.2,<3.10.0"
+starlette = ">=0.27.0,<0.28.0"
+pydantic = ">=1.10.12,<1.11.0"
+requests = ">=2.31.0,<2.32.0"
+aiohttp = ">=3.8.5,<3.9.0"
+
+# We use protected methods from nats-py
+# be careful while changing versions
+nats-py = { version = "2.3.1", optional = true }
+boto3 =  { version = ">=1.28.16,<1.29.0", optional = true }
+kafka-python = { version = ">=2.0.0,<2.1.0", optional = true }
+
+[tool.poetry.extras]
+nats = ["nats-py"]
+sqs = ["boto3"]
+kafka = ["kafka-python"]
+
+[tool.poetry.dev-dependencies]
+pre-commit = ">=3.3.3,<3.4.0"
+poetry = ">=1.5.1,<1.6.0"
+pytest = ">=7.4.0,<7.5.0"
+
+[tool.black]
+line-length = 88
+safe = true
+target_version = ["py38", "py39", "py310"]
+
+[tool.isort]
+profile = "black"
+
+[tool.ruff]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = ["-sv"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
