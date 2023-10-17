@@ -1,0 +1,109 @@
+[project]
+name = "prolif"
+description = "Interaction Fingerprints for protein-ligand complexes and more"
+authors = [
+  { name = "Cédric Bouysset", email = "cedric@bouysset.net" },
+]
+readme = "README.rst"
+requires-python = ">=3.8"
+dynamic = ["version"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+]
+keywords = [
+    "science",
+    "chemistry",
+    "drug-design",
+    "cheminformatics",
+    "chemoinformatics",
+    "molecular-dynamics",
+    "interaction-fingerprint",
+]
+dependencies = [
+    "pandas>=1.0.0",
+    "numpy>=1.13.3",
+    "scipy>=1.3.0",
+    "mdanalysis>=2.2.0",
+    "tqdm",
+    "multiprocess",
+    "dill",
+]
+
+[project.license]
+file = "LICENSE"
+
+[project.optional-dependencies]
+plots = [
+    "py3Dmol",
+    "matplotlib>=3.5",
+]
+tutorials = [
+    "rdkit",
+    "matplotlib>=3.7",
+    "seaborn<1.0",
+    "networkx",
+    "pyvis",
+    "prolif[plots]",
+]
+build = [
+    "build",
+]
+tests = [
+    "pytest>=6.1.2",
+    "pytest-cov",
+    "ipython",
+    "prolif[plots]"
+]
+dev = [
+    "prolif[build,tests]",
+]
+
+[project.urls]
+Homepage = "https://github.com/chemosim-lab/ProLIF"
+Documentation = "https://prolif.readthedocs.io/en/stable/"
+Discussions = "https://github.com/chemosim-lab/ProLIF/discussions"
+Issues = "https://github.com/chemosim-lab/ProLIF/issues"
+Changelog = "https://github.com/chemosim-lab/ProLIF/blob/master/CHANGELOG.md"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["prolif*", "tests*"]
+
+[tool.setuptools.package-data]
+"prolif.data" = ["*"]
+"prolif.data.vina" = ["*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "prolif._version.__version__" }
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.coverage.report]
+include_namespace_packages = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "if .*TYPE_CHECKING:",
+    "@.*abstractmethod",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
