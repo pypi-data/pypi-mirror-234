@@ -1,0 +1,45 @@
+create or replace procedure PLUGIN.NETWORK_ADDRESSES(METHOD VARCHAR, 
+                                    CONNECTION_PARAMETERS OBJECT)
+returns object
+language python
+RUNTIME_VERSION = '3.10'
+EXTERNAL_ACCESS_INTEGRATIONS = ()
+PACKAGES = ({{packages}})
+SECRETS = ()
+IMPORTS = ('/app.zip')
+HANDLER = 'run'
+execute as owner
+as
+$$
+from logging import getLogger
+from omnata_plugin_runtime.logging import log_exception
+import json
+logger = getLogger(__name__)
+def run(session,method,connection_parameters):
+   try:
+      logger.info('plugin entrypoint wrapper')
+      from omnata_plugin_runtime.plugin_entrypoints import PluginEntrypoint
+      logger.info('importing plugin {{plugin_class_name}} from module {{plugin_class_module}}')
+      entrypoint = PluginEntrypoint(session=session,
+         plugin_fqn='{{plugin_fqn}}',
+         module_name='{{plugin_class_module}}',
+         class_name='{{plugin_class_name}}'
+      )
+      result = entrypoint.network_addresses(method,connection_parameters)
+      logger.info(f'result from plugin: {result}')
+      return {
+         "success": True,
+         "data": result
+      }
+   except Exception as exception:
+      log_exception(exception,logger)
+      return {
+         "success": False,
+         "error": f"NETWORK_ADDRESSES: {str(exception)}"
+      }
+$$
+;
+   
+grant usage on procedure PLUGIN.NETWORK_ADDRESSES(VARCHAR, 
+                                    OBJECT)
+to application role OMNATA_MANAGEMENT;
