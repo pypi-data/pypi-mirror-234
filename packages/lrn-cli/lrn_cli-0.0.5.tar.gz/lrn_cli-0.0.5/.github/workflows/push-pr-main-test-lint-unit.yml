@@ -1,0 +1,37 @@
+#####
+# Pull Request workflow triggers on pushes to, or pull requests against, main
+# Jobs performed:
+# 1. Tests
+#####
+name: Tests
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      # Every push on those branches
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  run_unit_test:
+    runs-on: ubuntu-latest
+    name: Unit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.ci_github_token }}
+          submodules: recursive
+      - name: Python Setup
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install Testing and Linting Dependencies
+        run: pip install .[test]
+      - name: Run Python Tests
+        run: python -m pytest --black --isort -rs --doctest-modules --color=yes .

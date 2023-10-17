@@ -1,0 +1,58 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "setuptools-scm"]
+
+[project]
+authors = [
+    {name = "Olivier Mehani", email = "olivier.mehani@learnosity.com"},
+]
+description = "Learnosity CLI tool"
+dynamic = [ "version", "readme" ]
+dependencies = [
+    "click >= 7",
+    "learnosity_sdk",
+    "pygments >= 2",
+]
+name = "lrn_cli"
+requires-python = ">=3.9"
+#url = "https://github.com/Learnosity/lrn-cli"
+
+[project.optional-dependencies]
+dev = [
+    "setuptools",
+    "twine",
+    "wheel",
+]
+test = [
+    "black",
+    "isort",
+    "pytest",
+    "pytest-black",
+    "pytest-isort",
+    "pytest-runner",
+]
+
+[project.scripts]
+lrn-cli = "src.lrn_cli:cli"
+
+
+[tool.black]
+ignore = "W503"
+line-length = 120
+
+
+[tool.isort]
+profile = "black"
+src_paths = ["src", "test"]
+
+
+[tool.pytest.ini_options]
+addopts = "--black --isort -rs --doctest-modules"
+
+
+[tool.setuptools]
+packages = [ "src" ]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"], content-type = "text/markdown"}
+version = {attr = "src.__version__"}
